@@ -492,8 +492,7 @@ export class SerialManager {
             this.isPaused = true;
             // Store current spindle state before pausing
             this.prePauseSpindleState = { ...this.lastStatus.spindle };
-            // Turn off spindle state
-            this.spindleDirection = 'off';
+    
             await this.sendRealtimeCommand('!'); // Feed Hold
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
             // After feed hold, stop the spindle
