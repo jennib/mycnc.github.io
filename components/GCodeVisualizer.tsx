@@ -654,7 +654,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 setCamera(c => {
                     const newRotation = [...c.rotation];
                     newRotation[0] -= dx * 0.01;
-                    newRotation[1] -= dy * 0.01;
+                    newRotation[1] += dy * 0.01;
                     // Clamp pitch to prevent flipping over
                     newRotation[1] = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, newRotation[1]));
                     return { ...c, rotation: newRotation };
