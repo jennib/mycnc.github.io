@@ -758,7 +758,7 @@ const App: React.FC = () => {
     
         const probeTravel = unit === 'mm' ? -25 : -1.0;
         const probeFeed = machineSettings.probe.feedRate || 25;
-        const retractDist = unit === 'mm' ? 5 : 0.2;
+        const retractDist = unit === 'mm' ? -5 : -0.2;
     
         addLog({ type: 'status', message: `Starting ${axes.toUpperCase()}-Probe cycle...` });
     
