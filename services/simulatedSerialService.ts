@@ -34,6 +34,7 @@ export class SimulatedSerialManager {
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
+    prePauseSpindleState: { state: 'cw' | 'ccw' | 'off', speed: number } | null = null;
     totalLines = 0;
     gcode: string[] = [];
     positioningMode: 'absolute' | 'incremental' = 'absolute'; // 'absolute' (G90) or 'incremental' (G91)
@@ -307,17 +308,26 @@ export class SimulatedSerialManager {
         setTimeout(() => this.sendNextLine(), 50); 
     }
 
-    pause() {
+    async pause() {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
+            // Store current spindle state before pausing
+            this.prePauseSpindleState = { ...this.position.spindle };
             this.position.status = 'Hold';
+            // Simulate M5 (Spindle Stop)
+            this.position.spindle.state = 'off';
+            this.position.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
         }
     }
 
-    resume() {
+    async resume() {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
+            // Restore spindle state before resuming motion
+            if (this.prePauseSpindleState) {
+                this.position.spindle = { ...this.prePauseSpindleState };
+            }
             this.position.status = 'Run';
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
             this.sendNextLine();

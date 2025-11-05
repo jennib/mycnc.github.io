@@ -20,6 +20,7 @@ export class SerialManager {
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
+    prePauseSpindleState: { state: 'cw' | 'ccw' | 'off', speed: number } | null = null;
     totalLines = 0;
     gcode: string[] = [];
     statusInterval: number | null = null;
@@ -486,18 +487,30 @@ export class SerialManager {
         }
     }
 
-    pause() {
+    async pause() {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
-            this.sendRealtimeCommand('!'); // Feed Hold
+            // Store current spindle state before pausing
+            this.prePauseSpindleState = { ...this.lastStatus.spindle };
+            // Turn off spindle state
+            this.spindleDirection = 'off';
+            await this.sendRealtimeCommand('!'); // Feed Hold
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            // After feed hold, stop the spindle
+            await this.sendLine('M5');
         }
     }
 
-    resume() {
+    async resume() {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
-            this.sendRealtimeCommand('~'); // Cycle Resume
+            // First, restore spindle if it was running
+            if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
+                const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
+                await this.sendLine(`${spindleCmd} S${this.prePauseSpindleState.speed}`);
+            }
+            // Then, resume motion
+            await this.sendRealtimeCommand('~'); // Cycle Resume
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
             this.sendNextLine();
         }

@@ -450,7 +450,7 @@ const App: React.FC = () => {
         });
     }, [isConnected, gcodeLines, jobStartOptions]);
 
-    const handleJobControl = useCallback((action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }): void => {
+    const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }): Promise<void> => {
         const manager = serialManagerRef.current;
         if (!manager || !isConnected) return;
 
@@ -464,22 +464,16 @@ const App: React.FC = () => {
                 }
                 break;
             case 'pause':
-                setJobStatus(currentStatus => {
-                    if (currentStatus === JobStatus.Running) {
-                        manager.pause();
-                        return JobStatus.Paused;
-                    }
-                    return currentStatus;
-                });
+                if (jobStatusRef.current === JobStatus.Running) {
+                    await manager.pause();
+                    setJobStatus(JobStatus.Paused);
+                }
                 break;
             case 'resume':
-                setJobStatus(currentStatus => {
-                    if (currentStatus === JobStatus.Paused) {
-                        manager.resume();
-                        return JobStatus.Running;
-                    }
-                    return currentStatus;
-                });
+                if (jobStatusRef.current === JobStatus.Paused) {
+                    await manager.resume();
+                    setJobStatus(JobStatus.Running);
+                }
                 break;
             case 'stop':
                 setJobStatus(currentStatus => {
@@ -492,7 +486,7 @@ const App: React.FC = () => {
                 });
                 break;
         }
-    }, [isConnected, gcodeLines, machineSettings]);
+    }, [isConnected, gcodeLines, machineSettings, handleStartJobConfirmed]);
     
     const handleManualCommand = useCallback((command: string): void => {
         serialManagerRef.current?.sendLine(command);
