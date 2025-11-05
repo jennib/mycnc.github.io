@@ -492,11 +492,12 @@ export class SerialManager {
             this.isPaused = true;
             // Store current spindle state before pausing
             this.prePauseSpindleState = { ...this.lastStatus.spindle };
-    
-            await this.sendRealtimeCommand('!'); // Feed Hold
+
+            // Stop the spindle FIRST, then halt motion.
+            // GRBL in a 'Hold' state won't accept new G-code commands like M5.
+            await this.sendLineAndWaitForOk('M5');
+            await this.sendRealtimeCommand('!'); // Feed Hold now
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
-            // After feed hold, stop the spindle
-            await this.sendLine('M5');
         }
     }
 
