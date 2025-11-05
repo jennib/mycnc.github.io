@@ -13,6 +13,7 @@ const Footer: React.FC<FooterProps> = ({ onContactClick }) => {
                 <button onClick={onContactClick} className="ml-2 text-primary hover:underline font-semibold">
                     Contact Us
                 </button>
+                &nbsp;&nbsp;- Source Code <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">here</a>.    
             </p>
         </footer>
     );
