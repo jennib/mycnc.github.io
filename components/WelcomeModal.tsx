@@ -44,7 +44,11 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
                     <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
                 </div>
                 <div className="p-6 space-y-4">
-                    <p>To get started, please complete the following setup steps. This ensures the software knows about your machine's capabilities.</p>
+                    <p className="text-base text-text-primary">
+                        <b>mycnc.app</b> is a web-based G-code sender that runs in your browser to control your CNC machine. Connect via USB to jog, send files, and monitor jobs in real-time. It includes a 3D toolpath visualizer, a machine simulator, and G-code generators for simple operations.
+                    </p>
+                    <hr className="border-secondary" />
+                    <p className="text-sm text-text-secondary">To get started, please complete the two steps below. This will configure the application for your specific machine.</p>
                     <div className="space-y-3">
                         <SetupStep title="Machine Setup" description="Define your machine's work area and spindle speeds." isComplete={isMachineSetupComplete} onAction={onOpenSettings} actionText="Open Settings" />
                         <SetupStep title="Tool Library" description="Add at least one tool to your library." isComplete={isToolLibrarySetupComplete} onAction={onOpenToolLibrary} actionText="Open Tool Library" />
