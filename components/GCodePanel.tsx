@@ -83,7 +83,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
 
-
     useEffect(() => {
         setEditedGCode(gcodeLines.join('\n'));
         setIsEditing(false); // Exit edit mode on new file load

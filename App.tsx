@@ -121,6 +121,13 @@ const App: React.FC = () => {
         }
     }, [machineState?.status]);
 
+    // Auto-select tool if only one exists in the library
+    useEffect(() => {
+        if (toolLibrary.length === 1 && selectedToolId === null) {
+            setSelectedToolId(toolLibrary[0].id);
+        }
+    }, [toolLibrary, selectedToolId]);
+
     const removeNotification = useCallback((id: number) => {
         setNotifications(prev => {
             const notificationToRemove = prev.find(n => n.id === id);
@@ -399,7 +406,7 @@ const App: React.FC = () => {
         setFileName(name);
         setProgress(0);
         setJobStatus(JobStatus.Idle);
-        setSelectedToolId(null);
+        setSelectedToolId(toolLibrary.length === 1 ? toolLibrary[0].id : null);
         setTimeEstimate(estimateGCodeTime(lines));
         addLog({ type: 'status', message: `Loaded ${name} (${lines.length} lines).` });
     };
@@ -428,10 +435,10 @@ const App: React.FC = () => {
         setFileName('');
         setProgress(0);
         setJobStatus(JobStatus.Idle);
-        setSelectedToolId(null);
+        setSelectedToolId(toolLibrary.length === 1 ? toolLibrary[0].id : null);
         setTimeEstimate({ totalSeconds: 0, cumulativeSeconds: [] });
         addLog({ type: 'status', message: 'G-code file cleared.' });
-    }, [addLog]);
+    }, [addLog, toolLibrary]);
 
     const handleLoadGeneratedGCode = useCallback((gcode: string, name: string): void => {
         handleFileLoad(gcode, name);
@@ -1022,6 +1029,8 @@ const App: React.FC = () => {
                         unit={unit}
                         settings={machineSettings}
                         toolLibrary={toolLibrary}
+                        selectedToolId={selectedToolId}
+                        onToolSelect={setSelectedToolId}
                     />
                 </ErrorBoundary>
             )}

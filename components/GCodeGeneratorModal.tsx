@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
@@ -114,9 +112,11 @@ interface GCodeGeneratorModalProps {
     unit: 'mm' | 'in';
     settings: MachineSettings;
     toolLibrary: Tool[];
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
-const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary }) => {
+const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect }) => {
     const [activeTab, setActiveTab] = useState('surfacing');
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
@@ -134,7 +134,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         depth: -12, depthPerPass: 3, cutSide: 'outside',
         tabsEnabled: true, numTabs: 4, tabWidth: 6, tabHeight: 2,
         feed: 600, spindle: settings.spindle.max || 9000, safeZ: 5,
-        toolId: null,
+        toolId: selectedToolId,
     });
 
     // --- Drilling State ---
@@ -164,7 +164,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         circRadius: 40,
         circHoles: 6,
         circStartAngle: 0,
-        toolId: null as number | null,
+        toolId: selectedToolId,
     });
 
     // --- Slot State ---
@@ -178,7 +178,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         feed: 400, spindle: settings.spindle.max || 8000, safeZ: 5,
         startX: 10, startY: 10, endX: 90, endY: 20,
         centerX: 50, centerY: 50, radius: 40, startAngle: 45, endAngle: 135,
-        toolId: null,
+        toolId: selectedToolId,
     });
 
     // --- Surfacing State ---
@@ -195,7 +195,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         safeZ: 5,
         startX: 0,
         startY: 0,
-        toolId: null as number | null,
+        toolId: selectedToolId,
         direction: 'horizontal',
     });
 
@@ -217,7 +217,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         plungeFeed: 150,
         spindle: settings.spindle.max || 8000,
         safeZ: 5,
-        toolId: null as number | null,
+        toolId: selectedToolId,
     });
 
     // --- Pocket State ---
@@ -238,7 +238,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         plungeFeed: 150,
         spindle: settings.spindle.max || 8000,
         safeZ: 5,
-        toolId: null as number | null,
+        toolId: selectedToolId,
     });
 
     // --- Text State ---
@@ -258,7 +258,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         feed: 300,
         spindle: settings.spindle.max || 10000,
         safeZ: 5,
-        toolId: null,
+        toolId: selectedToolId,
     });
 
     // --- Thread Milling State ---
@@ -274,7 +274,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         feed: 200,
         spindle: settings.spindle.max || 10000,
         safeZ: 5,
-        toolId: null,
+        toolId: selectedToolId,
     });
     
     // --- Array State (now universal) ---
