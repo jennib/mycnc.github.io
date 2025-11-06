@@ -27,83 +27,8 @@ import Footer from './components/Footer';
 import ContactModal from './components/ContactModal';
 import ErrorBoundary from './ErrorBoundary';
 import UnsupportedBrowser from './components/UnsupportedBrowser';
-
-const GRBL_ALARM_CODES: { [key: number | string]: { name: string; desc: string; resolution: string } } = {
-    1: { name: 'Hard limit', desc: 'A limit switch was triggered. Usually due to machine travel limits.', resolution: 'Check for obstructions. The machine may need to be moved off the switch manually. Use the "$X" command to unlock after clearing the issue, then perform a homing cycle ($H).' },
-    2: { name: 'G-code motion command error', desc: 'The G-code motion target is invalid or exceeds machine travel limits.', resolution: 'Check your G-code file for errors near the last executed line. Use the "$X" command to unlock.' },
-    3: { name: 'Reset while in motion', desc: 'The reset button was pressed while the machine was moving.', resolution: 'This is expected. Use "$X" to unlock the machine and resume work.' },
-    4: { name: 'Probe fail', desc: 'The probing cycle failed to make contact or the probe is already triggered.', resolution: 'Check your probe wiring and ensure it is properly positioned. Use the "$X" command to unlock.' },
-    5: { name: 'Probe fail, travel error', desc: 'The probing cycle failed to clear the probe switch.', resolution: 'Check probe wiring and setup. The machine may require a soft-reset (E-STOP). Use "$X" to unlock.' },
-    8: { name: 'Homing fail, pull-off', desc: "The homing cycle failed because the machine couldn't move off the limit switches.", resolution: 'Check for mechanical issues or obstructions. Use "$X" to unlock.' },
-    9: { name: 'Homing fail, not found', desc: 'The homing cycle failed because the limit switches were not triggered.', resolution: 'Check limit switch wiring and functionality. Use "$X" to unlock.' },
-    'default': { name: 'Unknown Alarm', desc: 'An unspecified alarm has occurred.', resolution: 'Try unlocking with "$X". If that fails, a soft-reset (E-STOP button) may be required.' }
-};
-
-const GRBL_ERROR_CODES: { [key: number]: string } = {
-    1: 'G-code words consist of a letter and a value. Letter was not found.',
-    2: 'Numeric value format is not valid or missing an expected value.',
-    3: "Grbl '$' system command was not recognized or supported.",
-    4: 'Negative value received for an expected positive value.',
-    5: 'Homing cycle is not enabled via settings.',
-    6: 'Minimum step pulse time must be greater than 3usec.',
-    7: 'EEPROM read failed. Reset and restore factory settings.',
-    8: 'Grbl not in idle state. Commands cannot be executed.',
-    9: 'G-code locked out during alarm or jog state.',
-    10: 'Soft limits cannot be enabled without homing being enabled.',
-    11: 'Max characters per line exceeded. Line was not processed.',
-    12: 'Grbl setting value exceeds the maximum step rate.',
-    13: 'Safety door was detected as opened and door state initiated.',
-    14: 'Build info or startup line exceeded EEPROM line length limit.',
-    15: 'Jog target exceeds machine travel. Command ignored.',
-    16: "Jog command with no '=' or contains prohibited g-code.",
-    17: 'Laser mode requires PWM output.',
-    20: 'Unsupported or invalid g-code command found in block.',
-    21: 'More than one g-code command from same modal group found in block.',
-    22: 'Feed rate has not been set or is undefined.',
-    23: 'G-code command in block requires an integer value.',
-    24: 'Two g-code commands that both require the use of the XYZ axis words were detected in the block.',
-    25: 'A G-code word was repeated in the block.',
-    26: 'A G-code command implicitly or explicitly requires XYZ axis words in the block, but none were detected.',
-    27: 'N-line number value is not within the valid range of 1 - 9,999,999.',
-    28: 'A G-code command was sent, but is missing some required P or L value words in the line.',
-    29: 'Grbl supports six work coordinate systems G54-G59. G59.1, G59.2, and G59.3 are not supported.',
-    30: 'The G53 G-code command requires either a G0 or G1 motion mode to be active. A different motion was active.',
-    31: 'There are unused axis words in the block and G80 motion mode cancel is active.',
-    32: 'A G2 or G3 arc was commanded but there is no XYZ axis word in the selected plane to trace the arc.',
-    33: 'The motion command has an invalid target. G2, G3, and G38.2 generates this error.',
-    34: 'A G2 or G3 arc, traced with the radius definition, had a mathematical error when computing the arc geometry. Try either breaking up the arc into multiple smaller arcs or turning on calculated arcs.',
-    35: 'A G2 or G3 arc, traced with the offset definition, is missing the I or J router words in the selected plane to trace the arc.',
-    36: 'There are unused axis words in the block and G80 motion mode cancel is active.',
-    37: 'The G43.1 dynamic tool length offset command cannot apply an offset to an axis other than its configured axis.',
-    38: 'Tool number greater than max supported value.',
-};
-
-const DEFAULT_MACROS = [
-    { name: 'Go to WCS Zero', commands: ['G90', 'G0 X0 Y0'] },
-    { name: 'Safe Z & WCS Zero', commands: ['G90', 'G0 Z10', 'G0 X0 Y0'] },
-    { name: 'Spindle On (1k RPM)', commands: ['M3 S1000'] },
-    { name: 'Spindle Off', commands: ['M5'] },
-    { name: 'Go to G54 Zero', commands: ['G54 G0 X0 Y0'] },
-    { name: 'Reset All Offsets', commands: ['G92.1'] },
-];
-
-const DEFAULT_TOOLS = [
-    { id: 1, name: '1/8" Flat Endmill', diameter: 3.175, type: 'endmill', length: 25 },
-    { id: 2, name: '1/4" Flat Endmill', diameter: 6.35, type: 'endmill', length: 50 },
-    { id: 3, name: '60 Degree V-Bit', diameter: 12.7, type: 'v-bit', angle: 60, length: 30 },
-    { id: 4, name: '90 Degree V-Bit', diameter: 12.7, type: 'v-bit', angle: 90, length: 30 },
-];
-
-const DEFAULT_SETTINGS = {
-    workArea: { x: 300, y: 300, z: 80 },
-    spindle: { min: 0, max: 12000 },
-    probe: { xOffset: 3.0, yOffset: 3.0, zOffset: 15.0, feedRate: 25 },
-    scripts: {
-        startup: ['G21', 'G90'].join('\n'), // Set units to mm, absolute positioning
-        toolChange: ['M5', 'G0 Z10'].join('\n'), // Stop spindle, raise Z
-        shutdown: ['M5', 'G0 X0 Y0'].join('\n') // Stop spindle, go to WCS zero
-    }
-};
+import { GRBL_ALARM_CODES, GRBL_ERROR_CODES, DEFAULT_MACROS, DEFAULT_SETTINGS, DEFAULT_TOOLS } from './constants';
+import { useLocalStorage } from './components/useLocalStorage';
 
 // FIX: Properly type the usePrevious hook to be generic and type-safe.
 const usePrevious = <T,>(value: T): T | undefined => {
@@ -161,56 +86,13 @@ const App: React.FC = () => {
     const [returnToWelcome, setReturnToWelcome] = useState(false);
 
     // Persisted State
-    const [jogStep, setJogStep] = useState(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-jogstep');
-            return saved !== null ? JSON.parse(saved) : 1;
-        } catch { return 1; }
-    });
-    const [unit, setUnit] = useState<'mm' | 'in'>(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-unit');
-            return saved !== null ? JSON.parse(saved) : 'mm';
-        } catch { return 'mm'; }
-    });
-    const [isLightMode, setIsLightMode] = useState(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-theme');
-            return saved !== null ? JSON.parse(saved) : false;
-        } catch { return false; }
-    });
-    const [macros, setMacros] = useState(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-macros');
-            return saved ? JSON.parse(saved) : DEFAULT_MACROS;
-        } catch {
-            return DEFAULT_MACROS;
-        }
-    });
-    const [machineSettings, setMachineSettings] = useState<MachineSettings>(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-settings');
-            let parsed = saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
-             if (!parsed.probe) {
-                parsed.probe = DEFAULT_SETTINGS.probe;
-            }
-            if (parsed.probe && typeof parsed.probe.feedRate === 'undefined') {
-                parsed.probe.feedRate = DEFAULT_SETTINGS.probe.feedRate;
-            }
-            // isConfigured flag is added when settings are first saved.
-            return parsed;
-        } catch {
-            return DEFAULT_SETTINGS;
-        }
-    });
-    const [toolLibrary, setToolLibrary] = useState<Tool[]>(() => {
-        try {
-            const saved = localStorage.getItem('cnc-app-tool-library');
-            return saved ? JSON.parse(saved) : [];
-        } catch {
-            return [];
-        }
-    });
+    const [jogStep, setJogStep] = useLocalStorage<number>('cnc-app-jogstep', 1);
+    const [unit, setUnit] = useLocalStorage<'mm' | 'in'>('cnc-app-unit', 'mm');
+    const [isLightMode, setIsLightMode] = useLocalStorage<boolean>('cnc-app-theme', false);
+    const [macros, setMacros] = useLocalStorage<Macro[]>('cnc-app-macros', DEFAULT_MACROS);
+    const [machineSettings, setMachineSettings] = useLocalStorage<MachineSettings>('cnc-app-settings', DEFAULT_SETTINGS);
+    const [toolLibrary, setToolLibrary] = useLocalStorage<Tool[]>('cnc-app-tool-library', []);
+
 
     const serialManagerRef = useRef<any>(null);
     const prevState = usePrevious(machineState);
@@ -228,43 +110,9 @@ const App: React.FC = () => {
         jobStatusRef.current = jobStatus;
     }, [jobStatus]);
 
-    useEffect(() => {
-        localStorage.setItem('cnc-app-theme', JSON.stringify(isLightMode));
+    useEffect(() => { // This one remains as it affects the document class
         document.documentElement.classList.toggle('light-mode', isLightMode);
     }, [isLightMode]);
-
-    useEffect(() => {
-        localStorage.setItem('cnc-app-unit', JSON.stringify(unit));
-    }, [unit]);
-
-    useEffect(() => {
-        localStorage.setItem('cnc-app-jogstep', JSON.stringify(jogStep));
-    }, [jogStep]);
-
-     useEffect(() => {
-        try {
-            localStorage.setItem('cnc-app-macros', JSON.stringify(macros));
-        } catch (error) {
-            console.error("Could not save macros to localStorage:", error);
-            addNotification('Could not save macros.', 'error');
-        }
-    }, [macros]);
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('cnc-app-settings', JSON.stringify(machineSettings));
-        } catch (error) {
-            console.error("Could not save settings:", error);
-        }
-    }, [machineSettings]);
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('cnc-app-tool-library', JSON.stringify(toolLibrary));
-        } catch (error) {
-            console.error("Could not save tool library:", error);
-        }
-    }, [toolLibrary]);
     
     useEffect(() => {
         // We are no longer jogging if the machine reports back that it is idle or has an alarm.
@@ -272,6 +120,13 @@ const App: React.FC = () => {
             setIsJogging(false);
         }
     }, [machineState?.status]);
+
+    // Auto-select tool if only one exists in the library
+    useEffect(() => {
+        if (toolLibrary.length === 1 && selectedToolId === null) {
+            setSelectedToolId(toolLibrary[0].id);
+        }
+    }, [toolLibrary, selectedToolId]);
 
     const removeNotification = useCallback((id: number) => {
         setNotifications(prev => {
@@ -551,7 +406,7 @@ const App: React.FC = () => {
         setFileName(name);
         setProgress(0);
         setJobStatus(JobStatus.Idle);
-        setSelectedToolId(null);
+        setSelectedToolId(toolLibrary.length === 1 ? toolLibrary[0].id : null);
         setTimeEstimate(estimateGCodeTime(lines));
         addLog({ type: 'status', message: `Loaded ${name} (${lines.length} lines).` });
     };
@@ -580,10 +435,10 @@ const App: React.FC = () => {
         setFileName('');
         setProgress(0);
         setJobStatus(JobStatus.Idle);
-        setSelectedToolId(null);
+        setSelectedToolId(toolLibrary.length === 1 ? toolLibrary[0].id : null);
         setTimeEstimate({ totalSeconds: 0, cumulativeSeconds: [] });
         addLog({ type: 'status', message: 'G-code file cleared.' });
-    }, [addLog]);
+    }, [addLog, toolLibrary]);
 
     const handleLoadGeneratedGCode = useCallback((gcode: string, name: string): void => {
         handleFileLoad(gcode, name);
@@ -602,7 +457,7 @@ const App: React.FC = () => {
         });
     }, [isConnected, gcodeLines, jobStartOptions]);
 
-    const handleJobControl = useCallback((action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }): void => {
+    const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }): Promise<void> => {
         const manager = serialManagerRef.current;
         if (!manager || !isConnected) return;
 
@@ -616,22 +471,16 @@ const App: React.FC = () => {
                 }
                 break;
             case 'pause':
-                setJobStatus(currentStatus => {
-                    if (currentStatus === JobStatus.Running) {
-                        manager.pause();
-                        return JobStatus.Paused;
-                    }
-                    return currentStatus;
-                });
+                if (jobStatusRef.current === JobStatus.Running) {
+                    await manager.pause();
+                    setJobStatus(JobStatus.Paused);
+                }
                 break;
             case 'resume':
-                setJobStatus(currentStatus => {
-                    if (currentStatus === JobStatus.Paused) {
-                        manager.resume();
-                        return JobStatus.Running;
-                    }
-                    return currentStatus;
-                });
+                if (jobStatusRef.current === JobStatus.Paused) {
+                    await manager.resume();
+                    setJobStatus(JobStatus.Running);
+                }
                 break;
             case 'stop':
                 setJobStatus(currentStatus => {
@@ -643,8 +492,18 @@ const App: React.FC = () => {
                     return currentStatus;
                 });
                 break;
+            case 'gracefulStop':
+                setJobStatus(currentStatus => {
+                    if (currentStatus === JobStatus.Running || currentStatus === JobStatus.Paused) {
+                        manager.gracefulStop();
+                        setProgress(0);
+                        return JobStatus.Stopped;
+                    }
+                    return currentStatus;
+                });
+                break;
         }
-    }, [isConnected, gcodeLines, machineSettings]);
+    }, [isConnected, gcodeLines, machineSettings, handleStartJobConfirmed]);
     
     const handleManualCommand = useCallback((command: string): void => {
         serialManagerRef.current?.sendLine(command);
@@ -1078,6 +937,8 @@ const App: React.FC = () => {
                 onClose={() => {
                     const isMachineSetupComplete = machineSettings.workArea.x > 0 && machineSettings.workArea.y > 0;
                     const isToolLibrarySetupComplete = toolLibrary.length > 0;
+                    const hasSeenWelcome = localStorage.getItem('cnc-app-seen-welcome');
+                    
                     if (isMachineSetupComplete && isToolLibrarySetupComplete) {
                         setIsWelcomeModalOpen(false);
                         localStorage.setItem('cnc-app-seen-welcome', 'true');
@@ -1168,6 +1029,8 @@ const App: React.FC = () => {
                         unit={unit}
                         settings={machineSettings}
                         toolLibrary={toolLibrary}
+                        selectedToolId={selectedToolId}
+                        onToolSelect={setSelectedToolId}
                     />
                 </ErrorBoundary>
             )}

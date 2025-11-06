@@ -3,7 +3,7 @@
 
 import React, { useRef, useState, useEffect, DragEvent } from 'react';
 import { JobStatus, MachineState, Tool, MachineSettings } from '../types';
-import { Play, Pause, Square, Upload, FileText, Code, Eye, Maximize, Pencil, CheckCircle, X, Save, Plus, Minus, RefreshCw, Percent, ZoomIn, ZoomOut, Clock, BookOpen, Crosshair, Zap } from './Icons';
+import { Play, Pause, Square, Upload, FileText, Code, Eye, Maximize, Pencil, CheckCircle, X, Save, Plus, Minus, RefreshCw, Percent, ZoomIn, ZoomOut, Clock, BookOpen, Crosshair, Zap, AlertTriangle } from './Icons';
 import GCodeVisualizer, { GCodeVisualizerHandle } from './GCodeVisualizer';
 import GCodeLine from './GCodeLine';
 
@@ -36,7 +36,7 @@ interface GCodePanelProps {
     onFileLoad: (content: string, name: string) => void;
     fileName: string;
     gcodeLines: string[];
-    onJobControl: (action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }) => void;
+    onJobControl: (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }) => void;
     jobStatus: JobStatus;
     progress: number;
     isConnected: boolean;
@@ -92,7 +92,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (e: any) => {
                 const content = e.target?.result;
                 onFileLoad(content, file.name);
             };
@@ -264,10 +264,12 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                         <Pause className="w-8 h-8" />
                         Pause
                     </button>
-                    <button key="stop" onClick={() => onJobControl('stop')} disabled={isHoming} className="col-span-2 flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
-                        <Square className="w-8 h-8" />
-                        Stop Job
-                    </button>
+                    <div className="relative col-span-2">
+                        <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                            <Square className="w-8 h-8" />
+                            Stop Job
+                        </button>
+                    </div>
                 </>
             );
         }
@@ -279,10 +281,12 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                         <Play className="w-8 h-8" />
                         Resume
                     </button>
-                    <button key="stop" onClick={() => onJobControl('stop')} disabled={isHoming} className="col-span-2 flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
-                        <Square className="w-8 h-8" />
-                        Stop Job
-                    </button>
+                    <div className="col-span-2">
+                        <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                            <Square className="w-8 h-8" />
+                            Stop Job
+                        </button>
+                    </div>
                 </>
             );
         }

@@ -17,9 +17,12 @@ export class SerialManager {
 
     isJobRunning = false;
     isPaused = false;
+    pauseRequested = false; // Flag to signal pause from sendNextLine
+    stopRequested = false;
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
+    prePauseSpindleState: { state: 'cw' | 'ccw' | 'off', speed: number } | null = null;
     totalLines = 0;
     gcode: string[] = [];
     statusInterval: number | null = null;
@@ -435,6 +438,25 @@ export class SerialManager {
             return;
         }
 
+        if (this.stopRequested) {
+            this.isJobRunning = false;
+            this.isStopped = true;
+            this.stopRequested = false;
+            await this.sendLineAndWaitForOk('M5'); // Ensure spindle is off
+            this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
+            return;
+        }
+
+        if (this.pauseRequested) {
+            this.isPaused = true;
+            this.pauseRequested = false;
+            this.prePauseSpindleState = { ...this.lastStatus.spindle };
+            await this.sendLineAndWaitForOk('M5');
+            await this.sendRealtimeCommand('!'); // Feed Hold
+            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            return; // Stop the loop here until resumed
+        }
+
         if (this.isPaused) {
             return;
         }
@@ -486,20 +508,30 @@ export class SerialManager {
         }
     }
 
-    pause() {
+    async pause() {
         if (this.isJobRunning && !this.isPaused) {
-            this.isPaused = true;
-            this.sendRealtimeCommand('!'); // Feed Hold
-            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            this.pauseRequested = true;
         }
     }
 
-    resume() {
-        if (this.isJobRunning && this.isPaused) {
+    async resume() {
+        if (this.isJobRunning && this.isPaused && !this.pauseRequested) {
             this.isPaused = false;
-            this.sendRealtimeCommand('~'); // Cycle Resume
+            // First, restore spindle if it was running
+            if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
+                const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
+                await this.sendLine(`${spindleCmd} S${this.prePauseSpindleState.speed}`);
+            }
+            // Then, resume motion
+            await this.sendRealtimeCommand('~'); // Cycle Resume
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
             this.sendNextLine();
+        }
+    }
+
+    gracefulStop() {
+        if (this.isJobRunning && !this.isStopped) {
+            this.stopRequested = true;
         }
     }
 

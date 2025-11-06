@@ -1,10 +1,8 @@
-
-
 import React, { useRef, useState, useEffect, DragEvent } from 'react';
-import { JobStatus } from '../types.js';
-import { Play, Pause, Square, Upload, FileText, Code, Eye, Maximize, Pencil, CheckCircle, X, Save, Plus, Minus, RefreshCw, Percent, ZoomIn, ZoomOut, Clock, BookOpen, Crosshair } from './Icons';
-import GCodeVisualizer from './GCodeVisualizer';
-import GCodeLine from './GCodeLine.js';
+import { JobStatus, MachineState, Tool, MachineSettings } from '../types';
+import { Play, Pause, Square, Upload, FileText, Code, Eye, Maximize, Pencil, CheckCircle, X, Save, Plus, Minus, RefreshCw, Percent, ZoomIn, ZoomOut, Clock, BookOpen, Crosshair, Zap, AlertTriangle } from './Icons';
+import GCodeVisualizer, { GCodeVisualizerHandle } from './GCodeVisualizer';
+import GCodeLine from './GCodeLine';
 
 interface FeedrateOverrideControlProps {
     onFeedOverride: (command: 'reset' | 'inc10' | 'dec10' | 'inc1' | 'dec1') => void;
@@ -15,34 +13,20 @@ interface FeedrateOverrideControlProps {
 const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({ onFeedOverride, currentFeedrate, className = '' }) => {
     return (
         <div className={`bg-background p-3 rounded-md ${className}`}>
-            <h4 className='text-sm font-bold text-text-secondary mb-2 text-center'>Feed Rate Override</h4>
-            <div className='flex items-center justify-center gap-4 mb-3'>
-                <Percent className='w-8 h-8 text-primary' />
-                <span className='text-4xl font-mono font-bold'>{currentFeedrate}</span>
+            <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">Feed Rate Override</h4>
+            <div className="flex items-center justify-center gap-4 mb-3">
+                <Percent className="w-8 h-8 text-primary" />
+                <span className="text-4xl font-mono font-bold">{currentFeedrate}</span>
             </div>
-            <div className='grid grid-cols-5 gap-2 text-sm'>
-                <button title='Decrease Feed Rate by 10%' onClick={() => onFeedOverride('dec10')} className='p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold'><Minus className='w-4 h-4 mr-1' />10%</button>
-                <button title='Decrease Feed Rate by 1%' onClick={() => onFeedOverride('dec1')} className='p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold'><Minus className='w-4 h-4 mr-1' />1%</button>
-                <button title='Reset Feed Rate to 100%' onClick={() => onFeedOverride('reset')} className='p-2 bg-primary rounded hover:bg-primary-focus flex items-center justify-center'><RefreshCw className='w-5 h-5' /></button>
-                <button title='Increase Feed Rate by 1%' onClick={() => onFeedOverride('inc1')} className='p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold'><Plus className='w-4 h-4 mr-1' />1%</button>
-                <button title='Increase Feed Rate by 10%' onClick={() => onFeedOverride('inc10')} className='p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold'><Plus className='w-4 h-4 mr-1' />10%</button>
+            <div className="grid grid-cols-5 gap-2 text-sm">
+                <button title="Decrease Feed Rate by 10%" onClick={() => onFeedOverride('dec10')} className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"><Minus className="w-4 h-4 mr-1" />10%</button>
+                <button title="Decrease Feed Rate by 1%" onClick={() => onFeedOverride('dec1')} className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"><Minus className="w-4 h-4 mr-1" />1%</button>
+                <button title="Reset Feed Rate to 100%" onClick={() => onFeedOverride('reset')} className="p-2 bg-primary rounded hover:bg-primary-focus flex items-center justify-center"><RefreshCw className="w-5 h-5" /></button>
+                <button title="Increase Feed Rate by 1%" onClick={() => onFeedOverride('inc1')} className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"><Plus className="w-4 h-4 mr-1" />1%</button>
+                <button title="Increase Feed Rate by 10%" onClick={() => onFeedOverride('inc10')} className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"><Plus className="w-4 h-4 mr-1" />10%</button>
             </div>
         </div>
     );
-};
-
-const formatTime = (totalSeconds) => {
-    if (totalSeconds === Infinity) return '∞';
-    if (totalSeconds < 1) return '...';
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
-
-    const hh = String(hours).padStart(2, '0');
-    const mm = String(minutes).padStart(2, '0');
-    const ss = String(seconds).padStart(2, '0');
-
-    return `${hh}:${mm}:${ss}`;
 };
 
 interface GCodeVisualizerHandle {
@@ -56,26 +40,44 @@ interface GCodePanelProps {
     onFileLoad: (content: string, name: string) => void;
     fileName: string;
     gcodeLines: string[];
-    onJobControl: (action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }) => void;
+    onJobControl: (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }) => void;
     jobStatus: JobStatus;
     progress: number;
     isConnected: boolean;
-    unit: 'mm' | 'in';
+    unit: "mm" | "in";
     onGCodeChange: (content: string) => void;
-    machineState: any | null;
+    onClearFile?: () => void;
+    machineState: MachineState | null;
     onFeedOverride: (command: 'reset' | 'inc10' | 'dec10' | 'inc1' | 'dec1') => void;
-    timeEstimate: any;
-    machineSettings: any;
-    toolLibrary: any[];
+    timeEstimate: { totalSeconds: number, cumulativeSeconds: number[] };
+    machineSettings: MachineSettings;
+    toolLibrary: Tool[];
     selectedToolId: number | null;
     onToolSelect: (id: number | null) => void;
+    onOpenGenerator: () => void;
 }
+
+const formatTime = (totalSeconds: number): string => {
+    if (totalSeconds === Infinity) return '∞';
+    if (totalSeconds < 1) return '...';
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+
+    const hh = String(hours).padStart(2, '0');
+    const mm = String(minutes).padStart(2, '0');
+    const ss = String(seconds).padStart(2, '0');
+
+    return `${hh}:${mm}:${ss}`;
+};
 
 const GCodePanel: React.FC<GCodePanelProps> = ({ 
     onFileLoad, fileName, gcodeLines, onJobControl, 
     jobStatus, progress, isConnected, unit, onGCodeChange, 
+    onClearFile,
     machineState, onFeedOverride, timeEstimate, 
-    machineSettings, toolLibrary, selectedToolId, onToolSelect 
+    machineSettings, toolLibrary, selectedToolId, onToolSelect,
+    onOpenGenerator 
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const visualizerRef = useRef<GCodeVisualizerHandle>(null);
@@ -85,6 +87,8 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     const [editedGCode, setEditedGCode] = useState('');
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+    const [showStopOptions, setShowStopOptions] = useState(false);
+
 
     useEffect(() => {
         setEditedGCode(gcodeLines.join('\n'));
@@ -95,8 +99,8 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target?.result as string;
+            reader.onload = (e: any) => {
+                const content = e.target?.result;
                 onFileLoad(content, file.name);
             };
             reader.readAsText(file);
@@ -200,29 +204,23 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
     const renderContent = () => {
         if (gcodeLines.length > 0) {
-            if (view === 'visualizer') {
-                return (
-                    <GCodeVisualizer
-                        ref={visualizerRef}
-                        gcodeLines={gcodeLines}
-                        currentLine={currentLine}
-                        unit={unit}
-                        hoveredLineIndex={hoveredLineIndex}
-                        machineSettings={machineSettings}
+            if (view === 'visualizer') return <GCodeVisualizer
+                ref={visualizerRef}
+                gcodeLines={gcodeLines}
+                currentLine={currentLine}
+                unit={unit}
+                hoveredLineIndex={hoveredLineIndex}
+                machineSettings={machineSettings}
+            />;
+            if (view === 'code' && machineSettings) {
+                if (isEditing) return (
+                    <textarea
+                        className="w-full h-full absolute inset-0 bg-background font-mono text-sm p-2 rounded border border-secondary focus:ring-primary focus:border-primary"
+                        value={editedGCode}
+                        onChange={(e) => setEditedGCode(e.target.value)}
+                        spellCheck="false"
                     />
                 );
-            }
-            if (view === 'code') {
-                if (isEditing) {
-                    return (
-                        <textarea
-                            className="w-full h-full absolute inset-0 bg-background font-mono text-sm p-2 rounded border border-secondary focus:ring-primary focus:border-primary"
-                            value={editedGCode}
-                            onChange={(e) => setEditedGCode(e.target.value)}
-                            spellCheck="false"
-                        />
-                    );
-                }
                 return (
                     <div ref={codeContainerRef} className="absolute inset-0 bg-background rounded p-2 overflow-y-auto font-mono text-sm">
                         {gcodeLines.map((line, index) => (
@@ -269,14 +267,22 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         if (jobStatus === JobStatus.Running) {
             return (
                 <>
-                    <button key='pause' onClick={() => onJobControl('pause')} disabled={isHoming} className="flex items-center justify-center gap-3 p-5 bg-accent-yellow text-white font-bold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                    <button key="pause" onClick={() => onJobControl('pause')} disabled={isHoming} className="flex items-center justify-center gap-3 p-5 bg-accent-yellow text-white font-bold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
                         <Pause className="w-8 h-8" />
                         Pause
                     </button>
-                    <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="col-span-2 flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
-                        <Square className="w-8 h-8" />
-                        Stop Job
-                    </button>
+                    <div className="relative col-span-2">
+                        <button key='stop' onClick={() => setShowStopOptions(!showStopOptions)} onBlur={() => setTimeout(() => setShowStopOptions(false), 200)} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                            <Square className="w-8 h-8" />
+                            Stop Job
+                        </button>
+                        {showStopOptions && (
+                            <div className="absolute bottom-full mb-2 w-full bg-surface border border-secondary rounded-md shadow-lg z-10">
+                                <button onClick={() => { onJobControl('gracefulStop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-t-md"><Play className="w-5 h-5 rotate-90" /> Graceful Stop (M5)</button>
+                                <button onClick={() => { onJobControl('stop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-b-md text-accent-red"><AlertTriangle className="w-5 h-5" /> Emergency Stop (Reset)</button>
+                            </div>
+                        )}
+                    </div>
                 </>
             );
         }
@@ -284,14 +290,22 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         if (jobStatus === JobStatus.Paused) {
             return (
                 <>
-                    <button key='resume' onClick={() => onJobControl('resume')} disabled={isHoming} className="flex items-center justify-center gap-3 p-5 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                    <button key="resume" onClick={() => onJobControl('resume')} disabled={isHoming} className="flex items-center justify-center gap-3 p-5 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
                         <Play className="w-8 h-8" />
                         Resume
                     </button>
-                    <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="col-span-2 flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
-                        <Square className="w-8 h-8" />
-                        Stop Job
-                    </button>
+                    <div className="relative col-span-2">
+                        <button key='stop' onClick={() => setShowStopOptions(!showStopOptions)} onBlur={() => setTimeout(() => setShowStopOptions(false), 200)} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                            <Square className="w-8 h-8" />
+                            Stop Job
+                        </button>
+                        {showStopOptions && (
+                            <div className="absolute bottom-full mb-2 w-full bg-surface border border-secondary rounded-md shadow-lg z-10">
+                                <button onClick={() => { onJobControl('gracefulStop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-t-md"><Play className="w-5 h-5 rotate-90" /> Graceful Stop (M5)</button>
+                                <button onClick={() => { onJobControl('stop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-b-md text-accent-red"><AlertTriangle className="w-5 h-5" /> Emergency Stop (Reset)</button>
+                            </div>
+                        )}
+                    </div>
                 </>
             );
         }
@@ -299,7 +313,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         return null;
     };
 
-    // --- Dynamic Time Estimation Logic ---
     const { totalSeconds, cumulativeSeconds } = timeEstimate || { totalSeconds: 0, cumulativeSeconds: [] };
     let displayTime = totalSeconds;
     let timeLabel = "Est. Time";
@@ -307,23 +320,19 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
     if (isJobActive && totalSeconds > 0 && cumulativeSeconds) {
         const feedMultiplier = (machineState?.ov?.[0] ?? 100) / 100;
-        
         timeLabel = "Time Rem.";
         timeTitle = "Estimated Time Remaining";
-        
         if (feedMultiplier > 0) {
             const timeElapsedAt100 = (currentLine > 0 && cumulativeSeconds[currentLine - 1]) ? cumulativeSeconds[currentLine - 1] : 0;
             const timeRemainingAt100 = totalSeconds - timeElapsedAt100;
-            const adjustedRemainingTime = timeRemainingAt100 / feedMultiplier;
-            displayTime = adjustedRemainingTime;
+            displayTime = timeRemainingAt100 / feedMultiplier;
         } else {
             displayTime = Infinity;
         }
     }
-    // --- End of Logic ---
 
     return (
-        <div 
+        <div
             className="bg-surface rounded-lg shadow-lg flex flex-col p-4 h-full relative"
             onDragEnter={handleDragEnter}
             onDragOver={handleDragOver}
@@ -342,32 +351,16 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                         </button>
                         {view === 'visualizer' && gcodeLines.length > 0 && (
                             <>
-                                <button
-                                    onClick={() => visualizerRef.current?.resetView()}
-                                    title="Reset to Top-Down View"
-                                    className="p-1 rounded transition-colors hover:bg-secondary"
-                                >
+                                <button onClick={() => visualizerRef.current?.resetView()} title="Reset to Top-Down View" className="p-1 rounded transition-colors hover:bg-secondary">
                                     <Crosshair className="w-5 h-5" />
                                 </button>
-                                <button
-                                    onClick={() => visualizerRef.current?.fitView()}
-                                    title="Fit to View"
-                                    className="p-1 rounded transition-colors hover:bg-secondary"
-                                >
+                                <button onClick={() => visualizerRef.current?.fitView()} title="Fit to View" className="p-1 rounded transition-colors hover:bg-secondary">
                                     <Maximize className="w-5 h-5" />
                                 </button>
-                                <button
-                                    onClick={() => visualizerRef.current?.zoomIn()}
-                                    title="Zoom In"
-                                    className="p-1 rounded transition-colors hover:bg-secondary"
-                                >
+                                <button onClick={() => visualizerRef.current?.zoomIn()} title="Zoom In" className="p-1 rounded transition-colors hover:bg-secondary">
                                     <ZoomIn className="w-5 h-5" />
                                 </button>
-                                <button
-                                    onClick={() => visualizerRef.current?.zoomOut()}
-                                    title="Zoom Out"
-                                    className="p-1 rounded transition-colors hover:bg-secondary"
-                                >
+                                <button onClick={() => visualizerRef.current?.zoomOut()} title="Zoom Out" className="p-1 rounded transition-colors hover:bg-secondary">
                                     <ZoomOut className="w-5 h-5" />
                                 </button>
                             </>
@@ -375,114 +368,81 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                     </div>
                     {view === 'code' && gcodeLines.length > 0 && (
                         isEditing ? (
-                            <div className='flex items-center gap-2'>
-                                <button 
-                                    onClick={handleSave} 
-                                    className="flex items-center gap-2 px-3 py-1 bg-accent-green text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
-                                    title="Save Changes to Local Copy"
-                                >
-                                    <CheckCircle className="w-4 h-4" /> Save
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleSave} className="flex items-center gap-2 px-3 py-1 bg-accent-green text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors" title="Save Changes to Local Copy">
+                                    <CheckCircle className="w-4 h-4" />Save
                                 </button>
-                                <button 
-                                    onClick={handleSaveToDisk} 
-                                    className="flex items-center gap-2 px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                                    title="Save to Disk"
-                                >
-                                    <Save className="w-4 h-4" /> Save to Disk
+                                <button onClick={handleSaveToDisk} className="flex items-center gap-2 px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary transition-colors" title="Save to Disk">
+                                    <Save className="w-4 h-4" />Save to Disk
                                 </button>
-                                <button 
-                                    onClick={handleCancel} 
-                                    className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
-                                    title="Cancel"
-                                >
-                                    <X className="w-4 h-4" /> Cancel
+                                <button onClick={handleCancel} className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors" title="Cancel">
+                                    <X className="w-4 h-4" />Cancel
                                 </button>
                             </div>
                         ) : (
-                            <button 
-                                onClick={() => setIsEditing(true)} 
-                                className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
-                                title="Edit G-Code"
-                            >
-                                <Pencil className="w-4 h-4" /> Edit
+                            <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors" title="Edit G-Code">
+                                <Pencil className="w-4 h-4" />Edit
                             </button>
                         )
                     )}
                 </div>
                 <div className="flex items-center gap-2">
+                    <button onClick={onOpenGenerator} disabled={isJobActive} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Generate G-Code">
+                        <Zap className="w-5 h-5" />
+                        Generate
+                    </button>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".gcode,.nc,.txt" />
-                    <button 
-                        onClick={handleUploadClick}
-                        disabled={isJobActive}
-                        className="flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button onClick={handleUploadClick} disabled={isJobActive} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <Upload className="w-5 h-5" />
                         Load File
+                    </button>
+                    <button onClick={onClearFile} disabled={isJobActive || gcodeLines.length === 0} className="p-2 bg-secondary text-text-primary font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Clear G-Code &amp; Preview">
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
             </div>
             {fileName && (
-                <div className='grid grid-cols-2 gap-4 mb-2'>
-                    <p className="text-sm text-text-secondary truncate" title={fileName}><strong>File: </strong>{fileName}</p>
-                    <div className='flex items-center gap-2'>
-                        <BookOpen className='w-5 h-5 text-text-secondary flex-shrink-0' />
-                        <select
-                            value={selectedToolId || ''}
-                            onChange={e => onToolSelect(e.target.value ? parseInt(e.target.value, 10) : null)}
-                            disabled={isJobActive || toolLibrary.length === 0}
-                            className='w-full bg-background border border-secondary rounded-md py-1 px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50'
-                        >
-                            <option value=''>{toolLibrary.length > 0 ? 'Select a tool...' : 'No tools in library'}</option>
-                            {toolLibrary.map(tool => <option key={tool.id} value={tool.id}>{tool.name}</option>)}
-                        </select>
-                    </div>
-                </div>
+                <p className="text-sm text-text-secondary truncate mb-2" title={fileName}><strong>File: </strong>{fileName}</p>
             )}
-            
             <div className="space-y-4 flex-shrink-0 mb-4">
-                <div className="grid grid-cols-3 gap-4">
-                    {renderJobControls()}
-                </div>
+                <div className="grid grid-cols-3 gap-4">{renderJobControls()}</div>
+                {!isConnected && gcodeLines.length > 0 && (
+                    <div className="bg-accent-yellow/20 border border-accent-yellow text-accent-yellow p-4 rounded-md text-center">
+                        <p className="font-bold">Not Connected</p>
+                        <p className="text-sm">
+                            Please connect to your machine or the simulator using the button in the top right corner.
+                        </p>
+                    </div>
+                )}
                 <div className="w-full bg-secondary rounded-full h-4">
-                    <div className="bg-primary h-4 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+                    <div className="bg-primary h-4 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
                 </div>
                 <div className="flex justify-between items-center text-sm font-medium">
-                    <p>
-                        Status: <span className="font-bold capitalize">{jobStatus}</span>
-                        {(isJobActive && totalLines > 0) && <span className='ml-2 font-mono text-text-secondary bg-background px-2 py-0.5 rounded-md'>{`${currentLine} / ${totalLines}`}</span>}
+                    <p>Status: <span className="font-bold capitalize">{jobStatus}</span>
+                        {(isJobActive && totalLines > 0) && <span className="ml-2 font-mono text-text-secondary bg-background px-2 py-0.5 rounded-md">{`${currentLine} / ${totalLines}`}</span>}
                     </p>
                     <div className="flex items-center gap-4">
                         {(gcodeLines.length > 0 && totalSeconds > 0) && (
-                            <div title={timeTitle} className='flex items-center gap-1.5 text-text-secondary'>
-                                <Clock className='w-4 h-4' />
+                            <div title={timeTitle} className="flex items-center gap-1.5 text-text-secondary">
+                                <Clock className="w-4 h-4" />
                                 <span>{`${timeLabel}:`}</span>
-                                <span className='font-mono ml-1'>{formatTime(displayTime)}</span>
+                                <span className="font-mono ml-1">{formatTime(displayTime)}</span>
                             </div>
                         )}
                         <p className="font-bold">{`${progress.toFixed(1)}%`}</p>
                     </div>
                 </div>
             </div>
-            
             <div className="flex-grow relative min-h-0">
                 {renderContent()}
                 {isDraggingOver && (
-                    <div
-                        className="absolute inset-0 bg-primary/70 border-4 border-dashed border-primary-focus rounded-lg flex flex-col items-center justify-center pointer-events-none"
-                    >
+                    <div className="absolute inset-0 bg-primary/70 border-4 border-dashed border-primary-focus rounded-lg flex flex-col items-center justify-center pointer-events-none">
                         <Upload className="w-24 h-24 text-white" />
                         <p className="text-2xl font-bold text-white mt-4">Drop G-code file here</p>
                     </div>
                 )}
             </div>
-
-            {isJobActive && (
-                <FeedrateOverrideControl
-                    onFeedOverride={onFeedOverride}
-                    currentFeedrate={machineState?.ov?.[0] ?? 100}
-                    className='mt-4 flex-shrink-0'
-                />
-            )}
+            {isJobActive && <FeedrateOverrideControl onFeedOverride={onFeedOverride} currentFeedrate={machineState?.ov?.[0] ?? 100} className="mt-4 flex-shrink-0" />}
         </div>
     );
 };
