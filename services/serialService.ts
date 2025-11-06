@@ -17,6 +17,7 @@ export class SerialManager {
 
     isJobRunning = false;
     isPaused = false;
+    pauseRequested = false;
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
@@ -436,6 +437,17 @@ export class SerialManager {
             return;
         }
 
+        // New cooperative pause logic
+        if (this.pauseRequested) {
+            this.isPaused = true;
+            this.pauseRequested = false;
+            this.prePauseSpindleState = { ...this.lastStatus.spindle };
+            await this.sendLineAndWaitForOk('M5');
+            await this.sendRealtimeCommand('!'); // Feed Hold
+            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            return; // Stop the loop here until resumed
+        }
+
         if (this.isPaused) {
             return;
         }
@@ -489,20 +501,12 @@ export class SerialManager {
 
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
-            this.isPaused = true;
-            // Store current spindle state before pausing
-            this.prePauseSpindleState = { ...this.lastStatus.spindle };
-
-            // Stop the spindle FIRST, then halt motion.
-            // GRBL in a 'Hold' state won't accept new G-code commands like M5.
-            await this.sendLineAndWaitForOk('M5');
-            await this.sendRealtimeCommand('!'); // Feed Hold now
-            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            this.pauseRequested = true;
         }
     }
 
     async resume() {
-        if (this.isJobRunning && this.isPaused) {
+        if (this.isJobRunning && this.isPaused && !this.pauseRequested) {
             this.isPaused = false;
             // First, restore spindle if it was running
             if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
