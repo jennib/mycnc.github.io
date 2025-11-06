@@ -450,7 +450,7 @@ const App: React.FC = () => {
         });
     }, [isConnected, gcodeLines, jobStartOptions]);
 
-    const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }): Promise<void> => {
+    const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }): Promise<void> => {
         const manager = serialManagerRef.current;
         if (!manager || !isConnected) return;
 
@@ -479,6 +479,16 @@ const App: React.FC = () => {
                 setJobStatus(currentStatus => {
                     if (currentStatus === JobStatus.Running || currentStatus === JobStatus.Paused) {
                         manager.stopJob();
+                        setProgress(0);
+                        return JobStatus.Stopped;
+                    }
+                    return currentStatus;
+                });
+                break;
+            case 'gracefulStop':
+                setJobStatus(currentStatus => {
+                    if (currentStatus === JobStatus.Running || currentStatus === JobStatus.Paused) {
+                        manager.gracefulStop();
                         setProgress(0);
                         return JobStatus.Stopped;
                     }
@@ -920,6 +930,8 @@ const App: React.FC = () => {
                 onClose={() => {
                     const isMachineSetupComplete = machineSettings.workArea.x > 0 && machineSettings.workArea.y > 0;
                     const isToolLibrarySetupComplete = toolLibrary.length > 0;
+                    const hasSeenWelcome = localStorage.getItem('cnc-app-seen-welcome');
+                    
                     if (isMachineSetupComplete && isToolLibrarySetupComplete) {
                         setIsWelcomeModalOpen(false);
                         localStorage.setItem('cnc-app-seen-welcome', 'true');

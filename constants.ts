@@ -73,6 +73,9 @@ export const DEFAULT_SETTINGS: MachineSettings = {
     scripts: {
         startup: ['G21', 'G90'].join('\n'), // Set units to mm, absolute positioning
         toolChange: ['M5', 'G0 Z10'].join('\n'), // Stop spindle, raise Z
-        shutdown: ['M5', 'G0 X0 Y0'].join('\n') // Stop spindle, go to WCS zero
+        shutdown: ['M5', 'G0 X0 Y0'].join('\n'), // Stop spindle, go to WCS zero
+        jobPause: 'M5', // Stop spindle on pause
+        jobResume: '', // No default resume script, spindle state is restored by logic
+        jobStop: 'M5', // Stop spindle on graceful stop
     }
 };

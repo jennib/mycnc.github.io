@@ -17,7 +17,8 @@ export class SerialManager {
 
     isJobRunning = false;
     isPaused = false;
-    pauseRequested = false;
+    pauseRequested = false; // Flag to signal pause from sendNextLine
+    stopRequested = false;
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
@@ -437,7 +438,15 @@ export class SerialManager {
             return;
         }
 
-        // New cooperative pause logic
+        if (this.stopRequested) {
+            this.isJobRunning = false;
+            this.isStopped = true;
+            this.stopRequested = false;
+            await this.sendLineAndWaitForOk('M5'); // Ensure spindle is off
+            this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
+            return;
+        }
+
         if (this.pauseRequested) {
             this.isPaused = true;
             this.pauseRequested = false;
@@ -517,6 +526,12 @@ export class SerialManager {
             await this.sendRealtimeCommand('~'); // Cycle Resume
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
             this.sendNextLine();
+        }
+    }
+
+    gracefulStop() {
+        if (this.isJobRunning && !this.isStopped) {
+            this.stopRequested = true;
         }
     }
 

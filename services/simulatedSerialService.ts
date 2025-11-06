@@ -31,6 +31,8 @@ export class SimulatedSerialManager {
 
     isJobRunning = false;
     isPaused = false;
+    pauseRequested = false; // Flag to signal pause from sendNextLine
+    stopRequested = false;
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
@@ -38,9 +40,17 @@ export class SimulatedSerialManager {
     totalLines = 0;
     gcode: string[] = [];
     positioningMode: 'absolute' | 'incremental' = 'absolute'; // 'absolute' (G90) or 'incremental' (G91)
+    jobLoopTimeout: number | null = null;
     
     constructor(callbacks: SimulatedSerialManagerCallbacks) {
         this.callbacks = callbacks;
+    }
+
+    // Helper to immediately push the current state to the UI
+    forceStatusUpdate() {
+        const newPosition = JSON.parse(JSON.stringify(this.position));
+        const rawStatus = `<${newPosition.status}|MPos:${newPosition.mpos.x.toFixed(3)},${newPosition.mpos.y.toFixed(3)},${newPosition.mpos.z.toFixed(3)}|WPos:${newPosition.wpos.x.toFixed(3)},${newPosition.wpos.y.toFixed(3)},${newPosition.wpos.z.toFixed(3)}|FS:${newPosition.spindle.state === 'off' ? 0 : newPosition.spindle.speed},${newPosition.spindle.speed}|WCO:${newPosition.wco!.x.toFixed(3)},${newPosition.wco!.y.toFixed(3)},${newPosition.wco!.z.toFixed(3)}>`;
+        this.callbacks.onStatus(newPosition, rawStatus);
     }
 
     async connect(_baudRate: number) {
@@ -271,6 +281,16 @@ export class SimulatedSerialManager {
             return;
         }
 
+        if (this.stopRequested) {
+            this.isJobRunning = false;
+            this.isStopped = true;
+            this.stopRequested = false;
+            this.position.status = 'Idle';
+            await this.sendLine('M5', false); // Turn off spindle
+            this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
+            return;
+        }
+
         if (this.isPaused) {
             return;
         }
@@ -292,7 +312,7 @@ export class SimulatedSerialManager {
                 linesSent: this.currentLineIndex,
                 totalLines: this.totalLines
             });
-            setTimeout(() => this.sendNextLine(), 50); // Maintain job speed
+            this.jobLoopTimeout = window.setTimeout(() => this.sendNextLine(), 50); // Maintain job speed
             return;
         }
         
@@ -305,11 +325,18 @@ export class SimulatedSerialManager {
             totalLines: this.totalLines
         });
 
-        setTimeout(() => this.sendNextLine(), 50); 
+        this.jobLoopTimeout = window.setTimeout(() => this.sendNextLine(), 50); 
     }
 
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
+            this.pauseRequested = true;
+            // Immediately interrupt any pending job loop
+            if (this.jobLoopTimeout) {
+                clearTimeout(this.jobLoopTimeout);
+                this.jobLoopTimeout = null;
+            }
+            
             this.isPaused = true;
             // Store current spindle state before pausing
             this.prePauseSpindleState = { ...this.position.spindle };
@@ -318,19 +345,33 @@ export class SimulatedSerialManager {
             this.position.spindle.state = 'off';
             this.position.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            this.forceStatusUpdate(); // Immediately send the updated state
         }
     }
 
     async resume() {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
-            // Restore spindle state before resuming motion
-            if (this.prePauseSpindleState) {
-                this.position.spindle = { ...this.prePauseSpindleState };
-            }
+            this.pauseRequested = false;
             this.position.status = 'Run';
+
+            // Restore spindle if it was running before pause
+            if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
+                this.position.spindle = { ...this.prePauseSpindleState };
+                const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
+                this.callbacks.onLog({ type: 'status', message: `Spindle ON (${this.prePauseSpindleState.state.toUpperCase()}) at ${this.prePauseSpindleState.speed} RPM.` });
+            }
+            this.prePauseSpindleState = null;
+            
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
+            this.forceStatusUpdate();
             this.sendNextLine();
+        }
+    }
+
+    gracefulStop() {
+        if (this.isJobRunning && !this.isStopped) {
+            this.stopRequested = true;
         }
     }
 
@@ -342,13 +383,5 @@ export class SimulatedSerialManager {
             this.position.code = 3; // Reset while in motion
             this.callbacks.onLog({ type: 'status', message: 'Job stopped. Soft-reset sent to clear buffer and stop spindle.' });
         }
-    }
-
-    emergencyStop() {
-        this.isStopped = true;
-        this.isJobRunning = false;
-        this.position.status = 'Alarm';
-        this.position.code = 3; // Simulate a reset while in motion alarm
-        this.callbacks.onLog({ type: 'sent', message: 'CTRL-X' });
     }
 }
