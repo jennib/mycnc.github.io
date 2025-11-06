@@ -7,22 +7,11 @@ export enum JobStatus {
 }
 
 export interface MachineState {
-    status: 'Idle' | 'Run' | 'Hold' | 'Jog' | 'Alarm' | 'Door' | 'Check' | 'Home' | 'Sleep' | 'Connecting' | string;
-    code: number | null;
-    wpos: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    mpos: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    spindle: {
-        state: 'off' | 'cw' | 'ccw';
-        speed: number;
-    };
+    status: 'Idle' | 'Run' | 'Hold' | 'Jog' | 'Alarm' | 'Door' | 'Check' | 'Home' | 'Sleep';
+    code?: number;
+    wpos: { x: number; y: number; z: number };
+    mpos: { x: number; y: number; z: number };
+    spindle: { state: 'on' | 'off'; speed: number };
     ov: number[];
 }
 
@@ -36,27 +25,28 @@ export interface Tool {
     id: number;
     name: string;
     diameter: number;
-    type?: 'endmill' | 'v-bit' | string;
-    angle?: number;
-    length?: number;
-}
-
-export interface MachineSettings {
-    workArea: { x: number; y: number; z: number };
-    spindle: { min: number; max: number };
-    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number };
-    scripts: {
-        startup: string;
-        toolChange: string;
-        shutdown: string;
-        jobPause: string;
-        jobResume: string;
-        jobStop: string;
-    };
-    isConfigured?: boolean;
 }
 
 export interface Macro {
     name: string;
     commands: string[];
+}
+
+export interface MachineSettings {
+    workArea: { x: number; y: number; z: number };
+    spindle: { min: number; max: number; defaultFeedRate?: number; defaultPlungeRate?: number; };
+    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number };
+    scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
+    isConfigured?: boolean;
+}
+
+export interface GeneratorSettings {
+    surfacing: any;
+    drilling: any;
+    bore: any;
+    pocket: any;
+    profile: any;
+    slot: any;
+    text: any;
+    thread: any;
 }

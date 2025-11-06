@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS } from '../services/cncFonts.js';
-import { MachineSettings, Tool } from '../types';
+import { MachineSettings, Tool, GeneratorSettings } from '../types';
 import SlotGenerator from './SlotGenerator';
 import SurfacingGenerator from './SurfacingGenerator';
 import DrillingGenerator from './DrillingGenerator';
@@ -114,9 +114,11 @@ interface GCodeGeneratorModalProps {
     toolLibrary: Tool[];
     selectedToolId: number | null;
     onToolSelect: (id: number | null) => void;
+    generatorSettings: GeneratorSettings;
+    onSettingsChange: (settings: GeneratorSettings) => void;
 }
 
-const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect }) => {
+const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
     const [activeTab, setActiveTab] = useState('surfacing');
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
@@ -124,158 +126,28 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const [generationError, setGenerationError] = useState<string | null>(null);
 
     // --- Profile State ---
-    const [profileParams, setProfileParams] = useState<{
-        shape: string; width: number | ''; length: number | ''; cornerRadius: number | ''; diameter: number | '';
-        depth: number | ''; depthPerPass: number | ''; cutSide: string; tabsEnabled: boolean; numTabs: number | '';
-        tabWidth: number | ''; tabHeight: number | ''; feed: number | ''; spindle: number | ''; safeZ: number | ''; toolId: number | null;
-    }>({
-        shape: 'rect',
-        width: 80, length: 50, cornerRadius: 10, diameter: 60,
-        depth: -12, depthPerPass: 3, cutSide: 'outside',
-        tabsEnabled: true, numTabs: 4, tabWidth: 6, tabHeight: 2,
-        feed: 600, spindle: settings.spindle.max || 9000, safeZ: 5,
-        toolId: selectedToolId,
-    });
+    const [profileParams, setProfileParams] = useState(() => generatorSettings.profile);
 
     // --- Drilling State ---
-    const [drillParams, setDrillParams] = useState<{
-        drillType: string; depth: number | ''; peck: number | ''; retract: number | ''; feed: number | ''; spindle: number | ''; safeZ: number | '';
-        singleX: number | ''; singleY: number | ''; rectCols: number | ''; rectRows: number | ''; rectSpacingX: number | '';
-        rectSpacingY: number | ''; rectStartX: number | ''; rectStartY: number | ''; circCenterX: number | '';
-        circCenterY: number | ''; circRadius: number | ''; circHoles: number | ''; circStartAngle: number | ''; toolId: number | null;
-    }>({
-        drillType: 'single',
-        depth: -5,
-        peck: 2,
-        retract: 2,
-        feed: 150,
-        spindle: settings.spindle.max || 8000,
-        safeZ: 5,
-        singleX: 10,
-        singleY: 10,
-        rectCols: 4,
-        rectRows: 3,
-        rectSpacingX: 25,
-        rectSpacingY: 20,
-        rectStartX: 10,
-        rectStartY: 10,
-        circCenterX: 50,
-        circCenterY: 50,
-        circRadius: 40,
-        circHoles: 6,
-        circStartAngle: 0,
-        toolId: selectedToolId,
-    });
+    const [drillParams, setDrillParams] = useState(() => generatorSettings.drilling);
 
     // --- Slot State ---
-    const [slotParams, setSlotParams] = useState<{
-        type: string; slotWidth: number | ''; depth: number | ''; depthPerPass: number | ''; feed: number | '';
-        spindle: number | ''; safeZ: number | ''; startX: number | ''; startY: number | ''; endX: number | ''; endY: number | '';
-        centerX: number | ''; centerY: number | ''; radius: number | ''; startAngle: number | ''; endAngle: number | ''; toolId: number | null;
-    }>({
-        type: 'straight',
-        slotWidth: 6, depth: -5, depthPerPass: 2,
-        feed: 400, spindle: settings.spindle.max || 8000, safeZ: 5,
-        startX: 10, startY: 10, endX: 90, endY: 20,
-        centerX: 50, centerY: 50, radius: 40, startAngle: 45, endAngle: 135,
-        toolId: selectedToolId,
-    });
+    const [slotParams, setSlotParams] = useState(() => generatorSettings.slot);
 
     // --- Surfacing State ---
-    const [surfaceParams, setSurfaceParams] = useState<{
-        width: number | ''; length: number | ''; depth: number | ''; stepover: number | ''; feed: number | '';
-        spindle: number | ''; safeZ: number | ''; startX: number | ''; startY: number | ''; toolId: number | null; direction: string;
-    }>({
-        width: 100,
-        length: 100,
-        depth: -1,
-        stepover: 40,
-        feed: 800,
-        spindle: settings.spindle.max || 8000,
-        safeZ: 5,
-        startX: 0,
-        startY: 0,
-        toolId: selectedToolId,
-        direction: 'horizontal',
-    });
+    const [surfaceParams, setSurfaceParams] = useState(() => generatorSettings.surfacing);
 
     // --- Bore State ---
-    const [boreParams, setBoreParams] = useState<{
-        centerX: number | ''; centerY: number | ''; holeDiameter: number | ''; holeDepth: number | '';
-        counterboreEnabled: boolean; cbDiameter: number | ''; cbDepth: number | ''; depthPerPass: number | '';
-        feed: number | ''; plungeFeed: number | ''; spindle: number | ''; safeZ: number | ''; toolId: number | null;
-    }>({
-        centerX: 50,
-        centerY: 50,
-        holeDiameter: 20,
-        holeDepth: -15,
-        counterboreEnabled: true,
-        cbDiameter: 30,
-        cbDepth: -5,
-        depthPerPass: 2,
-        feed: 400,
-        plungeFeed: 150,
-        spindle: settings.spindle.max || 8000,
-        safeZ: 5,
-        toolId: selectedToolId,
-    });
+    const [boreParams, setBoreParams] = useState(() => generatorSettings.bore);
 
     // --- Pocket State ---
-    const [pocketParams, setPocketParams] = useState<{
-        shape: string; width: number | ''; length: number | ''; cornerRadius: number | ''; diameter: number | '';
-        depth: number | ''; depthPerPass: number | ''; stepover: number | ''; feed: number | ''; plungeFeed: number | '';
-        spindle: number | ''; safeZ: number | ''; toolId: number | null;
-    }>({
-        shape: 'rect',
-        width: 80,
-        length: 50,
-        cornerRadius: 5,
-        diameter: 60,
-        depth: -10,
-        depthPerPass: 2,
-        stepover: 40,
-        feed: 500,
-        plungeFeed: 150,
-        spindle: settings.spindle.max || 8000,
-        safeZ: 5,
-        toolId: selectedToolId,
-    });
+    const [pocketParams, setPocketParams] = useState(() => generatorSettings.pocket);
 
     // --- Text State ---
-    const [textParams, setTextParams] = useState<{
-        text: string; font: string; height: number | ''; spacing: number | ''; startX: number | ''; startY: number | '';
-        alignment: string; depth: number | ''; feed: number | ''; spindle: number | ''; safeZ: number | '';
-        toolId: number | null;
-    }>({
-        text: 'HELLO',
-        font: 'Sans-serif Stick',
-        height: 10,
-        spacing: 2,
-        startX: 10,
-        startY: 10,
-        alignment: 'left',
-        depth: -0.5,
-        feed: 300,
-        spindle: settings.spindle.max || 10000,
-        safeZ: 5,
-        toolId: selectedToolId,
-    });
+    const [textParams, setTextParams] = useState(() => generatorSettings.text);
 
     // --- Thread Milling State ---
-    const [threadParams, setThreadParams] = useState<{
-        type: string; hand: string; diameter: number | ''; pitch: number | ''; depth: number | '';
-        feed: number | ''; spindle: number | ''; safeZ: number | ''; toolId: number | null;
-    }>({
-        type: 'internal',
-        hand: 'right',
-        diameter: 10,
-        pitch: 1,
-        depth: 10,
-        feed: 200,
-        spindle: settings.spindle.max || 10000,
-        safeZ: 5,
-        toolId: selectedToolId,
-    });
+    const [threadParams, setThreadParams] = useState(() => generatorSettings.thread);
     
     // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
@@ -1071,9 +943,29 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction'].includes(field);
             const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
             if (isNumberField && value !== '' && isNaN(parsedValue as number)) return prevParams;
-            return { ...prevParams, [field]: parsedValue };
+            const newParams = { ...prevParams, [field]: parsedValue };
+            
+            // Update the main settings object
+            onSettingsChange({
+                ...generatorSettings,
+                [activeTab]: newParams
+            });
+
+            return newParams;
         });
-    }, []);
+    }, [activeTab, generatorSettings, onSettingsChange]);
+
+    const handleToolChange = useCallback((toolId: number | null) => {
+        // First, update the global selected tool ID in the App state
+        onToolSelect(toolId);
+
+        // Then, persist this change into the generator settings for the active tab
+        onSettingsChange({
+            ...generatorSettings,
+            [activeTab]: { ...generatorSettings[activeTab], toolId: toolId }
+        });
+    }, [activeTab, generatorSettings, onSettingsChange, onToolSelect]);
+
     const handleSurfaceUpdate = useCallback((field, value) => handleParamChange(setSurfaceParams, field, value), [handleParamChange]);
     const handleDrillUpdate = useCallback((field, value) => handleParamChange(setDrillParams, field, value), [handleParamChange]);
     const handleBoreUpdate = useCallback((field, value) => handleParamChange(setBoreParams, field, value), [handleParamChange]);
@@ -1104,6 +996,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             handleGenerateRef.current();
         }
     }, [isOpen, currentParams, toolLibrary, arraySettings]);
+    
+    // When the selected tool from outside changes, update all parameter sets.
+    // This handles the case where there's only one tool and it's auto-selected.
+    useEffect(() => {
+        if (selectedToolId !== null && generatorSettings[activeTab].toolId !== selectedToolId) {
+            handleToolChange(selectedToolId);
+        }
+    }, [selectedToolId]);
+
 
     const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || currentParams.toolId === null;
 
@@ -1160,6 +1061,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'drilling' && (
@@ -1169,6 +1072,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'bore' && (
@@ -1178,6 +1083,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'pocket' && (
@@ -1187,6 +1094,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'profile' && (
@@ -1196,6 +1105,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'slot' && (
@@ -1205,6 +1116,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                             {activeTab === 'text' && (
@@ -1215,6 +1128,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     unit={unit}
                                     fontOptions={Object.keys(FONTS)}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )} 
                             {activeTab === 'thread' && (
@@ -1224,6 +1139,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={handleToolChange}
                                 />
                             )}
                         </div>
