@@ -922,7 +922,7 @@ const App: React.FC = () => {
         const handleBeforeUnload = (event: BeforeUnloadEvent): string | void => {
             if (isJobActive) {
                 event.preventDefault();
-                event.returnValue = ''; // Required for Chrome
+                event.returnValue = 'A job is currently active. Are you sure you want to leave?'; // Required for Chrome, triggers confirmation dialog
                 return ''; // For other browsers
             }
         };
