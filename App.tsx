@@ -28,16 +28,8 @@ import ContactModal from './components/ContactModal';
 import ErrorBoundary from './ErrorBoundary';
 import UnsupportedBrowser from './components/UnsupportedBrowser';
 import { GRBL_ALARM_CODES, GRBL_ERROR_CODES, DEFAULT_MACROS, DEFAULT_SETTINGS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS } from './constants';
-import { useLocalStorage } from './components/useLocalStorage';
-
-// FIX: Properly type the usePrevious hook to be generic and type-safe.
-const usePrevious = <T,>(value: T): T | undefined => {
-    const ref = useRef<T | undefined>();
-    useEffect(() => {
-        ref.current = value;
-    });
-    return ref.current;
-};
+import { useLocalStorage } from './components/useLocalStorage'; // Keep existing path
+import { usePrevious } from './hooks/usePrevious'; // New import path
 
 const buildTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
 

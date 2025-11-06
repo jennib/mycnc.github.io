@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS } from '../services/cncFonts.js';
-import { MachineSettings, Tool, GeneratorSettings } from '../types';
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams } from '../types';
 import SlotGenerator from './SlotGenerator';
 import SurfacingGenerator from './SurfacingGenerator';
 import DrillingGenerator from './DrillingGenerator';
@@ -124,30 +124,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const [previewPaths, setPreviewPaths] = useState({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
     const [viewBox, setViewBox] = useState('0 0 100 100'); 
     const [generationError, setGenerationError] = useState<string | null>(null);
-
-    // --- Profile State ---
-    const [profileParams, setProfileParams] = useState(() => generatorSettings.profile);
-
-    // --- Drilling State ---
-    const [drillParams, setDrillParams] = useState(() => generatorSettings.drilling);
-
-    // --- Slot State ---
-    const [slotParams, setSlotParams] = useState(() => generatorSettings.slot);
-
-    // --- Surfacing State ---
-    const [surfaceParams, setSurfaceParams] = useState(() => generatorSettings.surfacing);
-
-    // --- Bore State ---
-    const [boreParams, setBoreParams] = useState(() => generatorSettings.bore);
-
-    // --- Pocket State ---
-    const [pocketParams, setPocketParams] = useState(() => generatorSettings.pocket);
-
-    // --- Text State ---
-    const [textParams, setTextParams] = useState(() => generatorSettings.text);
-
-    // --- Thread Milling State ---
-    const [threadParams, setThreadParams] = useState(() => generatorSettings.thread);
     
     // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
@@ -173,7 +149,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const vbHeight = height + padding * 2;
 
         return `${vbMinX} ${vbMinY} ${vbWidth} ${vbHeight}`;
-    }, []);
+    }, [previewPaths.bounds?.minX, previewPaths.bounds?.minY, previewPaths.bounds?.maxX, previewPaths.bounds?.maxY]);
 
     const fitView = useCallback(() => {
         setViewBox(calculateViewBox(previewPaths.bounds));
@@ -181,10 +157,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
     // This effect automatically fits the view whenever the preview bounds change.
     useEffect(() => {
-        fitView();
+        if (previewPaths.bounds && previewPaths.bounds.minX !== Infinity)
+            fitView();
     }, [fitView]);
 
     const generateDrillingCode = () => {
+        const drillParams = generatorSettings.drilling;
         const toolIndex = toolLibrary.findIndex(t => t.id === drillParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -250,6 +228,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const generateProfileCode = () => {
+        const profileParams = generatorSettings.profile;
         const toolIndex = toolLibrary.findIndex(t => t.id === profileParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -329,6 +308,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const generateSurfacingCode = () => {
+        const surfaceParams = generatorSettings.surfacing;
         const toolIndex = toolLibrary.findIndex(t => t.id === surfaceParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -386,6 +366,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const generatePocketCode = () => {
+        const pocketParams = generatorSettings.pocket;
         const toolIndex = toolLibrary.findIndex(t => t.id === pocketParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -442,8 +423,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const bounds = shape === 'rect' ? { minX: 0, minY: 0, maxX: width, maxY: length } : { minX: 0, minY: 0, maxX: diameter, maxY: diameter };
         return { code, paths, bounds, error: null };
     };
-
     const generateBoreCode = () => {
+        const boreParams = generatorSettings.bore;
         const toolIndex = toolLibrary.findIndex(t => t.id === boreParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -528,6 +509,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const generateSlotCode = () => {
+        const slotParams = generatorSettings.slot;
         const toolIndex = toolLibrary.findIndex(t => t.id === slotParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
@@ -635,6 +617,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
     
     const generateTextCode = () => {
+        const textParams = generatorSettings.text;
         const toolIndex = toolLibrary.findIndex(t => t.id === textParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
@@ -735,6 +718,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const generateThreadMillingCode = () => {
+        const threadParams = generatorSettings.thread;
         const toolIndex = toolLibrary.findIndex(t => t.id === threadParams.toolId);
         if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
@@ -896,7 +880,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const handleGenerate = useCallback(() => {
         setGenerationError(null);
         let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
-        if (activeTab === 'surfacing') result = generateSurfacingCode(); else if (activeTab === 'drilling') result = generateDrillingCode();
+        if (activeTab === 'surfacing') result = generateSurfacingCode();
+        else if (activeTab === 'drilling') result = generateDrillingCode();
         else if (activeTab === 'bore') result = generateBoreCode();
         else if (activeTab === 'pocket') result = generatePocketCode();
         else if (activeTab === 'profile') result = generateProfileCode();
@@ -918,7 +903,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         setGeneratedGCode(result.code ? result.code.join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
-    }, [activeTab, surfaceParams, drillParams, boreParams, pocketParams, profileParams, slotParams, textParams, threadParams, toolLibrary, arraySettings, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, applyArrayPattern]);
+    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode]);
 
     const handleGenerateRef = React.useRef(handleGenerate);
     useEffect(() => {
@@ -938,20 +923,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         });
     };
 
-    const handleParamChange = useCallback((setter, field, value) => {
-        setter((prevParams: any) => {
-            const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction'].includes(field);
-            const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
-            if (isNumberField && value !== '' && isNaN(parsedValue as number)) return prevParams;
-            const newParams = { ...prevParams, [field]: parsedValue };
-            
-            // Update the main settings object
-            onSettingsChange({
-                ...generatorSettings,
-                [activeTab]: newParams
-            });
+    const handleParamChange = useCallback((field: string, value: any) => {
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction'].includes(field);
+        const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
+        if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
 
-            return newParams;
+        onSettingsChange({
+            ...generatorSettings,
+            [activeTab]: { ...generatorSettings[activeTab], [field]: parsedValue }
         });
     }, [activeTab, generatorSettings, onSettingsChange]);
 
@@ -966,28 +945,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         });
     }, [activeTab, generatorSettings, onSettingsChange, onToolSelect]);
 
-    const handleSurfaceUpdate = useCallback((field, value) => handleParamChange(setSurfaceParams, field, value), [handleParamChange]);
-    const handleDrillUpdate = useCallback((field, value) => handleParamChange(setDrillParams, field, value), [handleParamChange]);
-    const handleBoreUpdate = useCallback((field, value) => handleParamChange(setBoreParams, field, value), [handleParamChange]);
-    const handlePocketUpdate = useCallback((field, value) => handleParamChange(setPocketParams, field, value), [handleParamChange]);
-    const handleProfileUpdate = useCallback((field, value) => handleParamChange(setProfileParams, field, value), [handleParamChange]);
-    const handleSlotUpdate = useCallback((field, value) => handleParamChange(setSlotParams, field, value), [handleParamChange]);
-    const handleTextUpdate = useCallback((field, value) => handleParamChange(setTextParams, field, value), [handleParamChange]);
-    const handleThreadUpdate = useCallback((field, value) => handleParamChange(setThreadParams, field, value), [handleParamChange]);
-
     const currentParams = useMemo(() => {
-        switch (activeTab) {
-            case 'surfacing': return surfaceParams;
-            case 'drilling': return drillParams;
-            case 'bore': return boreParams;
-            case 'pocket': return pocketParams;
-            case 'profile': return profileParams;
-            case 'slot': return slotParams;
-            case 'text': return textParams;
-            case 'thread': return threadParams;
-            default: return null;
-        }
-    }, [activeTab, surfaceParams, drillParams, boreParams, pocketParams, profileParams, slotParams, textParams, threadParams]);
+        return generatorSettings[activeTab];
+    }, [activeTab, generatorSettings]);
 
     // Effect to automatically trigger G-code generation when relevant parameters change
     useEffect(() => {
@@ -995,15 +955,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Use the ref to call the latest handleGenerate without creating an infinite loop
             handleGenerateRef.current();
         }
-    }, [isOpen, currentParams, toolLibrary, arraySettings]);
+    }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
     
-    // When the selected tool from outside changes, update all parameter sets.
-    // This handles the case where there's only one tool and it's auto-selected.
+    // When the selected tool from outside changes (e.g. from auto-selection),
+    // update the active tab's settings
     useEffect(() => {
-        if (selectedToolId !== null && generatorSettings[activeTab].toolId !== selectedToolId) {
+        if (selectedToolId !== null && currentParams?.toolId !== selectedToolId) {
             handleToolChange(selectedToolId);
         }
-    }, [selectedToolId]);
+    }, [selectedToolId, activeTab, currentParams, handleToolChange]);
 
 
     const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || currentParams.toolId === null;
@@ -1056,91 +1016,91 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         <div className="py-4">
                             {activeTab === 'surfacing' && (
                                 <SurfacingGenerator
-                                    params={surfaceParams}
-                                    onParamsChange={handleSurfaceUpdate}
+                                    params={generatorSettings.surfacing as SurfacingParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'drilling' && (
                                 <DrillingGenerator
-                                    params={drillParams}
-                                    onParamsChange={handleDrillUpdate}
+                                    params={generatorSettings.drilling as DrillingParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'bore' && (
                                 <BoreGenerator
-                                    params={boreParams}
-                                    onParamsChange={handleBoreUpdate}
+                                    params={generatorSettings.bore as BoreParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'pocket' && (
                                 <PocketGenerator
-                                    params={pocketParams}
-                                    onParamsChange={handlePocketUpdate}
+                                    params={generatorSettings.pocket as PocketParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'profile' && (
                                 <ProfileGenerator
-                                    params={profileParams}
-                                    onParamsChange={handleProfileUpdate}
+                                    params={generatorSettings.profile as ProfileParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'slot' && (
                                 <SlotGenerator
-                                    params={slotParams}
-                                    onParamsChange={handleSlotUpdate}
+                                    params={generatorSettings.slot as SlotParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                             {activeTab === 'text' && (
                                 <TextGenerator
-                                    params={textParams}
-                                    onParamsChange={handleTextUpdate}
+                                    params={generatorSettings.text as TextParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     fontOptions={Object.keys(FONTS)}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )} 
                             {activeTab === 'thread' && (
                                 <ThreadMillingGenerator
-                                    params={threadParams}
-                                    onParamsChange={handleThreadUpdate}
+                                    params={generatorSettings.thread as ThreadMillingParams}
+                                    onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
                                     selectedToolId={selectedToolId}
-                                    onToolSelect={handleToolChange}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                         </div>

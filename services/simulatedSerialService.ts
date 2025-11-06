@@ -381,7 +381,14 @@ export class SimulatedSerialManager {
             this.isJobRunning = false;
             this.position.status = 'Alarm';
             this.position.code = 3; // Reset while in motion
+            // Also turn off spindle
+            this.position.spindle.state = 'off';
+            this.position.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: 'Job stopped. Soft-reset sent to clear buffer and stop spindle.' });
         }
+    }
+
+    emergencyStop() {
+        this.stopJob();
     }
 }
