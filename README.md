@@ -11,6 +11,8 @@ See https://polyformproject.org/licenses/noncommercial/1.0.0/
 **mycnc.app** is a **web-based G-code sender** for CNC machines.  
 Simply open the website on your computer, connect your CNC machine via USB, and start machining — **no installation required** on either the computer or the CNC.
 
+Use the app at https://mycnc.app/   There is a simulator built in so you can try it out.
+
 Scroll down to view a sample screenshot of the app in action.
 ---
 
