@@ -82,7 +82,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     const [editedGCode, setEditedGCode] = useState('');
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
-    const [showStopOptions, setShowStopOptions] = useState(false);
 
 
     useEffect(() => {
@@ -267,16 +266,10 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                         Pause
                     </button>
                     <div className="relative col-span-2">
-                        <button key='stop' onClick={() => setShowStopOptions(!showStopOptions)} onBlur={() => setTimeout(() => setShowStopOptions(false), 200)} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                        <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
                             <Square className="w-8 h-8" />
                             Stop Job
                         </button>
-                        {showStopOptions && (
-                            <div className="absolute bottom-full mb-2 w-full bg-surface border border-secondary rounded-md shadow-lg z-10">
-                                <button onClick={() => { onJobControl('gracefulStop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-t-md"><Play className="w-5 h-5 rotate-90" /> Graceful Stop (M5)</button>
-                                <button onClick={() => { onJobControl('stop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-b-md text-accent-red"><AlertTriangle className="w-5 h-5" /> Emergency Stop (Reset)</button>
-                            </div>
-                        )}
                     </div>
                 </>
             );
@@ -289,17 +282,11 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                         <Play className="w-8 h-8" />
                         Resume
                     </button>
-                    <div className="relative col-span-2">
-                        <button key='stop' onClick={() => setShowStopOptions(!showStopOptions)} onBlur={() => setTimeout(() => setShowStopOptions(false), 200)} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
+                    <div className="col-span-2">
+                        <button key='stop' onClick={() => onJobControl('stop')} disabled={isHoming} className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed">
                             <Square className="w-8 h-8" />
                             Stop Job
                         </button>
-                        {showStopOptions && (
-                            <div className="absolute bottom-full mb-2 w-full bg-surface border border-secondary rounded-md shadow-lg z-10">
-                                <button onClick={() => { onJobControl('gracefulStop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-t-md"><Play className="w-5 h-5 rotate-90" /> Graceful Stop (M5)</button>
-                                <button onClick={() => { onJobControl('stop'); setShowStopOptions(false); }} className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-secondary-focus rounded-b-md text-accent-red"><AlertTriangle className="w-5 h-5" /> Emergency Stop (Reset)</button>
-                            </div>
-                        )}
                     </div>
                 </>
             );
