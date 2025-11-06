@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Upload, Download } from './Icons';
-import { MachineSettings } from '../types';
+import { MachineSettings, GeneratorSettings } from '../types';
 
 interface InputGroupProps {
     label: string;
@@ -52,22 +52,25 @@ const ScriptInput: React.FC<ScriptInputProps> = ({ label, value, onChange, place
 interface SettingsModalProps {
     isOpen: boolean;
     onCancel: () => void;
-    onSave: (settings: MachineSettings) => void;
+    onSave: (settings: MachineSettings, generatorSettings: GeneratorSettings) => void;
     settings: MachineSettings;
+    generatorSettings: GeneratorSettings;
     onResetDialogs: () => void;
     onExport: () => void;
     onImport: (imported: any) => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, onResetDialogs, onExport, onImport }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport }) => {
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
+    const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const importFileRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             setLocalSettings(JSON.parse(JSON.stringify(settings)));
+            setLocalGeneratorSettings(JSON.parse(JSON.stringify(generatorSettings)));
         }
-    }, [isOpen, settings]);
+    }, [isOpen, settings, generatorSettings]);
 
     if (!isOpen) return null;
 
@@ -114,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             }
         }
 
-        onSave(settingsToSave);
+        onSave(settingsToSave, localGeneratorSettings);
         onCancel();
     };
 
@@ -125,7 +128,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
             try {
-                const importedData = JSON.parse(e.target.result);
+                const importedData = JSON.parse(e.target.result as string);
                 onImport(importedData);
                 onCancel(); // Close modal on successful import
             } catch (error) {

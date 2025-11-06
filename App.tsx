@@ -3,7 +3,7 @@ import { SerialManager } from './services/serialService';
 import { SimulatedSerialManager } from './services/simulatedSerialService';
 // FIX: Import MachineState type to correctly type component state.
 import { completionSound } from './sounds';
-import { JobStatus, MachineState, Log, Tool, Macro, MachineSettings } from './types';
+import { JobStatus, MachineState, Log, Tool, Macro, MachineSettings, GeneratorSettings } from './types';
 import SerialConnector from './components/SerialConnector';
 import GCodePanel from './components/GCodePanel';
 import Console from './components/Console';
@@ -27,7 +27,7 @@ import Footer from './components/Footer';
 import ContactModal from './components/ContactModal';
 import ErrorBoundary from './ErrorBoundary';
 import UnsupportedBrowser from './components/UnsupportedBrowser';
-import { GRBL_ALARM_CODES, GRBL_ERROR_CODES, DEFAULT_MACROS, DEFAULT_SETTINGS, DEFAULT_TOOLS } from './constants';
+import { GRBL_ALARM_CODES, GRBL_ERROR_CODES, DEFAULT_MACROS, DEFAULT_SETTINGS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS } from './constants';
 import { useLocalStorage } from './components/useLocalStorage';
 
 // FIX: Properly type the usePrevious hook to be generic and type-safe.
@@ -92,6 +92,7 @@ const App: React.FC = () => {
     const [macros, setMacros] = useLocalStorage<Macro[]>('cnc-app-macros', DEFAULT_MACROS);
     const [machineSettings, setMachineSettings] = useLocalStorage<MachineSettings>('cnc-app-settings', DEFAULT_SETTINGS);
     const [toolLibrary, setToolLibrary] = useLocalStorage<Tool[]>('cnc-app-tool-library', []);
+    const [generatorSettings, setGeneratorSettings] = useLocalStorage<GeneratorSettings>('cnc-app-generator-settings', DEFAULT_GENERATOR_SETTINGS);
 
 
     const serialManagerRef = useRef<any>(null);
@@ -114,6 +115,26 @@ const App: React.FC = () => {
         document.documentElement.classList.toggle('light-mode', isLightMode);
     }, [isLightMode]);
     
+    // This effect runs once on startup to validate the saved generator settings.
+    // It ensures that any saved toolId still exists in the tool library.
+    useEffect(() => {
+        const toolIds = new Set(toolLibrary.map(t => t.id));
+        const validatedSettings = { ...generatorSettings };
+        let hasChanges = false;
+
+        for (const key in validatedSettings) {
+            const opSettings = validatedSettings[key];
+            if (opSettings.toolId !== null && !toolIds.has(opSettings.toolId)) {
+                opSettings.toolId = null;
+                hasChanges = true;
+            }
+        }
+
+        if (hasChanges) {
+            setGeneratorSettings(validatedSettings);
+        }
+    }, []); // Empty dependency array ensures this runs only once on mount
+
     useEffect(() => {
         // We are no longer jogging if the machine reports back that it is idle or has an alarm.
         if (machineState?.status === 'Idle' || machineState?.status === 'Alarm') {
@@ -853,6 +874,7 @@ const App: React.FC = () => {
             machineSettings,
             macros,
             toolLibrary,
+            generatorSettings,
         };
         const a = document.createElement('a');
         const url = URL.createObjectURL(new Blob([JSON.stringify(settingsToExport, null, 2)], { type: 'application/json' }));
@@ -863,10 +885,10 @@ const App: React.FC = () => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         addNotification('Settings exported successfully!', 'success');
-    }, [machineSettings, macros, toolLibrary, addNotification]);
+    }, [machineSettings, macros, toolLibrary, generatorSettings, addNotification]);
 
     const handleImportSettings = useCallback((imported: any): void => {
-        if (!window.confirm("This will overwrite your current macros, settings, and tool library. Are you sure?")) {
+        if (!window.confirm("This will overwrite your current macros, settings, tool library, and generator settings. Are you sure?")) {
             return;
         }
         if (imported.machineSettings && !imported.machineSettings.probe) {
@@ -876,9 +898,12 @@ const App: React.FC = () => {
             setMachineSettings(imported.machineSettings);
             setMacros(imported.macros);
             setToolLibrary(imported.toolLibrary);
+            if (imported.generatorSettings) {
+                setGeneratorSettings(imported.generatorSettings);
+            }
             addNotification("Settings imported successfully!", 'success');
         }
-    }, [addNotification]);
+    }, [addNotification, setMachineSettings, setMacros, setToolLibrary, setGeneratorSettings]);
     
     const handleToggleFullscreen = (): void => {
         if (!document.fullscreenElement) {
@@ -996,11 +1021,12 @@ const App: React.FC = () => {
                         setReturnToWelcome(false);
                     }
                 }}
-                onSave={(newSettings) => {
-                    // Mark settings as configured on the first save.
+                onSave={(newSettings, newGeneratorSettings) => {
                     setMachineSettings({ ...newSettings, isConfigured: true });
+                    setGeneratorSettings(newGeneratorSettings);
                 }}
                 settings={machineSettings}
+                generatorSettings={generatorSettings}
                 onResetDialogs={() => {
                     localStorage.removeItem('cnc-app-skip-preflight');
                     addNotification("Dialog settings have been reset.", 'info');
@@ -1031,6 +1057,8 @@ const App: React.FC = () => {
                         toolLibrary={toolLibrary}
                         selectedToolId={selectedToolId}
                         onToolSelect={setSelectedToolId}
+                        generatorSettings={generatorSettings}
+                        onSettingsChange={setGeneratorSettings}
                     />
                 </ErrorBoundary>
             )}
