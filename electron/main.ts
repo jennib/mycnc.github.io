@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, Menu, shell } from 'electron';
 import path from 'path';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -6,9 +6,47 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+let mainWindow: BrowserWindow;
+
+const createAboutWindow = () => {
+  const aboutWindow = new BrowserWindow({
+    width: 450,
+    height: 350,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    parent: mainWindow,
+    modal: true,
+    show: false,
+    webPreferences: {
+      // No need for preload or node integration for a simple static page
+    }
+  });
+
+  // Remove the menu from the about window
+  aboutWindow.setMenu(null);
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    const aboutUrl = new URL('about.html', process.env.VITE_DEV_SERVER_URL).href;
+    aboutWindow.loadURL(aboutUrl);
+  } else {
+    aboutWindow.loadFile(path.join(__dirname, '../renderer/about.html'));
+  }
+
+  aboutWindow.once('ready-to-show', () => {
+    aboutWindow.show();
+  });
+
+  // Open external links in the user's default browser
+  aboutWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
+};
+
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {
@@ -16,7 +54,38 @@ const createWindow = () => {
       sandbox: false,
     },
   });
-  
+
+  // --- Menu Template ---
+  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'File',
+      submenu: [
+        { role: 'quit' }
+      ]
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'About myCNC',
+          click: () => {
+            createAboutWindow();
+          }
+        },
+        {
+         
+          label: 'View on GitHub',
+          click: async () => {
+            await shell.openExternal('https://github.com/jennib/mycnc.github.io');
+          }
+        }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+
   mainWindow.webContents.session.on('select-serial-port', async (event, portList, webContents, callback) => {
     event.preventDefault();
     if (portList && portList.length > 0) {
@@ -74,7 +143,7 @@ const createWindow = () => {
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
   } else {
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 };
 
