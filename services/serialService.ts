@@ -85,15 +85,42 @@ export class SerialManager {
             textEncoder.readable.pipeTo(this.port.writable);
             this.writer = textEncoder.writable.getWriter();
 
-            this.readLoop();
+            this.readLoop(); // Start reading immediately
+
+            // GRBL Handshake: Send a soft-reset to get the welcome message
+            await new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error("Connection timed out. No GRBL welcome message received."));
+                }, 2500); // 2.5 second timeout
+
+                const originalOnLog = this.callbacks.onLog;
+                this.callbacks.onLog = (log) => {
+                    if (log.type === 'received' && log.message.toLowerCase().includes('grbl')) {
+                        clearTimeout(timeout);
+                        this.callbacks.onLog = originalOnLog; // Restore original handler
+                        originalOnLog(log); // Log the welcome message
+                        resolve();
+                    } else {
+                        originalOnLog(log);
+                    }
+                };
+
+                // Send soft-reset character (Ctrl-X)
+                this.sendRealtimeCommand('\x18').catch(reject);
+            });
+
+            // If handshake is successful, proceed with connection setup
+            this.callbacks.onConnect(portInfo);
             
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
 
         } catch (error) {
-            if (error instanceof Error) {
-                this.callbacks.onError(error.message);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            this.callbacks.onError(`Failed to connect: ${errorMessage}`);
+            if (this.port) {
+                // Ensure we disconnect if any part of the connection process fails
+                await this.disconnect();
             }
-            throw error;
         }
     }
 

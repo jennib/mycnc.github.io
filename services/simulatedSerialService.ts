@@ -55,13 +55,15 @@ export class SimulatedSerialManager {
 
     async connect(_baudRate: number) {
         this.callbacks.onConnect({ usbVendorId: 0xAAAA, usbProductId: 0xBBBB });
-        this.callbacks.onLog({ type: 'received', message: "Grbl 1.1h ['$' for help]" });
         this.statusInterval = window.setInterval(() => {
             // Deep clone the position object to ensure React detects a state change
             const newPosition = JSON.parse(JSON.stringify(this.position));
             const rawStatus = `<${newPosition.status}|MPos:${newPosition.mpos.x.toFixed(3)},${newPosition.mpos.y.toFixed(3)},${newPosition.mpos.z.toFixed(3)}|WPos:${newPosition.wpos.x.toFixed(3)},${newPosition.wpos.y.toFixed(3)},${newPosition.wpos.z.toFixed(3)}|FS:${newPosition.spindle.state === 'off' ? 0 : newPosition.spindle.speed},${newPosition.spindle.speed}|WCO:${newPosition.wco!.x.toFixed(3)},${newPosition.wco!.y.toFixed(3)},${newPosition.wco!.z.toFixed(3)}>`;
             this.callbacks.onStatus(newPosition, rawStatus);
         }, 250);
+
+        // Simulate the GRBL welcome message immediately after connection for the handshake
+        setTimeout(() => this.callbacks.onLog({ type: 'received', message: "Grbl 1.1h ['$' for help]" }), 50);
     }
 
     async disconnect() {

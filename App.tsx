@@ -316,6 +316,30 @@ const App: React.FC = () => {
         }
     }, []);
 
+     const handleDisconnect = useCallback(async (): Promise<void> => {
+        if (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused) {
+            if (!window.confirm("A job is currently running or paused. Are you sure you want to disconnect? This will stop the job.")) {
+                return; // User cancelled the disconnect
+            }
+        }
+        
+        // Run shutdown script before disconnecting
+        if (isConnected && machineSettings.scripts.shutdown && serialManagerRef.current) {
+            addLog({ type: 'status', message: 'Running shutdown script...' });
+            const shutdownCommands = machineSettings.scripts.shutdown.split('\n').filter(cmd => cmd.trim() !== '');
+            for (const command of shutdownCommands) {
+                await serialManagerRef.current.sendLineAndWaitForOk(command);
+            }
+        }
+
+        await serialManagerRef.current?.disconnect();
+
+        // If we were in a simulated connection, uncheck the simulator box.
+        if (isSimulatedConnection) {
+            setUseSimulator(false);
+        }
+    }, [jobStatus, isConnected, isSimulatedConnection, machineSettings.scripts.shutdown, addLog, setUseSimulator]);
+
     const handleConnect = useCallback(async (): Promise<void> => {
         if (!isSerialApiSupported && !useSimulator) return;
 
@@ -359,8 +383,8 @@ const App: React.FC = () => {
                 }
             },
             onError: (message: string) => {
-                setError(message);
                 addLog({ type: 'error', message });
+                addNotification(message, 'error');
             },
             onStatus: (status: MachineState, rawStatus?: string) => {
                 setMachineState(status);
@@ -378,35 +402,21 @@ const App: React.FC = () => {
             await manager.connect(115200);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-            setError(`Failed to connect: ${errorMessage}`);
-            addLog({ type: 'error', message: `Failed to connect: ${errorMessage}` });
-        }
-    }, [addLog, isSerialApiSupported, useSimulator, addNotification, playCompletionSound, machineSettings.scripts.startup, isVerboseRef]);
-
-    const handleDisconnect = useCallback(async (): Promise<void> => {
-        if (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused) {
-            if (!window.confirm("A job is currently running or paused. Are you sure you want to disconnect? This will stop the job.")) {
-                return; // User cancelled the disconnect
+            const fullErrorMessage = `Failed to connect: ${errorMessage}`;
+            addLog({ type: 'error', message: fullErrorMessage });
+            addNotification(fullErrorMessage, 'error');
+            if (errorMessage.includes("No GRBL welcome message")) {
+                // This is our specific handshake error
+                alert("Connection failed: The selected device is not a recognized GRBL CNC controller. Disconnecting.");
+                await handleDisconnect();
+            } else {
+                addLog({ type: 'error', message: `Failed to connect: ${errorMessage}` });
+                addNotification(`Failed to connect: ${errorMessage}`, 'error');
             }
         }
-        
-        // Run shutdown script before disconnecting
-        if (isConnected && machineSettings.scripts.shutdown && serialManagerRef.current) {
-            addLog({ type: 'status', message: 'Running shutdown script...' });
-            const shutdownCommands = machineSettings.scripts.shutdown.split('\n').filter(cmd => cmd.trim() !== '');
-            for (const command of shutdownCommands) {
-                await serialManagerRef.current.sendLineAndWaitForOk(command);
-            }
-        }
+    }, [addLog, isSerialApiSupported, useSimulator, addNotification, playCompletionSound, machineSettings.scripts.startup, isVerboseRef, handleDisconnect]);
 
-        await serialManagerRef.current?.disconnect();
-
-        // If we were in a simulated connection, uncheck the simulator box.
-        if (isSimulatedConnection) {
-            setUseSimulator(false);
-        }
-    }, [jobStatus, isConnected, isSimulatedConnection, machineSettings.scripts.shutdown, addLog, setUseSimulator]);
-
+ 
     const handleFileLoad = (content: string, name: string): void => {
         // More robustly clean and filter g-code lines
         const lines = content.split('\n')
