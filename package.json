@@ -22,6 +22,11 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "build/mycnc.icns"
+    ],
     "mac": {
       "category": "public.app-category.Utilities",
       "icon": "build/mycnc.icns"
