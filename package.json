@@ -30,7 +30,11 @@
     ],
     "mac": {
       "category": "public.app-category.Utilities",
-      "icon": "build/mycnc.icns"
+      "icon": "build/mycnc.icns",
+      "extendInfo": {
+        "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
+        "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
+      }
     },
     "win": {
       "target": "nsis",
