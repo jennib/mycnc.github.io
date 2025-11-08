@@ -1,0 +1,14 @@
+<svg
+                        viewBox="0 0 100 100"
+                        className="h-8 w-auto"
+                        aria-label="mycnc.app logo"
+                    >
+                        <g transform="translate(48,48)" fill="none" stroke="var(--color-text-primary)" strokeWidth="4">
+                            <circle r="48" cx="0" cy="0" />
+                            <path d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z" />
+                            <path d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z" transform="rotate(120)" />
+                            <path d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z" transform="rotate(-120)" />
+                            <circle r="12" cx="0" cy="0" />
+                        </g>
+                       
+                    </svg>
