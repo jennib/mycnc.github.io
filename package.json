@@ -2,6 +2,10 @@
   "name": "mycnc.app",
   "private": true,
   "version": "1.0.5",
+  "author": {
+    "name": "jennib",
+    "email": "jenni.b@gmail.com"
+  },
   "main": "./out/main/index.js",
   "type": "module",
   "scripts": {
