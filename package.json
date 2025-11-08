@@ -1,27 +1,73 @@
 {
-  "name": "cnc-g-code-sender",
+  "name": "mycnc.app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.5",
+  "description": "Gcode sender for CNC machines",
+  "author": {
+    "name": "jennib",
+    "email": "jenni.b@gmail.com"
+  },
+  "main": "./out/main/index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "electron:dev": "electron-vite dev",
+    "electron:build": "electron-vite build",
+    "preview:electron": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder"
+  },
+  "build": {
+    "appId": "com.mycnc.app",
+    "productName": "myCNC",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "build/mycnc.icns"
+    ],
+    "mac": {
+      "category": "public.app-category.Utilities",
+      "icon": "build/mycnc.icns",
+      "extendInfo": {
+        "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
+        "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
+      }
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/mycnc.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "icon": "build/icons"
+    }
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
+    "electron-squirrel-startup": "^1.0.1",
     "react": "^19.2.0",
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@types/node": "^18.19.9",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^28.2.4",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^2.1.0",
+    "patch-package": "^8.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.16",
-    "typescript": "~5.8.2",
-    "vite": "^6.4.1"
+    "tailwindcss": "^4.1.17",
+    "typescript": "~5.9.3",
+    "vite": "^5.3.5"
   }
 }
