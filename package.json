@@ -15,7 +15,7 @@
     "electron:dev": "electron-vite dev",
     "electron:build": "electron-vite build",
     "preview:electron": "electron-vite preview",
-    "dist": "electron-builder"
+    "dist": "electron-vite build && electron-builder"
   },
   "build": {
     "appId": "com.mycnc.app",
