@@ -2,6 +2,7 @@
   "name": "mycnc.app",
   "private": true,
   "version": "1.0.5",
+  "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
     "email": "jenni.b@gmail.com"
