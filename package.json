@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "electron:dev": "electron-vite dev",
-    "electonn:build": "electron-vite build",
+    "electron:build": "electron-vite build",
     "preview:electron": "electron-vite preview",
     "dist": "electron-builder"
   },
