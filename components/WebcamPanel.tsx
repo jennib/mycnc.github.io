@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, CameraOff, AlertTriangle, PictureInPicture, Dock } from './Icons';
+import { Camera, CameraOff, AlertTriangle, PictureInPicture, Dock, RefreshCw } from './Icons';
 
 const WebcamPanel: React.FC = () => {
     const [isWebcamOn, setIsWebcamOn] = useState(false);
+    const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+    const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
     const [isInPiP, setIsInPiP] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -24,9 +27,33 @@ const WebcamPanel: React.FC = () => {
         }
     };
     
-    const handleToggleWebcam = async () => {
+    const getDevices = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            // Request permission first to get device labels
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            tempStream.getTracks().forEach(track => track.stop()); // Immediately stop the temporary stream
+
+            const allDevices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
+            setDevices(videoDevices);
+
+            if (videoDevices.length > 0) {
+                setSelectedDeviceId(videoDevices[0].deviceId);
+            } else {
+                setError("No webcam found. Please connect a camera and try again.");
+            }
+        } catch (err) {
+            handleStreamError(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleToggleWebcam = () => {
         if (isWebcamOn && document.pictureInPictureElement) {
-            await document.exitPictureInPicture();
+            document.exitPictureInPicture();
         }
         setIsWebcamOn(prev => !prev);
     };
@@ -53,23 +80,27 @@ const WebcamPanel: React.FC = () => {
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined } });
                 streamRef.current = stream;
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
                 setError(null);
             } catch (err) {
-                console.error("Webcam Error:", err);
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    setError("Webcam access denied. Please allow camera permissions in your browser settings.");
-                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                    setError("No webcam found. Please connect a camera and try again.");
-                } else {
-                    setError("Could not access webcam.");
-                }
-                setIsWebcamOn(false);
+                handleStreamError(err);
             }
+        };
+
+        const handleStreamError = (err: any) => {
+            console.error("Webcam Error:", err);
+            if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+                setError("Webcam access denied. Please allow camera permissions in your OS settings.");
+            } else if (err instanceof Error && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
+                setError("No webcam found. Please connect a camera and try again.");
+            } else {
+                setError("Could not access webcam. The device may be in use by another application.");
+            }
+            setIsWebcamOn(false); // Turn off on error
         };
 
         const stopWebcam = () => {
@@ -83,15 +114,25 @@ const WebcamPanel: React.FC = () => {
         };
 
         if (isWebcamOn) {
-            startWebcam();
+            if (devices.length === 0) {
+                // If getDevices() was already tried and failed (e.g. no devices found),
+                // don't re-trigger automatically. Let the user use "Try Again".
+                // The `isLoading` and `error` checks prevent a re-trigger loop.
+                if (!isLoading && !error) {
+                    getDevices();
+                }
+            } else if (selectedDeviceId) {
+                startWebcam(); // Start stream if a device is selected
+            }
         } else {
             stopWebcam();
+            setDevices([]); // Clear device list when turned off
         }
 
         return () => {
             stopWebcam();
         };
-    }, [isWebcamOn]);
+    }, [isWebcamOn, selectedDeviceId, devices.length]);
 
     const renderBody = () => {
         if (!isWebcamOn) {
@@ -114,13 +155,20 @@ const WebcamPanel: React.FC = () => {
 
         return (
             <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center">
-                {error && (
+                {isLoading ? (
+                    <div className="text-center text-text-secondary p-4">
+                        <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                        <p className="text-sm font-semibold">Searching for cameras...</p>
+                    </div>
+                ) : error ? (
                     <div className="text-center text-accent-yellow p-4">
                         <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
                         <p className="text-sm font-semibold">{error}</p>
+                        <button onClick={getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
+                            Try Again
+                        </button>
                     </div>
-                )}
-                {!error && (
+                ) : (
                     <video
                         ref={videoRef}
                         autoPlay
@@ -135,7 +183,7 @@ const WebcamPanel: React.FC = () => {
 
     return (
         <div className="bg-surface rounded-lg shadow-lg p-4">
-            <div className={`text-lg font-bold flex items-center justify-between ${isWebcamOn ? 'pb-4 border-b border-secondary mb-4' : ''}`}>
+            <div className="text-lg font-bold flex items-center justify-between pb-4 border-b border-secondary mb-4">
                 <div className="flex items-center gap-2">
                     {isWebcamOn ? <Camera className="w-5 h-5 text-primary" /> : <CameraOff className="w-5 h-5 text-text-secondary" />}
                     Webcam
@@ -159,6 +207,23 @@ const WebcamPanel: React.FC = () => {
                     </button>
                 </div>
             </div>
+            {isWebcamOn && devices.length > 1 && (
+                <div className="mb-4">
+                    <label htmlFor="camera-select" className="block text-sm font-medium text-text-secondary mb-1">Select Camera</label>
+                    <select
+                        id="camera-select"
+                        value={selectedDeviceId}
+                        onChange={(e) => setSelectedDeviceId(e.target.value)}
+                        className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                        {devices.map(device => (
+                            <option key={device.deviceId} value={device.deviceId}>
+                                {device.label || `Camera ${devices.indexOf(device) + 1}`}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
             {renderBody()}
         </div>
     );
