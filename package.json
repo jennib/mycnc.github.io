@@ -2,6 +2,7 @@
   "name": "mycnc.app",
   "private": true,
   "version": "1.0.5",
+  "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
     "email": "jenni.b@gmail.com"
@@ -11,10 +12,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "electron:dev": "electron-vite dev",
+    "electron:dev": "electron-vite dev -- --enable-logging",
     "electron:build": "electron-vite build",
-    "electron:preview": "electron-vite preview",
-    "dist": "electron-builder"
+    "preview": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder"
   },
   "build": {
     "appId": "com.mycnc.app",
@@ -22,9 +23,18 @@
     "directories": {
       "output": "release"
     },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "build/mycnc.icns"
+    ],
     "mac": {
       "category": "public.app-category.Utilities",
-      "icon": "build/mycnc.icns"
+      "icon": "build/mycnc.icns",
+      "extendInfo": {
+        "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
+        "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
+      }
     },
     "win": {
       "target": "nsis",
@@ -41,23 +51,22 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
-    "electron-squirrel-startup": "^1.0.1",
-    "react": "^19.2.0",
-    "react-dom": "19.2.0"
+    "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {
-    "@types/node": "^24.10.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^5.1.0",
-    "autoprefixer": "^10.4.21",
-    "electron": "^29.0.0",
-    "electron-builder": "^26.0.12",
-    "electron-vite": "^4.0.1",
-    "patch-package": "^8.0.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.17",
-    "typescript": "~5.9.3",
-    "vite": "^7.2.2"
+    "@types/node": "^18.19.9",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.5.2",
+    "vite": "^5.3.1"
   }
 }

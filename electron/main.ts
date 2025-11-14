@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, Menu, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, Menu, shell, session } from 'electron';
 import path from 'path';
 import net from 'net';
 
@@ -197,6 +197,18 @@ const createWindow = () => {
       return true;
     }
     return false;
+  });
+
+  // --- Webcam/Media Permission Handler ---
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    // For this application, we will automatically grant media permission (camera, microphone).
+    // In a production app, you might want to show a custom prompt here.
+    if (permission === 'media') {
+      callback(true);
+    } else {
+      // Deny any other permission requests.
+      callback(false);
+    }
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
