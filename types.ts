@@ -6,19 +6,42 @@ export enum JobStatus {
     Complete = 'complete',
 }
 
+export interface ConsoleLog {
+    type: 'sent' | 'received' | 'status' | 'error';
+    message: string;
+    timestamp?: Date;
+}
+
+export interface MachinePosition {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export interface PortInfo {
+    portName?: string;
+    manufacturer?: string;
+    type: 'usb' | 'tcp';
+    ip?: string;
+    port?: number;
+    usbVendorId?: number;
+    usbProductId?: number;
+}
+
+export interface ConnectionOptions {
+    type: 'usb' | 'tcp';
+    ip?: string;
+    port?: number;
+}
+
 export interface MachineState {
     status: 'Idle' | 'Run' | 'Hold' | 'Jog' | 'Alarm' | 'Door' | 'Check' | 'Home' | 'Sleep';
     code?: number;
-    wpos: { x: number; y: number; z: number };
-    mpos: { x: number; y: number; z: number };
-    spindle: { state: 'on' | 'off'; speed: number };
+    wpos: MachinePosition;
+    mpos: MachinePosition;
+    wco: MachinePosition; // Added wco
+    spindle: { state: 'cw' | 'ccw' | 'off'; speed: number }; // Changed to 'cw' | 'ccw' | 'off'
     ov: number[];
-}
-
-export interface Log {
-    type: 'sent' | 'received' | 'status' | 'error';
-    message: string;
-    timestamp: Date;
 }
 
 export interface Tool {
@@ -186,3 +209,4 @@ export interface GeneratorSettings {
     text: TextParams;
     thread: ThreadMillingParams;
 }
+
