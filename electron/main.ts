@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, Menu, shell, ipcMain } from 'electron';
 import path from 'path';
+import net from 'net';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -7,6 +8,7 @@ if (require('electron-squirrel-startup')) {
 }
 
 let mainWindow: BrowserWindow;
+let tcpSocket: net.Socket | null = null;
 
 const createAboutWindow = () => {
   const aboutWindow = new BrowserWindow({
@@ -51,7 +53,8 @@ const createWindow = () => {
     height: 800,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      contextIsolation: true, // Enable context isolation
+      sandbox: true, // Enable sandboxing
     },
   });
 
@@ -86,7 +89,74 @@ const createWindow = () => {
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
-  mainWindow.webContents.session.on('select-serial-port', async (event, portList, webContents, callback) => {
+    // --- TCP Communication Handlers ---
+    ipcMain.handle('connect-tcp', async (event, ip: string, port: number) => {
+        return new Promise<boolean>((resolve) => {
+            if (tcpSocket) {
+                tcpSocket.destroy();
+                tcpSocket = null;
+            }
+
+            tcpSocket = new net.Socket();
+
+            tcpSocket.connect(port, ip, () => {
+                console.log(`TCP Connected to ${ip}:${port}`);
+                resolve(true);
+            });
+
+            tcpSocket.on('data', (data) => {
+                mainWindow.webContents.send('tcp-data', data.toString());
+            });
+
+            tcpSocket.on('error', (err) => {
+                console.error('TCP Socket Error:', err.message);
+                mainWindow.webContents.send('tcp-error', err.message);
+                if (tcpSocket) {
+                    tcpSocket.destroy();
+                    tcpSocket = null;
+                }
+                resolve(false); // Resolve false on connection error
+            });
+
+            tcpSocket.on('close', () => {
+                console.log('TCP Socket Closed');
+                mainWindow.webContents.send('tcp-disconnect');
+                if (tcpSocket) {
+                    tcpSocket.destroy();
+                    tcpSocket = null;
+                }
+            });
+
+            // Handle connection timeout
+            tcpSocket.setTimeout(5000, () => {
+                if (tcpSocket && !tcpSocket.connecting) { // Check if it's still trying to connect
+                    console.error('TCP Connection Timeout');
+                    mainWindow.webContents.send('tcp-error', 'Connection timed out.');
+                    tcpSocket.destroy();
+                    tcpSocket = null;
+                    resolve(false);
+                }
+            });
+        });
+    });
+
+    ipcMain.on('send-tcp', (event, data: string) => {
+        if (tcpSocket && !tcpSocket.destroyed) {
+            tcpSocket.write(data + '\n'); // GRBL expects newline
+        } else {
+            console.warn('Attempted to send data on a non-existent or destroyed TCP socket.');
+            mainWindow.webContents.send('tcp-error', 'Not connected to TCP device.');
+        }
+    });
+
+    ipcMain.on('disconnect-tcp', () => {
+        if (tcpSocket) {
+            tcpSocket.destroy();
+            tcpSocket = null;
+        }
+    });
+
+    mainWindow.webContents.session.on('select-serial-port', async (event, portList, webContents, callback) => {
     event.preventDefault();
     if (portList && portList.length > 0) {
       try {
