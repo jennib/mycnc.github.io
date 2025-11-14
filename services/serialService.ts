@@ -1,5 +1,20 @@
 import { ConsoleLog, MachineState, PortInfo, MachinePosition } from '../types';
 
+// Declare the Electron API on the Window object
+declare global {
+    interface Window {
+        electronAPI?: {
+            isElectron: boolean;
+            connectTCP: (ip: string, port: number) => Promise<boolean>;
+            sendTCP: (data: string) => void;
+            disconnectTCP: () => void;
+            onTCPData: (callback: (data: string) => void) => void;
+            onTCPError: (callback: (error: string) => void) => void;
+            onTCPDisconnect: (callback: () => void) => void;
+        };
+    }
+}
+
 interface SerialManagerCallbacks {
     onConnect: (info: PortInfo) => void;
     onDisconnect: () => void;
@@ -10,7 +25,7 @@ interface SerialManagerCallbacks {
 }
 
 export class SerialManager {
-    port: any = null;
+    port: any = null; // For Web Serial API
     reader: any = null;
     writer: any = null;
     callbacks: SerialManagerCallbacks;
@@ -43,9 +58,13 @@ export class SerialManager {
     linePromiseReject: ((reason?: any) => void) | null = null;
 
     isDisconnecting = false;
+    isElectron: boolean;
+    connectionType: 'usb' | 'tcp' | null = null;
+    tcpBuffer: string = ''; // Buffer for incoming TCP data
 
     constructor(callbacks: SerialManagerCallbacks) {
         this.callbacks = callbacks;
+        this.isElectron = !!window.electronAPI?.isElectron;
     }
 
     async connect(baudRate: number) {
@@ -70,8 +89,8 @@ export class SerialManager {
             };
             this.spindleDirection = 'off';
 
-            const portInfo = this.port.getInfo();
-            this.callbacks.onConnect(portInfo);
+            const usbPortInfo = this.port.getInfo();
+            this.connectionType = 'usb';
             
             this.port.addEventListener('disconnect', () => {
                 this.disconnect();
@@ -110,7 +129,12 @@ export class SerialManager {
             });
 
             // If handshake is successful, proceed with connection setup
-            this.callbacks.onConnect(portInfo);
+            this.callbacks.onConnect({ 
+                type: 'usb', 
+                portName: usbPortInfo.usbProductId ? `USB (VID: ${usbPortInfo.usbVendorId}, PID: ${usbPortInfo.usbProductId})` : 'USB Device',
+                usbVendorId: usbPortInfo.usbVendorId,
+                usbProductId: usbPortInfo.usbProductId,
+            });
             
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
 
@@ -124,8 +148,83 @@ export class SerialManager {
         }
     }
 
+    async connectTCP(ip: string, port: number) {
+        if (!this.isElectron || !window.electronAPI) {
+            this.callbacks.onError("TCP connection is only available in Electron environment.");
+            return;
+        }
+
+        try {
+            // Reset state for new connection
+            this.lastStatus = {
+                status: 'Idle',
+                code: null,
+                wpos: { x: 0, y: 0, z: 0 },
+                mpos: { x: 0, y: 0, z: 0 },
+                wco: { x: 0, y: 0, z: 0 },
+                spindle: { state: 'off', speed: 0 },
+                ov: [100, 100, 100],
+            };
+            this.spindleDirection = 'off';
+
+            // Set up listeners for TCP data
+            window.electronAPI.onTCPData((data) => {
+                // TCP data might come in chunks, so we need to buffer and split by newline
+                this.tcpBuffer += data;
+                const lines = this.tcpBuffer.split('\n');
+                this.tcpBuffer = lines.pop()!; // Keep the last, possibly incomplete, line
+                lines.forEach(line => this.processIncomingData(line));
+            });
+            window.electronAPI.onTCPError((error) => {
+                this.callbacks.onError(`TCP Error: ${error}`);
+                this.disconnect();
+            });
+            window.electronAPI.onTCPDisconnect(() => {
+                this.callbacks.onLog({ type: 'status', message: 'TCP connection lost.' });
+                this.disconnect();
+            });
+
+            const connected = await window.electronAPI.connectTCP(ip, port);
+
+            if (connected) {
+                this.connectionType = 'tcp';
+                // GRBL Handshake for TCP: Send a soft-reset to get the welcome message
+                await new Promise<void>((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error("Connection timed out. No GRBL welcome message received."));
+                    }, 2500); // 2.5 second timeout
+
+                    const originalOnLog = this.callbacks.onLog;
+                    this.callbacks.onLog = (log) => {
+                        if (log.type === 'received' && log.message.toLowerCase().includes('grbl')) {
+                            clearTimeout(timeout);
+                            this.callbacks.onLog = originalOnLog; // Restore original handler
+                            originalOnLog(log); // Log the welcome message
+                            resolve();
+                        } else {
+                            originalOnLog(log);
+                        }
+                    };
+
+                    // Send soft-reset character (Ctrl-X)
+                    this.sendRealtimeCommand('\x18').catch(reject);
+                });
+
+                this.callbacks.onConnect({ type: 'tcp', ip, port });
+                this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
+            } else {
+                this.callbacks.onError("Failed to establish TCP connection.");
+                this.disconnect();
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+            this.callbacks.onError(`Failed to connect via TCP: ${errorMessage}`);
+            this.disconnect();
+        }
+    }
+
     async disconnect() {
-        if (this.isDisconnecting || !this.port) return;
+        if (this.isDisconnecting || (!this.port && !this.connectionType)) return;
         this.isDisconnecting = true;
     
         if (this.statusInterval) {
@@ -136,24 +235,34 @@ export class SerialManager {
             this.stopJob();
         }
     
-        // The reader and writer must be released before the port can be closed.
-        // Awaiting these cancellations prevents a race condition.
-        try {
-            if (this.reader) {
-                await this.reader.cancel();
+        if (this.connectionType === 'usb') {
+            // The reader and writer must be released before the port can be closed.
+            // Awaiting these cancellations prevents a race condition.
+            try {
+                if (this.reader) {
+                    await this.reader.cancel();
+                }
+                if (this.writer) {
+                    await this.writer.abort();
+                }
+                if (this.port) {
+                    await this.port.close();
+                }
+            } catch (error) {
+                // Ignore errors during disconnection, as the port may have already been lost.
+            } finally {
+                this.port = this.reader = this.writer = null;
             }
-            if (this.writer) {
-                await this.writer.abort();
-            }
-            if (this.port) {
-                await this.port.close();
-            }
-        } catch (error) {
-            // Ignore errors during disconnection, as the port may have already been lost.
-        } finally {
-            this.port = this.reader = this.writer = null;
-            this.isDisconnecting = false;
+        } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+            window.electronAPI.disconnectTCP();
+            // Clean up listeners
+            // Note: ipcRenderer.removeListener is not directly exposed in preload,
+            // so we rely on the main process to clean up its socket.
+            // For the renderer, we just ensure our internal state is reset.
         }
+
+        this.connectionType = null;
+        this.isDisconnecting = false;
         this.callbacks.onDisconnect();
     }
     
@@ -269,64 +378,7 @@ export class SerialManager {
                     buffer = lines.pop()!; // Keep the last, possibly incomplete, line
 
                     lines.forEach(line => {
-                        const trimmedValue = line.trim();
-                        if (trimmedValue.startsWith('<') && trimmedValue.endsWith('>')) {
-                            const previousStatus = this.lastStatus.status; // Capture state before processing new status
-                            const statusUpdate = this.parseGrblStatus(trimmedValue, this.lastStatus);
-                            if (statusUpdate) {
-                                // A more robust state update. Instead of merging with spread syntax,
-                                // we explicitly build the new state to prevent stale properties
-                                // (like an alarm 'code') from persisting incorrectly.
-                                this.lastStatus = {
-                                    status: statusUpdate.status,
-                                    code: statusUpdate.code,
-                                    wpos: statusUpdate.wpos || this.lastStatus.wpos,
-                                    mpos: statusUpdate.mpos || this.lastStatus.mpos,
-                                    wco: statusUpdate.wco || this.lastStatus.wco,
-                                    ov: statusUpdate.ov || this.lastStatus.ov,
-                                    spindle: {
-                                        ...this.lastStatus.spindle,
-                                        ...(statusUpdate.spindle || {}),
-                                    }
-                                };
-                        
-                                // This logic must run *after* the new state is built.
-                                if (this.lastStatus.spindle.speed === 0) {
-                                    this.spindleDirection = 'off';
-                                }
-                                this.lastStatus.spindle.state = this.spindleDirection;
-                        
-                                // Send a deep clone to React to ensure re-render
-                                this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
-
-                                // If a jog just completed, request another status update to ensure we have the final position.
-                                if (previousStatus === 'Jog' && this.lastStatus.status === 'Idle') {
-                                    this.requestStatusUpdate();
-                                }
-                            }
-                        } else if (trimmedValue) {
-                            if (trimmedValue.startsWith('error:')) {
-                                // If a job is running (i.e., a promise is pending for an 'ok'),
-                                // reject the promise and let the job handler log the error contextually.
-                                // Otherwise, it's a manual command error, so report it directly.
-                                if (this.linePromiseReject) {
-                                    this.linePromiseReject(new Error(trimmedValue));
-                                    this.linePromiseResolve = null;
-                                    this.linePromiseReject = null;
-                                } else {
-                                    this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
-                                }
-                            } else {
-                                this.callbacks.onLog({ type: 'received', message: trimmedValue });
-                                if (trimmedValue.startsWith('ok')) {
-                                    if (this.linePromiseResolve) {
-                                        this.linePromiseResolve();
-                                        this.linePromiseResolve = null;
-                                        this.linePromiseReject = null;
-                                    }
-                                }
-                            }
-                        }
+                        this.processIncomingData(line);
                     });
                 }
             } catch (error) {
@@ -345,6 +397,67 @@ export class SerialManager {
                     this.callbacks.onError("Error reading from serial port.");
                 }
                 break;
+            }
+        }
+    }
+
+    processIncomingData(line: string) {
+        const trimmedValue = line.trim();
+        if (trimmedValue.startsWith('<') && trimmedValue.endsWith('>')) {
+            const previousStatus = this.lastStatus.status; // Capture state before processing new status
+            const statusUpdate = this.parseGrblStatus(trimmedValue, this.lastStatus);
+            if (statusUpdate) {
+                // A more robust state update. Instead of merging with spread syntax,
+                // we explicitly build the new state to prevent stale properties
+                // (like an alarm 'code') from persisting incorrectly.
+                this.lastStatus = {
+                    status: statusUpdate.status,
+                    code: statusUpdate.code,
+                    wpos: statusUpdate.wpos || this.lastStatus.wpos,
+                    mpos: statusUpdate.mpos || this.lastStatus.mpos,
+                    wco: statusUpdate.wco || this.lastStatus.wco,
+                    ov: statusUpdate.ov || this.lastStatus.ov,
+                    spindle: {
+                        ...this.lastStatus.spindle,
+                        ...(statusUpdate.spindle || {}),
+                    }
+                };
+        
+                // This logic must run *after* the new state is built.
+                if (this.lastStatus.spindle.speed === 0) {
+                    this.spindleDirection = 'off';
+                }
+                this.lastStatus.spindle.state = this.spindleDirection;
+        
+                // Send a deep clone to React to ensure re-render
+                this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
+
+                // If a jog just completed, request another status update to ensure we have the final position.
+                if (previousStatus === 'Jog' && this.lastStatus.status === 'Idle') {
+                    this.requestStatusUpdate();
+                }
+            }
+        } else if (trimmedValue) {
+            if (trimmedValue.startsWith('error:')) {
+                // If a job is running (i.e., a promise is pending for an 'ok'),
+                // reject the promise and let the job handler log the error contextually.
+                // Otherwise, it's a manual command error, so report it directly.
+                if (this.linePromiseReject) {
+                    this.linePromiseReject(new Error(trimmedValue));
+                    this.linePromiseResolve = null;
+                    this.linePromiseReject = null;
+                } else {
+                    this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
+                }
+            } else {
+                this.callbacks.onLog({ type: 'received', message: trimmedValue });
+                if (trimmedValue.startsWith('ok')) {
+                    if (this.linePromiseResolve) {
+                        this.linePromiseResolve();
+                        this.linePromiseResolve = null;
+                        this.linePromiseReject = null;
+                    }
+                }
             }
         }
     }
@@ -375,54 +488,77 @@ export class SerialManager {
             this.spindleDirection = 'off';
         }
 
-        if (!this.writer) {
-            return;
-        }
-        try {
-            const command = line + '\n';
-            await this.writer.write(command);
-            if (log) {
-                this.callbacks.onLog({ type: 'sent', message: line });
+        if (this.connectionType === 'usb' && this.writer) {
+            try {
+                const command = line + '\n';
+                await this.writer.write(command);
+                if (log) {
+                    this.callbacks.onLog({ type: 'sent', message: line });
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                if (this.isDisconnecting) {
+                    // Expected error during disconnect.
+                } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
+                    this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
+                    this.disconnect();
+                } else {
+                    this.callbacks.onError("Error writing to serial port.");
+                }
+                throw error;
             }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            if (this.isDisconnecting) {
-                // Expected error during disconnect.
-            } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
-                this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
-                this.disconnect();
-            } else {
-                this.callbacks.onError("Error writing to serial port.");
+        } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+            try {
+                window.electronAPI.sendTCP(line);
+                if (log) {
+                    this.callbacks.onLog({ type: 'sent', message: line });
+                }
+            } catch (error) {
+                this.callbacks.onError("Error writing to TCP socket.");
+                throw error;
             }
-            throw error;
+        } else {
+            this.callbacks.onError("Not connected to any device.");
+            throw new Error("Not connected.");
         }
     }
 
     async sendRealtimeCommand(command: string) {
-        if (!this.writer) {
-            return;
-        }
-        try {
-            await this.writer.write(command);
-            // Real-time commands are not logged to the console to avoid clutter.
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            if (this.isDisconnecting) {
-                // Expected error during disconnect.
-            } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
-                this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
-                this.disconnect();
-            } else {
-                this.callbacks.onError("Error writing to serial port.");
+        if (this.connectionType === 'usb' && this.writer) {
+            try {
+                await this.writer.write(command);
+                // Real-time commands are not logged to the console to avoid clutter.
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                if (this.isDisconnecting) {
+                    // Expected error during disconnect.
+                } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
+                    this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
+                    this.disconnect();
+                } else {
+                    this.callbacks.onError("Error writing to serial port.");
+                }
+                throw error;
             }
-            throw error;
+        } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+            try {
+                window.electronAPI.sendTCP(command);
+            } catch (error) {
+                this.callbacks.onError("Error writing real-time command to TCP socket.");
+                throw error;
+            }
+        } else {
+            this.callbacks.onError("Not connected to any device.");
+            throw new Error("Not connected.");
         }
     }
 
     requestStatusUpdate() {
-        if (this.writer) {
+        if (this.connectionType === 'usb' && this.writer) {
             // This write is silent and doesn't need to be awaited
             this.writer.write('?').catch(() => {});
+        } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+            window.electronAPI.sendTCP('?');
         }
     }
 

@@ -53,6 +53,7 @@
     "autoprefixer": "^10.4.21",
     "electron": "^29.0.0",
     "electron-builder": "^26.0.12",
+    "electron-vite": "^4.0.1",
     "patch-package": "^8.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",

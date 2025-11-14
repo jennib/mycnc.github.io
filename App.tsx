@@ -3,7 +3,7 @@ import { SerialManager } from './services/serialService';
 import { SimulatedSerialManager } from './services/simulatedSerialService';
 // FIX: Import MachineState type to correctly type component state.
 import { completionSound } from './sounds';
-import { JobStatus, MachineState, Log, Tool, Macro, MachineSettings, GeneratorSettings } from './types';
+import { JobStatus, MachineState, ConsoleLog, PortInfo, Tool, Macro, MachineSettings, GeneratorSettings } from './types';
 import SerialConnector from './components/SerialConnector';
 import GCodePanel from './components/GCodePanel';
 import Console from './components/Console';
@@ -37,7 +37,7 @@ const buildTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 1
 const App: React.FC = () => {
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [isSimulatedConnection, setIsSimulatedConnection] = useState(false);
-    const [portInfo, setPortInfo] = useState(null);
+    const [portInfo, setPortInfo] = useState<PortInfo | null>(null);
     const [gcodeLines, setGcodeLines] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
     const [jobStatus, setJobStatus] = useState(JobStatus.Idle);
@@ -60,6 +60,7 @@ const App: React.FC = () => {
     const [preflightWarnings, setPreflightWarnings] = useState<any[]>([]);
     const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isElectron, setIsElectron] = useState(false); // New state for Electron environment
 
 
     // Macro Editing State
@@ -237,6 +238,21 @@ const App: React.FC = () => {
         return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
     }, []);
 
+    useEffect(() => {
+        // Check if running in Electron
+        console.log('App.tsx useEffect: Checking for Electron environment.');
+        console.log('App.tsx useEffect: window.electronAPI:', window.electronAPI);
+        if (window.electronAPI) {
+            console.log('App.tsx useEffect: window.electronAPI.isElectron:', window.electronAPI.isElectron);
+        }
+        if (window.electronAPI?.isElectron) {
+            setIsElectron(true);
+            console.log('App.tsx useEffect: isElectron state set to TRUE.');
+        } else {
+            console.log('App.tsx useEffect: Not in Electron or window.electronAPI.isElectron is false/undefined.');
+        }
+    }, []);
+
     const playCompletionSound = useCallback(() => {
         const audioContext = audioContextRef.current;
         const audioBuffer = audioBufferRef.current;
@@ -340,14 +356,15 @@ const App: React.FC = () => {
         }
     }, [jobStatus, isConnected, isSimulatedConnection, machineSettings.scripts.shutdown, addLog, setUseSimulator]);
 
-    const handleConnect = useCallback(async (): Promise<void> => {
-        if (!isSerialApiSupported && !useSimulator) return;
+    const handleConnect = useCallback(async (options: ConnectionOptions): Promise<void> => {
+        if (!isSerialApiSupported && !useSimulator && options.type === 'usb') return;
+        if (!isElectron && options.type === 'tcp') return;
 
         const commonCallbacks = {
-            onConnect: async (info: any) => {
+            onConnect: async (info: PortInfo) => {
                 setIsConnected(true);
                 setPortInfo(info);
-                addLog({ type: 'status', message: `Connected to ${useSimulator ? 'simulator' : 'port'} at 115200 baud.` });
+                addLog({ type: 'status', message: `Connected to ${useSimulator ? 'simulator' : info.type === 'usb' ? 'USB port' : `TCP ${info.ip}:${info.port}`} at 115200 baud.` });
                 setError(null);
                 setIsSimulatedConnection(useSimulator);
                 setIsHomedSinceConnect(false); // Reset homing status on new connection
@@ -395,11 +412,29 @@ const App: React.FC = () => {
         };
 
         try {
-            const manager = useSimulator
-                ? new SimulatedSerialManager(commonCallbacks)
-                : new SerialManager(commonCallbacks);
-            serialManagerRef.current = manager; // Set ref before connect to use in onConnect
-            await manager.connect(115200);
+        let managerInstance;
+        if (useSimulator) {
+            managerInstance = new SimulatedSerialManager(commonCallbacks);
+        } else {
+            managerInstance = new SerialManager(commonCallbacks);
+        }
+        serialManagerRef.current = managerInstance;
+        
+        try {
+            if (useSimulator) {
+                await managerInstance.connect(115200); // SimulatedSerialManager only has 'connect'
+            } else if (options.type === 'usb') {
+                await managerInstance.connect(115200); // SerialManager's USB connect
+            } else if (options.type === 'tcp' && options.ip && options.port) {
+                // Ensure managerInstance is SerialManager before calling connectTCP
+                if (managerInstance instanceof SerialManager) {
+                    await managerInstance.connectTCP(options.ip, options.port);
+                } else {
+                    throw new Error("TCP connection not supported by simulator.");
+                }
+            } else {
+                throw new Error("Invalid connection options provided.");
+            }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
             const fullErrorMessage = `Failed to connect: ${errorMessage}`;
@@ -921,7 +956,7 @@ const App: React.FC = () => {
 
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-    if (!isSerialApiSupported || isMobile) {
+    if (!isSerialApiSupported && !isElectron || isMobile) { // Updated condition
         return <UnsupportedBrowser />;
     }
 
@@ -951,7 +986,7 @@ const App: React.FC = () => {
     // Effect to auto-connect when simulator mode is chosen from welcome modal
     useEffect(() => {
         if (useSimulator && !isConnected) {
-            handleConnect();
+            handleConnect({ type: 'usb' }); // Simulator uses the USB connection path
         }
     }, [useSimulator, isConnected, handleConnect]);
 
@@ -1128,6 +1163,7 @@ const App: React.FC = () => {
                         isSimulated={isSimulatedConnection}
                         useSimulator={useSimulator}
                         onSimulatorChange={setUseSimulator}
+                        isElectron={isElectron} // Pass the isElectron prop
                     />
                 </div>
             </header>
@@ -1167,7 +1203,7 @@ const App: React.FC = () => {
                     </div>
                 </div>
             )}
-            {error && (isSerialApiSupported || useSimulator) && (
+            {error && (isSerialApiSupported || useSimulator || isElectron) && ( // Updated condition
                 <div className="bg-accent-red/20 border-l-4 border-accent-red text-accent-red p-4 m-4 flex items-start" role="alert">
                     <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
                     <p>{error}</p>
