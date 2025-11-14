@@ -13,7 +13,7 @@
     "build": "vite build",
     "electron:dev": "electron-vite dev",
     "electron:build": "electron-vite build",
-    "preview:electron": "electron-vite preview",
+    "electron:preview": "electron-vite preview",
     "dist": "electron-builder"
   },
   "build": {
@@ -51,9 +51,8 @@
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
-    "electron": "^39.1.1",
+    "electron": "^29.0.0",
     "electron-builder": "^26.0.12",
-    "electron-vite": "^4.0.1",
     "patch-package": "^8.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
