@@ -388,13 +388,18 @@ const App: React.FC = () => {
     }
   }, [machineState, jobStatus, addLog]);
 
+  // Helper function to introduce a delay.
+  const sleep = (ms: number) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  };
+
   useEffect(() => {
     if ("serial" in navigator) {
       setIsSerialApiSupported(true);
     } else {
       setIsSerialApiSupported(false);
       setError(
-        "Web Serial API is not supported by your browser. Please use a compatible browser like Chrome, Edge, or enable it in Firefox (dom.w3c_serial.enabled)."
+        "This web browser does not support serial connections.  You can still use the simulator.  Or use a compatible browser like Chrome or, Edge to connect to your machine."
       );
     }
   }, []);
@@ -409,6 +414,9 @@ const App: React.FC = () => {
         return; // User cancelled the disconnect
       }
     }
+
+    // Add a small delay to allow any pending I/O operations to complete.
+    await sleep(250);
 
     // Run shutdown script before disconnecting
     if (
@@ -1199,12 +1207,6 @@ const App: React.FC = () => {
       window.electronAPI.send("toggle-fullscreen");
     }
   };
-
-  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
-
-  if (!isSerialApiSupported || isMobile) {
-    return <UnsupportedBrowser />;
-  }
 
   const alarmInfo = isAlarm
     ? GRBL_ALARM_CODES[machineState!.code!] || GRBL_ALARM_CODES.default
