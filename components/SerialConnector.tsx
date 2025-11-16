@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Power, PowerOff, Cpu } from './Icons';
-import { PortInfo } from '../types'; // Import PortInfo
+import { PortInfo, ConnectionOptions, SerialPortInfo } from '../types'; // Import PortInfo, ConnectionOptions, and SerialPortInfo
 
 interface SerialConnectorProps {
     isConnected: boolean;
     portInfo: PortInfo | null; // Use the imported PortInfo type
     onConnect: (options: ConnectionOptions) => void;
     onDisconnect: () => void;
-    isApiSupported: boolean;
     isSimulated: boolean;
     useSimulator: boolean;
     onSimulatorChange: (use: boolean) => void;
@@ -19,7 +18,6 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     portInfo,
     onConnect,
     onDisconnect,
-    isApiSupported,
     isSimulated,
     useSimulator,
     onSimulatorChange,
@@ -27,11 +25,40 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
 }) => {
     const [tcpIp, setTcpIp] = useState('127.0.0.1');
     const [tcpPort, setTcpPort] = useState(23); // Default GRBL port
+    const [baudRate, setBaudRate] = useState(115200); // Default baud rate for GRBL
     const [connectionType, setConnectionType] = useState<'usb' | 'tcp'>('usb');
+    const [availablePorts, setAvailablePorts] = useState<SerialPortInfo[]>([]);
+    const [selectedPortPath, setSelectedPortPath] = useState<string>('');
+
+    useEffect(() => {
+        const fetchPorts = async () => {
+            if (isElectron && connectionType === 'usb' && !isConnected) {
+                try {
+                    const ports = await window.electronAPI.requestSerialPort();
+                    setAvailablePorts(ports);
+                    if (ports.length > 0) {
+                        setSelectedPortPath(ports[0].path); // Auto-select the first port
+                    }
+                } catch (error) {
+                    console.error("Failed to list serial ports:", error);
+                }
+            }
+        };
+        fetchPorts();
+    }, [isElectron, connectionType, isConnected]);
 
     const handleConnect = () => {
         if (connectionType === 'usb') {
-            onConnect({ type: 'usb' });
+            if (isElectron && selectedPortPath) {
+                onConnect({ type: 'usb', path: selectedPortPath, baudRate });
+            } else if (!isElectron) {
+                // Web Serial API path, which is not currently supported in this flow
+                // This case should ideally be handled by the browser's native prompt
+                // or a different connection mechanism for web.
+                onConnect({ type: 'usb', baudRate });
+            } else {
+                console.error("No serial port selected.");
+            }
         } else {
             onConnect({ type: 'tcp', ip: tcpIp, port: tcpPort });
         }
@@ -96,6 +123,41 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                 </div>
             )}
 
+            {connectionType === 'usb' && isElectron && !isConnected && (
+                <>
+                    <div className="flex items-center gap-2">
+                        <select
+                            value={selectedPortPath}
+                            onChange={(e) => setSelectedPortPath(e.target.value)}
+                            className="w-48 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
+                            disabled={isConnected}
+                        >
+                            {availablePorts.length === 0 ? (
+                                <option value="">No ports found</option>
+                            ) : (
+                                availablePorts.map((port) => (
+                                    <option key={port.path} value={port.path}>
+                                        {port.manufacturer && port.manufacturer !== 'N/A'
+                                            ? `${port.manufacturer} (${port.path})`
+                                            : port.path}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            placeholder="Baud Rate"
+                            value={baudRate}
+                            onChange={(e) => setBaudRate(parseInt(e.target.value))}
+                            className="w-28 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
+                            disabled={isConnected}
+                        />
+                    </div>
+                </>
+            )}
+
             {connectionType === 'tcp' && isElectron && !isConnected && (
                 <div className="flex items-center gap-2">
                     <input
@@ -123,7 +185,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                     Disconnect
                 </button>
             ) : (
-                <button onClick={handleConnect} disabled={(!isApiSupported && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort))} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed">
+                <button onClick={handleConnect} disabled={(!isElectron && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort)) || (isElectron && connectionType === 'usb' && availablePorts.length === 0)} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed">
                     <Power className="w-5 h-5" />
                     Connect
                 </button>

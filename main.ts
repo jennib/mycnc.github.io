@@ -39,4 +39,16 @@ app.on("window-all-closed", () => {
   win = null;
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  // Set up permission request handler for serial port access
+  win.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+    console.log(`Permission request for: ${permission}`);
+    if (permission === 'serial') {
+      callback(true); // Approve the permission request
+    } else {
+      callback(false); // Deny other permission requests
+    }
+  });
+});

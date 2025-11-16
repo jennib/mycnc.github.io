@@ -3,7 +3,7 @@ import { SerialManager } from './services/serialService';
 import { SimulatedSerialManager } from './services/simulatedSerialService';
 // FIX: Import MachineState type to correctly type component state.
 import { completionSound } from './sounds';
-import { JobStatus, MachineState, Log, Tool, Macro, MachineSettings, GeneratorSettings } from './types';
+import { JobStatus, MachineState, Log, Tool, Macro, MachineSettings, GeneratorSettings, ConnectionOptions } from './types';
 import SerialConnector from './components/SerialConnector';
 import GCodePanel from './components/GCodePanel';
 import Console from './components/Console';
@@ -28,8 +28,9 @@ import ContactModal from './components/ContactModal';
 import ErrorBoundary from './ErrorBoundary';
 import UnsupportedBrowser from './components/UnsupportedBrowser';
 import { GRBL_ALARM_CODES, GRBL_ERROR_CODES, DEFAULT_MACROS, DEFAULT_SETTINGS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS } from './constants';
-import { useLocalStorage } from './components/useLocalStorage'; // Keep existing path
-import { usePrevious } from './hooks/usePrevious'; // New import path
+import { useLocalStorage } from './components/useLocalStorage';
+import { usePrevious } from './hooks/usePrevious';
+import { TcpManager } from './services/tcpService';
 
 const buildTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
@@ -37,14 +38,13 @@ const buildTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 1
 const App: React.FC = () => {
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [isSimulatedConnection, setIsSimulatedConnection] = useState(false);
-    const [portInfo, setPortInfo] = useState(null);
+    const [portInfo, setPortInfo] = useState<any>(null);
     const [gcodeLines, setGcodeLines] = useState<string[]>([]);
     const [fileName, setFileName] = useState('');
     const [jobStatus, setJobStatus] = useState(JobStatus.Idle);
     const [progress, setProgress] = useState<number>(0);
     const [consoleLogs, setConsoleLogs] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [isSerialApiSupported, setIsSerialApiSupported] = useState(true);
     const [useSimulator, setUseSimulator] = useState(false);
     const [machineState, setMachineState] = useState<MachineState | null>(null);
     const [isJogging, setIsJogging] = useState(false);
@@ -87,7 +87,8 @@ const App: React.FC = () => {
     const [generatorSettings, setGeneratorSettings] = useLocalStorage<GeneratorSettings>('cnc-app-generator-settings', DEFAULT_GENERATOR_SETTINGS);
 
 
-    const serialManagerRef = useRef<any>(null);
+    const serialManagerRef = useRef<any>(null); // Can be SerialManager or SimulatedSerialManager
+    const tcpManagerRef = useRef<any>(null); // Can be TcpManager
     const prevState = usePrevious(machineState);
     const jobStatusRef = useRef(jobStatus);
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -307,33 +308,26 @@ const App: React.FC = () => {
         }
     }, [machineState, jobStatus, addLog]);
 
-    useEffect(() => {
-        if ('serial' in navigator) {
-            setIsSerialApiSupported(true);
-        } else {
-            setIsSerialApiSupported(false);
-            setError("Web Serial API is not supported by your browser. Please use a compatible browser like Chrome, Edge, or enable it in Firefox (dom.w3c_serial.enabled).");
-        }
-    }, []);
-
-    const handleConnect = useCallback(async (): Promise<void> => {
-        if (!isSerialApiSupported && !useSimulator) return;
-
+    const handleConnect = useCallback(async (options: ConnectionOptions): Promise<void> => {
         const commonCallbacks = {
             onConnect: async (info: any) => {
                 setIsConnected(true);
                 setPortInfo(info);
-                addLog({ type: 'status', message: `Connected to ${useSimulator ? 'simulator' : 'port'} at 115200 baud.` });
+                addLog({ type: 'status', message: `Connected to ${options.type === 'usb' ? 'serial port' : 'TCP'} at ${options.type === 'usb' ? options.baudRate : `${options.ip}:${options.port}`} baud.` });
                 setError(null);
-                setIsSimulatedConnection(useSimulator);
+                setIsSimulatedConnection(options.type === 'usb' && useSimulator);
                 setIsHomedSinceConnect(false); // Reset homing status on new connection
                 
                 // Run startup script
-                if (machineSettings.scripts.startup && serialManagerRef.current) {
+                if (machineSettings.scripts.startup && (serialManagerRef.current || tcpManagerRef.current)) {
                     addLog({ type: 'status', message: 'Running startup script...' });
                     const startupCommands = machineSettings.scripts.startup.split('\n').filter(cmd => cmd.trim() !== '');
                     for (const command of startupCommands) {
-                        await serialManagerRef.current.sendLineAndWaitForOk(command);
+                        if (options.type === 'usb' && serialManagerRef.current) {
+                            await serialManagerRef.current.sendLineAndWaitForOk(command);
+                        } else if (options.type === 'tcp' && tcpManagerRef.current) {
+                            await tcpManagerRef.current.sendLineAndWaitForOk(command);
+                        }
                     }
                 }
             },
@@ -345,6 +339,7 @@ const App: React.FC = () => {
                 setMachineState(null);
                 addLog({ type: 'status', message: 'Disconnected.' });
                 serialManagerRef.current = null;
+                tcpManagerRef.current = null;
                 setIsSimulatedConnection(false);
                 setIsHomedSinceConnect(false);
             },
@@ -371,17 +366,25 @@ const App: React.FC = () => {
         };
 
         try {
-            const manager = useSimulator
-                ? new SimulatedSerialManager(commonCallbacks)
-                : new SerialManager(commonCallbacks);
-            serialManagerRef.current = manager; // Set ref before connect to use in onConnect
-            await manager.connect(115200);
+            if (useSimulator) {
+                const manager = new SimulatedSerialManager(commonCallbacks);
+                serialManagerRef.current = manager;
+                await manager.connect(options.baudRate || 115200);
+            } else if (options.type === 'usb') {
+                const manager = new SerialManager(commonCallbacks);
+                serialManagerRef.current = manager;
+                await manager.connect(options); // SerialManager expects full options object
+            } else if (options.type === 'tcp') {
+                const manager = new TcpManager(commonCallbacks);
+                tcpManagerRef.current = manager;
+                await manager.connect(options.ip!, options.port!);
+            }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
             setError(`Failed to connect: ${errorMessage}`);
             addLog({ type: 'error', message: `Failed to connect: ${errorMessage}` });
         }
-    }, [addLog, isSerialApiSupported, useSimulator, addNotification, playCompletionSound, machineSettings.scripts.startup, isVerboseRef]);
+    }, [addLog, useSimulator, addNotification, playCompletionSound, machineSettings.scripts.startup, isVerboseRef]);
 
     const handleDisconnect = useCallback(async (): Promise<void> => {
         if (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused) {
@@ -391,15 +394,23 @@ const App: React.FC = () => {
         }
         
         // Run shutdown script before disconnecting
-        if (isConnected && machineSettings.scripts.shutdown && serialManagerRef.current) {
+        if (isConnected && machineSettings.scripts.shutdown && (serialManagerRef.current || tcpManagerRef.current)) {
             addLog({ type: 'status', message: 'Running shutdown script...' });
             const shutdownCommands = machineSettings.scripts.shutdown.split('\n').filter(cmd => cmd.trim() !== '');
             for (const command of shutdownCommands) {
-                await serialManagerRef.current.sendLineAndWaitForOk(command);
+                if (serialManagerRef.current) {
+                    await serialManagerRef.current.sendLineAndWaitForOk(command);
+                } else if (tcpManagerRef.current) {
+                    await tcpManagerRef.current.sendLineAndWaitForOk(command);
+                }
             }
         }
 
-        await serialManagerRef.current?.disconnect();
+        if (serialManagerRef.current) {
+            await serialManagerRef.current.disconnect();
+        } else if (tcpManagerRef.current) {
+            await tcpManagerRef.current.disconnect();
+        }
 
         // If we were in a simulated connection, uncheck the simulator box.
         if (isSimulatedConnection) {
@@ -519,11 +530,13 @@ const App: React.FC = () => {
     }, [isConnected, gcodeLines, machineSettings, handleStartJobConfirmed]);
     
     const handleManualCommand = useCallback((command: string): void => {
-        serialManagerRef.current?.sendLine(command);
+        const manager = serialManagerRef.current || tcpManagerRef.current;
+        manager?.sendLine(command);
     }, []);
 
     const handleJog = (axis: string, direction: number, step: number): void => {
-        if (!serialManagerRef.current) return;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
+        if (!manager) return;
 
         if (axis === 'Z' && unit === 'mm' && step > 10) {
             addLog({ type: 'error', message: 'Z-axis jog step cannot exceed 10mm.' });
@@ -555,14 +568,15 @@ const App: React.FC = () => {
     }, []);
     
     const handleEmergencyStop = useCallback((): void => {
-        serialManagerRef.current?.emergencyStop();
+        const manager = serialManagerRef.current || tcpManagerRef.current;
+        manager?.emergencyStop();
         setJobStatus(JobStatus.Stopped);
         setProgress(0);
         addLog({type: 'error', message: 'EMERGENCY STOP TRIGGERED (Soft Reset)'});
     }, [addLog]);
 
     const handleSpindleCommand = useCallback((command: 'cw' | 'ccw' | 'off', speed: number): void => {
-        const manager = serialManagerRef.current;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
         if (!manager || !isConnected) return;
 
         let gcode = '';
@@ -584,7 +598,7 @@ const App: React.FC = () => {
     }, [isConnected]);
     
     const handleFeedOverride = useCallback((command: 'reset' | 'inc10' | 'dec10' | 'inc1' | 'dec1'): void => {
-        const manager = serialManagerRef.current;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
         if (!manager) return;
 
         const commandMap = {
@@ -603,7 +617,8 @@ const App: React.FC = () => {
     const isAlarm = machineState?.status === 'Alarm';
 
     const handleUnitChange = useCallback((newUnit: 'mm' | 'in'): void => {
-        if (newUnit === unit || !serialManagerRef.current) return;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
+        if (newUnit === unit || !manager) return;
 
         const command = newUnit === 'mm' ? 'G21' : 'G20';
         serialManagerRef.current.sendLine(command);
@@ -615,8 +630,8 @@ const App: React.FC = () => {
 
     }, [unit, addLog]);
 
-    const handleProbe = useCallback(async (axes: string): Promise<void> => {
-        const manager = serialManagerRef.current;
+    const handleProbe = useCallback(async (axes: 'X' | 'Y' | 'Z' | 'XYZ'): Promise<void> => {
+        const manager = serialManagerRef.current || tcpManagerRef.current;
         if (!manager || !isConnected) {
             addLog({ type: 'error', message: 'Cannot probe while disconnected.' });
             return;
@@ -755,7 +770,7 @@ const App: React.FC = () => {
     }, [isConnected, jogStep, handleJog, flashControl, handleEmergencyStop, isAlarm, handleManualCommand, unit]);
 
     const handleHome = useCallback((axes: 'all' | 'x' | 'y' | 'z' | 'xy'): void => {
-        const manager = serialManagerRef.current;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
         if (!manager) return;
 
         // Optimistically set the machine state to 'Home' to immediately lock the UI.
@@ -792,6 +807,8 @@ const App: React.FC = () => {
     }, [addLog]);
 
     const handleSetZero = useCallback((axes: 'all' | 'x' | 'y' | 'z' | 'xy'): void => {
+        const manager = serialManagerRef.current || tcpManagerRef.current;
+        if (!manager) return;
         let command = 'G10 L20 P1';
         switch (axes) {
             case 'all': command += ' X0 Y0 Z0'; break;
@@ -805,7 +822,7 @@ const App: React.FC = () => {
     }, [addLog]);
 
     const handleRunMacro = useCallback(async (commands: string[]): Promise<void> => {
-        const manager = serialManagerRef.current;
+        const manager = serialManagerRef.current || tcpManagerRef.current;
         if (!manager) return;
 
         // Replace placeholders in commands
@@ -910,8 +927,10 @@ const App: React.FC = () => {
     };
 
     const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    const isElectron = !!window.electronAPI;
+    const isSerialApiSupported = 'serial' in navigator;
 
-    if (!isSerialApiSupported || isMobile) {
+    if (!isElectron && !isSerialApiSupported && !useSimulator) {
         return <UnsupportedBrowser />;
     }
 
@@ -941,7 +960,7 @@ const App: React.FC = () => {
     // Effect to auto-connect when simulator mode is chosen from welcome modal
     useEffect(() => {
         if (useSimulator && !isConnected) {
-            handleConnect();
+            handleConnect({ type: 'usb', baudRate: 115200 }); // Simulator always uses 'usb' type internally
         }
     }, [useSimulator, isConnected, handleConnect]);
 
@@ -1118,6 +1137,7 @@ const App: React.FC = () => {
                         isSimulated={isSimulatedConnection}
                         useSimulator={useSimulator}
                         onSimulatorChange={setUseSimulator}
+                        isElectron={isElectron}
                     />
                 </div>
             </header>
@@ -1146,15 +1166,6 @@ const App: React.FC = () => {
                         <Unlock className="w-5 h-5" />
                         Unlock ($X)
                     </button>
-                </div>
-            )}
-            {!isSerialApiSupported && !useSimulator && (
-                <div className="bg-accent-yellow/20 border-l-4 border-accent-yellow text-accent-yellow p-4 m-4 flex items-start" role="alert">
-                    <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
-                    <div>
-                        <p className="font-bold">Browser Not Supported</p>
-                        <p>{error}</p>
-                    </div>
                 </div>
             )}
             {error && (isSerialApiSupported || useSimulator) && (

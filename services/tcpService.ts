@@ -1,6 +1,7 @@
-import { ConsoleLog, MachineState, PortInfo, MachinePosition, SerialPortInfo } from '../types';
+import net from 'net';
+import { ConsoleLog, MachineState, PortInfo } from '../types';
 
-interface SerialManagerCallbacks {
+interface TcpManagerCallbacks {
     onConnect: (info: PortInfo) => void;
     onDisconnect: () => void;
     onLog: (log: ConsoleLog) => void;
@@ -9,12 +10,15 @@ interface SerialManagerCallbacks {
     onStatus: (status: MachineState, raw: string) => void;
 }
 
-export class SerialManager {
-    callbacks: SerialManagerCallbacks;
+export class TcpManager {
+    private client: net.Socket | null = null;
+    private callbacks: TcpManagerCallbacks;
+    private isConnected: boolean = false;
+    private dataBuffer: string = '';
 
     isJobRunning = false;
     isPaused = false;
-    pauseRequested = false; // Flag to signal pause from sendNextLine
+    pauseRequested = false;
     stopRequested = false;
     isStopped = false;
     isDryRun = false;
@@ -22,9 +26,8 @@ export class SerialManager {
     prePauseSpindleState: { state: 'cw' | 'ccw' | 'off', speed: number } | null = null;
     totalLines = 0;
     gcode: string[] = [];
-    statusInterval: number | null = null;
-    
-    // State is now managed within the service to handle partial updates correctly.
+    statusInterval: NodeJS.Timeout | null = null;
+
     spindleDirection: 'cw' | 'ccw' | 'off' = 'off';
     lastStatus: MachineState = {
         status: 'Idle',
@@ -39,64 +42,23 @@ export class SerialManager {
     linePromiseResolve: (() => void) | null = null;
     linePromiseReject: ((reason?: any) => void) | null = null;
 
-    isDisconnecting = false;
-    private activePortInfo: PortInfo | null = null; // Add this line
-
-    constructor(callbacks: SerialManagerCallbacks) {
+    constructor(callbacks: TcpManagerCallbacks) {
         this.callbacks = callbacks;
-
-        if (window.electronAPI) {
-            // Serial Port Callbacks
-            window.electronAPI.onSerialData((data) => {
-                this.handleSerialData(data);
-            });
-            window.electronAPI.onSerialError((message) => {
-                this.callbacks.onError(`Serial Port Error: ${message}`);
-                this.disconnect();
-            });
-            window.electronAPI.onSerialDisconnect(() => {
-                this.disconnect();
-            });
-
-            // TCP Callbacks
-            window.electronAPI.onTCPConnect((info) => {
-                this.callbacks.onConnect(info);
-                this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
-            });
-            window.electronAPI.onTCPDisconnect(() => {
-                this.disconnect();
-            });
-            window.electronAPI.onTCPLog((log) => {
-                this.callbacks.onLog(log);
-            });
-            window.electronAPI.onTCPProgress((p) => {
-                this.callbacks.onProgress(p);
-            });
-            window.electronAPI.onTCPError((message) => {
-                this.callbacks.onError(`TCP Error: ${message}`);
-                this.disconnect();
-            });
-            window.electronAPI.onTCPStatus((status, raw) => {
-                this.lastStatus = status;
-                this.callbacks.onStatus(status, raw);
-            });
-        }
     }
 
-    async connect(options: ConnectionOptions) {
-        if (!window.electronAPI) {
-            this.callbacks.onError("Electron API not available for communication.");
-            return;
-        }
-
-        if (options.type === 'usb') {
-            if (!options.path || !options.baudRate) {
-                this.callbacks.onError("USB connection requires a port path and baud rate.");
-                return;
+    async connect(host: string, port: number): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (this.client && this.isConnected) {
+                this.callbacks.onError("Already connected to a TCP device.");
+                return reject(new Error("Already connected."));
             }
-            try {
-                // We no longer request the port here, it's selected in the UI and passed in options
-                await window.electronAPI.openSerialPort(options.path, options.baudRate);
+
+            this.client = new net.Socket();
+
+            this.client.connect(port, host, () => {
+                this.isConnected = true;
+                this.callbacks.onConnect({ type: 'tcp', ip: host, port: port });
+                this.callbacks.onLog({ type: 'status', message: `Connected to TCP: ${host}:${port}` });
                 
                 // Reset state for new connection
                 this.lastStatus = {
@@ -110,44 +72,34 @@ export class SerialManager {
                 };
                 this.spindleDirection = 'off';
 
-                this.activePortInfo = { 
-                    portName: options.path, 
-                    type: 'usb', 
-                    usbVendorId: undefined, 
-                    usbProductId: undefined 
-                };
-                this.callbacks.onConnect(this.activePortInfo);
-                
-                this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
+                this.statusInterval = setInterval(() => this.requestStatusUpdate(), 100);
+                resolve();
+            });
 
-            } catch (error) {
-                if (error instanceof Error) {
-                    this.callbacks.onError(error.message);
+            this.client.on('data', (data) => {
+                this.handleIncomingData(data.toString());
+            });
+
+            this.client.on('close', () => {
+                if (this.isConnected) {
+                    this.callbacks.onLog({ type: 'status', message: 'TCP connection closed.' });
+                    this.disconnect(false); // Disconnect without trying to close the socket again
                 }
-                throw error;
-            }
-        } else if (options.type === 'tcp') {
-            if (!options.ip || !options.port) {
-                this.callbacks.onError("TCP connection requires IP address and port.");
-                return;
-            }
-            try {
-                await window.electronAPI.connectTCP(options.ip, options.port);
-                this.activePortInfo = { type: 'tcp', ip: options.ip, port: options.port };
-                // TCP connection success is handled by onTCPConnect callback
-            } catch (error) {
-                if (error instanceof Error) {
-                    this.callbacks.onError(error.message);
-                }
-                throw error;
-            }
-        }
+            });
+
+            this.client.on('error', (err) => {
+                this.callbacks.onError(`TCP Error: ${err.message}`);
+                this.callbacks.onLog({ type: 'error', message: `TCP Error: ${err.message}` });
+                this.disconnect(false); // Disconnect without trying to close the socket again
+                reject(err);
+            });
+        });
     }
 
-    async disconnect() {
-        if (this.isDisconnecting) return;
-        this.isDisconnecting = true;
-    
+    disconnect(endSocket: boolean = true) {
+        if (!this.isConnected) return;
+
+        this.isConnected = false;
         if (this.statusInterval) {
             clearInterval(this.statusInterval);
             this.statusInterval = null;
@@ -155,23 +107,76 @@ export class SerialManager {
         if (this.isJobRunning) {
             this.stopJob();
         }
-    
-        try {
-            if (window.electronAPI) {
-                // Attempt to close both serial and TCP connections
-                // These are safe to call even if not connected, they will just do nothing or error silently
-                await window.electronAPI.closeSerialPort();
-                window.electronAPI.disconnectTCP(); 
-            }
-        } catch (error) {
-            // Ignore errors during disconnection
-        } finally {
-            this.isDisconnecting = false;
-            this.callbacks.onDisconnect(); // Ensure this is called only once after all cleanup
+
+        if (this.client && endSocket) {
+            this.client.destroy(); // Ensure the socket is fully closed
+        }
+        this.client = null;
+        this.callbacks.onDisconnect();
+    }
+
+    private handleIncomingData(data: string) {
+        this.dataBuffer += data;
+        let newlineIndex;
+        while ((newlineIndex = this.dataBuffer.indexOf('\n')) !== -1) {
+            const line = this.dataBuffer.substring(0, newlineIndex).trim();
+            this.dataBuffer = this.dataBuffer.substring(newlineIndex + 1);
+            this.processLine(line);
         }
     }
-    
-    parseGrblStatus(statusStr: string, lastStatus: MachineState) {
+
+    private processLine(line: string) {
+        if (!line) return;
+
+        if (line.startsWith('<') && line.endsWith('>')) {
+            const previousStatus = this.lastStatus.status;
+            const statusUpdate = this.parseGrblStatus(line, this.lastStatus);
+            if (statusUpdate) {
+                this.lastStatus = {
+                    status: statusUpdate.status,
+                    code: statusUpdate.code,
+                    wpos: statusUpdate.wpos || this.lastStatus.wpos,
+                    mpos: statusUpdate.mpos || this.lastStatus.mpos,
+                    wco: statusUpdate.wco || this.lastStatus.wco,
+                    ov: statusUpdate.ov || this.lastStatus.ov,
+                    spindle: {
+                        ...this.lastStatus.spindle,
+                        ...(statusUpdate.spindle || {})
+                    }
+                };
+
+                if (this.lastStatus.spindle.speed === 0) {
+                    this.spindleDirection = 'off';
+                }
+                this.lastStatus.spindle.state = this.spindleDirection;
+
+                this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), line);
+
+                if (previousStatus === 'Jog' && this.lastStatus.status === 'Idle') {
+                    this.requestStatusUpdate();
+                }
+            }
+        } else if (line.startsWith('error:')) {
+            if (this.linePromiseReject) {
+                this.linePromiseReject(new Error(line));
+                this.linePromiseResolve = null;
+                this.linePromiseReject = null;
+            } else {
+                this.callbacks.onError(`GRBL Error: ${line}`);
+            }
+        } else {
+            this.callbacks.onLog({ type: 'received', message: line });
+            if (line.startsWith('ok')) {
+                if (this.linePromiseResolve) {
+                    this.linePromiseResolve();
+                    this.linePromiseResolve = null;
+                    this.linePromiseReject = null;
+                }
+            }
+        }
+    }
+
+    private parseGrblStatus(statusStr: string, lastStatus: MachineState) {
         try {
             const content = statusStr.slice(1, -1);
             const parts = content.split('|');
@@ -181,7 +186,7 @@ export class SerialManager {
             const rawStatus = statusPart.split(':')[0].toLowerCase();
             let status: MachineState['status'];
             
-            if (rawStatus.startsWith('home')) { // Catches 'home', 'homing', 'homing cycle', etc.
+            if (rawStatus.startsWith('home')) {
                 status = 'Home';
             } else if (rawStatus === 'idle') {
                 status = 'Idle';
@@ -200,7 +205,6 @@ export class SerialManager {
             } else if (rawStatus === 'sleep') {
                 status = 'Sleep';
             } else {
-                // Try to capitalize unknown states as a fallback
                 status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
             }
 
@@ -212,7 +216,6 @@ export class SerialManager {
                 }
             }
             
-            // Always include status and code to ensure state is fully updated.
             parsed.status = status;
             parsed.code = code;
 
@@ -252,7 +255,6 @@ export class SerialManager {
                 }
             }
 
-            // If WPos wasn't in the status string, calculate it from MPos and WCO
             if (!parsed.wpos && parsed.mpos && (parsed.wco || lastStatus.wco)) {
                 const wcoToUse = parsed.wco || lastStatus.wco!;
                 parsed.wpos = {
@@ -265,79 +267,13 @@ export class SerialManager {
             return parsed;
         } catch (e) {
             console.error("Failed to parse GRBL status:", statusStr, e);
-            return null; // Failed to parse
+            return null;
         }
-    }
-
-    // This method will now be called by the electronAPI.onSerialData event
-    handleSerialData(data: string) {
-        const lines = data.split('\n');
-        lines.forEach(line => {
-            const trimmedValue = line.trim();
-            if (trimmedValue.startsWith('<') && trimmedValue.endsWith('>')) {
-                const previousStatus = this.lastStatus.status; // Capture state before processing new status
-                const statusUpdate = this.parseGrblStatus(trimmedValue, this.lastStatus);
-                if (statusUpdate) {
-                    // A more robust state update. Instead of merging with spread syntax,
-                    // we explicitly build the new state to prevent stale properties
-                    // (like an alarm 'code') from persisting incorrectly.
-                    this.lastStatus = {
-                        status: statusUpdate.status,
-                        code: statusUpdate.code,
-                        wpos: statusUpdate.wpos || this.lastStatus.wpos,
-                        mpos: statusUpdate.mpos || this.lastStatus.mpos,
-                        wco: statusUpdate.wco || this.lastStatus.wco,
-                        ov: statusUpdate.ov || this.lastStatus.ov,
-                        spindle: {
-                            ...this.lastStatus.spindle,
-                            ...(statusUpdate.spindle || {}),
-                        }
-                    };
-            
-                    // This logic must run *after* the new state is built.
-                    if (this.lastStatus.spindle.speed === 0) {
-                        this.spindleDirection = 'off';
-                    }
-                    this.lastStatus.spindle.state = this.spindleDirection;
-            
-                    // Send a deep clone to React to ensure re-render
-                    this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
-
-                    // If a jog just completed, request another status update to ensure we have the final position.
-                    if (previousStatus === 'Jog' && this.lastStatus.status === 'Idle') {
-                        this.requestStatusUpdate();
-                    }
-                }
-            } else if (trimmedValue) {
-                if (trimmedValue.startsWith('error:')) {
-                    // If a job is running (i.e., a promise is pending for an 'ok'),
-                    // reject the promise and let the job handler log the error contextually.
-                    // Otherwise, it's a manual command error, so report it directly.
-                    if (this.linePromiseReject) {
-                        this.linePromiseReject(new Error(trimmedValue));
-                        this.linePromiseResolve = null;
-                        this.linePromiseReject = null;
-                    } else {
-                        this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
-                    }
-                } else {
-                    this.callbacks.onLog({ type: 'received', message: trimmedValue });
-                    if (trimmedValue.startsWith('ok')) {
-                        if (this.linePromiseResolve) {
-                            this.linePromiseResolve();
-                            this.linePromiseResolve = null;
-                            this.linePromiseReject = null;
-                        }
-                    }
-                }
-            }
-        });
     }
 
     async sendLineAndWaitForOk(line: string, log = true) {
         return new Promise<void>((resolve, reject) => {
             if (this.linePromiseResolve) {
-                // This shouldn't happen with proper logic, but as a safeguard...
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
             this.linePromiseResolve = resolve;
@@ -351,6 +287,11 @@ export class SerialManager {
     }
 
     async sendLine(line: string, log = true) {
+        if (!this.client || !this.isConnected) {
+            this.callbacks.onError("TCP client not connected.");
+            throw new Error("TCP client not connected.");
+        }
+
         const upperLine = line.trim().toUpperCase();
         if (upperLine.startsWith('M3')) {
             this.spindleDirection = 'cw';
@@ -360,66 +301,34 @@ export class SerialManager {
             this.spindleDirection = 'off';
         }
 
-        if (!window.electronAPI) {
-            this.callbacks.onError("Electron API not available for communication.");
-            return;
-        }
         try {
-            if (this.activePortInfo?.type === 'tcp') {
-                window.electronAPI.sendTCP(line);
-            } else {
-                window.electronAPI.writeSerialPort(line);
-            }
+            this.client.write(line + '\n');
             if (log) {
                 this.callbacks.onLog({ type: 'sent', message: line });
             }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            if (this.isDisconnecting) {
-                // Expected error during disconnect.
-            } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
-                this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
-                this.disconnect();
-            } else {
-                this.callbacks.onError("Error writing to port.");
-            }
+            this.callbacks.onError("Error writing to TCP socket: " + errorMessage);
             throw error;
         }
     }
 
     async sendRealtimeCommand(command: string) {
-        if (!window.electronAPI) {
-            this.callbacks.onError("Electron API not available for communication.");
+        if (!this.client || !this.isConnected) {
+            this.callbacks.onError("TCP client not connected for real-time command.");
             return;
         }
         try {
-            if (this.activePortInfo?.type === 'tcp') {
-                window.electronAPI.sendTCPRealtime(command);
-            } else {
-                window.electronAPI.writeSerialPort(command);
-            }
-            // Real-time commands are not logged to the console to avoid clutter.
+            this.client.write(command); // Real-time commands usually don't need a newline
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            if (this.isDisconnecting) {
-                // Expected error during disconnect.
-            } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
-                this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
-                this.disconnect();
-            } else {
-                this.callbacks.onError("Error writing to port.");
-            }
-            throw error;
+            this.callbacks.onError("Error writing real-time command to TCP socket: " + errorMessage);
         }
     }
 
     requestStatusUpdate() {
-        if (window.electronAPI) {
-            if (this.activePortInfo?.type === 'tcp') {
-                window.electronAPI.sendTCPRealtime('?');
-            } else {
-                window.electronAPI.writeSerialPort('?');
-            }
+        if (this.client && this.isConnected) {
+            this.client.write('?');
         }
     }
 
@@ -445,7 +354,6 @@ export class SerialManager {
         }
         this.callbacks.onLog({ type: 'status', message: logMessage });
         
-        // Fire initial progress update
         this.callbacks.onProgress({
             percentage: (this.currentLineIndex / this.totalLines) * 100,
             linesSent: this.currentLineIndex,
@@ -466,7 +374,7 @@ export class SerialManager {
             this.isJobRunning = false;
             this.isStopped = true;
             this.stopRequested = false;
-            await this.sendLineAndWaitForOk('M5'); // Ensure spindle is off
+            await this.sendLineAndWaitForOk('M5');
             this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
             return;
         }
@@ -476,9 +384,9 @@ export class SerialManager {
             this.pauseRequested = false;
             this.prePauseSpindleState = { ...this.lastStatus.spindle };
             await this.sendLineAndWaitForOk('M5');
-            await this.sendRealtimeCommand('!'); // Feed Hold
+            await this.sendRealtimeCommand('!');
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
-            return; // Stop the loop here until resumed
+            return;
         }
 
         if (this.isPaused) {
@@ -487,6 +395,7 @@ export class SerialManager {
         
         if (this.currentLineIndex >= this.totalLines) {
             this.isJobRunning = false;
+            this.callbacks.onLog({ type: 'status', message: 'G-code job finished.' });
             return;
         }
 
@@ -516,14 +425,13 @@ export class SerialManager {
                 totalLines: this.totalLines
             });
 
-            // Schedule the next line to be sent on the next frame to avoid deep call stacks.
             setTimeout(() => this.sendNextLine(), 0); 
         } catch (error) {
             this.isJobRunning = false;
             this.isStopped = true;
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
             
-            if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
+            if (errorMessage.includes("TCP client not connected")) {
                 this.callbacks.onLog({ type: 'error', message: `Job aborted due to disconnection.` });
             } else if (!errorMessage.includes('Job stopped by user.')) {
                 this.callbacks.onLog({ type: 'error', message: `Job halted on line ${this.currentLineIndex + 1}: ${this.gcode[this.currentLineIndex]}` });
@@ -541,13 +449,11 @@ export class SerialManager {
     async resume() {
         if (this.isJobRunning && this.isPaused && !this.pauseRequested) {
             this.isPaused = false;
-            // First, restore spindle if it was running
             if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
                 const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
                 await this.sendLine(`${spindleCmd} S${this.prePauseSpindleState.speed}`);
             }
-            // Then, resume motion
-            await this.sendRealtimeCommand('~'); // Cycle Resume
+            await this.sendRealtimeCommand('~');
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
             this.sendNextLine();
         }
@@ -562,7 +468,7 @@ export class SerialManager {
     stopJob() {
         if (this.isJobRunning) {
             this.isStopped = true;
-            this.sendRealtimeCommand('\x18'); // Soft-reset
+            this.sendRealtimeCommand('\x18');
             if (this.linePromiseReject) {
                 this.linePromiseReject(new Error('Job stopped by user.'));
                 this.linePromiseResolve = null;
@@ -579,6 +485,6 @@ export class SerialManager {
             this.linePromiseResolve = null;
             this.linePromiseReject = null;
         }
-        this.sendRealtimeCommand('\x18'); // Soft Reset
+        this.sendRealtimeCommand('\x18');
     }
 }

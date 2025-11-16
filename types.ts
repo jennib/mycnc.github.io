@@ -210,3 +210,45 @@ export interface GeneratorSettings {
     thread: ThreadMillingParams;
 }
 
+export interface SerialPortInfo {
+    path: string;
+    manufacturer: string;
+    pnpId: string;
+    productId: string;
+    vendorId: string;
+}
+
+declare global {
+    interface Window {
+        electronAPI: {
+            isElectron: boolean;
+            connectTCP: (host: string, port: number) => Promise<void>;
+            sendTCP: (data: string) => void;
+            disconnectTCP: () => void;
+            sendTCPRealtime: (data: string) => void;
+            sendTCPGCode: (gcodeLines: string[], options: { startLine?: number; isDryRun?: boolean }) => void;
+            tcpPauseJob: () => void;
+            tcpResumeJob: () => void;
+            tcpStopJob: () => void;
+            tcpGracefulStopJob: () => void;
+            tcpEmergencyStop: () => void;
+            onTCPConnect: (callback: (info: PortInfo) => void) => Electron.IpcRenderer;
+            onTCPDisconnect: (callback: () => void) => Electron.IpcRenderer;
+            onTCPLog: (callback: (log: ConsoleLog) => void) => Electron.IpcRenderer;
+            onTCPProgress: (callback: (p: { percentage: number; linesSent: number; totalLines: number; }) => void) => Electron.IpcRenderer;
+            onTCPError: (callback: (message: string) => void) => Electron.IpcRenderer;
+            onTCPStatus: (callback: (status: MachineState, raw: string) => void) => Electron.IpcRenderer;
+
+            // Serial Port API
+            listSerialPorts: () => Promise<SerialPortInfo[]>;
+            requestSerialPort: () => Promise<SerialPortInfo | undefined>;
+            openSerialPort: (path: string, baudRate: number) => Promise<void>;
+            closeSerialPort: () => Promise<void>;
+            writeSerialPort: (data: string) => void;
+            onSerialData: (callback: (data: string) => void) => Electron.IpcRenderer;
+            onSerialError: (callback: (message: string) => void) => Electron.IpcRenderer;
+            onSerialDisconnect: (callback: () => void) => Electron.IpcRenderer;
+        };
+    }
+}
+
