@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Power, PowerOff, Cpu } from './Icons';
 import { PortInfo, ConnectionOptions, SerialPortInfo } from '../types'; // Import PortInfo, ConnectionOptions, and SerialPortInfo
+import { useLocalStorage } from './useLocalStorage';
 
 interface SerialConnectorProps {
     isConnected: boolean;
@@ -23,12 +24,12 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     onSimulatorChange,
     isElectron,
 }) => {
-    const [tcpIp, setTcpIp] = useState('127.0.0.1');
-    const [tcpPort, setTcpPort] = useState(23); // Default GRBL port
-    const [baudRate, setBaudRate] = useState(115200); // Default baud rate for GRBL
-    const [connectionType, setConnectionType] = useState<'usb' | 'tcp'>('usb');
+    const [tcpIp, setTcpIp] = useLocalStorage('tcpIp', '127.0.0.1');
+    const [tcpPort, setTcpPort] = useLocalStorage('tcpPort', 23); // Default GRBL port
+    const [baudRate, setBaudRate] = useLocalStorage('baudRate', 115200); // Default baud rate for GRBL
+    const [connectionType, setConnectionType] = useLocalStorage<'usb' | 'tcp'>('connectionType', 'usb');
     const [availablePorts, setAvailablePorts] = useState<SerialPortInfo[]>([]);
-    const [selectedPortPath, setSelectedPortPath] = useState<string>('');
+    const [selectedPortPath, setSelectedPortPath] = useLocalStorage('selectedPortPath', '');
 
     useEffect(() => {
         const fetchPorts = async () => {
@@ -37,7 +38,13 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                     const ports = await window.electronAPI.requestSerialPort();
                     setAvailablePorts(ports);
                     if (ports.length > 0) {
-                        setSelectedPortPath(ports[0].path); // Auto-select the first port
+                        // Check if the previously selected port is still available
+                        const storedPortExists = ports.some(port => port.path === selectedPortPath);
+                        if (!storedPortExists) {
+                            setSelectedPortPath(ports[0].path); // Auto-select the first port if stored is not found
+                        }
+                    } else {
+                        setSelectedPortPath(''); // Clear selected port if no ports are found
                     }
                 } catch (error) {
                     console.error("Failed to list serial ports:", error);
@@ -45,7 +52,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
             }
         };
         fetchPorts();
-    }, [isElectron, connectionType, isConnected]);
+    }, [isElectron, connectionType, isConnected, selectedPortPath, setSelectedPortPath]);
 
     const handleConnect = () => {
         if (connectionType === 'usb') {
