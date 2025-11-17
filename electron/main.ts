@@ -1,275 +1,55 @@
-import {
-  app,
-  BrowserWindow,
-  // dialog,
-  // Menu,
-  shell,
-  // session,
-  ipcMain,
-} from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import fs from "fs";
 import net from "net";
-import { SerialPort } from 'serialport';
-import { ReadlineParser } from '@serialport/parser-readline';
 
-import { TcpManager } from '../services/tcpService';
-import { ConsoleLog, MachineState, PortInfo } from '../types';
+let mainWindow: BrowserWindow | null = null;
+let serialPortInstance: any = null;
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// import('electron-squirrel-startup').then((squirrelStartup) => {
-//   if (squirrelStartup.default) {
-//     app.quit();
-//   }
-// });
-
-let mainWindow: BrowserWindow;
-let tcpManager: TcpManager | null = null;
-let serialPort: SerialPort | null = null;
-
-const createTcpManager = () => {
-  if (tcpManager) {
-    return tcpManager;
-  }
-
-  tcpManager = new TcpManager({
-    onConnect: (info: PortInfo) => {
-      mainWindow.webContents.send("tcp-connect", info);
-    },
-    onDisconnect: () => {
-      mainWindow.webContents.send("tcp-disconnect");
-    },
-    onLog: (log: ConsoleLog) => {
-      mainWindow.webContents.send("tcp-log", log);
-    },
-    onProgress: (p: { percentage: number; linesSent: number; totalLines: number; }) => {
-      mainWindow.webContents.send("tcp-progress", p);
-    },
-    onError: (message: string) => {
-      mainWindow.webContents.send("tcp-error", message);
-    },
-    onStatus: (status: MachineState, raw: string) => {
-      mainWindow.webContents.send("tcp-status", status, raw);
-    },
-  });
-  return tcpManager;
-};
 
 const createWindow = () => {
-  // Create the browser window.
+  // Try several places electron-vite might provide the preload path, then fall back to the built preload file.
+  const candidates = [
+    process.env.VITE_PRELOAD_JS,
+    process.env.VITE_PRELOAD,
+    process.env.ELECTRON_PRELOAD,
+    // common out path after build / dev bundling:
+    path.join(__dirname, "../preload/index.mjs"),
+    path.join(__dirname, "../preload/index.js"),
+    path.join(__dirname, "preload.js"),
+    path.join(__dirname, "preload.mjs"),
+  ].filter(Boolean) as string[];
+
+  let preloadPath: string | undefined = undefined;
+  for (const c of candidates) {
+    try {
+      const resolved = path.isAbsolute(c) ? c : path.join(__dirname, c);
+      if (fs.existsSync(resolved)) {
+        preloadPath = resolved;
+        break;
+      }
+    } catch (err) {
+      // ignore and try next
+    }
+  }
+
+  console.log("main: env VITE_PRELOAD_JS=", process.env.VITE_PRELOAD_JS);
+  console.log("main: env VITE_PRELOAD=", process.env.VITE_PRELOAD);
+  console.log("main: env ELECTRON_PRELOAD=", process.env.ELECTRON_PRELOAD);
+  console.log("main: resolved preloadPath=", preloadPath);
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 800,
+    height: 600,
     webPreferences: {
-      preload: process.env.VITE_PRELOAD_JS,
-      contextIsolation: true, // Enable context isolation
-      sandbox: false, // Disable sandbox to allow preload script access
+      preload: preloadPath,
+      contextIsolation: true,
+      sandbox: false,
     },
   });
-
-  // Add a handler for the 'toggle-fullscreen' event from the renderer
-  // ipcMain.on("toggle-fullscreen", (event) => {
-  //   const win = BrowserWindow.fromWebContents(event.sender);
-  //   if (win) win.setFullScreen(!win.isFullScreen());
-  // });
-
-  // --- Menu Template ---
-  // const menuTemplate: Electron.MenuItemConstructorOptions[] = [
-  //   {
-  //     label: "File",
-  //     submenu: [{ role: "quit" }],
-  //   },
-  //   {
-  //     role: "help",
-  //     submenu: [
-  //       {
-  //         label: "About myCNC",
-  //         click: () => {
-  //           createAboutWindow();
-  //         },
-  //       },
-  //       {
-  //         label: "View on GitHub",
-  //         click: async () => {
-  //           await shell.openExternal(
-//             "https://github.com/jennib/mycnc.github.io"
-  //           );
-  //         },
-  //       },
-  //     ],
-  //   },
-  // ];
-
-  // const menu = Menu.buildFromTemplate(menuTemplate);
-  // Menu.setApplicationMenu(menu);
-
-  // --- TCP Communication Handlers ---
-  ipcMain.handle("connect-tcp", async (event, host: string, port: number) => {
-    const manager = createTcpManager();
-    try {
-      await manager.connect(host, port);
-      return true;
-    } catch (error) {
-      console.error("Failed to connect TCP:", error);
-      return false;
-    }
-  });
-
-  ipcMain.on("send-tcp", (event, data: string) => {
-    const manager = createTcpManager();
-    manager.sendLine(data);
-  });
-
-  ipcMain.on("disconnect-tcp", () => {
-    const manager = createTcpManager();
-    manager.disconnect();
-  });
-
-  ipcMain.on("send-tcp-realtime", (event, data: string) => {
-    const manager = createTcpManager();
-    manager.sendRealtimeCommand(data);
-  });
-
-  ipcMain.on("send-tcp-gcode", (event, gcodeLines: string[], options: { startLine?: number; isDryRun?: boolean }) => {
-    const manager = createTcpManager();
-    manager.sendGCode(gcodeLines, options);
-  });
-
-  ipcMain.on("tcp-pause-job", () => {
-    const manager = createTcpManager();
-    manager.pause();
-  });
-
-  ipcMain.on("tcp-resume-job", () => {
-    const manager = createTcpManager();
-    manager.resume();
-  });
-
-  ipcMain.on("tcp-stop-job", () => {
-    const manager = createTcpManager();
-    manager.stopJob();
-  });
-
-  ipcMain.on("tcp-graceful-stop-job", () => {
-    const manager = createTcpManager();
-    manager.gracefulStop();
-  });
-
-  ipcMain.on("tcp-emergency-stop", () => {
-    const manager = createTcpManager();
-    manager.emergencyStop();
-  });
-
-  // --- Serial Port Communication Handlers ---
-  ipcMain.handle('list-serial-ports', async () => {
-    const ports = await SerialPort.list();
-    return ports.map(p => ({
-        path: p.path,
-        manufacturer: p.manufacturer || 'N/A',
-        pnpId: p.pnpId || 'N/A',
-        productId: p.productId || 'N/A',
-        vendorId: p.vendorId || 'N/A',
-    }));
-  });
-
-  ipcMain.handle('request-serial-port', async () => {
-      const ports = await SerialPort.list();
-      return ports.map(p => ({
-          path: p.path,
-          manufacturer: p.manufacturer || 'N/A',
-          pnpId: p.pnpId || 'N/A',
-          productId: p.productId || 'N/A',
-          vendorId: p.vendorId || 'N/A',
-      }));
-  });
-
-  ipcMain.handle('open-serial-port', async (event, path: string, baudRate: number) => {
-      if (serialPort && serialPort.isOpen) {
-          await new Promise<void>((resolve) => serialPort?.close(() => resolve()));
-      }
-
-      serialPort = new SerialPort({ path, baudRate });
-
-      const parser = serialPort.pipe(new ReadlineParser({ delimiter: '\n' }));
-
-      serialPort.on('open', () => {
-          console.log(`Serial port ${path} opened`);
-          mainWindow.webContents.send('serial-connect', { portName: path, type: 'usb' }); // Assuming 'usb' for serial
-      });
-
-      parser.on('data', (data: string) => {
-          mainWindow.webContents.send('serial-data', data);
-      });
-
-      serialPort.on('error', (err) => {
-          console.error('Serial port error:', err.message);
-          mainWindow.webContents.send('serial-error', err.message);
-          if (serialPort && serialPort.isOpen) {
-              serialPort.close();
-          }
-      });
-
-      serialPort.on('close', () => {
-          console.log('Serial port closed');
-          mainWindow.webContents.send('serial-disconnect');
-      });
-
-      await new Promise<void>((resolve, reject) => {
-          serialPort?.on('open', resolve);
-          serialPort?.on('error', reject);
-      });
-  });
-
-  ipcMain.handle('close-serial-port', async () => {
-      if (serialPort && serialPort.isOpen) {
-          await new Promise<void>((resolve) => serialPort?.close(() => resolve()));
-          serialPort = null;
-      }
-  });
-
-  ipcMain.on('write-serial-port', (event, data: string) => {
-      if (serialPort && serialPort.isOpen) {
-          serialPort.write(data + '\n', (err) => { // Add newline for typical serial communication
-              if (err) {
-                  console.error('Error writing to serial port:', err.message);
-                  mainWindow.webContents.send('serial-error', err.message);
-              }
-          });
-      } else {
-          mainWindow.webContents.send('serial-error', 'Serial port not open.');
-      }
-  });
-
-  // --- Serial Port Permission Handlers ---
-  // Removed as we are using node-serialport directly and not the Web Serial API.
-
-  // --- Webcam/Media Permission Handler ---
-  // mainWindow.webContents.session.setPermissionRequestHandler(
-  //   (webContents, permission, callback) => {
-  //     // For this application, we will automatically grant media permission (camera, microphone).
-  //     // In a production app, you might want to show a custom prompt here.
-  //     if (permission === "media") {
-  //       callback(true);
-  //     } else {
-  //       // Deny any other permission requests.
-  //       callback(false);
-  //     }
-  //   }
-  // );
-
-  mainWindow.webContents.on("did-finish-load", () => {
-    mainWindow.webContents.send(
-      "main-process-message",
-      new Date().toLocaleString()
-    );
-  });
-
-  // and load the index.html of the app.
-  // Log the environment variable to the console.
-  console.log("VITE_DEV_SERVER_URL:", process.env.VITE_DEV_SERVER_URL);
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
-    // Open the DevTools.
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
@@ -277,6 +57,174 @@ const createWindow = () => {
 };
 
 app.on("ready", createWindow);
+
+// --- TCP Connection Management ---
+let tcpBuffer: string = '';
+
+function connectTCP(ip: string, port: number) {
+  if (tcpSocket) {
+    tcpSocket.destroy();
+    tcpSocket = null;
+  }
+
+  return new Promise<{ ok: boolean; error?: string }>((resolve) => {
+    tcpSocket = net.createConnection({ host: ip, port: port }, () => {
+      console.log(`TCP: Connected to ${ip}:${port}`);
+      mainWindow?.webContents.send("tcp:event", {
+        type: "connected",
+        payload: { ip, port },
+      });
+      resolve({ ok: true });
+    });
+
+    tcpSocket.on("data", (chunk: Buffer) => {
+      tcpBuffer += chunk.toString();
+      let newlineIndex;
+      while ((newlineIndex = tcpBuffer.indexOf('\n')) !== -1) {
+        const line = tcpBuffer.substring(0, newlineIndex).trim();
+        tcpBuffer = tcpBuffer.substring(newlineIndex + 1);
+        if (line) {
+          mainWindow?.webContents.send("tcp:event", { type: "data", payload: line });
+        }
+      }
+    });
+
+    tcpSocket.on("error", (err) => {
+      console.error("TCP: Socket error:", err.message);
+      mainWindow?.webContents.send("tcp:event", {
+        type: "error",
+        payload: err.message,
+      });
+      // No need to call destroy, 'close' will be emitted.
+    });
+
+    tcpSocket.on("close", () => {
+      console.log("TCP: Connection closed");
+      tcpSocket = null;
+      tcpBuffer = '';
+      mainWindow?.webContents.send("tcp:event", { type: "disconnected" });
+    });
+
+    // Handle connection timeout
+    tcpSocket.on("timeout", () => {
+      console.error("TCP: Connection timed out.");
+      tcpSocket?.destroy(new Error("Connection timed out"));
+    });
+
+    tcpSocket.setTimeout(5000); // 5 second connection timeout
+  });
+}
+
+function disconnectTCP() {
+  if (tcpSocket) {
+    tcpSocket.destroy();
+    tcpSocket = null;
+  }
+  return { ok: true };
+}
+
+// --- IPC Handlers ---
+ipcMain.handle("serial:list", async () => {
+  try {
+    const { SerialPort } = await import("serialport");
+    const ports = await SerialPort.list();
+    return ports;
+  } catch (err) {
+    console.error("serial:list error", err);
+    return [];
+  }
+});
+
+ipcMain.handle(
+  "serial:open",
+  async (_e, options: { path: string; baudRate: number }) => {
+    try {
+      const { SerialPort } = await import("serialport");
+      if (serialPortInstance) {
+        serialPortInstance.close();
+        serialPortInstance = null;
+      }
+      serialPortInstance = new SerialPort({
+        path: options.path,
+        baudRate: options.baudRate,
+        autoOpen: true,
+      });
+      serialPortInstance.on("data", (chunk: Buffer) => {
+        mainWindow?.webContents.send("serial:data", chunk.toString());
+      });
+      serialPortInstance.on("error", (err: Error) => {
+        mainWindow?.webContents.send("connection:status", {
+          type: "serial",
+          error: err.message,
+        });
+      });
+      return { ok: true };
+    } catch (err: any) {
+      console.error("serial:open error", err);
+      return { ok: false, error: err?.message || String(err) };
+    }
+  }
+);
+
+ipcMain.handle("serial:close", async () => {
+  try {
+    if (serialPortInstance) {
+      serialPortInstance.close();
+      serialPortInstance = null;
+    }
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle("tcp:connect", async (_e, options: { ip: string; port: number }) => {
+  return connectTCP(options.ip, options.port);
+});
+
+ipcMain.handle("tcp:disconnect", async () => {
+  return disconnectTCP();
+});
+
+ipcMain.handle("tcp:write", async (_e, data: string) => {
+  try {
+    if (!tcpSocket) {
+      return { ok: false, error: "TCP not connected" };
+    }
+    tcpSocket.write(data);
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
+
+// --- Additional IPC Handlers (added) ---
+ipcMain.handle("serial:write", async (_e, data: string) => {
+  try {
+    if (!serialPortInstance) {
+      throw new Error("No serial port open");
+    }
+    serialPortInstance.write(data, (err: Error | null | undefined) => {
+      if (err) {
+        mainWindow?.webContents.send("serial:error", err.message);
+      }
+    });
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle("serial:request", async () => {
+  // Node serialport has no user-prompt; fallback to list
+  try {
+    const { SerialPort } = await import("serialport");
+    const ports = await SerialPort.list();
+    return { ok: true, ports };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
