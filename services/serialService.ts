@@ -92,7 +92,7 @@ export class SerialManager extends BasePortManager {
                         this.grblWelcomePromise = null;
                         this.disconnect(); // Clean up on timeout
                     }
-                }, 3000);
+                }, 10000);
             });
 
             await handshakePromise;
