@@ -5,6 +5,7 @@ import net from "net";
 
 let mainWindow: BrowserWindow | null = null;
 let serialPortInstance: any = null;
+let tcpSocket: net.Socket | null = null; // Declare tcpSocket at a higher scope
 
 
 const createWindow = () => {
