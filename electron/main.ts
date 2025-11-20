@@ -7,11 +7,11 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-let mainWindow: BrowserWindow;
+let mainWindow:BrowserWindow;
 let tcpSocket: net.Socket | null = null;
 
 const createAboutWindow = () => {
-  const aboutWindow = new BrowserWindow({
+  const aboutWindow = newBrowserWindow({
     width: 450,
     height: 450,
     resizable: false,
@@ -49,7 +49,7 @@ const createAboutWindow = () => {
 
 const createWindow = () => {
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  mainWindow = newBrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {
@@ -61,7 +61,7 @@ const createWindow = () => {
 
   // Add a handler for the 'toggle-fullscreen' event from the renderer
   ipcMain.on("toggle-fullscreen", (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender);
+    const win =BrowserWindow.fromWebContents(event.sender);
     if (win) win.setFullScreen(!win.isFullScreen());
   });
 
@@ -92,8 +92,8 @@ const createWindow = () => {
     },
   ];
 
-  const menu = Menu.buildFromTemplate(menuTemplate);
-  Menu.setApplicationMenu(menu);
+  const menu =Menu.buildFromTemplate(menuTemplate);
+ Menu.setApplicationMenu(menu);
 
   // --- TCP Communication Handlers ---
   ipcMain.handle("connect-tcp", async (event, ip: string, port: number) => {

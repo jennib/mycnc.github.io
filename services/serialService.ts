@@ -33,7 +33,7 @@ export class SerialManager {
 
     isJobRunning = false;
     isPaused = false;
-    stopRequested = false;
+
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
@@ -632,14 +632,7 @@ export class SerialManager {
             return;
         }
 
-        if (this.stopRequested) {
-            this.isJobRunning = false;
-            this.isStopped = true;
-            this.stopRequested = false;
-            await this.sendLineAndWaitForOk('M5'); // Ensure spindle is off
-            this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
-            return;
-        }
+
 
         if (this.isPaused) {
             return;
@@ -684,9 +677,15 @@ export class SerialManager {
             // Schedule the next line to be sent on the next frame to avoid deep call stacks.
             setTimeout(() => this.sendNextLine(), 0); 
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+            if (errorMessage.includes('Job paused by user.')) {
+                // This is an expected interruption when pausing. We just stop the send loop.
+                return;
+            }
+
             this.isJobRunning = false;
             this.isStopped = true;
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
             
             if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
                 this.callbacks.onLog({ type: 'error', message: `Job aborted due to disconnection.` });
@@ -700,6 +699,14 @@ export class SerialManager {
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
+
+            // If a line is currently waiting for an 'ok', we need to interrupt it.
+            if (this.linePromiseReject) {
+                this.linePromiseReject(new Error('Job paused by user.'));
+                this.linePromiseResolve = null;
+                this.linePromiseReject = null;
+            }
+
             // The UI will handle the warning about the spindle. We just send the command.
             await this.sendRealtimeCommand('!'); // Feed Hold
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
@@ -711,6 +718,7 @@ export class SerialManager {
             this.isPaused = false;
             this.callbacks.onLog({ type: 'status', message: 'Resuming job...' });
 
+            /*
             // Run the resume script if it exists.
             const resumeScript = this.settings.scripts.jobResume.split('\n');
             for (const line of resumeScript) {
@@ -718,22 +726,22 @@ export class SerialManager {
                     await this.sendLineAndWaitForOk(line);
                 }
             }
+            */
 
             await this.sendRealtimeCommand('~'); // Cycle Resume
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
-            this.sendNextLine(); // Continue sending G-code lines
+            // Give GRBL a moment to process the resume command before sending the next line.
+            setTimeout(() => this.sendNextLine(), 250);
         }
     }
 
-    gracefulStop() {
-        if (this.isJobRunning && !this.isStopped) {
-            this.stopRequested = true;
-        }
-    }
+
 
     stopJob() {
         if (this.isJobRunning) {
             this.isStopped = true;
+            this.isJobRunning = false;
+            this.isPaused = false; // Reset pause state on stop
             this.sendRealtimeCommand('\x18'); // Soft-reset
             if (this.linePromiseReject) {
                 this.linePromiseReject(new Error('Job stopped by user.'));

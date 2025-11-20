@@ -145,7 +145,6 @@ const App: React.FC = () => {
 
   const serialManagerRef = useRef<any>(null);
   const prevState = usePrevious(machineState);
-  const jobStatusRef = useRef(jobStatus);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
 
@@ -154,10 +153,6 @@ const App: React.FC = () => {
   useEffect(() => {
     isVerboseRef.current = isVerbose;
   }, [isVerbose]);
-
-  useEffect(() => {
-    jobStatusRef.current = jobStatus;
-  }, [jobStatus]);
 
   useEffect(() => {
     // This one remains as it affects the document class
@@ -384,6 +379,17 @@ const App: React.FC = () => {
   }, [machineState, prevState, addNotification]);
 
   useEffect(() => {
+    if (!machineState) return;
+    const { status } = machineState;
+
+    if (status === 'Hold' && jobStatus === JobStatus.Running) {
+        setJobStatus(JobStatus.Paused);
+    } else if (status === 'Run' && jobStatus === JobStatus.Paused) {
+        setJobStatus(JobStatus.Running);
+    }
+  }, [machineState, jobStatus]);
+
+  useEffect(() => {
     if (
       machineState?.status === "Alarm" &&
       (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused)
@@ -504,15 +510,15 @@ const App: React.FC = () => {
       onLog: addLog,
       onProgress: (p: { percentage: number }) => {
         setProgress(p.percentage);
-        if (
-          p.percentage >= 100 &&
-          jobStatusRef.current !== JobStatus.Complete
-        ) {
-          setJobStatus(JobStatus.Complete);
-          addLog({ type: "status", message: "Job complete!" });
-          addNotification("Job complete!", "success");
-          playCompletionSound();
-        }
+        setJobStatus((currentJobStatus) => {
+            if (p.percentage >= 100 && currentJobStatus !== JobStatus.Complete) {
+                addLog({ type: "status", message: "Job complete!" });
+                addNotification("Job complete!", "success");
+                playCompletionSound();
+                return JobStatus.Complete;
+            }
+            return currentJobStatus;
+        });
       },
       onError: (message: string) => {
         addLog({ type: "error", message });
@@ -700,7 +706,7 @@ const App: React.FC = () => {
 
   const handleJobControl = useCallback(
     async (
-      action: "start" | "pause" | "resume" | "stop" | "gracefulStop",
+      action: "start" | "pause" | "resume" | "stop",
       options?: { startLine?: number }
     ): Promise<void> => {
       const manager = serialManagerRef.current;
@@ -719,7 +725,7 @@ const App: React.FC = () => {
           }
           break;
         case "pause":
-          if (jobStatusRef.current === JobStatus.Running) {
+          if (jobStatus === JobStatus.Running) {
             // Check if spindle is on and show warning if so
             if (machineState && machineState.spindle && machineState.spindle.state !== 'off' && machineState.spindle.speed > 0) {
                 setInfoModalTitle('Spindle Warning');
@@ -731,7 +737,7 @@ const App: React.FC = () => {
           }
           break;
         case "resume":
-          if (jobStatusRef.current === JobStatus.Paused) {
+          if (jobStatus === JobStatus.Paused) {
             await manager.resume();
             setJobStatus(JobStatus.Running);
           }
@@ -749,22 +755,9 @@ const App: React.FC = () => {
             return currentStatus;
           });
           break;
-        case "gracefulStop":
-          setJobStatus((currentStatus) => {
-            if (
-              currentStatus === JobStatus.Running ||
-              currentStatus === JobStatus.Paused
-            ) {
-              manager.gracefulStop();
-              setProgress(0);
-              return JobStatus.Stopped;
-            }
-            return currentStatus;
-          });
-          break;
       }
     },
-    [isConnected, gcodeLines, machineSettings, handleStartJobConfirmed]
+    [isConnected, gcodeLines, machineSettings, handleStartJobConfirmed, jobStatus, machineState]
   );
 
   const handleManualCommand = useCallback((command: string): void => {
