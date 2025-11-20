@@ -36,13 +36,15 @@ import {
   BookOpen,
 } from "./components/Icons";
 import { estimateGCodeTime } from "./services/gcodeTimeEstimator.js";
-import { analyzeGCode } from "./services/gcodeAnalyzer.js";
+import { analyzeGCode, getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 import Footer from "./components/Footer";
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
 import UnsupportedBrowser from "./components/UnsupportedBrowser";
+import SpindleConfirmationModal from "./components/SpindleConfirmationModal";
+import InfoModal from "./components/InfoModal";
 import {
   GRBL_ALARM_CODES,
   GRBL_ERROR_CODES,
@@ -91,6 +93,15 @@ const App: React.FC = () => {
   const [preflightWarnings, setPreflightWarnings] = useState<any[]>([]);
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSpindleModalOpen, setIsSpindleModalOpen] = useState(false);
+  const [spindleModalArgs, setSpindleModalArgs] = useState({
+      onConfirm: (startSpindle: boolean) => {},
+      title: 'Confirm Spindle State',
+      message: 'Do you want to turn the spindle on before proceeding?'
+  });
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [infoModalTitle, setInfoModalTitle] = useState('');
+  const [infoModalMessage, setInfoModalMessage] = useState('');
 
   // Macro Editing State
   const [isMacroEditorOpen, setIsMacroEditorOpen] = useState(false);
@@ -470,7 +481,10 @@ const App: React.FC = () => {
           addLog({ type: "status", message: "Running startup script..." });
           const startupCommands = machineSettings.scripts.startup
             .split("\n")
-            .filter((cmd) => cmd.trim() !== "");
+            .map(l => l.replace(/\(.*\)/g, '')) // Remove parenthetical comments
+            .map(l => l.split(';')[0])          // Remove semicolon comments
+            .map(l => l.trim())
+            .filter(l => l && l !== '%');       // Filter empty lines
           for (const command of startupCommands) {
             await serialManagerRef.current.sendLineAndWaitForOk(command);
           }
@@ -515,7 +529,7 @@ const App: React.FC = () => {
     try {
       const manager = useSimulator
         ? new SimulatedSerialManager(commonCallbacks)
-        : new SerialManager(commonCallbacks);
+        : new SerialManager(machineSettings, commonCallbacks);
       serialManagerRef.current = manager; // Set ref before connect to use in onConnect
       await manager.connect(115200);
     } catch (err) {
@@ -616,14 +630,72 @@ const App: React.FC = () => {
       const manager = serialManagerRef.current;
       if (!manager || !isConnected || gcodeLines.length === 0) return;
 
+      const { startLine } = jobStartOptions;
+      const { isDryRun } = options;
+
+      const startJob = async (startSpindle: boolean) => {
+          // If starting from a specific line, set the machine state first
+          if (startLine > 0) {
+              addLog({ type: 'status', message: `Calculating machine state for line ${startLine + 1}...` });
+              const state = getMachineStateAtLine(gcodeLines, startLine);
+              
+              const setupCommands: string[] = [];
+              
+              // 1. Set WCS, Units, Distance Mode
+              setupCommands.push(state.workCoordinateSystem);
+              setupCommands.push(state.unitMode);
+              setupCommands.push(state.distanceMode);
+
+              // 2. Set Spindle State (conditionally)
+              if (startSpindle && !isDryRun && (state.spindle === 'M3' || state.spindle === 'M4') && state.speed && state.speed > 0) {
+                  setupCommands.push(`${state.spindle} S${state.speed}`);
+                  setupCommands.push('G4 P1'); 
+              }
+
+              // 3. Set Coolant State
+              if (!isDryRun && (state.coolant === 'M7' || state.coolant === 'M8')) {
+                  setupCommands.push(state.coolant);
+              }
+
+              if (setupCommands.length > 0) {
+                  addLog({ type: 'status', message: `Restoring machine state: ${setupCommands.join(', ')}` });
+                  for (const command of setupCommands) {
+                      try {
+                          await manager.sendLineAndWaitForOk(command);
+                      } catch (error) {
+                          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                          addLog({ type: 'error', message: `Failed to set initial state with command '${command}': ${errorMessage}` });
+                          setJobStatus(JobStatus.Idle);
+                          return; 
+                      }
+                  }
+              }
+          }
+
+          setJobStatus(JobStatus.Running);
+          manager.sendGCode(gcodeLines, {
+            startLine: startLine,
+            isDryRun: isDryRun,
+          });
+      };
+
+      // Close the preflight modal first
       setIsPreflightModalOpen(false);
-      setJobStatus(JobStatus.Running);
-      manager.sendGCode(gcodeLines, {
-        startLine: jobStartOptions.startLine,
-        isDryRun: options.isDryRun,
-      });
+
+      // If starting from the beginning, just start the job.
+      // Otherwise, show the spindle confirmation modal.
+      if (startLine === 0) {
+          startJob(true); // Assume spindle on if starting from beginning
+      } else {
+          setSpindleModalArgs({
+              onConfirm: startJob,
+              title: 'Start Job from Line',
+              message: `Starting from line ${startLine + 1}. Do you want to turn the spindle on?`
+          });
+          setIsSpindleModalOpen(true);
+      }
     },
-    [isConnected, gcodeLines, jobStartOptions]
+    [isConnected, gcodeLines, jobStartOptions, addLog]
   );
 
   const handleJobControl = useCallback(
@@ -648,6 +720,12 @@ const App: React.FC = () => {
           break;
         case "pause":
           if (jobStatusRef.current === JobStatus.Running) {
+            // Check if spindle is on and show warning if so
+            if (machineState && machineState.spindle && machineState.spindle.state !== 'off' && machineState.spindle.speed > 0) {
+                setInfoModalTitle('Spindle Warning');
+                setInfoModalMessage('Pause was initiated but the spindle has been left running. Proceed with caution.');
+                setIsInfoModalOpen(true);
+            }
             await manager.pause();
             setJobStatus(JobStatus.Paused);
           }
@@ -1309,6 +1387,22 @@ const App: React.FC = () => {
         isHomed={isHomedSinceConnect}
         warnings={preflightWarnings}
         selectedTool={selectedTool}
+      />
+      <SpindleConfirmationModal
+        isOpen={isSpindleModalOpen}
+        onClose={() => setIsSpindleModalOpen(false)}
+        onConfirm={(startSpindle) => {
+            spindleModalArgs.onConfirm(startSpindle);
+            setIsSpindleModalOpen(false);
+        }}
+        title={spindleModalArgs.title}
+        message={spindleModalArgs.message}
+      />
+      <InfoModal
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        title={infoModalTitle}
+        message={infoModalMessage}
       />
       <MacroEditorModal
         isOpen={isMacroEditorOpen}

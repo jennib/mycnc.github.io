@@ -28,16 +28,15 @@ export class SerialManager {
     port: any = null; // For Web Serial API
     reader: any = null;
     writer: any = null;
+    settings: MachineSettings;
     callbacks: SerialManagerCallbacks;
 
     isJobRunning = false;
     isPaused = false;
-    pauseRequested = false; // Flag to signal pause from sendNextLine
     stopRequested = false;
     isStopped = false;
     isDryRun = false;
     currentLineIndex = 0;
-    prePauseSpindleState: { state: 'cw' | 'ccw' | 'off', speed: number } | null = null;
     totalLines = 0;
     gcode: string[] = [];
     statusInterval: number | null = null;
@@ -58,11 +57,13 @@ export class SerialManager {
     linePromiseReject: ((reason?: any) => void) | null = null;
 
     isDisconnecting = false;
+    isHandshakeInProgress = false;
     isElectron: boolean;
     connectionType: 'usb' | 'tcp' | null = null;
     tcpBuffer: string = ''; // Buffer for incoming TCP data
 
-    constructor(callbacks: SerialManagerCallbacks) {
+    constructor(settings: MachineSettings, callbacks: SerialManagerCallbacks) {
+        this.settings = settings;
         this.callbacks = callbacks;
         this.isElectron = !!window.electronAPI?.isElectron;
     }
@@ -73,6 +74,7 @@ export class SerialManager {
             return;
         }
 
+        this.isHandshakeInProgress = true;
         try {
             this.port = await (navigator as any).serial.requestPort();
             await this.port.open({ baudRate });
@@ -106,6 +108,9 @@ export class SerialManager {
 
             this.readLoop(); // Start reading immediately
 
+            // Add a short delay to allow the serial port to initialize fully
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             // GRBL Handshake: Send a soft-reset to get the welcome message
             await new Promise<void>((resolve, reject) => {
                 const timeout = setTimeout(() => {
@@ -128,6 +133,8 @@ export class SerialManager {
                 this.sendRealtimeCommand('\x18').catch(reject);
             });
 
+            this.isHandshakeInProgress = false;
+
             // If handshake is successful, proceed with connection setup
             this.callbacks.onConnect({ 
                 type: 'usb', 
@@ -139,6 +146,7 @@ export class SerialManager {
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
 
         } catch (error) {
+            this.isHandshakeInProgress = false;
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             this.callbacks.onError(`Failed to connect: ${errorMessage}`);
             if (this.port) {
@@ -154,6 +162,7 @@ export class SerialManager {
             return;
         }
 
+        this.isHandshakeInProgress = true;
         try {
             // Reset state for new connection
             this.lastStatus = {
@@ -188,6 +197,10 @@ export class SerialManager {
 
             if (connected) {
                 this.connectionType = 'tcp';
+
+                // Add a short delay to allow the connection to stabilize
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
                 // GRBL Handshake for TCP: Send a soft-reset to get the welcome message
                 await new Promise<void>((resolve, reject) => {
                     const timeout = setTimeout(() => {
@@ -209,6 +222,8 @@ export class SerialManager {
                     // Send soft-reset character (Ctrl-X)
                     this.sendRealtimeCommand('\x18').catch(reject);
                 });
+                
+                this.isHandshakeInProgress = false;
 
                 this.callbacks.onConnect({ type: 'tcp', ip, port });
                 this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
@@ -217,6 +232,7 @@ export class SerialManager {
                 this.disconnect();
             }
         } catch (error) {
+            this.isHandshakeInProgress = false;
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             this.callbacks.onError(`Failed to connect via TCP: ${errorMessage}`);
             this.disconnect();
@@ -423,12 +439,6 @@ export class SerialManager {
                     }
                 };
         
-                // This logic must run *after* the new state is built.
-                if (this.lastStatus.spindle.speed === 0) {
-                    this.spindleDirection = 'off';
-                }
-                this.lastStatus.spindle.state = this.spindleDirection;
-        
                 // Send a deep clone to React to ensure re-render
                 this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
 
@@ -439,6 +449,17 @@ export class SerialManager {
             }
         } else if (trimmedValue) {
             if (trimmedValue.startsWith('error:')) {
+                // If the handshake is in progress, squelch the error and log it quietly.
+                if (this.isHandshakeInProgress) {
+                    this.callbacks.onLog({ type: 'status', message: `GRBL error during handshake (squelched): ${trimmedValue}` });
+                    if (this.linePromiseReject) {
+                        this.linePromiseReject(new Error(trimmedValue));
+                        this.linePromiseResolve = null;
+                        this.linePromiseReject = null;
+                    }
+                    return; // Stop further processing of this error
+                }
+
                 // If a job is running (i.e., a promise is pending for an 'ok'),
                 // reject the promise and let the job handler log the error contextually.
                 // Otherwise, it's a manual command error, so report it directly.
@@ -449,7 +470,8 @@ export class SerialManager {
                 } else {
                     this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
                 }
-            } else {
+            }
+            else {
                 this.callbacks.onLog({ type: 'received', message: trimmedValue });
                 if (trimmedValue.startsWith('ok')) {
                     if (this.linePromiseResolve) {
@@ -479,14 +501,23 @@ export class SerialManager {
     }
 
     async sendLine(line: string, log = true) {
+        // Guard against sending empty or whitespace-only lines to GRBL.
+        if (!line || line.trim() === '') {
+            return;
+        }
+
         const upperLine = line.trim().toUpperCase();
         if (upperLine.startsWith('M3')) {
             this.spindleDirection = 'cw';
+            this.lastStatus.spindle.state = 'cw';
         } else if (upperLine.startsWith('M4')) {
             this.spindleDirection = 'ccw';
+            this.lastStatus.spindle.state = 'ccw';
         } else if (upperLine.startsWith('M5')) {
             this.spindleDirection = 'off';
+            this.lastStatus.spindle.state = 'off';
         }
+
 
         if (this.connectionType === 'usb' && this.writer) {
             try {
@@ -610,16 +641,6 @@ export class SerialManager {
             return;
         }
 
-        if (this.pauseRequested) {
-            this.isPaused = true;
-            this.pauseRequested = false;
-            this.prePauseSpindleState = { ...this.lastStatus.spindle };
-            await this.sendLineAndWaitForOk('M5');
-            await this.sendRealtimeCommand('!'); // Feed Hold
-            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
-            return; // Stop the loop here until resumed
-        }
-
         if (this.isPaused) {
             return;
         }
@@ -646,6 +667,11 @@ export class SerialManager {
 
         try {
             await this.sendLineAndWaitForOk(line);
+
+            if ((upperLine.startsWith('M3') || upperLine.startsWith('M4')) && this.settings.spindle.warmupDelay > 0) {
+                const delayInSeconds = this.settings.spindle.warmupDelay / 1000;
+                await this.sendLineAndWaitForOk(`G4 P${delayInSeconds}`);
+            }
             
             this.currentLineIndex++;
 
@@ -673,23 +699,29 @@ export class SerialManager {
 
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
-            this.pauseRequested = true;
+            this.isPaused = true;
+            // The UI will handle the warning about the spindle. We just send the command.
+            await this.sendRealtimeCommand('!'); // Feed Hold
+            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
         }
     }
 
     async resume() {
-        if (this.isJobRunning && this.isPaused && !this.pauseRequested) {
+        if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
-            // First, restore spindle if it was running
-            if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
-                const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
-                await this.sendLine(`${spindleCmd} S${this.prePauseSpindleState.speed}`);
-                this.spindleDirection = this.prePauseSpindleState.state;
+            this.callbacks.onLog({ type: 'status', message: 'Resuming job...' });
+
+            // Run the resume script if it exists.
+            const resumeScript = this.settings.scripts.jobResume.split('\n');
+            for (const line of resumeScript) {
+                if (line.trim()) {
+                    await this.sendLineAndWaitForOk(line);
+                }
             }
-            // Then, resume motion
+
             await this.sendRealtimeCommand('~'); // Cycle Resume
             this.callbacks.onLog({ type: 'status', message: 'Job resumed.' });
-            this.sendNextLine();
+            this.sendNextLine(); // Continue sending G-code lines
         }
     }
 

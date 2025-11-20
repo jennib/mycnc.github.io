@@ -165,12 +165,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
                                 <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
                             </InputGroup>
+                            <InputGroup label="Spindle Warmup Delay (ms)">
+                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
+                            </InputGroup>
                             <InputGroup label="Probe (mm)">
                                 <div className="flex items-center gap-2">
                                     <span className="w-4 text-center text-text-secondary font-semibold">X</span>
                                     <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.g.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                                 </div>
@@ -181,6 +184,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                         <div className="space-y-4 bg-background p-4 rounded-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
+                            <ScriptInput label="Job Pause Script" value={localSettings.scripts.jobPause} onChange={e => handleScriptChange('jobPause', e.target.value)} placeholder="e.g., M5" />
+                            <ScriptInput label="Job Resume Script" value={localSettings.scripts.jobResume} onChange={e => handleScriptChange('jobResume', e.target.value)} placeholder="e.g., M3 S{spindle_speed}" />
+                            <ScriptInput label="Job Stop Script" value={localSettings.scripts.jobStop} onChange={e => handleScriptChange('jobStop', e.target.value)} placeholder="e.g., M5" />
                             <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
                             <ScriptInput label="Tool Change Script" value={localSettings.scripts.toolChange} onChange={e => handleScriptChange('toolChange', e.target.value)} placeholder="e.g., M5 G0 Z10" />
                             <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />

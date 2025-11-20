@@ -57,7 +57,7 @@ export interface Macro {
 
 export interface MachineSettings {
     workArea: { x: number; y: number; z: number };
-    spindle: { min: number; max: number; defaultFeedRate?: number; defaultPlungeRate?: number; };
+    spindle: { min: number; max: number; warmupDelay: number; };
     probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
     isConfigured?: boolean;

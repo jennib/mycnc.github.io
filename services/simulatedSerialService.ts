@@ -293,6 +293,19 @@ export class SimulatedSerialManager {
             return;
         }
 
+        if (this.pauseRequested) {
+            this.isPaused = true;
+            this.pauseRequested = false;
+            this.prePauseSpindleState = { ...this.position.spindle };
+            this.position.status = 'Hold';
+            // Simulate M5 (Spindle Stop)
+            this.position.spindle.state = 'off';
+            this.position.spindle.speed = 0;
+            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
+            this.forceStatusUpdate(); // Immediately send the updated state
+            return;
+        }
+
         if (this.isPaused) {
             return;
         }
@@ -333,21 +346,6 @@ export class SimulatedSerialManager {
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
             this.pauseRequested = true;
-            // Immediately interrupt any pending job loop
-            if (this.jobLoopTimeout) {
-                clearTimeout(this.jobLoopTimeout);
-                this.jobLoopTimeout = null;
-            }
-            
-            this.isPaused = true;
-            // Store current spindle state before pausing
-            this.prePauseSpindleState = { ...this.position.spindle };
-            this.position.status = 'Hold';
-            // Simulate M5 (Spindle Stop)
-            this.position.spindle.state = 'off';
-            this.position.spindle.speed = 0;
-            this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
-            this.forceStatusUpdate(); // Immediately send the updated state
         }
     }
 
