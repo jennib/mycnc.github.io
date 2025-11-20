@@ -684,6 +684,7 @@ export class SerialManager {
             if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
                 const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
                 await this.sendLine(`${spindleCmd} S${this.prePauseSpindleState.speed}`);
+                this.spindleDirection = this.prePauseSpindleState.state;
             }
             // Then, resume motion
             await this.sendRealtimeCommand('~'); // Cycle Resume

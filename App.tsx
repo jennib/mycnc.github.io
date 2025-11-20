@@ -808,6 +808,11 @@ const App: React.FC = () => {
         return;
       }
 
+      if (machineState?.spindle?.state !== 'off') {
+        addLog({ type: "error", message: "Cannot probe while spindle is running." });
+        return;
+      }
+
       const offsets = {
         x: machineSettings.probe.xOffset,
         y: machineSettings.probe.yOffset,

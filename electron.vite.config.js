@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
           index: resolve(__dirname, 'electron/main.ts')
         },
         output: {
-          format: 'es'
+          format: 'cjs'
         }
       }
     }
@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
           index: resolve(__dirname, 'electron/preload.ts')
         },
         output: {
-          format: 'es'
+          format: 'cjs'
         }
       }
     }

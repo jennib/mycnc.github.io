@@ -42,6 +42,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(({
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     
     const isControlDisabled = !isConnected || isJobActive || isJogging || isMacroRunning || ['Alarm', 'Home', 'Jog'].includes(machineState?.status || '');
+    const isProbeDisabled = isControlDisabled || machineState?.spindle?.state !== 'off';
     const isZJogDisabledForStep = (unit === 'mm' && jogStep > 10) || (unit === 'in' && jogStep > 1);
 
     const JogButton = ({ id, axis, direction, icon, label, hotkey }: { id: string, axis: string, direction: number, icon: React.ReactNode, label: string, hotkey: string }) => {
@@ -147,16 +148,16 @@ const JogPanel: React.FC<JogPanelProps> = memo(({
                     <div className="bg-background p-3 rounded-md">
                         <h4 className="text-sm font-bold text-text-secondary mb-2">Probe</h4>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                            <button onClick={() => onProbe('X')} disabled={isControlDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
+                            <button onClick={() => onProbe('X')} disabled={isProbeDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
                                 Probe X
                             </button>
-                            <button onClick={() => onProbe('Y')} disabled={isControlDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
+                            <button onClick={() => onProbe('Y')} disabled={isProbeDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
                                 Probe Y
                             </button>
-                            <button onClick={() => onProbe('Z')} disabled={isControlDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center gap-1">
+                            <button onClick={() => onProbe('Z')} disabled={isProbeDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center gap-1">
                                 <Probe className="w-4 h-4" /> Probe Z
                             </button>
-                            <button onClick={() => onProbe('XY')} disabled={isControlDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
+                            <button onClick={() => onProbe('XY')} disabled={isProbeDisabled} className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50">
                                 Probe XY
                             </button>
                         </div>

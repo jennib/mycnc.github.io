@@ -1,12 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  dialog,
-  Menu,
-  shell,
-  session,
-  ipcMain,
-} from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell, dialog } from "electron";
 import path from "path";
 import net from "net";
 
@@ -228,8 +220,8 @@ const createWindow = () => {
   // --- Webcam/Media Permission Handler ---
   mainWindow.webContents.session.setPermissionRequestHandler(
     (webContents, permission, callback) => {
-      // For this application, we will automatically grant media permission (camera, microphone).
-      // In a production app, you might want to show a custom prompt here.
+      // For this electron.application, we will automatically grant media permission (camera, microphone).
+      // In a production electron.app, you might want to show a custom prompt here.
       if (permission === "media") {
         callback(true);
       } else {
@@ -246,7 +238,7 @@ const createWindow = () => {
     );
   });
 
-  // and load the index.html of the app.
+  // and load the index.html of the electron.app.
   // Log the environment variable to the console.
   console.log("VITE_DEV_SERVER_URL:", process.env.VITE_DEV_SERVER_URL);
 
