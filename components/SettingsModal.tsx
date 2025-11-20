@@ -184,11 +184,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                         <div className="space-y-4 bg-background p-4 rounded-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
-                            <ScriptInput label="Job Pause Script" value={localSettings.scripts.jobPause} onChange={e => handleScriptChange('jobPause', e.target.value)} placeholder="e.g., M5" />
-                            <ScriptInput label="Job Resume Script" value={localSettings.scripts.jobResume} onChange={e => handleScriptChange('jobResume', e.target.value)} placeholder="e.g., M3 S{spindle_speed}" />
-                            <ScriptInput label="Job Stop Script" value={localSettings.scripts.jobStop} onChange={e => handleScriptChange('jobStop', e.target.value)} placeholder="e.g., M5" />
                             <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
-                            <ScriptInput label="Tool Change Script" value={localSettings.scripts.toolChange} onChange={e => handleScriptChange('toolChange', e.target.value)} placeholder="e.g., M5 G0 Z10" />
                             <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
