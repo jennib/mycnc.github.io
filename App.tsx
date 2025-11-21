@@ -983,6 +983,10 @@ const App: React.FC = () => {
         document.activeElement &&
         ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)
       ) {
+        // If backspace is pressed in an empty input field, prevent default to avoid browser navigation
+        if (e.key === "Backspace" && (document.activeElement as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value === "") {
+          e.preventDefault();
+        }
         return;
       }
 
