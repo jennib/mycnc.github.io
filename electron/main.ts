@@ -11,7 +11,7 @@ let mainWindow:BrowserWindow;
 let tcpSocket: net.Socket | null = null;
 
 const createAboutWindow = () => {
-  const aboutWindow = newBrowserWindow({
+  const aboutWindow = new BrowserWindow({
     width: 450,
     height: 450,
     resizable: false,
@@ -49,7 +49,7 @@ const createAboutWindow = () => {
 
 const createWindow = () => {
   // Create the browser window.
-  mainWindow = newBrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     webPreferences: {

@@ -449,6 +449,15 @@ export class SerialManager {
             }
         } else if (trimmedValue) {
             if (trimmedValue.startsWith('error:')) {
+                if (this.isStoppingAndUnlocking) {
+                    this.callbacks.onLog({ type: 'status', message: `GRBL error suppressed during stop/unlock sequence: ${trimmedValue}` });
+                    if (this.linePromiseReject) {
+                        this.linePromiseReject(new Error(trimmedValue)); // Still reject the promise so sendLineAndWaitForOk doesn't hang
+                        this.linePromiseResolve = null;
+                        this.linePromiseReject = null;
+                    }
+                    return; // Suppress further error processing
+                }
                 // If the handshake is in progress, squelch the error and log it quietly.
                 if (this.isHandshakeInProgress) {
                     this.callbacks.onLog({ type: 'status', message: `GRBL error during handshake (squelched): ${trimmedValue}` });
@@ -737,16 +746,33 @@ export class SerialManager {
 
 
 
-    stopJob() {
+    async stopJob() {
         if (this.isJobRunning) {
             this.isStopped = true;
             this.isJobRunning = false;
             this.isPaused = false; // Reset pause state on stop
-            this.sendRealtimeCommand('\x18'); // Soft-reset
+            
             if (this.linePromiseReject) {
                 this.linePromiseReject(new Error('Job stopped by user.'));
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
+            }
+
+            this.isStoppingAndUnlocking = true; // Start suppressing errors
+            try {
+                await this.sendRealtimeCommand('\x18'); // Soft-reset (Ctrl-X)
+                await new Promise(resolve => setTimeout(resolve, 500)); // Give GRBL time to reset
+                this.callbacks.onLog({ type: 'status', message: 'Soft reset sent. Attempting to unlock GRBL...' });
+                
+                // Send $X to unlock. This might fail if GRBL is still busy, so we catch the error.
+                try {
+                    await this.sendLineAndWaitForOk('$X');
+                    this.callbacks.onLog({ type: 'status', message: 'GRBL unlocked successfully.' });
+                } catch (unlockError) {
+                    this.callbacks.onLog({ type: 'error', message: `Failed to unlock GRBL with $X: ${unlockError.message}. Manual unlock might be required.` });
+                }
+            } finally {
+                this.isStoppingAndUnlocking = false; // Stop suppressing errors
             }
         }
     }
