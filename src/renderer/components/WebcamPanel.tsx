@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, CameraOff, AlertTriangle, PictureInPicture, Dock, RefreshCw } from './Icons';
+import { Camera, CameraOff, AlertTriangle, PictureInPicture, Dock, RefreshCw, Volume2, VolumeX } from './Icons';
 
 const isElectron = !!window.electronAPI?.isElectron;
 
@@ -18,6 +18,10 @@ const WebcamPanel: React.FC = () => {
     const [webRTCUrl, setWebRTCUrl] = useState('ws://localhost:8080');
     const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
     const [webcamMode, setWebcamMode] = useState<'local' | 'webrtc'>('local');
+
+    // Audio controls
+    const [isMuted, setIsMuted] = useState(true);
+    const [volume, setVolume] = useState(0.5); // 0.0 to 1.0
 
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
@@ -180,6 +184,13 @@ const WebcamPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = isMuted;
+            videoRef.current.volume = volume;
+        }
+    }, [isMuted, volume]);
+
+    useEffect(() => {
         const startLocalWebcam = async () => {
             try {
                 if (streamRef.current) {
@@ -258,7 +269,6 @@ const WebcamPanel: React.FC = () => {
                         ref={videoRef}
                         autoPlay
                         playsInline
-                        muted
                         className="w-full h-full object-cover"
                     />
                 )}
@@ -321,6 +331,31 @@ const WebcamPanel: React.FC = () => {
                             </button>
                         </div>
                     )}
+
+                    {/* Audio Controls */}
+                    <div className="flex items-center gap-2 mt-4">
+                        <button
+                            onClick={() => setIsMuted(prev => !prev)}
+                            title={isMuted ? "Unmute" : "Mute"}
+                            className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                        </button>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={isMuted ? 0 : volume}
+                            onChange={(e) => {
+                                const newVolume = parseFloat(e.target.value);
+                                setVolume(newVolume);
+                                if (newVolume > 0) setIsMuted(false);
+                            }}
+                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                            disabled={isMuted}
+                        />
+                    </div>
                 </div>
             )}
 
