@@ -231,7 +231,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
-      <Analytics />
+      {!window.electronAPI?.isElectron && <Analytics />}
       <WelcomeModal isOpen={isWelcomeModalOpen} onClose={uiActions.closeWelcomeModal} onOpenSettings={() => { uiActions.closeWelcomeModal(); uiActions.setReturnToWelcome(true); uiActions.openSettingsModal(); }} onOpenToolLibrary={() => { uiActions.closeWelcomeModal(); uiActions.setReturnToWelcome(true); uiActions.openToolLibraryModal(); }} onTrySimulator={() => {}} isMachineSetupComplete={!!machineSettings.isConfigured} isToolLibrarySetupComplete={toolLibrary.length > 0} />
       <NotificationContainer notifications={notifications} onDismiss={() => {}} />
       <ContactModal isOpen={isContactModalOpen} onClose={uiActions.closeContactModal} />

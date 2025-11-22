@@ -1,0 +1,33 @@
+:root {
+  --color-primary: #0d9488;
+  --color-primary-focus: #0f766e;
+  --color-secondary: #475569;
+  --color-secondary-focus: #334155;
+  --color-background: #1e293b;
+  --color-surface: #334155;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-accent-green: #10b981;
+  --color-accent-yellow: #f59e0b;
+  --color-accent-red: #ef4444;
+}
+.light-mode {
+  --color-primary: #0000ff;
+  --color-primary-focus: #0000dd;
+  --color-secondary: #666666;
+  --color-secondary-focus: #444444;
+  --color-background: #ffffff;
+  --color-surface: #e0e0e0;
+  --color-text-primary: #000000;
+  --color-text-secondary: #444444;
+  --color-accent-green: #006400;
+  --color-accent-yellow: #ff8c00;
+  --color-accent-red: #c80000;
+}
+.light-mode .bg-secondary {
+  color: #ffffff;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
