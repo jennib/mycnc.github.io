@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, CameraOff, AlertTriangle, PictureInPicture, Dock, RefreshCw } from './Icons';
 
+const isElectron = !!window.electronAPI?.isElectron;
+
 const WebcamPanel: React.FC = () => {
     const [isWebcamOn, setIsWebcamOn] = useState(false);
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -10,6 +12,13 @@ const WebcamPanel: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
+    const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+
+    // WebRTC specific state
+    const [webRTCUrl, setWebRTCUrl] = useState('ws://localhost:8080');
+    const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
+    const [webcamMode, setWebcamMode] = useState<'local' | 'webrtc'>('local');
+
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
@@ -58,6 +67,102 @@ const WebcamPanel: React.FC = () => {
         setIsWebcamOn(prev => !prev);
     };
 
+    const stopWebcam = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+         if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+    };
+
+    const handleStreamError = (err: any) => {
+        console.error("Webcam Error:", err);
+        if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+            setError("Webcam access denied. Please allow camera permissions in your OS settings.");
+        } else if (err instanceof Error && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
+            setError("No webcam found. Please connect a camera and try again.");
+        } else {
+            setError("Could not access webcam. The device may be in use by another application.");
+        }
+        setIsWebcamOn(false); // Turn off on error
+    };
+
+
+    const connectWebRTC = () => {
+        if (!isElectron) return;
+
+        setIsLoading(true);
+        setError(null);
+        
+        const peerConnection = new RTCPeerConnection();
+        peerConnectionRef.current = peerConnection;
+
+        peerConnection.ontrack = (event) => {
+            if (videoRef.current) {
+                videoRef.current.srcObject = event.streams[0];
+            }
+        };
+
+        peerConnection.oniceconnectionstatechange = () => {
+            if (peerConnection.iceConnectionState === 'connected') {
+                setIsWebRTCConnected(true);
+                setIsLoading(false);
+            } else if (peerConnection.iceConnectionState === 'failed') {
+                setError('WebRTC connection failed.');
+                setIsLoading(false);
+                setIsWebRTCConnected(false);
+            }
+        };
+
+        const ws = new WebSocket(webRTCUrl);
+
+        ws.onopen = async () => {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
+        };
+
+        ws.onmessage = async (event) => {
+            if (typeof event.data === 'string') {
+                const data = JSON.parse(event.data);
+                if (data.sdp) {
+                    await peerConnection.setRemoteDescription(data.sdp);
+                } else if (data.candidate) {
+                    await peerConnection.addIceCandidate(data.candidate);
+                }
+            } else if (event.data instanceof Blob) {
+                // Let's inspect the binary data to see what it is.
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const arrayBuffer = reader.result as ArrayBuffer;
+                    const bytes = new Uint8Array(arrayBuffer.slice(0, 16));
+                    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                    console.log('Received binary data (first 16 bytes):', hex);
+                };
+                reader.readAsArrayBuffer(event.data);
+            }
+        };
+
+        ws.onerror = (err) => {
+            console.error('WebSocket Error:', err);
+            setError('WebSocket connection error. Check the server URL and make sure the server is running.');
+            setIsLoading(false);
+        };
+    };
+
+    const disconnectWebRTC = () => {
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+            peerConnectionRef.current = null;
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+        setIsWebRTCConnected(false);
+    };
+
     useEffect(() => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
@@ -75,12 +180,12 @@ const WebcamPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const startWebcam = async () => {
+        const startLocalWebcam = async () => {
             try {
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined } });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined }, audio: true });
                 streamRef.current = stream;
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
@@ -91,48 +196,28 @@ const WebcamPanel: React.FC = () => {
             }
         };
 
-        const handleStreamError = (err: any) => {
-            console.error("Webcam Error:", err);
-            if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-                setError("Webcam access denied. Please allow camera permissions in your OS settings.");
-            } else if (err instanceof Error && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
-                setError("No webcam found. Please connect a camera and try again.");
-            } else {
-                setError("Could not access webcam. The device may be in use by another application.");
-            }
-            setIsWebcamOn(false); // Turn off on error
-        };
-
-        const stopWebcam = () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-                streamRef.current = null;
-            }
-             if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
-        };
-
         if (isWebcamOn) {
-            if (devices.length === 0) {
-                // If getDevices() was already tried and failed (e.g. no devices found),
-                // don't re-trigger automatically. Let the user use "Try Again".
-                // The `isLoading` and `error` checks prevent a re-trigger loop.
-                if (!isLoading && !error) {
-                    getDevices();
+            if (webcamMode === 'local') {
+                disconnectWebRTC();
+                if (devices.length === 0) {
+                    if (!isLoading && !error) {
+                        getDevices();
+                    }
+                } else if (selectedDeviceId) {
+                    startLocalWebcam();
                 }
-            } else if (selectedDeviceId) {
-                startWebcam(); // Start stream if a device is selected
             }
         } else {
             stopWebcam();
+            disconnectWebRTC();
             setDevices([]); // Clear device list when turned off
         }
 
         return () => {
             stopWebcam();
+            disconnectWebRTC();
         };
-    }, [isWebcamOn, selectedDeviceId, devices.length]);
+    }, [isWebcamOn, selectedDeviceId, devices.length, webcamMode]);
 
     const renderBody = () => {
         if (!isWebcamOn) {
@@ -158,13 +243,13 @@ const WebcamPanel: React.FC = () => {
                 {isLoading ? (
                     <div className="text-center text-text-secondary p-4">
                         <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                        <p className="text-sm font-semibold">Searching for cameras...</p>
+                        <p className="text-sm font-semibold">{webcamMode === 'webrtc' ? 'Connecting to WebRTC...' : 'Searching for cameras...'}</p>
                     </div>
                 ) : error ? (
                     <div className="text-center text-accent-yellow p-4">
                         <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
                         <p className="text-sm font-semibold">{error}</p>
-                        <button onClick={getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
+                        <button onClick={webcamMode === 'webrtc' ? connectWebRTC : getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
                             Try Again
                         </button>
                     </div>
@@ -207,7 +292,39 @@ const WebcamPanel: React.FC = () => {
                     </button>
                 </div>
             </div>
-            {isWebcamOn && devices.length > 1 && (
+
+            {isWebcamOn && isElectron && (
+                <div className="mb-4">
+                     <div className="flex items-center gap-4 mb-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="webcamMode" value="local" checked={webcamMode === 'local'} onChange={() => setWebcamMode('local')} className="form-radio text-primary focus:ring-primary"/>
+                            <span className="text-sm font-medium text-text-secondary">Local Camera</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="webcamMode" value="webrtc" checked={webcamMode === 'webrtc'} onChange={() => setWebcamMode('webrtc')} className="form-radio text-primary focus:ring-primary"/>
+                            <span className="text-sm font-medium text-text-secondary">WebRTC Stream</span>
+                        </label>
+                    </div>
+
+                    {webcamMode === 'webrtc' && (
+                        <div className='flex items-center gap-2'>
+                             <input
+                                type="text"
+                                value={webRTCUrl}
+                                onChange={(e) => setWebRTCUrl(e.target.value)}
+                                placeholder="e.g., ws://localhost:8080"
+                                className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                disabled={isWebRTCConnected}
+                            />
+                            <button onClick={isWebRTCConnected ? disconnectWebRTC : connectWebRTC}  className={`px-3 py-1 ${isWebRTCConnected ? 'bg-accent-red hover:bg-red-700' : 'bg-secondary hover:bg-secondary-focus'} text-white font-semibold rounded-md`}>
+                                {isWebRTCConnected ? 'Disconnect' : 'Connect'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {isWebcamOn && webcamMode === 'local' && devices.length > 1 && (
                 <div className="mb-4">
                     <label htmlFor="camera-select" className="block text-sm font-medium text-text-secondary mb-1">Select Camera</label>
                     <select

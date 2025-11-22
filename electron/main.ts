@@ -53,7 +53,7 @@ const createWindow = () => {
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: process.env.VITE_PRELOAD_JS,
+      preload: path.join(__dirname, '../preload/index.cjs'),
       contextIsolation: true, // Enable context isolation
       sandbox: false, // Disable sandbox to allow preload script access
     },

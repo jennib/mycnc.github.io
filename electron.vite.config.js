@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => ({
       'process.env.GEMINI_API_KEY': JSON.stringify(loadEnv(mode, '.', '').GEMINI_API_KEY)
     },
     resolve: {
-      alias: { '@': resolve(__dirname, '.') }
+      alias: { '@': resolve(__dirname, 'src/renderer') }
     },
     build: {
       rollupOptions: {
