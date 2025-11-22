@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, dialog } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } from "electron";
 import path from "path";
 import net from "net";
 
@@ -7,7 +7,7 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-let mainWindow:BrowserWindow;
+let mainWindow: BrowserWindow;
 let tcpSocket: net.Socket | null = null;
 
 const createAboutWindow = () => {
@@ -61,12 +61,12 @@ const createWindow = () => {
 
   // Add a handler for the 'toggle-fullscreen' event from the renderer
   ipcMain.on("toggle-fullscreen", (event) => {
-    const win =BrowserWindow.fromWebContents(event.sender);
+    const win = BrowserWindow.fromWebContents(event.sender);
     if (win) win.setFullScreen(!win.isFullScreen());
   });
 
   // --- Menu Template ---
-  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+  const menuTemplate: MenuItemConstructorOptions[] = [
     {
       label: "File",
       submenu: [{ role: "quit" }],
@@ -92,8 +92,8 @@ const createWindow = () => {
     },
   ];
 
-  const menu =Menu.buildFromTemplate(menuTemplate);
- Menu.setApplicationMenu(menu);
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
 
   // --- TCP Communication Handlers ---
   ipcMain.handle("connect-tcp", async (event, ip: string, port: number) => {
@@ -201,14 +201,13 @@ const createWindow = () => {
     }
   );
 
-  mainWindow.webContents.session.setPermissionCheckHandler(
-    (webContents, permission, requestingOrigin, details) => {
-      if (permission === "serial") {
-        return true;
-      }
-      return false;
+  mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
+    console.log(`[Main Process] Checking permission for: ${permission}`);
+    if (permission === 'serial' || permission === 'media') {
+      return true;
     }
-  );
+    return false;
+  });
 
   mainWindow.webContents.session.setDevicePermissionHandler((details) => {
     if (details.deviceType === "serial") {
@@ -218,18 +217,22 @@ const createWindow = () => {
   });
 
   // --- Webcam/Media Permission Handler ---
-  mainWindow.webContents.session.setPermissionRequestHandler(
-    (webContents, permission, callback) => {
-      // For this electron.application, we will automatically grant media permission (camera, microphone).
-      // In a production electron.app, you might want to show a custom prompt here.
-      if (permission === "media") {
-        callback(true);
-      } else {
-        // Deny any other permission requests.
-        callback(false);
-      }
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    console.log(`[Main Process] Permission request for: ${permission} from origin ${details.requestingUrl}`);
+    if (permission === 'media') {
+      // In a real app, you'd want to ask the user, but for now, we'll grant it.
+      // This will cover 'video' and 'audio' permissions.
+      console.log('[Main Process] Granting media permission.');
+      return callback(true);
     }
-  );
+    // Handle individual camera/microphone requests if they come separately
+    if (permission === 'camera' || permission === 'microphone') {
+        console.log(`[Main Process] Granting ${permission} permission.`);
+        return callback(true);
+    }
+    // Deny other requests
+    callback(false);
+  });
 
   mainWindow.webContents.on("did-finish-load", () => {
     mainWindow.webContents.send(
@@ -241,6 +244,16 @@ const createWindow = () => {
   // and load the index.html of the electron.app.
   // Log the environment variable to the console.
   console.log("VITE_DEV_SERVER_URL:", process.env.VITE_DEV_SERVER_URL);
+
+  // Set a Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' http://localhost:3000; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *;"]
+      }
+    });
+  });
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
