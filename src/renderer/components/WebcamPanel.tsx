@@ -7,6 +7,8 @@ const WebcamPanel: React.FC = () => {
     const [isWebcamOn, setIsWebcamOn] = useState(false);
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
+    const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
+    const [selectedAudioDeviceId, setSelectedAudioDeviceId] = useState<string>('');
     const [isInPiP, setIsInPiP] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,17 +47,25 @@ const WebcamPanel: React.FC = () => {
         setError(null);
         try {
             // Request permission first to get device labels
-            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             tempStream.getTracks().forEach(track => track.stop()); // Immediately stop the temporary stream
 
             const allDevices = await navigator.mediaDevices.enumerateDevices();
+            console.log('All enumerated devices:', allDevices);
             const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
+            const audioInputDevices = allDevices.filter(device => device.kind === 'audioinput');
+            console.log('Audio input devices:', audioInputDevices);
             setDevices(videoDevices);
+            setAudioInputDevices(audioInputDevices);
 
             if (videoDevices.length > 0) {
                 setSelectedDeviceId(videoDevices[0].deviceId);
             } else {
                 setError("No webcam found. Please connect a camera and try again.");
+            }
+
+            if (audioInputDevices.length > 0) {
+                setSelectedAudioDeviceId(audioInputDevices[0].deviceId);
             }
         } catch (err) {
             handleStreamError(err);
@@ -123,6 +133,11 @@ const WebcamPanel: React.FC = () => {
         const ws = new WebSocket(webRTCUrl);
 
         ws.onopen = async () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, streamRef.current!);
+                });
+            }
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
@@ -196,8 +211,19 @@ const WebcamPanel: React.FC = () => {
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined }, audio: true });
+                console.log('Attempting getUserMedia with:');
+                console.log('  Video Device ID:', selectedDeviceId);
+                console.log('  Audio Device ID:', selectedAudioDeviceId);
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
+                    audio: { deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined }
+                });
                 streamRef.current = stream;
+                console.log('Local stream audio tracks:', stream.getAudioTracks());
+                if (stream.getAudioTracks().length > 0) {
+                    console.log('Acquired audio track label:', stream.getAudioTracks()[0].label);
+                    console.log('Acquired audio track ID:', stream.getAudioTracks()[0].id);
+                }
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                 }
@@ -217,6 +243,10 @@ const WebcamPanel: React.FC = () => {
                 } else if (selectedDeviceId) {
                     startLocalWebcam();
                 }
+            } else if (webcamMode === 'webrtc') {
+                // Ensure local stream is started for WebRTC transmission
+                startLocalWebcam();
+                // connectWebRTC will be called when the user clicks 'Connect'
             }
         } else {
             stopWebcam();
@@ -228,7 +258,7 @@ const WebcamPanel: React.FC = () => {
             stopWebcam();
             disconnectWebRTC();
         };
-    }, [isWebcamOn, selectedDeviceId, devices.length, webcamMode]);
+    }, [isWebcamOn, selectedDeviceId, selectedAudioDeviceId, devices.length, webcamMode]);
 
     const renderBody = () => {
         if (!isWebcamOn) {
@@ -359,21 +389,43 @@ const WebcamPanel: React.FC = () => {
                 </div>
             )}
 
-            {isWebcamOn && webcamMode === 'local' && devices.length > 1 && (
-                <div className="mb-4">
-                    <label htmlFor="camera-select" className="block text-sm font-medium text-text-secondary mb-1">Select Camera</label>
-                    <select
-                        id="camera-select"
-                        value={selectedDeviceId}
-                        onChange={(e) => setSelectedDeviceId(e.target.value)}
-                        className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        {devices.map(device => (
-                            <option key={device.deviceId} value={device.deviceId}>
-                                {device.label || `Camera ${devices.indexOf(device) + 1}`}
-                            </option>
-                        ))}
-                    </select>
+            {isWebcamOn && webcamMode === 'local' && (devices.length > 1 || audioInputDevices.length > 1) && (
+                <div className="flex gap-2 mb-4">
+                    {devices.length > 1 && (
+                        <div className="w-1/2">
+                            <label htmlFor="camera-select" className="block text-xs font-medium text-text-secondary mb-1">Select Camera</label>
+                            <select
+                                id="camera-select"
+                                value={selectedDeviceId}
+                                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                                className="w-full p-1 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            >
+                                {devices.map(device => (
+                                    <option key={device.deviceId} value={device.deviceId}>
+                                        {device.label || `Camera ${devices.indexOf(device) + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {audioInputDevices.length > 1 && (
+                        <div className="w-1/2">
+                            <label htmlFor="audio-input-select" className="block text-xs font-medium text-text-secondary mb-1">Select Microphone</label>
+                            <select
+                                id="audio-input-select"
+                                value={selectedAudioDeviceId}
+                                onChange={(e) => setSelectedAudioDeviceId(e.target.value)}
+                                className="w-full p-1 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            >
+                                {audioInputDevices.map(device => (
+                                    <option key={device.deviceId} value={device.deviceId}>
+                                        {device.label || `Microphone ${audioInputDevices.indexOf(device) + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </div>
             )}
             {renderBody()}
