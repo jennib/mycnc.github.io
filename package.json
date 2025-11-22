@@ -15,7 +15,8 @@
     "electron:dev": "cross-env VITE_DEV_SERVER_URL=http://localhost:3000 electron-vite dev -- --enable-logging --trace-warnings",
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
-    "dist": "electron-vite build && electron-builder"
+    "dist": "electron-vite build && electron-builder",
+    "test": "vitest"
   },
   "build": {
     "appId": "com.mycnc.app",
@@ -55,6 +56,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^18.19.9",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -64,11 +66,13 @@
     "electron": "^31.0.1",
     "electron-builder": "^24.13.3",
     "electron-vite": "^4.0.1",
+    "jsdom": "^27.2.0",
     "postcss": "^8.4.38",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.2",
-    "vite": "^5.3.1"
+    "vite": "^5.3.1",
+    "vitest": "^4.0.13"
   }
 }
