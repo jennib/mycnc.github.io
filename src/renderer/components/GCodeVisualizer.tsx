@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
-import { parseGCode } from '../services/gcodeParser';
 import { MachineSettings } from '../types';
+
+// --- Color Constants ---
+const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
+const CUTTING_COLOR = [1.0, 0.84, 0.0, 1.0]; // Bright yellow
+const PLUNGE_COLOR = [1.0, 0.65, 0.0, 1.0]; // Orange
+const EXECUTED_COLOR = [0.2, 0.2, 0.2, 1.0]; // Dark gray
+const HIGHLIGHT_COLOR = [1.0, 0.0, 1.0, 1.0]; // Magenta
 
 // --- WebGL Helper Functions ---
 const createShader = (gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null => {
@@ -51,13 +57,6 @@ const fragmentShaderSource = `
       gl_FragColor = vColor;
     }
 `;
-
-// --- Color Constants ---
-const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
-const CUTTING_COLOR = [1.0, 0.84, 0.0, 1.0]; // Bright yellow
-const PLUNGE_COLOR = [1.0, 0.65, 0.0, 1.0]; // Orange
-const EXECUTED_COLOR = [0.2, 0.2, 0.2, 1.0]; // Dark gray
-const HIGHLIGHT_COLOR = [1.0, 0.0, 1.0, 1.0]; // Magenta
 
 // --- Matrix Math (gl-matrix simplified) ---
 const mat4 = {
@@ -211,42 +210,9 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         rotation: [0, Math.PI / 2] // Default to top-down view (Z-up system)
     });
     const mouseState = useRef({ isDown: false, lastPos: { x: 0, y: 0 }, button: 0 });
+    const workerRef = useRef<Worker | null>(null);
 
-    const createToolModel = (position: {x: number, y: number, z: number}) => {
-        const { x, y, z } = position;
-        const toolHeight = 20;
-        const toolRadius = 3;
-        const holderHeight = 10;
-        const holderRadius = 8;
-        const vertices: number[] = [];
-    
-        const addQuad = (p1: number[], p2: number[], p3: number[], p4: number[]) => vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
-    
-        // Tip
-        vertices.push(x, y, z, x - toolRadius, y, z + toolHeight, x + toolRadius, y, z + toolHeight);
-    
-        // Body (simplified cylinder)
-        const sides = 8;
-        for (let i = 0; i < sides; i++) {
-            const a1 = (i / sides) * 2 * Math.PI;
-            const a2 = ((i + 1) / sides) * 2 * Math.PI;
-            const x1 = Math.cos(a1) * toolRadius;
-            const z1 = Math.sin(a1) * toolRadius;
-            const x2 = Math.cos(a2) * toolRadius;
-            const z2 = Math.sin(a2) * toolRadius;
-            addQuad(
-                [x + x1, y + z1, z + toolHeight],
-                [x + x2, y + z2, z + toolHeight],
-                [x + x2, y + z2, z + toolHeight + holderHeight],
-                [x + x1, y + z1, z + toolHeight + holderHeight]
-            );
-        }
-    
-        return {
-            vertices: new Float32Array(vertices),
-            colors: new Float32Array(Array(vertices.length / 3).fill([1.0, 0.2, 0.2, 1.0]).flat()) // Red
-        };
-    };
+    const [workerData, setWorkerData] = useState<any>(null);
 
     const fitView = useCallback((bounds: any, newRotation: number[] | null = null) => {
         if (!bounds || bounds.minX === Infinity) {
@@ -286,191 +252,87 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     }));
 
     useEffect(() => {
-        const parsed = parseGCode(gcodeLines);
-        setParsedGCode(parsed);
-        fitView(parsed.bounds, [0, Math.PI / 2]);
-    }, [gcodeLines, fitView]);
+        workerRef.current = new Worker(new URL('../../services/gcodeVisualizerWorker.ts', import.meta.url), { type: 'module' });
+
+        workerRef.current.onmessage = (event) => {
+            const { type, parsedGCode, toolpathVertices, toolpathColors, toolModelVertices, toolModelColors, workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors } = event.data;
+            if (type === 'processedGCode') {
+                setParsedGCode(parsedGCode);
+                setWorkerData({
+                    toolpathVertices, toolpathColors, toolModelVertices, toolModelColors,
+                    workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors
+                });
+                fitView(parsedGCode.bounds, [0, Math.PI / 2]);
+            }
+        };
+
+        return () => {
+            workerRef.current?.terminate();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (workerRef.current && gcodeLines.length > 0) {
+            workerRef.current.postMessage({
+                type: 'processGCode',
+                gcodeLines,
+                machineSettings,
+                currentLine,
+                hoveredLineIndex
+            });
+        }
+    }, [gcodeLines, machineSettings, currentLine, hoveredLineIndex]);
+
     // Effect to regenerate buffers when their data sources change.
     useEffect(() => {
         const gl = glRef.current;
-        if (!gl) return;
+        if (!gl || !workerData) return;
 
         // --- Create Work Area Buffers ---
-        const workArea = machineSettings.workArea;
-        const gridVertices = [];
-        const boundsVertices = [];
-        const gridColor = [0.2, 0.25, 0.35, 1.0];
-        const boundsColor = [0.4, 0.45, 0.55, 1.0];
-        const gridSpacing = 10; // mm
-
-        for (let i = 0; i <= workArea.x; i += gridSpacing) {
-            gridVertices.push(i, 0, 0, i, workArea.y, 0);
-        }
-        for (let i = 0; i <= workArea.y; i += gridSpacing) {
-            gridVertices.push(0, i, 0, workArea.x, i, 0);
-        }
-        
-        const wx = workArea.x, wy = workArea.y, wz = workArea.z;
-        boundsVertices.push(
-            0, 0, 0, wx, 0, 0,  wx, 0, 0, wx, wy, 0,  wx, wy, 0, 0, wy, 0,  0, wy, 0, 0, 0, 0, // bottom
-            0, 0, wz, wx, 0, wz,  wx, 0, wz, wx, wy, wz,  wx, wy, wz, 0, wy, wz,  0, wy, wz, 0, 0, wz, // top
-            0, 0, 0, 0, 0, wz,  wx, 0, 0, wx, 0, wz,  wx, wy, 0, wx, wy, wz,  0, wy, 0, 0, wy, wz // sides
-        );
-
         const workAreaBuffers: any = {};
         workAreaBuffers.gridPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.gridPosition);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridVertices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaGridVertices, gl.STATIC_DRAW);
         workAreaBuffers.gridColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.gridColor);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat()), gl.STATIC_DRAW);
-        workAreaBuffers.gridVertexCount = gridVertices.length / 3;
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaGridColors, gl.STATIC_DRAW);
+        workAreaBuffers.gridVertexCount = workerData.workAreaGridVertices.length / 3;
 
         workAreaBuffers.boundsPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsPosition);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boundsVertices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsVertices, gl.STATIC_DRAW);
         workAreaBuffers.boundsColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsColor);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat()), gl.STATIC_DRAW);
-        workAreaBuffers.boundsVertexCount = boundsVertices.length / 3;
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsColors, gl.STATIC_DRAW);
+        workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices.length / 3;
         
         // --- Create Axis Indicator Buffers ---
-        const axisLength = Math.max(25, Math.hypot(workArea.x, workArea.y) * 0.1);
-        const labelSize = axisLength * 0.1; // Half-size of the letter labels
-        const axisLabelOffset = axisLength + labelSize * 2; // Position for the labels to be clearly visible past the axis line
-
-        const axisVertices = [
-            // X-axis line
-            0, 0, 0,  axisLength, 0, 0,
-            // Y-axis line
-            0, 0, 0,  0, axisLength, 0,
-            // Z-axis line
-            0, 0, 0,  0, 0, axisLength
-        ];
-        const red = [1.0, 0.3, 0.3, 1.0];
-        const green = [0.3, 1.0, 0.3, 1.0];
-        const blue = [0.3, 0.3, 1.0, 1.0];
-        const axisColors = [...red, ...red, ...green, ...green, ...blue, ...blue];
-
-        // 'X' Label vertices
-        const xLabel = [
-            axisLabelOffset - labelSize, -labelSize, 0,   axisLabelOffset + labelSize,  labelSize, 0,
-            axisLabelOffset - labelSize,  labelSize, 0,   axisLabelOffset + labelSize, -labelSize, 0,
-        ];
-        axisVertices.push(...xLabel);
-        axisColors.push(...Array(4).fill(red).flat());
-
-        // 'Y' Label vertices
-        const yLabel = [
-            -labelSize, axisLabelOffset + labelSize, 0,   0, axisLabelOffset, 0,
-             labelSize, axisLabelOffset + labelSize, 0,   0, axisLabelOffset, 0,
-             0, axisLabelOffset, 0,                     0, axisLabelOffset - labelSize, 0,
-        ];
-        axisVertices.push(...yLabel);
-        axisColors.push(...Array(6).fill(green).flat());
-
-        // 'Z' Label vertices
-        const zLabel = [
-            -labelSize, 0, axisLabelOffset + labelSize,    labelSize, 0, axisLabelOffset + labelSize,
-             labelSize, 0, axisLabelOffset + labelSize,   -labelSize, 0, axisLabelOffset - labelSize,
-            -labelSize, 0, axisLabelOffset - labelSize,    labelSize, 0, axisLabelOffset - labelSize,
-        ];
-        axisVertices.push(...zLabel);
-        axisColors.push(...Array(6).fill(blue).flat());
-
-
         workAreaBuffers.axisPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisPosition);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(axisVertices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaAxisVertices, gl.STATIC_DRAW);
         workAreaBuffers.axisColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisColor);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(axisColors), gl.STATIC_DRAW);
-        workAreaBuffers.axisVertexCount = axisVertices.length / 3;
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaAxisColors, gl.STATIC_DRAW);
+        workAreaBuffers.axisVertexCount = workerData.workAreaAxisVertices.length / 3;
 
         // --- Create Toolpath Buffers ---
-        const segments = parsedGCode ? parsedGCode.segments : [];
-        const vertices: number[] = [];
-        const colors: number[] = [];
-
-        segments.forEach((seg, i) => {
-            let color;
-            const isHovered = i === hoveredLineIndex;
-            const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
-
-            if (isHovered) {
-                color = HIGHLIGHT_COLOR;
-            } else if (i < currentLine) {
-                color = EXECUTED_COLOR;
-            } else if (seg.type === 'G0') {
-                color = RAPID_COLOR;
-            } else if (isPlunge) {
-                color = PLUNGE_COLOR;
-            } else {
-                color = CUTTING_COLOR;
-            }
-
-            if ((seg.type === 'G2' || seg.type === 'G3') && seg.center) {
-                const arcPoints = 20;
-                const radius = Math.hypot(seg.start.x - seg.center.x, seg.start.y - seg.center.y);
-                let startAngle = Math.atan2(seg.start.y - seg.center.y, seg.start.x - seg.center.x);
-                let endAngle = Math.atan2(seg.end.y - seg.center.y, seg.end.x - seg.center.x);
-                
-                let angleDiff = endAngle - startAngle;
-
-                const isFullCircle = Math.abs(seg.start.x - seg.end.x) < 1e-6 &&
-                                     Math.abs(seg.start.y - seg.end.y) < 1e-6 &&
-                                     radius > 1e-6;
-
-                if (isFullCircle) {
-                    angleDiff = seg.clockwise ? -2 * Math.PI : 2 * Math.PI;
-                } else {
-                    if (seg.clockwise && angleDiff > 0) angleDiff -= 2 * Math.PI;
-                    if (!seg.clockwise && angleDiff < 0) angleDiff += 2 * Math.PI;
-                }
-
-                for (let j = 0; j < arcPoints; j++) {
-                    const p1_angle = startAngle + (j / arcPoints) * angleDiff;
-                    const p2_angle = startAngle + ((j + 1) / arcPoints) * angleDiff;
-                    const p1_z = seg.start.z + (seg.end.z - seg.start.z) * (j / arcPoints);
-                    const p2_z = seg.start.z + (seg.end.z - seg.start.z) * ((j + 1) / arcPoints);
-
-                    vertices.push(
-                        seg.center.x + Math.cos(p1_angle) * radius, seg.center.y + Math.sin(p1_angle) * radius, p1_z,
-                        seg.center.x + Math.cos(p2_angle) * radius, seg.center.y + Math.sin(p2_angle) * radius, p2_z
-                    );
-                    colors.push(...color, ...color);
-                }
-            } else { // G0, G1
-                vertices.push(
-                    seg.start.x, seg.start.y, seg.start.z,
-                    seg.end.x, seg.end.y, seg.end.z
-                );
-                colors.push(...color, ...color);
-            }
-        });
-        
-        let toolModel = null;
-        if(currentLine > 0 && currentLine <= segments.length){
-            toolModel = createToolModel(segments[currentLine - 1].end);
-        }
-
         const positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.toolpathVertices, gl.STATIC_DRAW);
 
         const colorBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.toolpathColors, gl.STATIC_DRAW);
 
         let toolPositionBuffer = null, toolColorBuffer = null;
-        if (toolModel) {
+        if (workerData.toolModelVertices) {
             toolPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, toolModel.vertices, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelVertices, gl.STATIC_DRAW);
             
             toolColorBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolColorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, toolModel.colors, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelColors, gl.STATIC_DRAW);
         }
         
         if (buffersRef.current) {
@@ -491,14 +353,14 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         buffersRef.current = { 
             position: positionBuffer, 
             color: colorBuffer, 
-            vertexCount: vertices.length / 3,
+            vertexCount: workerData.toolpathVertices.length / 3,
             toolPosition: toolPositionBuffer,
             toolColor: toolColorBuffer,
-            toolVertexCount: toolModel ? toolModel.vertices.length / 3 : 0,
+            toolVertexCount: workerData.toolModelVertices ? workerData.toolModelVertices.length / 3 : 0,
             workArea: workAreaBuffers,
         };
 
-    }, [parsedGCode, currentLine, hoveredLineIndex, machineSettings]);
+    }, [workerData]);
     
     useEffect(() => {
         const canvas = canvasRef.current;
