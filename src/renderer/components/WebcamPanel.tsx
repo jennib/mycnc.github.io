@@ -17,7 +17,7 @@ const WebcamPanel: React.FC = () => {
     const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
     // WebRTC specific state
-    const [webRTCUrl, setWebRTCUrl] = useState('ws://localhost:8080');
+    const [webRTCUrl, setWebRTCUrl] = useState('ws://10.0.0.162:8888/webrtc');
     const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
     const [webcamMode, setWebcamMode] = useState<'local' | 'webrtc'>('local');
 
@@ -110,12 +110,37 @@ const WebcamPanel: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        const peerConnection = new RTCPeerConnection();
+        const peerConnection = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
         peerConnectionRef.current = peerConnection;
 
         peerConnection.ontrack = (event) => {
+            console.log("CLIENT: Received remote track:", event.track.kind);
             if (videoRef.current) {
-                videoRef.current.srcObject = event.streams[0];
+                let stream = videoRef.current.srcObject as MediaStream | null;
+                if (!stream) {
+                    // Explicitly set srcObject to null before creating a new stream
+                    videoRef.current.srcObject = null; 
+                    stream = new MediaStream();
+                    videoRef.current.srcObject = stream;
+                    console.log("CLIENT: Created new MediaStream for video.srcObject.");
+                }
+                stream.addTrack(event.track);
+                console.log(`CLIENT: Added ${event.track.kind} track to MediaStream. Track ID: ${event.track.id}, ReadyState: ${event.track.readyState}, Enabled: ${event.track.enabled}`);
+
+                // Explicitly play the video and unmute it
+                if (videoRef.current.paused) {
+                    videoRef.current.play().catch(e => console.error("Autoplay failed:", e));
+                }
+                videoRef.current.muted = false; // Ensure it's not muted if audio is expected
+                
+                // Log dimensions after a short delay to allow stream processing
+                setTimeout(() => {
+                    console.log("CLIENT: Video element dimensions (delayed):", videoRef.current?.videoWidth, "x", videoRef.current?.videoHeight);
+                }, 500); // 500ms delay
+            } else {
+                console.error("CLIENT: videoRef.current is null when ontrack fired.");
             }
         };
 
@@ -133,23 +158,29 @@ const WebcamPanel: React.FC = () => {
         const ws = new WebSocket(webRTCUrl);
 
         ws.onopen = async () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, streamRef.current!);
-                });
-            }
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            ws.send(JSON.stringify({ sdp: peerConnection.localDescription }));
+            console.log("WebRTC WebSocket Connected");
+            // No offer sent from client, waiting for offer from server
         };
 
         ws.onmessage = async (event) => {
             if (typeof event.data === 'string') {
-                const data = JSON.parse(event.data);
-                if (data.sdp) {
-                    await peerConnection.setRemoteDescription(data.sdp);
-                } else if (data.candidate) {
-                    await peerConnection.addIceCandidate(data.candidate);
+                const message = JSON.parse(event.data);
+
+                if (message.type === 'offer') {
+                    console.log("CLIENT: Received Offer.");
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
+                    
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    ws.send(JSON.stringify(peerConnection.localDescription));
+
+                } else if (message.type === 'iceCandidate') {
+                    const candidateInit = {
+                        candidate: message.candidate.candidate,
+                        sdpMid: message.candidate.sdpMid,
+                        sdpMLineIndex: message.candidate.sdpMLineIndex
+                    };
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidateInit));
                 }
             } else if (event.data instanceof Blob) {
                 // Let's inspect the binary data to see what it is.
@@ -163,6 +194,10 @@ const WebcamPanel: React.FC = () => {
                 reader.readAsArrayBuffer(event.data);
             }
         };
+
+        // Add recvonly transceivers as this client is a viewer
+        peerConnection.addTransceiver('video', { direction: 'recvonly' });
+        peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
         ws.onerror = (err) => {
             console.error('WebSocket Error:', err);
@@ -280,27 +315,31 @@ const WebcamPanel: React.FC = () => {
         }
 
         return (
-            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center">
-                {isLoading ? (
-                    <div className="text-center text-text-secondary p-4">
-                        <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
-                        <p className="text-sm font-semibold">{webcamMode === 'webrtc' ? 'Connecting to WebRTC...' : 'Searching for cameras...'}</p>
+            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full" // Removed object-cover
+                />
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
+                        <div className="text-center text-text-secondary p-4">
+                            <RefreshCw className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                            <p className="text-sm font-semibold">{webcamMode === 'webrtc' ? 'Connecting to WebRTC...' : 'Searching for cameras...'}</p>
+                        </div>
                     </div>
-                ) : error ? (
-                    <div className="text-center text-accent-yellow p-4">
-                        <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm font-semibold">{error}</p>
-                        <button onClick={webcamMode === 'webrtc' ? connectWebRTC : getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
-                            Try Again
-                        </button>
+                )}
+                {error && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
+                        <div className="text-center text-accent-yellow p-4">
+                            <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+                            <p className="text-sm font-semibold">{error}</p>
+                            <button onClick={webcamMode === 'webrtc' ? connectWebRTC : getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
+                                Try Again
+                            </button>
+                        </div>
                     </div>
-                ) : (
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-cover"
-                    />
                 )}
             </div>
         );
