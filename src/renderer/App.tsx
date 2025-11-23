@@ -123,6 +123,23 @@ const App: React.FC = () => {
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
+  const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleFlash = useCallback((buttonId: string) => {
+    if (flashTimeoutRef.current) {
+      clearTimeout(flashTimeoutRef.current);
+    }
+    setFlashingButton(buttonId);
+    flashTimeoutRef.current = setTimeout(() => {
+      setFlashingButton(null);
+    }, 150); // Flash for 150ms
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () =>
+      flashTimeoutRef.current && clearTimeout(flashTimeoutRef.current);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("light-mode", isLightMode);
@@ -172,6 +189,14 @@ const App: React.FC = () => {
     }
   };
 
+  const handleToggleFullscreen = () => {
+    // Check if the electronAPI and its send method exist before calling it
+    if (window.electronAPI && typeof window.electronAPI.send === "function") {
+      window.electronAPI.send("toggle-fullscreen");
+    } else {
+      console.error("Fullscreen API is not available.");
+    }
+  };
   // Global Hotkey Handling
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -605,7 +630,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4">{/* Logo */}</div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => window.electronAPI?.send("toggle-fullscreen")}
+            onClick={handleToggleFullscreen}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
           >
@@ -747,7 +772,7 @@ const App: React.FC = () => {
             jogStep={jogStep}
             onStepChange={settingsActions.setJogStep}
             flashingButton={flashingButton}
-            onFlash={setFlashingButton}
+            onFlash={handleFlash}
             unit={unit}
             onUnitChange={handleUnitChange}
             isJobActive={isJobActive}
