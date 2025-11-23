@@ -495,6 +495,8 @@ export class SerialManager {
                 // Otherwise, it's a manual command error, so report it directly.
                 if (this.linePromiseReject) {
                     this.linePromiseReject(new Error(trimmedValue));
+                    this.linePromiseResolve = null;
+                    this.linePromiseReject = null;
                 } else {
                     this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
                 }
