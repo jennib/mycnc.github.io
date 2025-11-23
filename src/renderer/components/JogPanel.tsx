@@ -63,6 +63,9 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const isZJogDisabledForStep =
       (unit === "mm" && jogStep > 10) || (unit === "in" && jogStep > 1);
 
+    const stepSizes =
+      unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
+
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         // Ignore hotkeys if the user is typing in an input field
@@ -117,6 +120,42 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               handled = true;
             }
             break;
+          // Step size hotkeys
+          case "1":
+            if (stepSizes[0] !== undefined) {
+              onStepChange(stepSizes[0]);
+              buttonToFlash = `step-${stepSizes[0]}`;
+              handled = true;
+            }
+            break;
+          case "2":
+            if (stepSizes[1] !== undefined) {
+              onStepChange(stepSizes[1]);
+              buttonToFlash = `step-${stepSizes[1]}`;
+              handled = true;
+            }
+            break;
+          case "3":
+            if (stepSizes[2] !== undefined) {
+              onStepChange(stepSizes[2]);
+              buttonToFlash = `step-${stepSizes[2]}`;
+              handled = true;
+            }
+            break;
+          case "4":
+            if (stepSizes[3] !== undefined) {
+              onStepChange(stepSizes[3]);
+              buttonToFlash = `step-${stepSizes[3]}`;
+              handled = true;
+            }
+            break;
+          case "5":
+            if (stepSizes[4] !== undefined) {
+              onStepChange(stepSizes[4]);
+              buttonToFlash = `step-${stepSizes[4]}`;
+              handled = true;
+            }
+            break;
         }
 
         if (handled) {
@@ -132,7 +171,15 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       return () => {
         document.removeEventListener("keydown", handleKeyDown);
       };
-    }, [onJog, jogStep, isControlDisabled, isZJogDisabledForStep, onFlash]);
+    }, [
+      onJog,
+      jogStep,
+      isControlDisabled,
+      isZJogDisabledForStep,
+      onFlash,
+      onStepChange,
+      stepSizes,
+    ]);
 
     const JogButton = ({
       id,
@@ -179,9 +226,6 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         </button>
       );
     };
-
-    const stepSizes =
-      unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
 
     return (
       <div className="bg-surface rounded-lg shadow-lg flex flex-col p-4 gap-4">
