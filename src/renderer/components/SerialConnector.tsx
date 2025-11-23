@@ -25,8 +25,8 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     onSimulatorChange,
     isElectron,
 }) => {
-    const [tcpIp, setTcpIp] = useState('127.0.0.1');
-    const [tcpPort, setTcpPort] = useState(23); // Default GRBL port
+    const [tcpIp, setTcpIp] = useState('10.0.0.162');
+    const [tcpPort, setTcpPort] = useState(8889); // Default GRBL port
     const [connectionType, setConnectionType] = useState<'usb' | 'tcp'>('usb');
 
     const handleConnect = () => {

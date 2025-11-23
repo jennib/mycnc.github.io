@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   JobStatus,
   Tool,
+  ConnectionOptions,
 } from "./types";
 import SerialConnector from "./components/SerialConnector";
 import GCodePanel from "./components/GCodePanel";
@@ -130,7 +131,13 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleConnect = () => connectionActions.connect(useSimulator);
+  const handleConnect = (options: ConnectionOptions) => {
+    if (useSimulator) {
+        connectionActions.connect({ type: 'simulator' });
+    } else {
+        connectionActions.connect(options);
+    }
+  };
   const handleDisconnect = () => connectionActions.disconnect();
 
   const handleJobControl = async (action: "start" | "pause" | "resume" | "stop", options?: { startLine?: number }) => {
@@ -225,6 +232,104 @@ const App: React.FC = () => {
     }
   };
 
+  const handleHome = (axes: 'all' | 'x' | 'y' | 'z' | 'xy') => {
+    if (axes === 'all') {
+      connectionActions.sendLine('$H');
+    }
+    // Note: GRBL doesn't support homing individual axes with a single command.
+    // This would require a macro or special handling if needed in the future.
+  };
+
+  const handleSetZero = (axes: 'all' | 'x' | 'y' | 'z' | 'xy') => {
+    const commandMap = {
+      all: 'G10 L20 P1 X0 Y0 Z0',
+      x: 'G10 L20 P1 X0',
+      y: 'G10 L20 P1 Y0',
+      z: 'G10 L20 P1 Z0',
+      xy: 'G10 L20 P1 X0 Y0',
+    };
+    const command = commandMap[axes];
+    if (command) {
+      connectionActions.sendLine(command);
+    }
+  };
+
+  const handleSpindleCommand = (command: 'cw' | 'ccw' | 'off', speed: number) => {
+    switch (command) {
+      case 'cw':
+        connectionActions.sendLine(`M3 S${speed}`);
+        break;
+      case 'ccw':
+        connectionActions.sendLine(`M4 S${speed}`);
+        break;
+      case 'off':
+        connectionActions.sendLine('M5');
+        break;
+    }
+  };
+
+  const handleJog = (axis: string, direction: number, step: number) => {
+    const { jogFeedRate } = machineSettings;
+    const distance = direction * step;
+    const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
+    connectionActions.sendLine(command);
+  };
+
+  const handleProbe = (axes: string) => {
+    const { probeFeedRate, probeTravelDistance } = machineSettings.probe;
+    if (!probeFeedRate || !probeTravelDistance) {
+        logActions.addLog({ type: 'error', message: 'Probe settings are not configured.' });
+        return;
+    }
+
+    let command = '';
+    // The probe command G38.2 moves one or more axes. The first axis to touch the probe
+    // stops all axes and records the coordinates.
+    // We assume a negative direction for probing.
+    if (axes.includes('X')) {
+        command += `X-${probeTravelDistance} `;
+    }
+    if (axes.includes('Y')) {
+        command += `Y-${probeTravelDistance} `;
+    }
+    if (axes.includes('Z')) {
+        command += `Z-${probeTravelDistance} `;
+    }
+
+    if (command) {
+        connectionActions.sendLine(`G38.2 ${command.trim()} F${probeFeedRate}`);
+    }
+  };
+
+  const handleUnitChange = (newUnit: 'mm' | 'in') => {
+    settingsActions.setUnit(newUnit);
+    connectionActions.sendLine(newUnit === 'mm' ? 'G21' : 'G20');
+  };
+
+  const handleRunMacro = async (commands: string[]) => {
+    machineActions.setIsMacroRunning(true);
+    logActions.addLog({ type: 'info', message: `Running macro...` });
+    for (const command of commands) {
+        if (command.trim()) {
+            try {
+                await connectionActions.sendLine(command);
+            } catch (error) {
+                // Error is already logged by the connection store
+                break; // Stop macro on error
+            }
+        }
+    }
+    logActions.addLog({ type: 'info', message: 'Macro finished.' });
+    machineActions.setIsMacroRunning(false);
+  };
+
+  const handleEmergencyStop = () => {
+    const manager = useConnectionStore.getState().serialManager;
+    if (manager) {
+      manager.emergencyStop();
+    }
+  };
+
   const alarmInfo = machineState?.status === "Alarm" ? GRBL_ALARM_CODES[machineState!.code!] || GRBL_ALARM_CODES.default : null;
   const isJobActive = jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused;
   const selectedTool = toolLibrary.find((t: Tool) => t.id === selectedToolId) || null;
@@ -252,11 +357,11 @@ const App: React.FC = () => {
           <button onClick={uiActions.openToolLibraryModal} title="Tool Library" className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"><BookOpen className="w-5 h-5" /></button>
           <button onClick={() => { uiActions.setReturnToWelcome(false); uiActions.openSettingsModal(); }} title="Machine Settings" className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"><Settings className="w-5 h-5" /></button>
           <ThemeToggle isLightMode={isLightMode} onToggle={() => settingsActions.setIsLightMode(!isLightMode)} />
-          <SerialConnector isConnected={isConnected} portInfo={portInfo} onConnect={handleConnect} onDisconnect={handleDisconnect} isApiSupported={isSerialApiSupported} isSimulated={isSimulated} useSimulator={useSimulator} onSimulatorChange={setUseSimulator} />
+          <SerialConnector isConnected={isConnected} portInfo={portInfo} onConnect={handleConnect} onDisconnect={handleDisconnect} isApiSupported={isSerialApiSupported} isSimulated={isSimulated} useSimulator={useSimulator} onSimulatorChange={setUseSimulator} isElectron={!!window.electronAPI?.isElectron} />
         </div>
       </header>
 
-      <StatusBar isConnected={isConnected} machineState={machineState} unit={unit} onEmergencyStop={() => {}} flashingButton={flashingButton} />
+      <StatusBar isConnected={isConnected} machineState={machineState} unit={unit} onEmergencyStop={handleEmergencyStop} flashingButton={flashingButton} />
       
       {alarmInfo && <div className="bg-accent-red/20 border-b-4 border-accent-red text-accent-red p-4 m-4 flex items-start" role="alert"><OctagonAlert className="h-8 w-8 mr-4 flex-shrink-0" /><div className="flex-grow"><h3 className="font-bold text-lg">{`Machine Alarm: ${alarmInfo.name}`}</h3><p className="text-sm">{alarmInfo.desc}</p><p className="text-sm mt-2"><strong>Resolution: </strong>{alarmInfo.resolution}</p></div><button id="unlock-button" title="Unlock Machine (Hotkey: x)" onClick={() => handleManualCommand("$X")} className={`ml-4 flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-100 ${flashingButton === "unlock-button" ? "ring-4 ring-white ring-inset" : ""}`}><Unlock className="w-5 h-5" /> Unlock ($X)</button></div>}
       {!isSerialApiSupported && !useSimulator && <div className="bg-accent-yellow/20 border-l-4 border-accent-yellow text-accent-yellow p-4 m-4 flex items-start" role="alert"><AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" /><div><p className="font-bold">Browser Not Supported</p><p>{error}</p></div></div>}
@@ -267,9 +372,9 @@ const App: React.FC = () => {
           <GCodePanel onFileLoad={jobActions.loadFile} fileName={fileName} gcodeLines={gcodeLines} onJobControl={handleJobControl} jobStatus={jobStatus} progress={progress} isConnected={isConnected} unit={unit} onGCodeChange={jobActions.updateGCode} onClearFile={jobActions.clearFile} machineState={machineState} onFeedOverride={handleFeedOverride} timeEstimate={timeEstimate} machineSettings={machineSettings} toolLibrary={toolLibrary} selectedToolId={selectedToolId} onToolSelect={setSelectedToolId} onOpenGenerator={uiActions.openGCodeModal} />
         </div>
         <div className="flex flex-col gap-4 overflow-hidden min-h-0">
-          <JogPanel isConnected={isConnected} machineState={machineState} onJog={() => {}} onHome={() => {}} onSetZero={() => {}} onSpindleCommand={() => {}} onProbe={() => {}} onCommand={handleManualCommand} jogStep={jogStep} onStepChange={settingsActions.setJogStep} flashingButton={flashingButton} onFlash={setFlashingButton} unit={unit} onUnitChange={settingsActions.setUnit} isJobActive={isJobActive} isJogging={isJogging} isMacroRunning={isMacroRunning} />
+          <JogPanel isConnected={isConnected} machineState={machineState} onJog={handleJog} onHome={handleHome} onSetZero={handleSetZero} onSpindleCommand={handleSpindleCommand} onProbe={handleProbe} onCommand={handleManualCommand} jogStep={jogStep} onStepChange={settingsActions.setJogStep} flashingButton={flashingButton} onFlash={setFlashingButton} unit={unit} onUnitChange={handleUnitChange} isJobActive={isJobActive} isJogging={isJogging} isMacroRunning={isMacroRunning} />
           <WebcamPanel />
-          <MacrosPanel macros={macros} onRunMacro={() => {}} onOpenEditor={uiActions.openMacroEditor} isEditMode={isMacroEditMode} onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)} disabled={isJobActive} />
+          <MacrosPanel macros={macros} onRunMacro={handleRunMacro} onOpenEditor={uiActions.openMacroEditor} isEditMode={isMacroEditMode} onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)} disabled={isJobActive} />
           <Console logs={logs} onSendCommand={handleManualCommand} isConnected={isConnected} isJobActive={isJobActive} isMacroRunning={isMacroRunning} isLightMode={isLightMode} isVerbose={isVerbose} onVerboseChange={logActions.setIsVerbose} />
         </div>
       </main>

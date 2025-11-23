@@ -60,6 +60,31 @@ export const useSettingsStore = create<SettingsState>()(
         Object.fromEntries(
           Object.entries(state).filter(([key]) => key !== 'actions')
         ),
+      merge: (persistedState, currentState) => {
+        const state = persistedState as any;
+        const deepMerge = (current: object, persisted: object) => {
+            const result = { ...current };
+            for (const key in persisted) {
+                if (persisted.hasOwnProperty(key)) {
+                    const currentValue = (current as any)[key];
+                    const persistedValue = (persisted as any)[key];
+                    if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) && typeof persistedValue === 'object' && persistedValue !== null && !Array.isArray(persistedValue)) {
+                        (result as any)[key] = deepMerge(currentValue, persistedValue);
+                    } else {
+                        (result as any)[key] = persistedValue;
+                    }
+                }
+            }
+            return result;
+        };
+
+        return {
+            ...currentState,
+            ...state,
+            machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
+            generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
+        };
+      },
     }
   )
 );

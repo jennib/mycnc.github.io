@@ -182,7 +182,7 @@ const WebcamPanel: React.FC = () => {
                     };
                     await peerConnection.addIceCandidate(new RTCIceCandidate(candidateInit));
                 }
-            } else if (event.data instanceof Blob) {
+            }/* else if (event.data instanceof Blob) {
                 // Let's inspect the binary data to see what it is.
                 const reader = new FileReader();
                 reader.onload = () => {
@@ -192,7 +192,7 @@ const WebcamPanel: React.FC = () => {
                     console.log('Received binary data (first 16 bytes):', hex);
                 };
                 reader.readAsArrayBuffer(event.data);
-            }
+            }*/
         };
 
         // Add recvonly transceivers as this client is a viewer

@@ -40,6 +40,9 @@ export class SerialManager {
     totalLines = 0;
     gcode: string[] = [];
     statusInterval: number | null = null;
+    normalPollingRate = 1000;
+    alarmPollingRate = 1000;
+    isPollingInAlarmState = false;
     
     // State is now managed within the service to handle partial updates correctly.
     spindleDirection: 'cw' | 'ccw' | 'off' = 'off';
@@ -69,6 +72,10 @@ export class SerialManager {
     }
 
     async connect(baudRate: number) {
+        if (this.port) { // Already connected or connecting
+            this.callbacks.onError("A connection attempt is already in progress.");
+            return;
+        }
         if (!('serial' in navigator)) {
             this.callbacks.onError("Web Serial API not supported.");
             return;
@@ -98,13 +105,8 @@ export class SerialManager {
                 this.disconnect();
             });
 
-            const textDecoder = new TextDecoderStream();
-            this.port.readable.pipeTo(textDecoder.writable);
-            this.reader = textDecoder.readable.getReader();
-
-            const textEncoder = new TextEncoderStream();
-            textEncoder.readable.pipeTo(this.port.writable);
-            this.writer = textEncoder.writable.getWriter();
+            this.reader = this.port.readable.getReader();
+            this.writer = this.port.writable.getWriter();
 
             this.readLoop(); // Start reading immediately
 
@@ -136,14 +138,15 @@ export class SerialManager {
             this.isHandshakeInProgress = false;
 
             // If handshake is successful, proceed with connection setup
-            this.callbacks.onConnect({ 
-                type: 'usb', 
+            this.callbacks.onConnect({
+                type: 'usb',
                 portName: usbPortInfo.usbProductId ? `USB (VID: ${usbPortInfo.usbVendorId}, PID: ${usbPortInfo.usbProductId})` : 'USB Device',
                 usbVendorId: usbPortInfo.usbVendorId,
                 usbProductId: usbPortInfo.usbProductId,
             });
             
-            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
+            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
+            this.isPollingInAlarmState = false;
 
         } catch (error) {
             this.isHandshakeInProgress = false;
@@ -157,6 +160,10 @@ export class SerialManager {
     }
 
     async connectTCP(ip: string, port: number) {
+        if (this.connectionType) { // Already connected or connecting
+            this.callbacks.onError("A connection attempt is already in progress.");
+            return;
+        }
         if (!this.isElectron || !window.electronAPI) {
             this.callbacks.onError("TCP connection is only available in Electron environment.");
             return;
@@ -226,7 +233,8 @@ export class SerialManager {
                 this.isHandshakeInProgress = false;
 
                 this.callbacks.onConnect({ type: 'tcp', ip, port });
-                this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 100);
+                this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
+                this.isPollingInAlarmState = false;
             } else {
                 this.callbacks.onError("Failed to establish TCP connection.");
                 this.disconnect();
@@ -240,46 +248,46 @@ export class SerialManager {
     }
 
     async disconnect() {
-        if (this.isDisconnecting || (!this.port && !this.connectionType)) return;
+        if (this.isDisconnecting || (!this.port && this.connectionType !== 'tcp')) return;
         this.isDisconnecting = true;
     
         if (this.statusInterval) {
             clearInterval(this.statusInterval);
             this.statusInterval = null;
         }
-        if (this.isJobRunning) {
-            this.stopJob();
-        }
-    
-        if (this.connectionType === 'usb') {
-            // The reader and writer must be released before the port can be closed.
-            // Awaiting these cancellations prevents a race condition.
-            try {
-                if (this.reader) {
-                    await this.reader.cancel();
-                }
-                if (this.writer) {
-                    await this.writer.abort();
-                }
-                if (this.port) {
-                    await this.port.close();
-                }
-            } catch (error) {
-                // Ignore errors during disconnection, as the port may have already been lost.
-            } finally {
-                this.port = this.reader = this.writer = null;
-            }
-        } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
-            window.electronAPI.disconnectTCP();
-            // Clean up listeners
-            // Note: ipcRenderer.removeListener is not directly exposed in preload,
-            // so we rely on the main process to clean up its socket.
-            // For the renderer, we just ensure our internal state is reset.
+
+        // If a command is pending, reject it.
+        if (this.linePromiseReject) {
+            this.linePromiseReject(new Error('Connection disconnected.'));
+            this.linePromiseResolve = null;
+            this.linePromiseReject = null;
         }
 
-        this.connectionType = null;
-        this.isDisconnecting = false;
-        this.callbacks.onDisconnect();
+        // If a job was running, send a soft-reset to stop the machine.
+        if (this.isJobRunning) {
+            this.isJobRunning = false;
+            this.isPaused = false;
+            this.isStopped = true;
+            this.sendRealtimeCommand('\x18').catch(err => console.error("Failed to send soft-reset on disconnect:", err));
+        }
+    
+        try {
+            if (this.connectionType === 'usb' && this.port) {
+                // Let port.close() handle the stream cancellations.
+                await this.port.close();
+            } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+                window.electronAPI.disconnectTCP();
+            }
+        } catch (error) {
+            console.error("Error during disconnect:", error);
+        } finally {
+            this.port = null;
+            this.reader = null;
+            this.writer = null;
+            this.connectionType = null;
+            this.isDisconnecting = false;
+            this.callbacks.onDisconnect();
+        }
     }
     
     parseGrblStatus(statusStr: string, lastStatus: MachineState) {
@@ -381,15 +389,17 @@ export class SerialManager {
     }
 
     async readLoop() {
+        const decoder = new TextDecoder();
         let buffer = '';
         while (this.port?.readable && this.reader) {
             try {
                 const { value, done } = await this.reader.read();
                 if (done) {
+                    this.reader.releaseLock();
                     break;
                 }
                 if (value) {
-                    buffer += value;
+                    buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n');
                     buffer = lines.pop()!; // Keep the last, possibly incomplete, line
 
@@ -441,6 +451,27 @@ export class SerialManager {
         
                 // Send a deep clone to React to ensure re-render
                 this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
+
+                const isAlarm = this.lastStatus.status === 'Alarm';
+
+                if (isAlarm && !this.isPollingInAlarmState) {
+                    // Transitioning to Alarm state polling
+                    if (this.statusInterval) {
+                        clearInterval(this.statusInterval);
+                    }
+                    this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.alarmPollingRate);
+                    this.isPollingInAlarmState = true;
+                    this.callbacks.onLog({ type: 'status', message: 'Machine in Alarm state. Reducing status polling rate.' });
+            
+                } else if (!isAlarm && this.isPollingInAlarmState) {
+                    // Transitioning back from Alarm state
+                    if (this.statusInterval) {
+                        clearInterval(this.statusInterval);
+                    }
+                    this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
+                    this.isPollingInAlarmState = false;
+                    this.callbacks.onLog({ type: 'status', message: 'Alarm cleared. Resuming normal status polling rate.' });
+                }
 
                 // If a jog just completed, request another status update to ensure we have the final position.
                 if (previousStatus === 'Jog' && this.lastStatus.status === 'Idle') {
@@ -499,14 +530,30 @@ export class SerialManager {
                 // This shouldn't happen with proper logic, but as a safeguard...
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
-            this.linePromiseResolve = resolve;
-            this.linePromiseReject = reject;
-            this.sendLine(line, log).catch(err => {
-                this.linePromiseResolve = null;
-                this.linePromiseReject = null;
-                reject(err);
-            });
-        });
+                    const timeoutId = setTimeout(() => {
+                        // Important: nullify the promise handlers before rejecting
+                        this.linePromiseResolve = null;
+                        this.linePromiseReject = null;
+                        reject(new Error(`Command timed out after 10s: ${line}`));
+                    }, 10000); // 10-second timeout
+            
+                    this.linePromiseResolve = () => {
+                        clearTimeout(timeoutId);
+                        resolve();
+                    };
+            
+                    this.linePromiseReject = (reason) => {
+                        clearTimeout(timeoutId);
+                        reject(reason);
+                    };
+            
+                    this.sendLine(line, log).catch(err => {
+                        clearTimeout(timeoutId);
+                        // Ensure handlers are cleared on send error as well
+                        this.linePromiseResolve = null;
+                        this.linePromiseReject = null;
+                        reject(err);
+                    });        });
     }
 
     async sendLine(line: string, log = true) {
@@ -530,8 +577,9 @@ export class SerialManager {
 
         if (this.connectionType === 'usb' && this.writer) {
             try {
-                const command = line + '\n';
-                await this.writer.write(command);
+                const encoder = new TextEncoder();
+                const data = encoder.encode(line + '\n');
+                await this.writer.write(data);
                 if (log) {
                     this.callbacks.onLog({ type: 'sent', message: line });
                 }
@@ -549,7 +597,7 @@ export class SerialManager {
             }
         } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
             try {
-                window.electronAPI.sendTCP(line);
+                window.electronAPI.sendTCP(line + '\n');
                 if (log) {
                     this.callbacks.onLog({ type: 'sent', message: line });
                 }
@@ -566,7 +614,9 @@ export class SerialManager {
     async sendRealtimeCommand(command: string) {
         if (this.connectionType === 'usb' && this.writer) {
             try {
-                await this.writer.write(command);
+                const encoder = new TextEncoder();
+                const data = encoder.encode(command);
+                await this.writer.write(data);
                 // Real-time commands are not logged to the console to avoid clutter.
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Unknown error";

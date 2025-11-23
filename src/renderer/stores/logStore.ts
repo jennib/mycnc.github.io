@@ -55,29 +55,33 @@ const GRBL_ERROR_CODES: { [key: number]: string } = {
     38: "Tool number greater than max supported value.",
 };
 
-export const useLogStore = create<LogState>((set, get) => ({
+export const useLogStore = create<LogState>((set) => ({
   logs: [],
   isVerbose: false,
   actions: {
     addLog: (log) => {
-      let processedLog: Log = { ...log, timestamp: new Date() };
-      const { isVerbose } = get();
-
-      // Add explanation for GRBL errors
-      if (processedLog.type === 'error' && processedLog.message.includes('error:')) {
-        const codeMatch = processedLog.message.match(/error:(\d+)/);
-        if (codeMatch?.[1]) {
-          const code = parseInt(codeMatch[1], 10);
-          const explanation = GRBL_ERROR_CODES[code];
-          if (explanation) {
-            processedLog.message = `${processedLog.message} (${explanation})`;
-          }
-        }
-      }
-
       set((state) => {
+        // Use state directly from the setter to avoid closure issues.
+        if (!state.isVerbose && log.type === 'status') {
+          return state; // Don't add the log, return current state.
+        }
+
+        let processedLog: Log = { ...log, timestamp: new Date() };
+
+        // Add explanation for GRBL errors
+        if (processedLog.type === 'error' && processedLog.message.includes('error:')) {
+            const codeMatch = processedLog.message.match(/error:(\d+)/);
+            if (codeMatch?.[1]) {
+                const code = parseInt(codeMatch[1], 10);
+                const explanation = GRBL_ERROR_CODES[code];
+                if (explanation) {
+                    processedLog.message = `${processedLog.message} (${explanation})`;
+                }
+            }
+        }
+
         // Consolidate repeated 'ok' messages to prevent console spam
-        if (!isVerbose && processedLog.type === 'received' && processedLog.message.trim().toLowerCase() === 'ok') {
+        if (!state.isVerbose && processedLog.type === 'received' && processedLog.message.trim().toLowerCase() === 'ok') {
           const lastLog = state.logs[state.logs.length - 1];
           if (lastLog?.type === 'received' && /^ok\.*$/.test(lastLog.message) && lastLog.message.length < 60) {
             const newLogs = [...state.logs];

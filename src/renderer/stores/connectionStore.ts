@@ -15,9 +15,9 @@ interface ConnectionState {
   isSimulated: boolean;
   portInfo: any | null;
   actions: {
-    connect: (useSimulator: boolean) => Promise<void>;
+    connect: (options: import('../types').ConnectionOptions | { type: 'simulator' }) => Promise<void>;
     disconnect: () => Promise<void>;
-    sendLine: (line: string) => void;
+    sendLine: (line: string) => Promise<void>;
     sendRealtimeCommand: (command: string) => void;
   };
 }
@@ -29,11 +29,12 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   isSimulated: false,
   portInfo: null,
   actions: {
-    connect: async (useSimulator: boolean) => {
+    connect: async (options: import('../types').ConnectionOptions | { type: 'simulator' }) => {
       if (get().isConnecting || get().isConnected) return;
 
       set({ isConnecting: true });
 
+      const useSimulator = options.type === 'simulator';
       const { machineSettings } = useSettingsStore.getState();
       const { addLog } = useLogStore.getState().actions;
       const { setMachineState, setIsHomedSinceConnect, reset: resetMachine } = useMachineStore.getState().actions;
@@ -49,22 +50,51 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
           });
           addLog({
             type: 'status',
-            message: `Connected to ${useSimulator ? 'simulator' : 'port'} at 115200 baud.`,
+            message: `Connected to ${useSimulator ? 'simulator' : info.type === 'tcp' ? `TCP at ${info.ip}:${info.port}` : 'serial port'} at 115200 baud.`,
           });
           setIsHomedSinceConnect(false);
 
           // Run startup script
           if (machineSettings.scripts.startup && get().serialManager) {
-            addLog({ type: 'status', message: 'Running startup script...' });
-            const startupCommands = machineSettings.scripts.startup
-              .split('\n')
-              .map(l => l.replace(/\(.*?\)/g, ''))
-              .map(l => l.split(';')[0])
-              .map(l => l.trim())
-              .filter(l => l && l !== '%');
-            for (const command of startupCommands) {
-              get().serialManager?.sendLineAndWaitForOk(command);
-            }
+            const runStartupScript = async () => {
+              addLog({ type: 'status', message: 'Running startup script...' });
+              const startupCommands = machineSettings.scripts.startup
+                .split('\n')
+                .map(l => l.replace(/\(.*?\)/g, ''))
+                .map(l => l.split(';')[0])
+                .map(l => l.trim())
+                .filter(l => l && l !== '%');
+              
+              let isUnlocked = false;
+              for (const command of startupCommands) {
+                try {
+                  await get().serialManager?.sendLineAndWaitForOk(command);
+                } catch (error) {
+                  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                  if (errorMessage.includes('error:9') && !isUnlocked) {
+                    isUnlocked = true; // Only try to unlock once
+                    addLog({ type: 'status', message: 'Machine is locked. Attempting to unlock...' });
+                    try {
+                      await get().serialManager?.sendLineAndWaitForOk('$X');
+                      addLog({ type: 'status', message: 'Machine unlocked. Retrying last command...' });
+                      await get().serialManager?.sendLineAndWaitForOk(command); // Retry the failed command
+                    } catch (unlockError) {
+                      const unlockErrorMessage = unlockError instanceof Error ? unlockError.message : "Unknown error";
+                      addLog({ type: 'error', message: `Failed to unlock machine: ${unlockErrorMessage}` });
+                      break; // Stop script if unlock fails
+                    }
+                  } else {
+                    let finalErrorMessage = `Startup script failed on command '${command}': ${errorMessage}`;
+                    if (errorMessage.includes('error:9') && isUnlocked) {
+                        finalErrorMessage = `Startup script failed on command '${command}' even after unlocking. Please check machine state.`;
+                    }
+                    addLog({ type: 'error', message: finalErrorMessage });
+                    break; // Stop script on other errors
+                  }
+                }
+              }
+            };
+            runStartupScript();
           }
         },
         onDisconnect: () => {
@@ -90,7 +120,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         onError: (message: string) => {
           addLog({ type: 'error', message });
         },
-        onStatus: setMachineState,
+        onStatus: (status: any, raw: string) => {
+          setMachineState(status);
+          // Let the logStore decide whether to show it based on verbosity
+          addLog({ type: 'status', message: raw });
+        },
       };
 
       try {
@@ -99,7 +133,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
           : new SerialManager(machineSettings, commonCallbacks);
         
         set({ serialManager: manager });
-        await manager.connect(115200);
+
+        if (useSimulator) {
+            await manager.connect(115200);
+        } else if (options.type === 'usb') {
+            await manager.connect(115200);
+        } else if (options.type === 'tcp') {
+            await (manager as SerialManager).connectTCP(options.ip, options.port);
+        }
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -111,7 +152,24 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       await get().serialManager?.disconnect();
     },
     sendLine: (line: string) => {
-      get().serialManager?.sendLine(line);
+      const manager = get().serialManager;
+      if (manager) {
+        const trimmedLine = line.trim();
+        // Jog commands are real-time and don't get an 'ok' response.
+        // They should not use sendLineAndWaitForOk.
+        if (trimmedLine.startsWith('$J=')) {
+          return manager.sendLine(line).catch(error => {
+            useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed: ${error.message}` });
+            throw error; // Re-throw
+          });
+        } else {
+          return manager.sendLineAndWaitForOk(line).catch(error => {
+            useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed: ${error.message}` });
+            throw error; // Re-throw
+          });
+        }
+      }
+      return Promise.reject(new Error("Not connected."));
     },
     sendRealtimeCommand: (command: string) => {
       get().serialManager?.sendRealtimeCommand(command);

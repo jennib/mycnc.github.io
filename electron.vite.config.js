@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/preload.ts')
+          preload: resolve(__dirname, 'electron/preload.ts')
         },
         output: {
           format: 'cjs'
