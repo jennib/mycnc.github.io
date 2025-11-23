@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } from "electron";
+import * as electron from "electron";
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } = electron;
 import path from "path";
 import net from "net";
 

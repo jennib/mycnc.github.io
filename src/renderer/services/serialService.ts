@@ -480,16 +480,6 @@ export class SerialManager {
             }
         } else if (trimmedValue) {
             if (trimmedValue.startsWith('error:')) {
-                if (this.isStoppingAndUnlocking) {
-                    this.callbacks.onLog({ type: 'status', message: `GRBL error suppressed during stop/unlock sequence: ${trimmedValue}` });
-                    if (this.linePromiseReject) {
-                        this.linePromiseReject(new Error(trimmedValue)); // Still reject the promise so sendLineAndWaitForOk doesn't hang
-                        this.linePromiseResolve = null;
-                        this.linePromiseReject = null;
-                    }
-                    return; // Suppress further error processing
-                }
-                // If the handshake is in progress, squelch the error and log it quietly.
                 if (this.isHandshakeInProgress) {
                     this.callbacks.onLog({ type: 'status', message: `GRBL error during handshake (squelched): ${trimmedValue}` });
                     if (this.linePromiseReject) {
@@ -505,55 +495,48 @@ export class SerialManager {
                 // Otherwise, it's a manual command error, so report it directly.
                 if (this.linePromiseReject) {
                     this.linePromiseReject(new Error(trimmedValue));
-                    this.linePromiseResolve = null;
-                    this.linePromiseReject = null;
                 } else {
                     this.callbacks.onError(`GRBL Error: ${trimmedValue}`);
                 }
             }
             else {
                 this.callbacks.onLog({ type: 'received', message: trimmedValue });
-                if (trimmedValue.startsWith('ok')) {
-                    if (this.linePromiseResolve) {
-                        this.linePromiseResolve();
-                        this.linePromiseResolve = null;
-                        this.linePromiseReject = null;
-                    }
-                }
-            }
+                                                    if (trimmedValue.startsWith('ok')) {
+                                                        if (this.linePromiseResolve) {
+                                                            this.linePromiseResolve();
+                                                            this.linePromiseResolve = null;
+                                                            this.linePromiseReject = null;
+                                                        }
+                                                    }            }
         }
     }
 
     async sendLineAndWaitForOk(line: string, log = true) {
         return new Promise<void>((resolve, reject) => {
             if (this.linePromiseResolve) {
-                // This shouldn't happen with proper logic, but as a safeguard...
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
-                    const timeoutId = setTimeout(() => {
-                        // Important: nullify the promise handlers before rejecting
-                        this.linePromiseResolve = null;
-                        this.linePromiseReject = null;
-                        reject(new Error(`Command timed out after 10s: ${line}`));
-                    }, 10000); // 10-second timeout
-            
-                    this.linePromiseResolve = () => {
-                        clearTimeout(timeoutId);
-                        resolve();
-                    };
-            
-                    this.linePromiseReject = (reason) => {
-                        clearTimeout(timeoutId);
-                        reject(reason);
-                    };
-            
-                    this.sendLine(line, log).catch(err => {
-                        clearTimeout(timeoutId);
-                        // Ensure handlers are cleared on send error as well
-                        this.linePromiseResolve = null;
-                        this.linePromiseReject = null;
-                        reject(err);
-                    });        });
+    
+            const timeoutId = setTimeout(() => {
+                this.linePromiseResolve = null;
+                this.linePromiseReject = null;
+                reject(new Error(`Command timed out after 10s: ${line}`));
+            }, 10000);
+    
+            this.linePromiseResolve = () => {
+                clearTimeout(timeoutId);
+                resolve();
+            };
+    
+            this.linePromiseReject = (reason) => {
+                clearTimeout(timeoutId);
+                reject(reason);
+            };
+    
+            this.sendLine(line, log).catch(err => {
+                this.linePromiseReject?.(err);
+            });
+        });
     }
 
     async sendLine(line: string, log = true) {
@@ -808,7 +791,6 @@ export class SerialManager {
                 this.linePromiseReject = null;
             }
 
-            this.isStoppingAndUnlocking = true; // Start suppressing errors
             try {
                 await this.sendRealtimeCommand('\x18'); // Soft-reset (Ctrl-X)
                 await new Promise(resolve => setTimeout(resolve, 500)); // Give GRBL time to reset
@@ -822,7 +804,6 @@ export class SerialManager {
                     this.callbacks.onLog({ type: 'error', message: `Failed to unlock GRBL with $X: ${unlockError.message}. Manual unlock might be required.` });
                 }
             } finally {
-                this.isStoppingAndUnlocking = false; // Stop suppressing errors
             }
         }
     }
@@ -835,6 +816,28 @@ export class SerialManager {
             this.linePromiseResolve = null;
             this.linePromiseReject = null;
         }
-        this.sendRealtimeCommand('\x18'); // Soft Reset
+        
+        const command = '\x18'; // Soft Reset
+        this.callbacks.onLog({ type: 'info', message: 'EMERGENCY STOP' });
+
+        // Bypass normal checks to send e-stop if at all possible.
+        try {
+            if (this.connectionType === 'usb' && this.writer) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(command);
+                this.writer.write(data).catch(err => {
+                    console.warn("E-stop USB write failed, connection may be lost.", err);
+                });
+            } else if (this.connectionType === 'tcp' && window.electronAPI) {
+                window.electronAPI.sendTCP(command);
+            } else {
+                // As a last resort, if we are in electron, try sending to TCP anyway
+                if (window.electronAPI) {
+                    window.electronAPI.sendTCP(command);
+                }
+            }
+        } catch(e) {
+            console.warn("Could not send e-stop command.", e);
+        }
     }
 }
