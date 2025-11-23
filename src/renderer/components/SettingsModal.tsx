@@ -74,6 +74,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
     if (!isOpen) return null;
 
+    const handleNumericChange = (field: keyof MachineSettings, value: string) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
     const handleNestedNumericChange = (category: keyof MachineSettings, field: string, value: string) => {
         // Keep the value as a string during editing to allow partial input like "1." or "-"
         setLocalSettings(prev => ({
@@ -99,10 +106,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         // Deep clone to avoid mutating state directly
         const settingsToSave = JSON.parse(JSON.stringify(localSettings));
         
+        
         // Define which fields need to be parsed to numbers
         const numericFields = {
             workArea: ['x', 'y', 'z'],
-            spindle: ['min', 'max'],
+            spindle: ['min', 'max', 'warmupDelay'],
             probe: ['xOffset', 'yOffset', 'zOffset', 'feedRate']
         };
 
@@ -116,6 +124,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 }
             }
         }
+
+        settingsToSave.jogFeedRate = parseFloat(settingsToSave.jogFeedRate) || 0;
 
         onSave(settingsToSave, localGeneratorSettings);
         onCancel();
@@ -161,16 +171,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
                                 <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
                             </InputGroup>
+                            <InputGroup label="Jog Feed Rate (mm/min)">
+                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
+                            </InputGroup>
                             <InputGroup label="Spindle Speed Range (RPM)">
                                 <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
                                 <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
+                            </InputGroup>
+                            <InputGroup label="Spindle Warmup Delay (ms)">
+                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
                             </InputGroup>
                             <InputGroup label="Probe (mm)">
                                 <div className="flex items-center gap-2">
                                     <span className="w-4 text-center text-text-secondary font-semibold">X</span>
                                     <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.g.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                                 </div>
@@ -182,7 +198,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         <div className="space-y-4 bg-background p-4 rounded-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
                             <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
-                            <ScriptInput label="Tool Change Script" value={localSettings.scripts.toolChange} onChange={e => handleScriptChange('toolChange', e.target.value)} placeholder="e.g., M5 G0 Z10" />
                             <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>

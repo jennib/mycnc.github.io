@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
           index: resolve(__dirname, 'electron/main.ts')
         },
         output: {
-          format: 'es'
+          format: 'cjs'
         }
       }
     }
@@ -21,10 +21,10 @@ export default defineConfig(({ mode }) => ({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/preload.ts')
+          preload: resolve(__dirname, 'electron/preload.ts')
         },
         output: {
-          format: 'es'
+          format: 'cjs'
         }
       }
     }
@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => ({
       'process.env.GEMINI_API_KEY': JSON.stringify(loadEnv(mode, '.', '').GEMINI_API_KEY)
     },
     resolve: {
-      alias: { '@': resolve(__dirname, '.') }
+      alias: { '@': resolve(__dirname, 'src/renderer') }
     },
     build: {
       rollupOptions: {

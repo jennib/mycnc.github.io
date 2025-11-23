@@ -237,6 +237,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ } = profileParams;
 
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
         const code = [
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
@@ -256,8 +265,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             paths.push({ cx: diameter/2, cy: diameter/2, r: diameter/2, stroke: 'var(--color-text-secondary)', fill: 'none', strokeDasharray: '4 2', strokeWidth: '0.5%'});
         }
 
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
         let currentDepth = 0;
         while (currentDepth > numericDepth) {
             currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
@@ -377,6 +384,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
         }
 
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
         const code = [
             `(--- Pocket Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
@@ -386,11 +402,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const toolRadius = selectedTool.diameter / 2;
         const stepoverDist = selectedTool.diameter * (stepover / 100);
 
-        const numericDepth = Number(depth);
         const numericPlungeFeed = Number(plungeFeed);
         let currentDepth = 0;
         while (currentDepth > numericDepth) {
-            currentDepth = Math.max(numericDepth, currentDepth - (Number(depthPerPass)));
+            currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
             code.push(`(--- Pass at Z=${currentDepth.toFixed(3)} ---)`);
 
             if (shape === 'rect') {
@@ -440,6 +455,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
         if (counterboreEnabled && cbDiameter <= holeDiameter) {
             return { error: "Counterbore must be larger than hole diameter.", code: [], paths: [], bounds: {} };
+        }
+
+        const numericDepthPerPass = Number(depthPerPass);
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(Number(holeDepth))) {
+            return { error: "Depth per Pass cannot be greater than total Hole Depth.", code: [], paths: [], bounds: {} };
+        }
+        if (counterboreEnabled && numericDepthPerPass > Math.abs(Number(cbDepth))) {
+            return { error: "Depth per Pass cannot be greater than total Counterbore Depth.", code: [], paths: [], bounds: {} };
         }
 
         const code = [
@@ -520,6 +546,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const paramsToCheck: (string | number | null)[] = [slotWidth, depth, depthPerPass, feed, spindle, safeZ];
         if (paramsToCheck.some(p => p === '' || p === null)) return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
 
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
         const code = [
             `(--- Slot Operation: ${type} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
@@ -548,8 +583,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         offsets.sort((a,b) => a-b);
 
 
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
         let currentDepth = 0;
         while (currentDepth > numericDepth) {
             currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);

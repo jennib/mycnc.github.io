@@ -1,12 +1,5 @@
-import {
-  app,
-  BrowserWindow,
-  dialog,
-  Menu,
-  shell,
-  session,
-  ipcMain,
-} from "electron";
+import * as electron from "electron";
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } = electron;
 import path from "path";
 import net from "net";
 
@@ -61,7 +54,7 @@ const createWindow = () => {
     width: 1280,
     height: 800,
     webPreferences: {
-      preload: process.env.VITE_PRELOAD_JS,
+      preload: path.join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true, // Enable context isolation
       sandbox: false, // Disable sandbox to allow preload script access
     },
@@ -74,10 +67,18 @@ const createWindow = () => {
   });
 
   // --- Menu Template ---
-  const menuTemplate: Electron.MenuItemConstructorOptions[] = [
+  const menuTemplate: MenuItemConstructorOptions[] = [
     {
       label: "File",
       submenu: [{ role: "quit" }],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+      ]
     },
     {
       role: "help",
@@ -104,60 +105,55 @@ const createWindow = () => {
   Menu.setApplicationMenu(menu);
 
   // --- TCP Communication Handlers ---
-  ipcMain.handle("connect-tcp", async (event, ip: string, port: number) => {
-    return new Promise<boolean>((resolve) => {
-      if (tcpSocket) {
-        tcpSocket.destroy();
-        tcpSocket = null;
-      }
+ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
+  return new Promise((resolve, reject) => {
+    if (tcpSocket) {
+      tcpSocket.destroy();
+      tcpSocket = null;
+    }
 
-      tcpSocket = new net.Socket();
+    tcpSocket = new net.Socket();
 
-      tcpSocket.connect(port, ip, () => {
-        console.log(`TCP Connected to ${ip}:${port}`);
-        resolve(true);
-      });
+    const connectionTimeout = setTimeout(() => {
+      reject(new Error("Connection timed out."));
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    }, 5000);
 
-      tcpSocket.on("data", (data) => {
-        mainWindow.webContents.send("tcp-data", data.toString());
-      });
-
-      tcpSocket.on("error", (err) => {
-        console.error("TCP Socket Error:", err.message);
-        mainWindow.webContents.send("tcp-error", err.message);
-        if (tcpSocket) {
-          tcpSocket.destroy();
-          tcpSocket = null;
-        }
-        resolve(false); // Resolve false on connection error
-      });
-
-      tcpSocket.on("close", () => {
-        console.log("TCP Socket Closed");
-        mainWindow.webContents.send("tcp-disconnect");
-        if (tcpSocket) {
-          tcpSocket.destroy();
-          tcpSocket = null;
-        }
-      });
-
-      // Handle connection timeout
-      tcpSocket.setTimeout(5000, () => {
-        if (tcpSocket && !tcpSocket.connecting) {
-          // Check if it's still trying to connect
-          console.error("TCP Connection Timeout");
-          mainWindow.webContents.send("tcp-error", "Connection timed out.");
-          tcpSocket.destroy();
-          tcpSocket = null;
-          resolve(false);
-        }
-      });
+    tcpSocket.on("connect", () => {
+      clearTimeout(connectionTimeout);
+      console.log(`TCP Connected to ${ip}:${port}`);
+      resolve(true);
     });
+
+    tcpSocket.on("data", (data) => {
+      mainWindow.webContents.send("tcp-data", data.toString());
+    });
+
+    tcpSocket.on("error", (err) => {
+      clearTimeout(connectionTimeout);
+      console.error("TCP Socket Error:", err.message);
+      mainWindow.webContents.send("tcp-error", err.message);
+      reject(new Error(err.message));
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    });
+
+    tcpSocket.on("close", () => {
+      clearTimeout(connectionTimeout);
+      console.log("TCP Socket Closed");
+      mainWindow.webContents.send("tcp-disconnect");
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    });
+
+    tcpSocket.connect(port, ip);
   });
+});
 
   ipcMain.on("send-tcp", (event, data: string) => {
     if (tcpSocket && !tcpSocket.destroyed) {
-      tcpSocket.write(data + "\n"); // GRBL expects newline
+      tcpSocket.write(data); // Newline is now handled by the caller
     } else {
       console.warn(
         "Attempted to send data on a non-existent or destroyed TCP socket."
@@ -165,7 +161,6 @@ const createWindow = () => {
       mainWindow.webContents.send("tcp-error", "Not connected to TCP device.");
     }
   });
-
   ipcMain.on("disconnect-tcp", () => {
     if (tcpSocket) {
       tcpSocket.destroy();
@@ -173,50 +168,52 @@ const createWindow = () => {
     }
   });
 
-  mainWindow.webContents.session.on(
-    "select-serial-port",
-    async (event, portList, webContents, callback) => {
-      event.preventDefault();
-      if (portList && portList.length > 0) {
-        try {
-          const { response } = await dialog.showMessageBox(mainWindow, {
-            title: "Select a Serial Port",
-            message: "Please select a serial port to connect to:",
-            type: "question",
-            buttons: [...portList.map((p) => p.portName), "Cancel"],
-            cancelId: portList.length, // The index of the 'Cancel' button
-          });
-
-          if (response < portList.length) {
-            // User selected a port
-            callback(portList[response].portId);
-          } else {
-            // User clicked 'Cancel' or closed the dialog
-            callback("");
-          }
-        } catch (err) {
-          console.error("Error showing serial port selection dialog:", err);
-          callback(""); // Cancel on error
-        }
-      } else {
-        await dialog.showMessageBox(mainWindow, {
-          title: "No Serial Ports Found",
-          message:
-            "No serial ports were found. Please ensure your device is connected.",
+  const handleSelectSerialPort = async (event, portList, webContents, callback) => {
+    // Re-register the handler for the next time, as `once` makes it a single-use handler.
+    webContents.session.once('select-serial-port', handleSelectSerialPort);
+    
+    event.preventDefault();
+    if (portList && portList.length > 0) {
+      try {
+        const { response } = await dialog.showMessageBox(mainWindow, {
+          title: "Select a Serial Port",
+          message: "Please select a serial port to connect to:",
+          type: "question",
+          buttons: [...portList.map((p) => p.portName), "Cancel"],
+          cancelId: portList.length, // The index of the 'Cancel' button
         });
-        callback("");
-      }
-    }
-  );
 
-  mainWindow.webContents.session.setPermissionCheckHandler(
-    (webContents, permission, requestingOrigin, details) => {
-      if (permission === "serial") {
-        return true;
+        if (response < portList.length) {
+          // User selected a port
+          callback(portList[response].portId);
+        } else {
+          // User clicked 'Cancel' or closed the dialog
+          callback("");
+        }
+      } catch (err) {
+        console.error("Error showing serial port selection dialog:", err);
+        callback(""); // Cancel on error
       }
-      return false;
+    } else {
+      await dialog.showMessageBox(mainWindow, {
+        title: "No Serial Ports Found",
+        message:
+          "No serial ports were found. Please ensure your device is connected.",
+      });
+      callback("");
     }
-  );
+  };
+
+  // Set up the initial handler. It will re-register itself after each use.
+  mainWindow.webContents.session.once('select-serial-port', handleSelectSerialPort);
+
+  mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
+    console.log(`[Main Process] Checking permission for: ${permission}`);
+    if (permission === 'serial' || permission === 'media') {
+      return true;
+    }
+    return false;
+  });
 
   mainWindow.webContents.session.setDevicePermissionHandler((details) => {
     if (details.deviceType === "serial") {
@@ -226,18 +223,22 @@ const createWindow = () => {
   });
 
   // --- Webcam/Media Permission Handler ---
-  mainWindow.webContents.session.setPermissionRequestHandler(
-    (webContents, permission, callback) => {
-      // For this application, we will automatically grant media permission (camera, microphone).
-      // In a production app, you might want to show a custom prompt here.
-      if (permission === "media") {
-        callback(true);
-      } else {
-        // Deny any other permission requests.
-        callback(false);
-      }
+  mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
+    console.log(`[Main Process] Permission request for: ${permission} from origin ${details.requestingUrl}`);
+    if (permission === 'media') {
+      // In a real app, you'd want to ask the user, but for now, we'll grant it.
+      // This will cover 'video' and 'audio' permissions.
+      console.log('[Main Process] Granting media permission.');
+      return callback(true);
     }
-  );
+    // Handle individual camera/microphone requests if they come separately
+    if (permission === 'camera' || permission === 'microphone') {
+        console.log(`[Main Process] Granting ${permission} permission.`);
+        return callback(true);
+    }
+    // Deny other requests
+    callback(false);
+  });
 
   mainWindow.webContents.on("did-finish-load", () => {
     mainWindow.webContents.send(
@@ -246,14 +247,24 @@ const createWindow = () => {
     );
   });
 
-  // and load the index.html of the app.
+  // and load the index.html of the electron.app.
   // Log the environment variable to the console.
   console.log("VITE_DEV_SERVER_URL:", process.env.VITE_DEV_SERVER_URL);
+
+  // Set a Content Security Policy
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' http://localhost:3000; connect-src 'self' http://localhost:3000 ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *;"]
+      }
+    });
+  });
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
   }

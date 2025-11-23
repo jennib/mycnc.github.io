@@ -6,85 +6,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Permissions-Policy" content="serial=*" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      :root {
-        --color-primary: #0d9488;
-        --color-primary-focus: #0f766e;
-        --color-secondary: #475569;
-        --color-secondary-focus: #334155;
-        --color-background: #1e293b;
-        --color-surface: #334155;
-        --color-text-primary: #f1f5f9;
-        --color-text-secondary: #94a3b8;
-        --color-accent-green: #10b981;
-        --color-accent-yellow: #f59e0b;
-        --color-accent-red: #ef4444;
-      }
-      .light-mode {
-        --color-primary: #0000ff;
-        --color-primary-focus: #0000dd;
-        --color-secondary: #666666;
-        --color-secondary-focus: #444444;
-        --color-background: #ffffff;
-        --color-surface: #e0e0e0;
-        --color-text-primary: #000000;
-        --color-text-secondary: #444444;
-        --color-accent-green: #006400;
-        --color-accent-yellow: #ff8c00;
-        --color-accent-red: #c80000;
-      }
-      .light-mode .bg-secondary {
-        color: #ffffff;
-      }
-    </style>
-
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              primary: "var(--color-primary)",
-              "primary-focus": "var(--color-primary-focus)",
-              secondary: "var(--color-secondary)",
-              "secondary-focus": "var(--color-secondary-focus)",
-              background: "var(--color-background)",
-              surface: "var(--color-surface)",
-              "text-primary": "var(--color-text-primary)",
-              "text-secondary": "var(--color-text-secondary)",
-              "accent-green": "var(--color-accent-green)",
-              "accent-yellow": "var(--color-accent-yellow)",
-              "accent-red": "var(--color-accent-red)",
-            },
-            animation: {
-              "spin-slow": "spin 3s linear infinite",
-              "spin-slow-reverse": "spin-reverse 3s linear infinite",
-            },
-            keyframes: {
-              "spin-reverse": {
-                to: {
-                  transform: "rotate(-360deg)",
-                },
-              },
-            },
-          },
-        },
-      };
-    </script>
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://aistudiocdn.com/react@19.2.0",
-          "react-dom/client": "https://aistudiocdn.com/react-dom@19.2.0/client",
-          "react-dom/": "https://aistudiocdn.com/react-dom@19.2.0/",
-          "@vercel/analytics/": "https://aistudiocdn.com/@vercel/analytics@^1.5.0/",
-          "react/": "https://aistudiocdn.com/react@^19.2.0/"
-        }
-      }
-    </script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'"
+    />
   </head>
   <body class="bg-background text-text-primary">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/src/renderer/index.tsx"></script>
   </body>
 </html>
