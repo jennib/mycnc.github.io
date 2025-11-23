@@ -631,7 +631,8 @@ export class SerialManager {
     requestStatusUpdate() {
         if (this.connectionType === 'usb' && this.writer) {
             // This write is silent and doesn't need to be awaited
-            this.writer.write('?').catch(() => {});
+            const encoder = new TextEncoder();
+            this.writer.write(encoder.encode('?')).catch(() => {});
         } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
             window.electronAPI.sendTCP('?');
         }
