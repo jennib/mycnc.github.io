@@ -14,7 +14,15 @@ interface SurfacingGeneratorProps {
 
 const SurfacingGenerator: React.FC<SurfacingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = ['width', 'length', 'depth', 'stepover', 'feed', 'spindle', 'plungeFeed', 'safeZ']; // Add all numeric fields here
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (

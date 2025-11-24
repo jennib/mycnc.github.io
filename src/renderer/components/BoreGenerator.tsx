@@ -17,7 +17,18 @@ interface BoreGeneratorProps {
 const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
 
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'centerX', 'centerY', 'holeDiameter', 'holeDepth', 'cbDiameter', 'cbDepth',
+            'depthPerPass', 'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (

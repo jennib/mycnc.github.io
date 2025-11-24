@@ -14,7 +14,19 @@ interface SlotGeneratorProps {
 
 const SlotGenerator: React.FC<SlotGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'startX', 'startY', 'endX', 'endY', 'centerX', 'centerY', 'radius',
+            'startAngle', 'endAngle', 'slotWidth', 'depth', 'depthPerPass',
+            'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (
