@@ -12,7 +12,6 @@ interface ConnectionState {
   serialManager: SerialManager | SimulatedSerialManager | null;
   isConnected: boolean;
   isConnecting: boolean;
-  isDisconnecting: boolean;
   isSimulated: boolean;
   portInfo: any | null;
   actions: {
@@ -27,12 +26,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   serialManager: null,
   isConnected: false,
   isConnecting: false,
-  isDisconnecting: false,
   isSimulated: false,
   portInfo: null,
   actions: {
     connect: async (options: import('../types').ConnectionOptions | { type: 'simulator' }) => {
-      if (get().isConnecting || get().isConnected || get().isDisconnecting) return;
+      if (get().isConnecting || get().isConnected) return;
 
       set({ isConnecting: true });
 
@@ -57,7 +55,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
           setIsHomedSinceConnect(false);
 
           // Run startup script
-          if (machineSettings.runStartupScript && machineSettings.scripts.startup && get().serialManager) {
+          if (machineSettings.scripts.startup && get().serialManager) {
             const runStartupScript = async () => {
               addLog({ type: 'status', message: 'Running startup script...' });
               const startupCommands = machineSettings.scripts.startup
@@ -104,7 +102,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
           set({
             isConnected: false,
             isConnecting: false,
-            isDisconnecting: false,
             isSimulated: false,
             portInfo: null,
             serialManager: null,
@@ -152,8 +149,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       }
     },
     disconnect: async () => {
-      if (get().isDisconnecting || !get().isConnected) return;
-      set({ isDisconnecting: true });
       await get().serialManager?.disconnect();
     },
     sendLine: (line: string, timeout?: number) => {

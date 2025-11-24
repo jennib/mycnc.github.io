@@ -66,7 +66,120 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const stepSizes =
       unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
 
-    
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        // Ignore hotkeys if the user is typing in an input field
+        const activeElement = document.activeElement;
+        if (
+          activeElement &&
+          (activeElement.tagName === "INPUT" ||
+            activeElement.tagName === "TEXTAREA")
+        ) {
+          return;
+        }
+
+        if (isControlDisabled) {
+          return;
+        }
+
+        let handled = false;
+        let buttonToFlash: string | null = null;
+
+        switch (event.key) {
+          case "ArrowUp":
+            onJog("Y", 1, jogStep);
+            buttonToFlash = "jog-y-plus";
+            handled = true;
+            break;
+          case "ArrowDown":
+            onJog("Y", -1, jogStep);
+            buttonToFlash = "jog-y-minus";
+            handled = true;
+            break;
+          case "ArrowLeft":
+            onJog("X", -1, jogStep);
+            buttonToFlash = "jog-x-minus";
+            handled = true;
+            break;
+          case "ArrowRight":
+            onJog("X", 1, jogStep);
+            buttonToFlash = "jog-x-plus";
+            handled = true;
+            break;
+          case "PageUp":
+            if (!isZJogDisabledForStep) {
+              onJog("Z", 1, jogStep);
+              buttonToFlash = "jog-z-plus";
+              handled = true;
+            }
+            break;
+          case "PageDown":
+            if (!isZJogDisabledForStep) {
+              onJog("Z", -1, jogStep);
+              buttonToFlash = "jog-z-minus";
+              handled = true;
+            }
+            break;
+          // Step size hotkeys
+          case "1":
+            if (stepSizes[0] !== undefined) {
+              onStepChange(stepSizes[0]);
+              buttonToFlash = `step-${stepSizes[0]}`;
+              handled = true;
+            }
+            break;
+          case "2":
+            if (stepSizes[1] !== undefined) {
+              onStepChange(stepSizes[1]);
+              buttonToFlash = `step-${stepSizes[1]}`;
+              handled = true;
+            }
+            break;
+          case "3":
+            if (stepSizes[2] !== undefined) {
+              onStepChange(stepSizes[2]);
+              buttonToFlash = `step-${stepSizes[2]}`;
+              handled = true;
+            }
+            break;
+          case "4":
+            if (stepSizes[3] !== undefined) {
+              onStepChange(stepSizes[3]);
+              buttonToFlash = `step-${stepSizes[3]}`;
+              handled = true;
+            }
+            break;
+          case "5":
+            if (stepSizes[4] !== undefined) {
+              onStepChange(stepSizes[4]);
+              buttonToFlash = `step-${stepSizes[4]}`;
+              handled = true;
+            }
+            break;
+        }
+
+        if (handled) {
+          event.preventDefault();
+          if (buttonToFlash) {
+            onFlash(buttonToFlash);
+          }
+        }
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+      };
+    }, [
+      onJog,
+      jogStep,
+      isControlDisabled,
+      isZJogDisabledForStep,
+      onFlash,
+      onStepChange,
+      stepSizes,
+    ]);
 
     const JogButton = ({
       id,

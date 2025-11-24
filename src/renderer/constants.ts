@@ -70,7 +70,7 @@ export const DEFAULT_SETTINGS: MachineSettings = {
     workArea: { x: 300, y: 300, z: 80 },
     jogFeedRate: 1000,
     spindle: { min: 0, max: 12000, warmupDelay: 0 },
-    probe: { xOffset: 3.0, yOffset: 3.0, zOffset: 15.0, feedRate: 25, probeTravelDistance: 5 },
+    probe: { xOffset: 3.0, yOffset: 3.0, zOffset: 15.0, feedRate: 25 },
     scripts: {
         startup: ['G21', 'G90'].join('\n'), // Set units to mm, absolute positioning
         toolChange: ['M5', 'G0 Z10'].join('\n'), // Stop spindle, raise Z
@@ -78,8 +78,7 @@ export const DEFAULT_SETTINGS: MachineSettings = {
         jobPause: 'M5', // Stop spindle on pause
         jobResume: '', // No default resume script, spindle state is restored by logic
         jobStop: 'M5', // Stop spindle on graceful stop
-    },
-    runStartupScript: true,
+    }
 };
 
 export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = { // Ensure this matches the new interfaces

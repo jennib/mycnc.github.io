@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Upload, Download } from './Icons';
 import { MachineSettings, GeneratorSettings } from '../types';
-import { useSettingsStore } from '../stores/settingsStore';
 
 interface InputGroupProps {
     label: string;
@@ -187,7 +186,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <span className="w-4 text-center text-text-secondary font-semibold">X</span>
                                     <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.g.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                                 </div>
@@ -195,23 +194,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             <InputGroup label="Probe Feed Rate">
                                 <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
                             </InputGroup>
-                            <InputGroup label="Probe Travel Distance">
-                                <NumberInput id="probe-travel" value={localSettings.probe.probeTravelDistance} onChange={e => handleNestedNumericChange('probe', 'probeTravelDistance', e.target.value)} unit="mm" />
-                            </InputGroup>
                         </div>
                         <div className="space-y-4 bg-background p-4 rounded-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="run-startup-script"
-                                    checked={localSettings.runStartupScript}
-                                    onChange={e => setLocalSettings(prev => ({ ...prev, runStartupScript: e.target.checked }))}
-                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <label htmlFor="run-startup-script" className="text-sm text-text-primary">Run startup script on connect</label>
-                            </div>
-                            <ScriptInput label="Startup Script" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
+                            <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
                             <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
@@ -236,16 +222,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             <p className="text-sm">Reset "Don't show again" dialogs.</p>
                             <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
                                 Reset Dialogs
-                            </button>
-                        </div>
-                        <div className="flex items-center justify-between mt-4">
-                            <p className="text-sm">Reset all machine and generator settings to their defaults.</p>
-                            <button onClick={() => {
-                                if (window.confirm('Are you sure you want to reset all settings to their defaults? This cannot be undone.')) {
-                                    useSettingsStore.getState().actions.resetSettings();
-                                }
-                            }} className="px-4 py-2 bg-accent-red text-white text-sm font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-accent-red">
-                                Reset All Settings
                             </button>
                         </div>
                     </div>
