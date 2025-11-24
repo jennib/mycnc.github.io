@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Plus, Trash2, Pencil } from './Icons';
 import { Tool } from '@/types';
 
@@ -72,11 +71,10 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
     return (
         <div
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
-            onClick={onCancel} aria-modal="true" role="dialog"
+            aria-modal="true" role="dialog"
         >
             <div
                 className="bg-surface rounded-lg shadow-2xl w-full max-w-md border border-secondary transform transition-all max-h-[80vh] flex flex-col"
-                onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">Tool Library</h2>

@@ -48,7 +48,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
 
     return (
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
             onClick={onCancel}
             aria-modal="true"
             role="dialog"

@@ -152,12 +152,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
     return (
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex items-center justify-center"
-            onClick={onCancel} aria-modal="true" role="dialog"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            aria-modal="true" role="dialog"
         >
             <div
                 className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all max-h-[90vh] flex flex-col"
-                onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">Machine Settings</h2>

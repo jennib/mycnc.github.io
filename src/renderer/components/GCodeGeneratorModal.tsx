@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS } from '@/services/cncFonts.js';
@@ -1234,8 +1234,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex items-center justify-center" onClick={onClose}>
-            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-4xl border border-secondary transform transition-all max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-4xl border border-secondary transform transition-all max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">G-Code Generator</h2>
                     <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary">
@@ -1388,7 +1388,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         Cancel
                     </button>
                     <button
-                        onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)} 
+                        onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)}
                         disabled={isLoadDisabled}
                         title={isLoadDisabled ? (generationError || 'Please select a tool') : 'Load G-Code'}
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
