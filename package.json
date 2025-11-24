@@ -52,7 +52,9 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
-    "electron-squirrel-startup": "^1.0.1",
+    "@xstate/react": "^6.0.0",
+
+    "xstate": "^5.24.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -63,7 +65,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "cross-env": "^10.1.0",
-    "electron": "^31.0.1",
+    "electron": "^39.2.3",
     "electron-builder": "^24.13.3",
     "electron-vite": "^4.0.1",
     "jsdom": "^27.2.0",
@@ -72,7 +74,7 @@
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.2",
-    "vite": "^5.3.1",
+    "vite": "^7.2.4",
     "vitest": "^4.0.13"
   }
 }
