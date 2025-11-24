@@ -498,14 +498,17 @@ const App: React.FC = () => {
   };
 
   const handleProbe = (axes: string) => {
-    const { probeFeedRate, probeTravelDistance } = machineSettings.probe;
-    if (!probeFeedRate || !probeTravelDistance) {
+    logActions.addLog({ type: 'info', message: `Probing axes: ${axes}` });
+    const { probe } = machineSettings;
+    if (!probe || !probe.feedRate || !probe.probeTravelDistance) {
       logActions.addLog({
         type: "error",
         message: "Probe settings are not configured.",
       });
       return;
     }
+
+    const { feedRate, probeTravelDistance } = probe;
 
     let command = "";
     // The probe command G38.2 moves one or more axes. The first axis to touch the probe
@@ -522,7 +525,9 @@ const App: React.FC = () => {
     }
 
     if (command) {
-      connectionActions.sendLine(`G38.2 ${command.trim()} F${probeFeedRate}`);
+      const gcode = `G38.2 ${command.trim()} F${feedRate}`;
+      logActions.addLog({ type: 'info', message: `Sending probe command: ${gcode}` });
+      connectionActions.sendLine(gcode);
     }
   };
 
