@@ -2,6 +2,7 @@
 
 
 import React, { useRef, useState, useEffect, DragEvent } from 'react';
+
 import { JobStatus, MachineState, Tool, MachineSettings } from '../types';
 import { Play, Pause, Square, Upload, FileText, Code, Eye, Maximize, Pencil, CheckCircle, X, Save, Plus, Minus, RefreshCw, Percent, ZoomIn, ZoomOut, Clock, BookOpen, Crosshair, Zap, AlertTriangle } from './Icons';
 import GCodeVisualizer, { GCodeVisualizerHandle } from './GCodeVisualizer';
@@ -446,4 +447,4 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     );
 };
 
-export default memo(GCodePanel);
+export default React.memo(GCodePanel);
