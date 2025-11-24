@@ -2,7 +2,7 @@
  
    import React from 'react';
 import { Tool, MachineSettings, BoreParams } from '@/types';
-import { ToolSelector, Input, Checkbox, SpindleAndFeedControls } from './SharedControls';
+import { ToolSelector, Input, Checkbox, SpindleAndFeedControls, RadioGroup } from './SharedControls';
 
 interface BoreGeneratorProps {
     params: any;
