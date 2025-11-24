@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, PocketParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface PocketGeneratorProps {
@@ -8,6 +8,8 @@ interface PocketGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
@@ -39,7 +41,7 @@ const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChang
                 params={params} 
                 onParamChange={handleParamChange} 
                 unit={unit}
-                includePlungeFeed={true} 
+                plunge={true} 
             />
         </div>
     );

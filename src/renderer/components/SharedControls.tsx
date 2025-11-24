@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool } from '../../types';
+import { Tool } from '@/types';
 
 interface RadioGroupProps {
     label?: string;

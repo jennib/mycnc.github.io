@@ -1,4 +1,4 @@
-import { ConsoleLog, MachineState, PortInfo, MachinePosition } from '../types';
+import { ConsoleLog, MachineState, PortInfo, MachinePosition, MachineSettings } from '@/types';
 
 function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
@@ -27,21 +27,6 @@ function deepClone<T>(obj: T): T {
   return objCopy as T;
 }
 import { parseGrblStatus } from './grblParser';
-
-// Declare the Electron API on the Window object
-declare global {
-    interface Window {
-        electronAPI?: {
-            isElectron: boolean;
-            connectTCP: (ip: string, port: number) => Promise<boolean>;
-            sendTCP: (data: string) => void;
-            disconnectTCP: () => void;
-            onTCPData: (callback: (data: string) => void) => void;
-            onTCPError: (callback: (error: string) => void) => void;
-            onTCPDisconnect: (callback: () => void) => void;
-        };
-    }
-}
 
 interface SerialManagerCallbacks {
     onConnect: (info: PortInfo) => void;

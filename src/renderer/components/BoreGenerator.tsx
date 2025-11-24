@@ -1,7 +1,7 @@
 
  
    import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, BoreParams } from '@/types';
 import { ToolSelector, Input, Checkbox, SpindleAndFeedControls } from './SharedControls';
 
 interface BoreGeneratorProps {
@@ -10,6 +10,8 @@ interface BoreGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
@@ -49,7 +51,7 @@ const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, t
                 params={params} 
                 onParamChange={handleParamChange} 
                 unit={unit}
-                includePlungeFeed={true} 
+                plunge={true} 
             />
         </div>
     );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, SlotParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface SlotGeneratorProps {
@@ -8,6 +8,8 @@ interface SlotGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const SlotGenerator: React.FC<SlotGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {

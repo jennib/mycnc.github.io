@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, X, AlertTriangle, Play } from './Icons';
-import { Tool } from '../types';
+import { Tool } from '@/types';
 
 interface ChecklistItemProps {
     children: React.ReactNode;

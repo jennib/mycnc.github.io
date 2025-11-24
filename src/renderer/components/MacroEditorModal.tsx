@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Trash2, X } from './Icons';
-import { Macro } from '../types';
+import { Macro } from '@/types';
 
 interface MacroEditorModalProps {
     isOpen: boolean;

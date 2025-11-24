@@ -1,4 +1,4 @@
-import { ConsoleLog, MachineState, PortInfo } from '../types';
+import { ConsoleLog, MachineState, PortInfo } from '@/types';
 
 const getParam = (gcode: string, param: string): number | null => {
     // Allows for optional whitespace between parameter and value
@@ -19,7 +19,7 @@ interface SimulatedSerialManagerCallbacks {
 export class SimulatedSerialManager {
     callbacks: SimulatedSerialManagerCallbacks;
     statusInterval: number | null = null;
-    position: MachineState = {
+    lastStatus: MachineState = {
         status: 'Idle',
         code: null,
         wpos: { x: 0, y: 0, z: 0 },
@@ -48,7 +48,7 @@ export class SimulatedSerialManager {
 
     // Helper to immediately push the current state to the UI
     forceStatusUpdate() {
-        const newPosition = JSON.parse(JSON.stringify(this.position));
+        const newPosition = JSON.parse(JSON.stringify(this.lastStatus));
         const rawStatus = `<${newPosition.status}|MPos:${newPosition.mpos.x.toFixed(3)},${newPosition.mpos.y.toFixed(3)},${newPosition.mpos.z.toFixed(3)}|WPos:${newPosition.wpos.x.toFixed(3)},${newPosition.wpos.y.toFixed(3)},${newPosition.wpos.z.toFixed(3)}|FS:${newPosition.spindle.state === 'off' ? 0 : newPosition.spindle.speed},${newPosition.spindle.speed}|WCO:${newPosition.wco!.x.toFixed(3)},${newPosition.wco!.y.toFixed(3)},${newPosition.wco!.z.toFixed(3)}>`;
         this.callbacks.onStatus(newPosition, rawStatus);
     }
@@ -57,7 +57,7 @@ export class SimulatedSerialManager {
         this.callbacks.onConnect({ usbVendorId: 0xAAAA, usbProductId: 0xBBBB });
         this.statusInterval = window.setInterval(() => {
             // Deep clone the position object to ensure React detects a state change
-            const newPosition = JSON.parse(JSON.stringify(this.position));
+            const newPosition = JSON.parse(JSON.stringify(this.lastStatus));
             const rawStatus = `<${newPosition.status}|MPos:${newPosition.mpos.x.toFixed(3)},${newPosition.mpos.y.toFixed(3)},${newPosition.mpos.z.toFixed(3)}|WPos:${newPosition.wpos.x.toFixed(3)},${newPosition.wpos.y.toFixed(3)},${newPosition.wpos.z.toFixed(3)}|FS:${newPosition.spindle.state === 'off' ? 0 : newPosition.spindle.speed},${newPosition.spindle.speed}|WCO:${newPosition.wco!.x.toFixed(3)},${newPosition.wco!.y.toFixed(3)},${newPosition.wco!.z.toFixed(3)}>`;
             this.callbacks.onStatus(newPosition, rawStatus);
         }, 250);
@@ -98,9 +98,9 @@ export class SimulatedSerialManager {
         if (upperLine.startsWith('G38.2')) {
             this.callbacks.onLog({ type: 'status', message: 'Probing Z... (simulated)' });
             // Simulate probe touching 5mm below current Z
-            const touchPoint = this.position.wpos.z - 5;
-            this.position.wpos.z = touchPoint;
-            this.position.mpos.z = touchPoint;
+            const touchPoint = this.lastStatus.wpos.z - 5;
+            this.lastStatus.wpos.z = touchPoint;
+            this.lastStatus.mpos.z = touchPoint;
             this.callbacks.onLog({ type: 'received', message: `[PRB:0.000,0.000,${touchPoint.toFixed(3)}:1]` });
             await this.sendOk();
             return;
@@ -124,48 +124,48 @@ export class SimulatedSerialManager {
             const z = getParam(upperLine, 'Z');
             
             if (this.positioningMode === 'incremental') {
-                if(x !== null) { this.position.wpos.x += x; this.position.mpos.x += x; }
-                if(y !== null) { this.position.wpos.y += y; this.position.mpos.y += y; }
-                if(z !== null) { this.position.wpos.z += z; this.position.mpos.z += z; }
+                if(x !== null) { this.lastStatus.wpos.x += x; this.lastStatus.mpos.x += x; }
+                if(y !== null) { this.lastStatus.wpos.y += y; this.lastStatus.mpos.y += y; }
+                if(z !== null) { this.lastStatus.wpos.z += z; this.lastStatus.mpos.z += z; }
             } else { // absolute
-                if(x !== null) { this.position.wpos.x = x; this.position.mpos.x = x + this.position.wco!.x; }
-                if(y !== null) { this.position.wpos.y = y; this.position.mpos.y = y + this.position.wco!.y; }
-                if(z !== null) { this.position.wpos.z = z; this.position.mpos.z = z + this.position.wco!.z; }
+                if(x !== null) { this.lastStatus.wpos.x = x; this.lastStatus.mpos.x = x + this.lastStatus.wco!.x; }
+                if(y !== null) { this.lastStatus.wpos.y = y; this.lastStatus.mpos.y = y + this.lastStatus.wco!.y; }
+                if(z !== null) { this.lastStatus.wpos.z = z; this.lastStatus.mpos.z = z + this.lastStatus.wco!.z; }
             }
             await this.sendOk();
             return;
         }
 
         if (upperLine.startsWith('M3')) {
-            const speed = getParam(upperLine, 'S') ?? this.position.spindle.speed ?? 1000;
-            this.position.spindle.state = 'cw';
-            this.position.spindle.speed = speed;
+            const speed = getParam(upperLine, 'S') ?? this.lastStatus.spindle.speed ?? 1000;
+            this.lastStatus.spindle.state = 'cw';
+            this.lastStatus.spindle.speed = speed;
             this.callbacks.onLog({ type: 'status', message: `Spindle ON (CW) at ${speed} RPM.` });
             await this.sendOk();
             return;
         }
 
         if (upperLine.startsWith('M4')) {
-            const speed = getParam(upperLine, 'S') ?? this.position.spindle.speed ?? 1000;
-            this.position.spindle.state = 'ccw';
-            this.position.spindle.speed = speed;
+            const speed = getParam(upperLine, 'S') ?? this.lastStatus.spindle.speed ?? 1000;
+            this.lastStatus.spindle.state = 'ccw';
+            this.lastStatus.spindle.speed = speed;
             this.callbacks.onLog({ type: 'status', message: `Spindle ON (CCW) at ${speed} RPM.` });
             await this.sendOk();
             return;
         }
 
         if (upperLine.startsWith('M5')) {
-            this.position.spindle.state = 'off';
-            this.position.spindle.speed = 0;
+            this.lastStatus.spindle.state = 'off';
+            this.lastStatus.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: `Spindle OFF.` });
             await this.sendOk();
             return;
         }
 
         if (upperLine === '$X') {
-            if (this.position.status === 'Alarm') {
-                this.position.status = 'Idle';
-                this.position.code = null;
+            if (this.lastStatus.status === 'Alarm') {
+                this.lastStatus.status = 'Idle';
+                this.lastStatus.code = null;
                 this.callbacks.onLog({ type: 'status', message: '[MSG:Caution: Unlocked]' });
             }
             await this.sendOk();
@@ -177,17 +177,17 @@ export class SimulatedSerialManager {
             const y = getParam(upperLine, 'Y') || 0;
             const z = getParam(upperLine, 'Z') || 0;
             
-            this.position.status = 'Jog';
+            this.lastStatus.status = 'Jog';
             
             // Simulate that the jog move takes some time to complete
             setTimeout(() => {
-                this.position.wpos.x += x;
-                this.position.wpos.y += y;
-                this.position.wpos.z += z;
-                this.position.mpos.x += x;
-                this.position.mpos.y += y;
-                this.position.mpos.z += z;
-                this.position.status = 'Idle';
+                this.lastStatus.wpos.x += x;
+                this.lastStatus.wpos.y += y;
+                this.lastStatus.wpos.z += z;
+                this.lastStatus.mpos.x += x;
+                this.lastStatus.mpos.y += y;
+                this.lastStatus.mpos.z += z;
+                this.lastStatus.status = 'Idle';
             }, 300);
 
             await this.sendOk(10); // Send 'ok' quickly, as real GRBL does
@@ -199,27 +199,27 @@ export class SimulatedSerialManager {
             const yParam = getParam(upperLine, 'Y');
             const zParam = getParam(upperLine, 'Z');
             
-            if (xParam !== null) { this.position.wco!.x = this.position.mpos.x - xParam; this.position.wpos.x = xParam; }
-            if (yParam !== null) { this.position.wco!.y = this.position.mpos.y - yParam; this.position.wpos.y = yParam; }
-            if (zParam !== null) { this.position.wco!.z = this.position.mpos.z - zParam; this.position.wpos.z = zParam; }
+            if (xParam !== null) { this.lastStatus.wco!.x = this.lastStatus.mpos.x - xParam; this.lastStatus.wpos.x = xParam; }
+            if (yParam !== null) { this.lastStatus.wco!.y = this.lastStatus.mpos.y - yParam; this.lastStatus.wpos.y = yParam; }
+            if (zParam !== null) { this.lastStatus.wco!.z = this.lastStatus.mpos.z - zParam; this.lastStatus.wpos.z = zParam; }
             await this.sendOk();
             return;
         }
 
         if (upperLine.startsWith('$H')) {
-            this.position.status = 'Home';
+            this.lastStatus.status = 'Home';
             // Simulate homing process running in the background
             setTimeout(() => {
-                if (upperLine === '$H' || upperLine.includes('X')) { this.position.mpos.x = 0; }
-                if (upperLine === '$H' || upperLine.includes('Y')) { this.position.mpos.y = 0; }
-                if (upperLine === '$H' || upperLine.includes('Z')) { this.position.mpos.z = 0; }
+                if (upperLine === '$H' || upperLine.includes('X')) { this.lastStatus.mpos.x = 0; }
+                if (upperLine === '$H' || upperLine.includes('Y')) { this.lastStatus.mpos.y = 0; }
+                if (upperLine === '$H' || upperLine.includes('Z')) { this.lastStatus.mpos.z = 0; }
                 
                 // After MPos is reset, WPos is calculated from the existing WCO
-                this.position.wpos.x = this.position.mpos.x - this.position.wco!.x;
-                this.position.wpos.y = this.position.mpos.y - this.position.wco!.y;
-                this.position.wpos.z = this.position.mpos.z - this.position.wco!.z;
+                this.lastStatus.wpos.x = this.lastStatus.mpos.x - this.lastStatus.wco!.x;
+                this.lastStatus.wpos.y = this.lastStatus.mpos.y - this.lastStatus.wco!.y;
+                this.lastStatus.wpos.z = this.lastStatus.mpos.z - this.lastStatus.wco!.z;
 
-                this.position.status = 'Idle';
+                this.lastStatus.status = 'Idle';
             }, 1000); // Homing takes time
             
             // GRBL sends 'ok' immediately after receiving the command
@@ -231,7 +231,7 @@ export class SimulatedSerialManager {
     }
 
     async sendRealtimeCommand(command: string) {
-        let newFeed = this.position.ov[0];
+        let newFeed = this.lastStatus.ov[0];
         switch (command) {
             case '\x90': newFeed = 100; break; // 100%
             case '\x91': newFeed += 10; break; // +10%
@@ -240,7 +240,7 @@ export class SimulatedSerialManager {
             case '\x94': newFeed -= 1; break; // -1%
         }
         // Clamp to user-requested range for simulation
-        this.position.ov[0] = Math.max(25, Math.min(300, newFeed));
+        this.lastStatus.ov[0] = Math.max(25, Math.min(300, newFeed));
     }
 
     sendGCode(gcodeLines: string[], options: { startLine?: number; isDryRun?: boolean; } = {}) {
@@ -258,7 +258,7 @@ export class SimulatedSerialManager {
         this.isJobRunning = true;
         this.isPaused = false;
         this.isStopped = false;
-        this.position.status = 'Run';
+        this.lastStatus.status = 'Run';
 
         let logMessage = `Starting G-code job from line ${startLine + 1}: ${this.totalLines} total lines.`;
         if (isDryRun) {
@@ -278,7 +278,7 @@ export class SimulatedSerialManager {
     async sendNextLine() {
         if (this.isStopped) {
             this.isJobRunning = false;
-            this.position.status = 'Idle';
+            this.lastStatus.status = 'Idle';
             this.callbacks.onLog({ type: 'status', message: 'Job stopped by user.' });
             return;
         }
@@ -287,7 +287,7 @@ export class SimulatedSerialManager {
             this.isJobRunning = false;
             this.isStopped = true;
             this.stopRequested = false;
-            this.position.status = 'Idle';
+            this.lastStatus.status = 'Idle';
             await this.sendLine('M5', false); // Turn off spindle
             this.callbacks.onLog({ type: 'status', message: 'Job stopped gracefully.' });
             return;
@@ -296,11 +296,11 @@ export class SimulatedSerialManager {
         if (this.pauseRequested) {
             this.isPaused = true;
             this.pauseRequested = false;
-            this.prePauseSpindleState = { ...this.position.spindle };
-            this.position.status = 'Hold';
+            this.prePauseSpindleState = { ...this.lastStatus.spindle };
+            this.lastStatus.status = 'Hold';
             // Simulate M5 (Spindle Stop)
-            this.position.spindle.state = 'off';
-            this.position.spindle.speed = 0;
+            this.lastStatus.spindle.state = 'off';
+            this.lastStatus.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: 'Job paused.' });
             this.forceStatusUpdate(); // Immediately send the updated state
             return;
@@ -312,7 +312,7 @@ export class SimulatedSerialManager {
         
         if (this.currentLineIndex >= this.totalLines) {
             this.isJobRunning = false;
-            this.position.status = 'Idle';
+            this.lastStatus.status = 'Idle';
             return;
         }
 
@@ -353,11 +353,11 @@ export class SimulatedSerialManager {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
             this.pauseRequested = false;
-            this.position.status = 'Run';
+            this.lastStatus.status = 'Run';
 
             // Restore spindle if it was running before pause
             if (this.prePauseSpindleState && this.prePauseSpindleState.state !== 'off' && this.prePauseSpindleState.speed > 0) {
-                this.position.spindle = { ...this.prePauseSpindleState };
+                this.lastStatus.spindle = { ...this.prePauseSpindleState };
                 const spindleCmd = this.prePauseSpindleState.state === 'cw' ? 'M3' : 'M4';
                 this.callbacks.onLog({ type: 'status', message: `Spindle ON (${this.prePauseSpindleState.state.toUpperCase()}) at ${this.prePauseSpindleState.speed} RPM.` });
             }
@@ -379,11 +379,11 @@ export class SimulatedSerialManager {
         if (this.isJobRunning) {
             this.isStopped = true;
             this.isJobRunning = false;
-            this.position.status = 'Alarm';
-            this.position.code = 3; // Reset while in motion
+            this.lastStatus.status = 'Alarm';
+            this.lastStatus.code = 3; // Reset while in motion
             // Also turn off spindle
-            this.position.spindle.state = 'off';
-            this.position.spindle.speed = 0;
+            this.lastStatus.spindle.state = 'off';
+            this.lastStatus.spindle.speed = 0;
             this.callbacks.onLog({ type: 'status', message: 'Job stopped. Soft-reset sent to clear buffer and stop spindle.' });
         }
     }

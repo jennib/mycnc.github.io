@@ -8,6 +8,8 @@ interface SurfacingGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const SurfacingGenerator: React.FC<SurfacingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {

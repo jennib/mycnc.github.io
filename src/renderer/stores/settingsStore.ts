@@ -1,17 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import {
-  Macro,
-  MachineSettings,
-  Tool,
-  GeneratorSettings,
-} from '../types';
-import {
-  DEFAULT_MACROS,
-  DEFAULT_SETTINGS,
-  DEFAULT_TOOLS,
-  DEFAULT_GENERATOR_SETTINGS,
-} from '../constants';
+import { MachineSettings, Tool, Macro, GeneratorSettings } from '@/types';
+import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS } from '@/constants';
 
 interface SettingsState {
   jogStep: number;

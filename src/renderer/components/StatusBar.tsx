@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { PowerOff, RotateCw, RotateCcw, OctagonAlert } from './Icons';
-import { MachineState } from '../types';
+import { MachineState } from '@/types';
 
 interface StatusIndicatorProps {
     isConnected: boolean;

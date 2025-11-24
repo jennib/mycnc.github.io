@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { useJobStore } from '../stores/jobStore';
-import { useConnectionStore } from '../stores/connectionStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { useUIStore } from '../stores/uiStore';
-import { useLogStore } from '../stores/logStore';
-import { analyzeGCode, getMachineStateAtLine } from '../services/gcodeAnalyzer.js';
-import { JobStatus } from '../types';
+import { useJobStore } from '@/stores/jobStore';
+import { useConnectionStore } from '@/stores/connectionStore';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { useUIStore } from '@/stores/uiStore';
+import { useLogStore } from '@/stores/logStore';
+import { analyzeGCode, getMachineStateAtLine } from '@/services/gcodeAnalyzer.js';
+import { JobStatus, TimeEstimate, Tool } from '@/types';
 
 export function useJob() {
   const { gcodeLines, fileName, jobStatus, progress, timeEstimate, actions: jobActions } = useJobStore();

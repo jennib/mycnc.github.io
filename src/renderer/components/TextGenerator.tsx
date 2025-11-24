@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, TextParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface TextGeneratorProps {
@@ -9,6 +9,8 @@ interface TextGeneratorProps {
     unit: 'mm' | 'in';
     settings: MachineSettings;
     fontOptions: string[];
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const TextGenerator: React.FC<TextGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, fontOptions }) => {

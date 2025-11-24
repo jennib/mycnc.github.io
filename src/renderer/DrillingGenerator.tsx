@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tool, MachineSettings } from '../../types';
+import { Tool, MachineSettings, DrillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface DrillingGeneratorProps {

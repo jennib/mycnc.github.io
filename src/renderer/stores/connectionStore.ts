@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { SerialManager } from '../services/serialService';
-import { SimulatedSerialManager } from '../services/simulatedSerialService';
-import { MachineSettings } from '../types';
+import { SerialManager } from '@/services/serialService';
+import { SimulatedSerialManager } from '@/services/simulatedSerialService';
+import { MachineSettings, PortInfo } from '@/types';
 
 import { useLogStore } from './logStore';
 import { useMachineStore } from './machineStore';

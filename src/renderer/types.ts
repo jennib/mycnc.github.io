@@ -7,7 +7,7 @@ export enum JobStatus {
 }
 
 export interface ConsoleLog {
-    type: 'sent' | 'received' | 'status' | 'error';
+    type: 'sent' | 'received' | 'status' | 'error' | 'info';
     message: string;
     timestamp?: Date;
 }
@@ -47,7 +47,7 @@ export interface MachineState {
 export interface Tool {
     id: number;
     name: string;
-    diameter: number;
+    diameter: number | '';
 }
 
 export interface Macro {
@@ -59,7 +59,7 @@ export interface MachineSettings {
     workArea: { x: number; y: number; z: number };
     jogFeedRate: number;
     spindle: { min: number; max: number; warmupDelay: number; };
-    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number };
+    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number; probeTravelDistance: number };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
     isConfigured?: boolean;
 }
@@ -209,5 +209,10 @@ export interface GeneratorSettings {
     slot: SlotParams;
     text: TextParams;
     thread: ThreadMillingParams;
+}
+
+export interface TimeEstimate {
+    totalTime: number;
+    remainingTime: number;
 }
 

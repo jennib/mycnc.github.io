@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
-import { MachineSettings } from '../types';
+import { MachineSettings } from '@/types';
 
 // --- Color Constants ---
 const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Save, X, Plus, Trash2, Pencil } from './Icons';
-import { Tool } from '../types';
+import { Tool } from '@/types';
 
 interface ToolLibraryModalProps {
     isOpen: boolean;
@@ -10,7 +10,7 @@ interface ToolLibraryModalProps {
     library: Tool[];
 }
 
-const newToolInitialState: Omit<Tool, 'id'> & { id: number | null } = {
+const newToolInitialState: Omit<Tool, 'id'> & { id: number | null, diameter: number | '' } = {
     id: null,
     name: '',
     diameter: '',

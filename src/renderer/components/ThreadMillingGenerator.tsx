@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, ThreadMillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface ThreadMillingGeneratorProps {
@@ -8,6 +8,8 @@ interface ThreadMillingGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const ThreadMillingGenerator: React.FC<ThreadMillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, ProfileParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls, Checkbox } from './SharedControls';
 
 interface ProfileGeneratorProps {
@@ -8,6 +8,8 @@ interface ProfileGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const ProfileGenerator: React.FC<ProfileGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {

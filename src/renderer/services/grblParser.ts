@@ -1,4 +1,4 @@
-import { MachineState } from '../types';
+import { MachineState } from '@/types';
 
 export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Partial<MachineState> & { status: string, code: number | null } | null {
     try {
