@@ -168,6 +168,10 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
   const [scrubberLine, setScrubberLine] = useState(0); // New state for the scrubber
 
+  const isHoming = machineState?.status === "Home";
+  const isJobActive =
+    jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused;
+
   const lineHeight = 20; // Approximate height of a single line
   const containerHeight = codeContainerRef.current?.clientHeight || 0;
   const visibleLines = Math.ceil(containerHeight / lineHeight);
@@ -242,9 +246,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     onJobControl("start", { startLine: lineNumber - 1 });
   };
 
-  const isHoming = machineState?.status === "Home";
-  const isJobActive =
-    jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused;
   const isReadyToStart =
     (isConnected || isSimulated) && // Allow starting if simulator is selected
     gcodeLines.length > 0 &&
