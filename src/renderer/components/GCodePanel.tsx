@@ -166,12 +166,15 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
   const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
+  const [scrubberLine, setScrubberLine] = useState(0); // New state for the scrubber
 
   const lineHeight = 20; // Approximate height of a single line
   const containerHeight = codeContainerRef.current?.clientHeight || 0;
   const visibleLines = Math.ceil(containerHeight / lineHeight);
   const startIndex = Math.floor(scrollTop / lineHeight);
   const endIndex = Math.min(gcodeLines.length - 1, startIndex + visibleLines);
+
+  const visualizerCurrentLine = isJobActive ? currentLine : scrubberLine;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
@@ -321,7 +324,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             <GCodeVisualizer
               ref={visualizerRef}
               gcodeLines={gcodeLines}
-              currentLine={currentLine}
+              currentLine={visualizerCurrentLine} // Use visualizerCurrentLine
               unit={unit}
               hoveredLineIndex={hoveredLineIndex}
               machineSettings={machineSettings}
@@ -547,8 +550,23 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                   title="Zoom Out"
                   className="p-1 rounded transition-colors hover:bg-secondary"
                 >
-                  <ZoomOut className="w-5 h-5" />
+                  <ZoomOut className="w-5 h-8" />
                 </button>
+                <div className="relative w-24 ml-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max={gcodeLines.length > 0 ? gcodeLines.length - 1 : 0}
+                    value={scrubberLine}
+                    onChange={(e) => setScrubberLine(parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    disabled={isJobActive || gcodeLines.length === 0}
+                    title="Scrub G-code Toolpath"
+                  />
+                  <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-text-secondary">
+                    {scrubberLine}
+                  </span>
+                </div>
               </>
             )}
           </div>

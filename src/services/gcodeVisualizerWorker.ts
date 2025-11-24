@@ -106,15 +106,15 @@ const generateToolpathColors = (
 const createToolModel = (position: GCodePoint) => {
     // Tool geometry is now generated around (0,0,0).
     // The actual position will be applied via a modelViewMatrix translation in the main thread.
-    const toolHeight = 20;
-    const toolRadius = 3;
+    const toolHeight = 50; // Increased size
+    const toolRadius = 10; // Increased size
     const holderHeight = 10;
     const holderRadius = 8;
     const vertices: number[] = [];
 
     const addQuad = (p1: number[], p2: number[], p3: number[], p4: number[]) => vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
 
-    // Tip at (0,0,0)
+    // Tip at (0,0,0) - base of the tool is at z=0 relative to its local coordinate system
     vertices.push(0, 0, 0, -toolRadius, 0, toolHeight, toolRadius, 0, toolHeight);
 
     // Body (simplified cylinder) around (0,0,0)
@@ -136,7 +136,7 @@ const createToolModel = (position: GCodePoint) => {
 
     return {
         vertices: new Float32Array(vertices),
-        colors: new Float32Array(Array(vertices.length / 3).fill([1.0, 0.2, 0.2, 1.0]).flat()) // Red
+        colors: new Float32Array(Array(vertices.length / 3).fill([0.0, 1.0, 0.0, 1.0]).flat()) // Bright Green
     };
 };
 
