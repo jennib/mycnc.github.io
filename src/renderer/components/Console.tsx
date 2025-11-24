@@ -130,4 +130,4 @@ const Console: React.FC<ConsoleProps> = ({ logs, onSendCommand, isConnected, isJ
     );
 };
 
-export default Console;
+export default memo(Console);

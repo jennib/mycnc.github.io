@@ -81,8 +81,19 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [editedGCode, setEditedGCode] = useState('');
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [scrollTop, setScrollTop] = useState(0);
     const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
 
+    const lineHeight = 20; // Approximate height of a single line
+    const containerHeight = codeContainerRef.current?.clientHeight || 0;
+    const visibleLines = Math.ceil(containerHeight / lineHeight);
+    const startIndex = Math.floor(scrollTop / lineHeight);
+    const endIndex = Math.min(gcodeLines.length - 1, startIndex + visibleLines);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        setScrollTop(e.currentTarget.scrollTop);
+    };
+    
     useEffect(() => {
         setEditedGCode(gcodeLines.join('\n'));
         setIsEditing(false); // Exit edit mode on new file load
@@ -219,21 +230,24 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                     />
                 );
                 return (
-                    <div ref={codeContainerRef} className="absolute inset-0 bg-background rounded p-2 overflow-y-auto font-mono text-sm">
-                        {gcodeLines.map((line, index) => (
-                            <GCodeLine
-                                key={index}
-                                line={line}
-                                lineNumber={index + 1}
-                                isExecuted={index < currentLine}
-                                isCurrent={isJobActive && (index === currentLine)}
-                                isHovered={index === hoveredLineIndex}
-                                onRunFromHere={handleRunFromLine}
-                                isActionable={isReadyToStart}
-                                onMouseEnter={() => setHoveredLineIndex(index)}
-                                onMouseLeave={() => setHoveredLineIndex(null)}
-                            />
-                        ))}
+                    <div ref={codeContainerRef} className="absolute inset-0 bg-background rounded p-2 overflow-y-auto font-mono text-sm" onScroll={handleScroll}>
+                        <div style={{ height: `${gcodeLines.length * lineHeight}px`, position: 'relative' }}>
+                            {gcodeLines.slice(startIndex, endIndex + 1).map((line, index) => (
+                                <div key={startIndex + index} style={{ position: 'absolute', top: `${(startIndex + index) * lineHeight}px`, width: '100%' }}>
+                                    <GCodeLine
+                                        line={line}
+                                        lineNumber={startIndex + index + 1}
+                                        isExecuted={startIndex + index < currentLine}
+                                        isCurrent={isJobActive && (startIndex + index === currentLine)}
+                                        isHovered={startIndex + index === hoveredLineIndex}
+                                        onRunFromHere={handleRunFromLine}
+                                        isActionable={isReadyToStart}
+                                        onMouseEnter={() => setHoveredLineIndex(startIndex + index)}
+                                        onMouseLeave={() => setHoveredLineIndex(null)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 );
             }
@@ -432,4 +446,4 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     );
 };
 
-export default GCodePanel;
+export default memo(GCodePanel);

@@ -42,6 +42,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
       const commonCallbacks = {
         onConnect: (info: any) => {
+          get().serialManager?.sendRealtimeCommand('\x18'); // Send soft-reset on connect
           set({
             isConnected: true,
             isConnecting: false,

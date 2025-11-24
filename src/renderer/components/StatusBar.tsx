@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { PowerOff, RotateCw, RotateCcw, OctagonAlert } from './Icons';
 import { MachineState } from '../types';
 
@@ -8,14 +8,16 @@ interface StatusIndicatorProps {
 }
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, machineState }) => {
+    const isAlarm = machineState?.status === 'Alarm';
+
     const getStatusIndicatorClass = () => {
         if (!isConnected) return 'bg-accent-yellow/20 text-accent-yellow';
-        if (machineState?.status === 'Alarm') return 'bg-accent-red/20 text-accent-red';
+        if (isAlarm) return 'bg-accent-red/20 text-accent-red';
         return 'bg-accent-green/20 text-accent-green';
     };
 
     const statusText = isConnected
-        ? (machineState?.status === 'Home' ? 'Homing' : machineState?.status || 'Connected') 
+        ? (isAlarm ? `Alarm: ${machineState?.code}` : (machineState?.status === 'Home' ? 'Homing' : machineState?.status || 'Connected'))
         : 'Disconnected';
 
     return (
@@ -93,7 +95,7 @@ interface StatusBarProps {
     flashingButton: string | null;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ isConnected, machineState, unit, onEmergencyStop, flashingButton }) => (
+const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit, onEmergencyStop, flashingButton }) => (
     <div className="bg-surface/50 border-b border-t border-secondary shadow-sm p-2 flex justify-between items-center z-10 flex-shrink-0 gap-4">
         <div className="flex items-center gap-6">
             <StatusIndicator isConnected={isConnected} machineState={machineState} />
@@ -118,6 +120,6 @@ const StatusBar: React.FC<StatusBarProps> = ({ isConnected, machineState, unit, 
             )}
         </div>
     </div>
-);
+));
 
 export default StatusBar;
