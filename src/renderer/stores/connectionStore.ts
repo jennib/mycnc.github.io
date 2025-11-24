@@ -30,7 +30,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   portInfo: null,
   actions: {
     connect: async (options: import('../types').ConnectionOptions | { type: 'simulator' }) => {
-      if (get().isConnecting || get().isConnected) return;
+      // If already connected or connecting, disconnect first to ensure a clean state
+      if (get().isConnected || get().isConnecting) {
+        await get().actions.disconnect();
+      }
 
       set({ isConnecting: true });
 
