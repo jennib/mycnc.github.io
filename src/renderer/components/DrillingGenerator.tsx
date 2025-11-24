@@ -1,13 +1,12 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, DrillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface DrillingGeneratorProps {
-    params: any;
+    params: DrillingParams;
     onParamsChange: (field: string, value: any) => void;
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
-    settings: MachineSettings;
 }
 
 const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
