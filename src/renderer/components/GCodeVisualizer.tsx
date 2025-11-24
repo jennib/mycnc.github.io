@@ -406,7 +406,32 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         const gl = glRef.current;
         if (!gl || !workerData) return;
 
-        // ... existing work area buffer creation ...
+        // --- Create Work Area Buffers ---
+        const workAreaBuffers: any = {};
+        workAreaBuffers.gridPosition = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.gridPosition);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaGridVertices, gl.STATIC_DRAW);
+        workAreaBuffers.gridColor = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.gridColor);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaGridColors, gl.STATIC_DRAW);
+        workAreaBuffers.gridVertexCount = workerData.workAreaGridVertices ? workerData.workAreaGridVertices.length / 3 : 0;
+
+        workAreaBuffers.boundsPosition = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsPosition);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsVertices, gl.STATIC_DRAW);
+        workAreaBuffers.boundsColor = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsColor);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsColors, gl.STATIC_DRAW);
+        workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices ? workerData.workAreaBoundsVertices.length / 3 : 0;
+        
+        // --- Create Axis Indicator Buffers ---
+        workAreaBuffers.axisPosition = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisPosition);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaAxisVertices, gl.STATIC_DRAW);
+        workAreaBuffers.axisColor = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisColor);
+        gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaAxisColors, gl.STATIC_DRAW);
+        workAreaBuffers.axisVertexCount = workerData.workAreaAxisVertices ? workerData.workAreaAxisVertices.length / 3 : 0;
 
         // --- Create Toolpath Buffers ---
         const positionBuffer = gl.createBuffer();
