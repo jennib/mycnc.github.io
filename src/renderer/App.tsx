@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+
 import { JobStatus, Tool, ConnectionOptions } from "./types";
 import SerialConnector from "./components/SerialConnector";
 import GCodePanel from "./components/GCodePanel";
@@ -45,22 +46,19 @@ import { useJob } from "./hooks/useJob";
 import { useLogStore } from "./stores/logStore";
 
 const App: React.FC = () => {
-  const {
-    machineState,
-    isJogging,
-    isHomedSinceConnect,
-    isMacroRunning,
-    isConnected,
-    handleHome,
-    handleSetZero,
-    handleSpindleCommand,
-    handleProbe,
-    handleJog,
-    handleJogStop,
-    handleRunMacro,
-    handleManualCommand,
-    handleUnitChange,
-  } = useMachine();
+  const machineState = useMachineStore((state) => state.machineState);
+  const isJogging = useMachineStore((state) => state.isJogging);
+  const isHomedSinceConnect = useMachineStore((state) => state.isHomedSinceConnect);
+  const isMacroRunning = useMachineStore((state) => state.isMacroRunning);
+  const handleSetZero = useMachineStore((state) => state.actions.handleSetZero);
+  const handleSpindleCommand = useMachineStore((state) => state.actions.handleSpindleCommand);
+  const handleProbe = useMachineStore((state) => state.actions.handleProbe);
+  const handleJog = useMachineStore((state) => state.actions.handleJog);
+  const handleJogStop = useMachineStore((state) => state.actions.handleJogStop);
+  const handleRunMacro = useMachineStore((state) => state.actions.handleRunMacro);
+  const handleManualCommand = useMachineStore((state) => state.actions.handleManualCommand);
+  const handleUnitChange = useMachineStore((state) => state.actions.handleUnitChange);
+  const handleHome = useMachineStore((state) => state.actions.handleHome);
 
   const {
     gcodeLines,
@@ -108,6 +106,7 @@ const App: React.FC = () => {
 
   // Connection Store
   const {
+    isConnected,
     isSimulated,
     portInfo,
     actions: connectionActions,
@@ -127,6 +126,7 @@ const App: React.FC = () => {
   const [useSimulator, setUseSimulator] = useState(false);
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const activeJogKeyRef = useRef<string | null>(null);
@@ -170,15 +170,25 @@ const App: React.FC = () => {
     }
   }, []);
 
-
-
   const handleConnect = (options: ConnectionOptions) => {
     if (useSimulator) {
-      connectionActions.connect({ type: "simulator" });
+      connectionActions.connect({ type: "simulator" }); // Always use simulator if toggled
     } else {
       connectionActions.connect(options);
     }
   };
+
+  useEffect(() => {
+    if (window.electronAPI?.on) {
+      const unsubscribe = window.electronAPI.on(
+        "is-fullscreen",
+        (value: boolean) => setIsFullscreen(value)
+      );
+      // Request initial state
+      window.electronAPI.send("get-fullscreen-state");
+      return () => unsubscribe();
+    }
+  }, []);
 
   const handleToggleFullscreen = () => {
     // Check if the electronAPI and its send method exist before calling it
@@ -186,6 +196,8 @@ const App: React.FC = () => {
       window.electronAPI.send("toggle-fullscreen");
     } else {
       console.error("Fullscreen API is not available.");
+      // Fallback for non-electron environment
+      setIsFullscreen((prev) => !prev);
     }
   };
   // Global Hotkey Handling
@@ -216,17 +228,35 @@ const App: React.FC = () => {
       let direction = 0;
 
       switch (event.key) {
-        case "ArrowUp": axis = "Y"; direction = 1; break;
-        case "ArrowDown": axis = "Y"; direction = -1; break;
-        case "ArrowLeft": axis = "X"; direction = -1; break;
-        case "ArrowRight": axis = "X"; direction = 1; break;
-        case "PageUp": axis = "Z"; direction = 1; break;
-        case "PageDown": axis = "Z"; direction = -1; break;
+        case "ArrowUp":
+          axis = "Y";
+          direction = 1;
+          break;
+        case "ArrowDown":
+          axis = "Y";
+          direction = -1;
+          break;
+        case "ArrowLeft":
+          axis = "X";
+          direction = -1;
+          break;
+        case "ArrowRight":
+          axis = "X";
+          direction = 1;
+          break;
+        case "PageUp":
+          axis = "Z";
+          direction = 1;
+          break;
+        case "PageDown":
+          axis = "Z";
+          direction = -1;
+          break;
       }
 
       if (axis && direction !== 0) {
         event.preventDefault();
-        
+
         // Set the ref immediately to block subsequent keydown repeats
         activeJogKeyRef.current = event.key;
 
@@ -234,11 +264,11 @@ const App: React.FC = () => {
         // A large distance simulates continuous movement until key-up/cancel.
         const distance = direction * 99999;
         const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
-        
-        connectionActions.sendLine(command).catch(err => {
-            console.error("Failed to start jog:", err);
-            // If the command fails, unblock jogging.
-            activeJogKeyRef.current = null;
+
+        connectionActions.sendLine(command).catch((err) => {
+          console.error("Failed to start jog:", err);
+          // If the command fails, unblock jogging.
+          activeJogKeyRef.current = null;
         });
       }
     };
@@ -315,8 +345,6 @@ const App: React.FC = () => {
       connectionActions.sendRealtimeCommand(commandMap[command]);
     }
   };
-
-
 
   const alarmInfo =
     machineState?.status === "Alarm"
@@ -578,6 +606,7 @@ const App: React.FC = () => {
             selectedToolId={selectedToolId}
             onToolSelect={setSelectedToolId}
             onOpenGenerator={uiActions.openGCodeModal}
+            isSimulated={useSimulator}
           />
         </div>
         <div className="flex flex-col gap-4 overflow-hidden min-h-0">
@@ -585,11 +614,11 @@ const App: React.FC = () => {
             isConnected={isConnected}
             machineState={machineState}
             onJog={handleJog}
-            onHome={handleHome}
+            onHome={() => handleHome('all')}
             onSetZero={handleSetZero}
             onSpindleCommand={handleSpindleCommand}
             onProbe={handleProbe}
-            onCommand={handleManualCommand}
+            onSendCommand={handleManualCommand}
             jogStep={jogStep}
             onStepChange={settingsActions.setJogStep}
             flashingButton={flashingButton}
