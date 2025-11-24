@@ -1,5 +1,4 @@
-import React, { useState, memo, useEffect } from "react";
-import Switch from './Switch';
+import React, { useState, memo, useEffect, useRef } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -22,6 +21,7 @@ interface JogPanelProps {
   onSetZero: (axes: "all" | "x" | "y" | "z" | "xy") => void;
   onSpindleCommand: (command: "cw" | "ccw" | "off", speed: number) => void;
   onProbe: (axes: string) => void;
+  onSendCommand: (command: string) => void;
   jogStep: number;
   onStepChange: (step: number) => void;
   flashingButton: string | null;
@@ -54,7 +54,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isMacroRunning,
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
-    const [isContinuous, setIsContinuous] = useState(false);
+    const pressedJogKey = useRef<string | null>(null);
 
     const isControlDisabled =
       !isConnected ||
@@ -70,6 +70,58 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const stepSizes =
       unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
 
+    const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
+      ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
+      ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
+      ArrowLeft: { axis: "X", direction: -1, id: "jog-x-minus" },
+      ArrowRight: { axis: "X", direction: 1, id: "jog-x-plus" },
+      PageUp: { axis: "Z", direction: 1, id: "jog-z-plus" },
+      PageDown: { axis: "Z", direction: -1, id: "jog-z-minus" },
+    };
+
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
+        ) {
+          return; // Don't jog if typing in an input field
+        }
+
+        const hotkey = jogHotkeys[event.key];
+        if (hotkey && !isControlDisabled) {
+          event.preventDefault();
+          if (pressedJogKey.current !== event.key) {
+            pressedJogKey.current = event.key;
+            onFlash(hotkey.id);
+            onJog(hotkey.axis, hotkey.direction, 99999);
+          }
+        }
+      };
+
+      const handleKeyUp = (event: KeyboardEvent) => {
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
+
+        if (pressedJogKey.current === event.key) {
+          pressedJogKey.current = null;
+          onJogStop();
+          onFlash(""); // Clear flashing button
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
+      };
+    }, [isControlDisabled, onJog, onJogStop, onFlash]);
 
 
     const JogButton = ({
@@ -88,13 +140,12 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       hotkey: string;
     }) => {
       const isZButton = axis === "Z";
-      const isDisabled =
-        isControlDisabled || (isZButton && isZJogDisabledForStep && !isContinuous);
+      const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
 
       let title = `${label} (${axis}${
         direction > 0 ? "+" : "-"
       }) (Hotkey: ${hotkey})`;
-      if (isZButton && isZJogDisabledForStep && !isContinuous) {
+      if (isZButton && isZJogDisabledForStep) {
         title = `Z-Jog disabled for step size > ${
           unit === "mm" ? "10mm" : "1in"
         }`;
@@ -102,17 +153,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
 
       const handleMouseDown = () => {
         onFlash(id);
-        if (isContinuous) {
-          onJog(axis, direction, 99999); // Large number for continuous jog
-        } else {
-          onJog(axis, direction, jogStep);
-        }
+        onJog(axis, direction, 99999); // Large number for continuous jog
       };
 
       const handleMouseUp = () => {
-        if (isContinuous) {
-          onJogStop();
-        }
+        onJogStop();
       };
 
       return (
@@ -196,7 +241,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 hotkey="Page Down"
               />
             </div>
-            <div className="flex justify-between items-center mt-3">
+            <div className="flex justify-around items-center mt-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-text-secondary">Step:</span>
                 <div className="flex gap-1">
@@ -205,9 +250,9 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                       key={step}
                       id={`step-${step}`}
                       onClick={() => onStepChange(step)}
-                      disabled={isControlDisabled || isContinuous}
+                      disabled={isControlDisabled}
                       className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                        jogStep === step && !isContinuous
+                        jogStep === step
                           ? "bg-primary text-white font-bold"
                           : "bg-secondary hover:bg-secondary-focus"
                       } ${
@@ -221,14 +266,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-text-secondary">Continuous:</span>
-                <Switch
-                  id="continuous-jog-switch"
-                  isOn={isContinuous}
-                  handleToggle={() => setIsContinuous(!isContinuous)}
-                />
-              </div>
+
             </div>
             <div className="mt-3 border-t border-secondary pt-3">
               <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
