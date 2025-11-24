@@ -132,7 +132,31 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         rectCols: 3, rectRows: 2, rectSpacingX: 15, rectSpacingY: 15,
         circCopies: 6, circRadius: 40, circCenterX: 50, circCenterY: 50, circStartAngle: 0,
     });
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Backspace') {
+                const target = event.target as HTMLElement;
+                if (
+                    target.tagName.toLowerCase() !== 'input' &&
+                    target.tagName.toLowerCase() !== 'textarea'
+                ) {
+                    event.preventDefault();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
     
+    useEffect(() => {
+        console.log(generatorSettings);
+    }, [generatorSettings]);
+
     const calculateViewBox = useCallback((bounds) => {
         if (!bounds || bounds.minX === Infinity) return '0 -100 100 100';
         const { minX = 0, minY = 0, maxX = 100, maxY = 100 } = bounds;
@@ -169,14 +193,21 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
         const { depth, peck, retract, feed, spindle, safeZ } = drillParams;
-        if ([depth, peck, feed, spindle, safeZ].some(p => p === '' || p === null || isNaN(Number(p)))) {
+        if ([depth, peck, retract, feed, spindle, safeZ].some(p => p === '' || p === null || isNaN(Number(p)))) {
             return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
         }
+
+        const numericDepth = Number(depth);
+        const numericPeck = Number(peck);
+        const numericRetract = Number(retract);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
 
         const code = [
             `(--- Drilling Operation: ${drillParams.drillType} ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
-            `G21 G90`, `M3 S${spindle}`
+            `G21 G90`, `M3 S${numericSpindle}`
         ];
         const paths = [];
         const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
@@ -189,39 +220,39 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const points = [];
         if (drillParams.drillType === 'single') {
-            points.push({ x: drillParams.singleX, y: drillParams.singleY });
+            points.push({ x: Number(drillParams.singleX), y: Number(drillParams.singleY) });
         } else if (drillParams.drillType === 'rect') {
             const { rectCols, rectRows, rectSpacingX, rectSpacingY, rectStartX, rectStartY } = drillParams;
-            for (let row = 0; row < rectRows; row++) {
-                for (let col = 0; col < rectCols; col++) {
+            for (let row = 0; row < Number(rectRows); row++) {
+                for (let col = 0; col < Number(rectCols); col++) {
                     points.push({
-                        x: rectStartX + col * rectSpacingX,
-                        y: rectStartY + row * rectSpacingY
+                        x: Number(rectStartX) + col * Number(rectSpacingX),
+                        y: Number(rectStartY) + row * Number(rectSpacingY)
                     });
                 }
             }
         } else { // circ
             const { circHoles, circRadius, circCenterX, circCenterY, circStartAngle } = drillParams;
-            const angleStep = circHoles > 0 ? 360 / circHoles : 0;
-            for (let i = 0; i < circHoles; i++) {
-                const angle = (circStartAngle + i * angleStep) * (Math.PI / 180);
+            const angleStep = Number(circHoles) > 0 ? 360 / Number(circHoles) : 0;
+            for (let i = 0; i < Number(circHoles); i++) {
+                const angle = (Number(circStartAngle) + i * angleStep) * (Math.PI / 180);
                 points.push({
-                    x: circCenterX + circRadius * Math.cos(angle),
-                    y: circCenterY + circRadius * Math.sin(angle)
+                    x: Number(circCenterX) + Number(circRadius) * Math.cos(angle),
+                    y: Number(circCenterY) + Number(circRadius) * Math.sin(angle)
                 });
             }
         }
 
         // Use G83 Peck Drilling Cycle
-        code.push(`G0 Z${safeZ.toFixed(3)}`);
-        code.push(`G83 Z${depth.toFixed(3)} Q${peck.toFixed(3)} R${retract.toFixed(3)} F${feed.toFixed(3)}`);
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push(`G83 Z${numericDepth.toFixed(3)} Q${numericPeck.toFixed(3)} R${numericRetract.toFixed(3)} F${numericFeed.toFixed(3)}`);
         points.forEach(p => {
             code.push(`X${p.x.toFixed(3)} Y${p.y.toFixed(3)}`);
             paths.push({ cx: p.x, cy: p.y, r: selectedTool.diameter / 2, stroke: 'var(--color-accent-yellow)', fill: 'var(--color-accent-yellow-transparent)' });
             updateBounds(p.x, p.y);
         });
         code.push('G80'); // Cancel cycle
-        code.push(`G0 Z${safeZ.toFixed(3)}`);
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
         code.push('M5');
 
         return { code, paths, bounds, error: null };
@@ -237,8 +268,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ } = profileParams;
 
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericCornerRadius = Number(cornerRadius);
+        const numericDiameter = Number(diameter);
         const numericDepth = Number(depth);
         const numericDepthPerPass = Number(depthPerPass);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
         if (numericDepthPerPass <= 0) {
             return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
         }
@@ -249,20 +288,20 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const code = [
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
-            `G21 G90`, `M3 S${spindle}`];
+            `G21 G90`, `M3 S${numericSpindle}`];
         const paths = [];
         const toolRadius = toolDiameter / 2;
         let offset = 0;
         if (cutSide === 'outside') offset = toolRadius;
         if (cutSide === 'inside') offset = -toolRadius;
 
-        const bounds = shape === 'rect' ? { minX: -offset, minY: -offset, maxX: width + offset, maxY: length + offset } : { minX: -diameter / 2 - offset, minY: -diameter / 2 - offset, maxX: diameter / 2 + offset, maxY: diameter / 2 + offset };
+        const bounds = shape === 'rect' ? { minX: -offset, minY: -offset, maxX: numericWidth + offset, maxY: numericLength + offset } : { minX: -numericDiameter / 2 - offset, minY: -numericDiameter / 2 - offset, maxX: numericDiameter / 2 + offset, maxY: numericDiameter / 2 + offset };
 
         // Draw original shape for reference
         if (shape === 'rect') {
-             paths.push({ d: `M 0 ${cornerRadius} L 0 ${length-cornerRadius} A ${cornerRadius} ${cornerRadius} 0 0 1 ${cornerRadius} ${length} L ${width-cornerRadius} ${length} A ${cornerRadius} ${cornerRadius} 0 0 1 ${width} ${length-cornerRadius} L ${width} ${cornerRadius} A ${cornerRadius} ${cornerRadius} 0 0 1 ${width-cornerRadius} 0 L ${cornerRadius} 0 A ${cornerRadius} ${cornerRadius} 0 0 1 0 ${cornerRadius}`, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
+             paths.push({ d: `M 0 ${numericCornerRadius} L 0 ${numericLength-numericCornerRadius} A ${numericCornerRadius} ${numericCornerRadius} 0 0 1 ${numericCornerRadius} ${numericLength} L ${numericWidth-numericCornerRadius} ${numericLength} A ${numericCornerRadius} ${numericCornerRadius} 0 0 1 ${numericWidth} ${numericLength-numericCornerRadius} L ${numericWidth} ${numericCornerRadius} A ${numericCornerRadius} ${numericCornerRadius} 0 0 1 ${numericWidth-numericCornerRadius} 0 L ${numericCornerRadius} 0 A ${numericCornerRadius} ${numericCornerRadius} 0 0 1 0 ${numericCornerRadius}`, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
         } else {
-            paths.push({ cx: diameter/2, cy: diameter/2, r: diameter/2, stroke: 'var(--color-text-secondary)', fill: 'none', strokeDasharray: '4 2', strokeWidth: '0.5%'});
+            paths.push({ cx: numericDiameter/2, cy: numericDiameter/2, r: numericDiameter/2, stroke: 'var(--color-text-secondary)', fill: 'none', strokeDasharray: '4 2', strokeWidth: '0.5%'});
         }
 
         let currentDepth = 0;
@@ -270,9 +309,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
 
             if (shape === 'rect') {
-                const r = Math.max(0, cornerRadius - offset);
-                const w = width + offset * 2;
-                const l = length + offset * 2;
+                const r = Math.max(0, numericCornerRadius - offset);
+                const w = numericWidth + offset * 2;
+                const l = numericLength + offset * 2;
 
                 const p1 = { x: -offset + r, y: -offset };
                 const p2 = { x: w - r, y: -offset };
@@ -283,10 +322,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 const p7 = { x: -offset, y: l - r };
                 const p8 = { x: -offset, y: -offset + r };
 
-                code.push(`G0 X${p2.x.toFixed(3)} Y${p2.y.toFixed(3)} Z${safeZ}`);
-                code.push(`G1 Z${currentDepth.toFixed(3)} F${feed/2}`);
+                code.push(`G0 X${p2.x.toFixed(3)} Y${p2.y.toFixed(3)} Z${numericSafeZ}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed/2}`);
 
-                code.push(`G1 X${p1.x.toFixed(3)} F${feed}`);
+                code.push(`G1 X${p1.x.toFixed(3)} F${numericFeed}`);
                 if (r > 0) code.push(`G2 X${(-offset).toFixed(3)} Y${p8.y.toFixed(3)} I0 J${r.toFixed(3)}`);
                 code.push(`G1 Y${p7.y.toFixed(3)}`);
                 if (r > 0) code.push(`G2 X${p6.x.toFixed(3)} Y${l.toFixed(3)} I${r.toFixed(3)} J0`);
@@ -298,19 +337,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                  paths.push({ d: `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y} A ${r} ${r} 0 0 0 ${p3.x} ${p3.y} L ${p4.x} ${p4.y} A ${r} ${r} 0 0 0 ${p5.x} ${p5.y} L ${p6.x} ${p6.y} A ${r} ${r} 0 0 0 ${p7.x} ${p7.y} L ${p8.x} ${p8.y} A ${r} ${r} 0 0 0 ${p1.x} ${p1.y}`, stroke: 'var(--color-accent-yellow)', fill: 'none', strokeWidth: '2%'});
             
             } else { // Circle
-                const radius = diameter / 2 + offset;
-                const centerX = diameter / 2;
-                const centerY = diameter / 2;
-                code.push(`G0 X${(centerX + radius).toFixed(3)} Y${centerY.toFixed(3)} Z${safeZ}`);
-                code.push(`G1 Z${currentDepth.toFixed(3)} F${feed/2}`);
-                code.push(`G2 I${-radius.toFixed(3)} J0 F${Number(feed)}`);
+                const radius = numericDiameter / 2 + offset;
+                const centerX = numericDiameter / 2;
+                const centerY = numericDiameter / 2;
+                code.push(`G0 X${(centerX + radius).toFixed(3)} Y${centerY.toFixed(3)} Z${numericSafeZ}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed/2}`);
+                code.push(`G2 I${-radius.toFixed(3)} J0 F${Number(numericFeed)}`);
                 paths.push({ cx: centerX, cy: centerY, r: radius, stroke: 'var(--color-accent-yellow)', fill: 'none', strokeWidth: '2%'});
             }
         }
         
         // TODO: Implement tabs logic for final pass
         
-        code.push(`G0 Z${safeZ}`, `M5`);
+        code.push(`G0 Z${numericSafeZ}`, `M5`);
         return { code, paths, bounds, error: null };
     };
 
@@ -326,27 +365,39 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
         }
 
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericDepth = Number(depth);
+        const numericStepover = Number(stepover);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if (numericStepover <= 0 || numericStepover > 100) {
+            return { error: "Stepover must be between 1% and 100%.", code: [], paths: [], bounds: {} };
+        }
+
         const code = [
             `(--- Surfacing Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
-            `G21 G90`, `M3 S${spindle}`
+            `G21 G90`, `M3 S${numericSpindle}`
         ];
         const paths = [];
         const toolRadius = selectedTool.diameter / 2;
-        const stepoverDist = selectedTool.diameter * (stepover / 100);
+        const stepoverDist = selectedTool.diameter * (numericStepover / 100);
 
-        code.push(`G0 Z${safeZ.toFixed(3)}`);
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
 
         if (direction === 'horizontal') {
             let y = toolRadius;
             let xDirection = 1; // 1 for right, -1 for left
-            while (y <= length + toolRadius) {
-                const startX = (xDirection === 1) ? -toolRadius : width + toolRadius;
-                const endX = (xDirection === 1) ? width + toolRadius : -toolRadius;
+            while (y <= numericLength + toolRadius) {
+                const startX = (xDirection === 1) ? -toolRadius : numericWidth + toolRadius;
+                const endX = (xDirection === 1) ? numericWidth + toolRadius : -toolRadius;
                 code.push(`G0 X${startX.toFixed(3)} Y${y.toFixed(3)}`);
-                code.push(`G1 Z${depth.toFixed(3)} F${feed / 2}`);
-                code.push(`G1 X${endX.toFixed(3)} F${feed}`);
-                code.push(`G0 Z${safeZ.toFixed(3)}`);
+                code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                code.push(`G1 X${endX.toFixed(3)} F${numericFeed}`);
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
                 paths.push({ d: `M ${startX} ${y} L ${endX} ${y}`, stroke: 'var(--color-accent-yellow)' });
                 y += stepoverDist;
                 xDirection *= -1; // Reverse direction for next pass
@@ -354,13 +405,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         } else { // vertical
             let x = toolRadius;
             let yDirection = 1; // 1 for up, -1 for down
-            while (x <= width + toolRadius) {
-                const startY = (yDirection === 1) ? -toolRadius : length + toolRadius;
-                const endY = (yDirection === 1) ? length + toolRadius : -toolRadius;
+            while (x <= numericWidth + toolRadius) {
+                const startY = (yDirection === 1) ? -toolRadius : numericLength + toolRadius;
+                const endY = (yDirection === 1) ? numericLength + toolRadius : -toolRadius;
                 code.push(`G0 X${x.toFixed(3)} Y${startY.toFixed(3)}`);
-                code.push(`G1 Z${depth.toFixed(3)} F${feed / 2}`);
-                code.push(`G1 Y${endY.toFixed(3)} F${feed}`);
-                code.push(`G0 Z${safeZ.toFixed(3)}`);
+                code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                code.push(`G1 Y${endY.toFixed(3)} F${numericFeed}`);
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
                 paths.push({ d: `M ${x.toFixed(3)} ${startY.toFixed(3)} L ${x.toFixed(3)} ${endY.toFixed(3)}`, stroke: 'var(--color-accent-yellow)' });
                 x += stepoverDist;
                 yDirection *= -1; // Reverse direction for next pass
@@ -368,7 +419,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
 
         code.push(`M5`);
-        const bounds = { minX: 0, minY: 0, maxX: width, maxY: length };
+        const bounds = { minX: 0, minY: 0, maxX: numericWidth, maxY: numericLength };
         return { code, paths, bounds, error: null };
     };
 
@@ -384,8 +435,18 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
         }
 
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericCornerRadius = Number(cornerRadius);
+        const numericDiameter = Number(diameter);
         const numericDepth = Number(depth);
         const numericDepthPerPass = Number(depthPerPass);
+        const numericStepover = Number(stepover);
+        const numericFeed = Number(feed);
+        const numericPlungeFeed = Number(plungeFeed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
         if (numericDepthPerPass <= 0) {
             return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
         }
@@ -396,46 +457,45 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const code = [
             `(--- Pocket Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
-            `G21 G90`, `M3 S${spindle}`, `G0 Z${safeZ}`
+            `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ}`
         ];
         const paths = [];
         const toolRadius = selectedTool.diameter / 2;
-        const stepoverDist = selectedTool.diameter * (stepover / 100);
+        const stepoverDist = selectedTool.diameter * (numericStepover / 100);
 
-        const numericPlungeFeed = Number(plungeFeed);
         let currentDepth = 0;
         while (currentDepth > numericDepth) {
             currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
             code.push(`(--- Pass at Z=${currentDepth.toFixed(3)} ---)`);
 
             if (shape === 'rect') {
-                const centerX = width / 2;
-                const centerY = length / 2;
+                const centerX = numericWidth / 2;
+                const centerY = numericLength / 2;
                 code.push(`G0 X${centerX.toFixed(3)} Y${centerY.toFixed(3)}`);
                 code.push(`G1 Z${currentDepth.toFixed(3)} F${numericPlungeFeed}`);
 
                 // Simplified raster clearing for now
                 let y = toolRadius;
-                while (y <= length - toolRadius) {
-                    code.push(`G1 X${(width - toolRadius).toFixed(3)} Y${y.toFixed(3)} F${feed}`);
-                    paths.push({ d: `M${toolRadius} ${y} L${width - toolRadius} ${y}`, stroke: 'var(--color-accent-yellow)' });
+                while (y <= numericLength - toolRadius) {
+                    code.push(`G1 X${(numericWidth - toolRadius).toFixed(3)} Y${y.toFixed(3)} F${numericFeed}`);
+                    paths.push({ d: `M${toolRadius} ${y} L${numericWidth - toolRadius} ${y}`, stroke: 'var(--color-accent-yellow)' });
                     y += stepoverDist;
-                    if (y <= length - toolRadius) {
-                        code.push(`G1 X${toolRadius.toFixed(3)} Y${y.toFixed(3)} F${feed}`);
-                        paths.push({ d: `M${width - toolRadius} ${y - stepoverDist} L${width - toolRadius} ${y}`, stroke: 'var(--color-text-secondary)' });
+                    if (y <= numericLength - toolRadius) {
+                        code.push(`G1 X${toolRadius.toFixed(3)} Y${y.toFixed(3)} F${numericFeed}`);
+                        paths.push({ d: `M${numericWidth - toolRadius} ${y - stepoverDist} L${numericWidth - toolRadius} ${y}`, stroke: 'var(--color-text-secondary)' });
                     }
                 }
             } else { // Circle
-                const centerX = diameter / 2;
-                const centerY = diameter / 2;
-                const maxRadius = diameter / 2 - toolRadius;
+                const centerX = numericDiameter / 2;
+                const centerY = numericDiameter / 2;
+                const maxRadius = numericDiameter / 2 - toolRadius;
                 code.push(`G0 X${centerX.toFixed(3)} Y${centerY.toFixed(3)}`);
                 code.push(`G1 Z${currentDepth.toFixed(3)} F${numericPlungeFeed}`);
             }
         }
 
-        code.push(`G0 Z${safeZ}`, `M5`, `G0 X0 Y0`);
-        const bounds = shape === 'rect' ? { minX: 0, minY: 0, maxX: width, maxY: length } : { minX: 0, minY: 0, maxX: diameter, maxY: diameter };
+        code.push(`G0 Z${numericSafeZ}`, `M5`, `G0 X0 Y0`);
+        const bounds = shape === 'rect' ? { minX: 0, minY: 0, maxX: numericWidth, maxY: numericLength } : { minX: 0, minY: 0, maxX: numericDiameter, maxY: numericDiameter };
         return { code, paths, bounds, error: null };
     };
     const generateBoreCode = () => {
@@ -447,31 +507,42 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ } = boreParams;
 
-        if (holeDiameter <= selectedTool.diameter) {
+        const numericCenterX = Number(centerX);
+        const numericCenterY = Number(centerY);
+        const numericHoleDiameter = Number(holeDiameter);
+        const numericHoleDepth = Number(holeDepth);
+        const numericCbDiameter = Number(cbDiameter);
+        const numericCbDepth = Number(cbDepth);
+        const numericDepthPerPass = Number(depthPerPass);
+        const numericFeed = Number(feed);
+        const numericPlungeFeed = Number(plungeFeed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if (numericHoleDiameter <= selectedTool.diameter) {
             return { error: "Tool must be smaller than hole diameter.", code: [], paths: [], bounds: {} };
         }
-        if (counterboreEnabled && cbDiameter <= selectedTool.diameter) {
+        if (counterboreEnabled && numericCbDiameter <= selectedTool.diameter) {
             return { error: "Tool must be smaller than counterbore diameter.", code: [], paths: [], bounds: {} };
         }
-        if (counterboreEnabled && cbDiameter <= holeDiameter) {
+        if (counterboreEnabled && numericCbDiameter <= numericHoleDiameter) {
             return { error: "Counterbore must be larger than hole diameter.", code: [], paths: [], bounds: {} };
         }
 
-        const numericDepthPerPass = Number(depthPerPass);
         if (numericDepthPerPass <= 0) {
             return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
         }
-        if (numericDepthPerPass > Math.abs(Number(holeDepth))) {
+        if (numericDepthPerPass > Math.abs(numericHoleDepth)) {
             return { error: "Depth per Pass cannot be greater than total Hole Depth.", code: [], paths: [], bounds: {} };
         }
-        if (counterboreEnabled && numericDepthPerPass > Math.abs(Number(cbDepth))) {
+        if (counterboreEnabled && numericDepthPerPass > Math.abs(numericCbDepth)) {
             return { error: "Depth per Pass cannot be greater than total Counterbore Depth.", code: [], paths: [], bounds: {} };
         }
 
         const code = [
             `(--- Bore Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
-            `G21 G90`, `M3 S${spindle}`
+            `G21 G90`, `M3 S${numericSpindle}`
         ];
         const paths = [];
         const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
@@ -487,47 +558,43 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             if (pathRadius <= 0) return;
 
             code.push(`(Boring to Ø${targetDiameter} at Z=${targetDepth})`);
-            paths.push({ cx: centerX, cy: centerY, r: targetDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
-            updateBounds(centerX, centerY, targetDiameter / 2);
+            paths.push({ cx: numericCenterX, cy: numericCenterY, r: targetDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
+            updateBounds(numericCenterX, numericCenterY, targetDiameter / 2);
 
-            const numericPlungeFeed = Number(plungeFeed);
-            const numericDepthPerPass = Number(depthPerPass);
-            code.push(`G0 X${centerX.toFixed(3)} Y${centerY.toFixed(3)} Z${safeZ.toFixed(3)}`);
+            code.push(`G0 X${numericCenterX.toFixed(3)} Y${numericCenterY.toFixed(3)} Z${numericSafeZ.toFixed(3)}`);
             code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
 
             let currentDepth = startZ;
             while (currentDepth > targetDepth) {
                 currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
                 // Ramp in
-                code.push(`G2 X${(centerX + pathRadius).toFixed(3)} Y${centerY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${feed}`);
+                code.push(`G2 X${(numericCenterX + pathRadius).toFixed(3)} Y${numericCenterY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
                 // Full circle
                 code.push(`G2 I${-pathRadius.toFixed(3)} J0`);
                 // Ramp out
-                code.push(`G2 X${centerX.toFixed(3)} Y${centerY.toFixed(3)} I${-pathRadius / 2} J0`);
+                code.push(`G2 X${numericCenterX.toFixed(3)} Y${numericCenterY.toFixed(3)} I${-pathRadius / 2} J0`);
 
                 if (currentDepth === Math.max(targetDepth, startZ - numericDepthPerPass)) {
-                    paths.push({ cx: centerX, cy: centerY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
+                    paths.push({ cx: numericCenterX, cy: numericCenterY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
                 }
             }
         };
 
         if (counterboreEnabled) {
             // Order depths from shallowest to deepest
-            const numericCbDepth = Number(cbDepth);
-            const numericHoleDepth = Number(holeDepth);
             if (numericCbDepth > numericHoleDepth) {
-                doHelicalBore(cbDiameter, cbDepth);
-                doHelicalBore(holeDiameter, holeDepth, cbDepth);
+                doHelicalBore(numericCbDiameter, numericCbDepth);
+                doHelicalBore(numericHoleDiameter, numericHoleDepth, numericCbDepth);
             } else {
                 // This case is less common but possible
-                doHelicalBore(holeDiameter, holeDepth);
-                doHelicalBore(cbDiameter, cbDepth); // This will just re-trace in air, but handles the logic simply
+                doHelicalBore(numericHoleDiameter, numericHoleDepth);
+                doHelicalBore(numericCbDiameter, numericCbDepth); // This will just re-trace in air, but handles the logic simply
             }
         } else {
-            doHelicalBore(holeDiameter, holeDepth);
+            doHelicalBore(numericHoleDiameter, numericHoleDepth);
         }
 
-        code.push(`G0 Z${safeZ.toFixed(3)}`);
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
         code.push(`M5`);
         code.push(`G0 X0 Y0`);
 
@@ -546,8 +613,22 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const paramsToCheck: (string | number | null)[] = [slotWidth, depth, depthPerPass, feed, spindle, safeZ];
         if (paramsToCheck.some(p => p === '' || p === null)) return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
 
+        const numericSlotWidth = Number(slotWidth);
         const numericDepth = Number(depth);
         const numericDepthPerPass = Number(depthPerPass);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+        const numericStartX = Number(startX);
+        const numericStartY = Number(startY);
+        const numericEndX = Number(endX);
+        const numericEndY = Number(endY);
+        const numericCenterX = Number(centerX);
+        const numericCenterY = Number(centerY);
+        const numericRadius = Number(radius);
+        const numericStartAngle = Number(startAngle);
+        const numericEndAngle = Number(endAngle);
+
         if (numericDepthPerPass <= 0) {
             return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
         }
@@ -559,7 +640,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             `(--- Slot Operation: ${type} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
-            `G21 G90`, `M3 S${spindle}`
+            `G21 G90`, `M3 S${numericSpindle}`
         ];
         const paths = [];
         let bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
@@ -571,12 +652,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         };
         
         const offsets = [];
-        if (slotWidth <= toolDiameter) {
+        if (numericSlotWidth <= toolDiameter) {
             offsets.push(0);
         } else {
-            const wallOffset = (slotWidth - toolDiameter) / 2;
+            const wallOffset = (numericSlotWidth - toolDiameter) / 2;
             offsets.push(-wallOffset, wallOffset);
-            if (slotWidth > toolDiameter * 2) {
+            if (numericSlotWidth > toolDiameter * 2) {
                  offsets.push(0); // Add a center pass
             }
         }
@@ -590,21 +671,21 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
             for (const offset of offsets) {
                 if (type === 'straight') {
-                    const angle = Math.atan2(endY - startY, endX - startX);
+                    const angle = Math.atan2(numericEndY - numericStartY, numericEndX - numericStartX);
                     const perpAngle = angle + Math.PI / 2;
 
                     const dx = Math.cos(perpAngle) * offset;
                     const dy = Math.sin(perpAngle) * offset;
 
-                    const passStartX = startX + dx;
-                    const passStartY = startY + dy;
-                    const passEndX = endX + dx;
-                    const passEndY = endY + dy;
+                    const passStartX = numericStartX + dx;
+                    const passStartY = numericStartY + dy;
+                    const passEndX = numericEndX + dx;
+                    const passEndY = numericEndY + dy;
 
-                    code.push(`G0 Z${safeZ}`);
+                    code.push(`G0 Z${numericSafeZ}`);
                     code.push(`G0 X${passStartX.toFixed(3)} Y${passStartY.toFixed(3)}`);
-                    code.push(`G1 Z${currentDepth.toFixed(3)} F${feed / 2}`);
-                    code.push(`G1 X${passEndX.toFixed(3)} Y${passEndY.toFixed(3)} F${feed}`);
+                    code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`);
+                    code.push(`G1 X${passEndX.toFixed(3)} Y${passEndY.toFixed(3)} F${numericFeed}`);
 
                     if (currentDepth === Math.max(numericDepth, -numericDepthPerPass)) {
                         paths.push({ d: `M${passStartX} ${passStartY} L${passEndX} ${passEndY}`, stroke: 'var(--color-accent-yellow)', strokeWidth: `${toolDiameter}%` });
@@ -612,40 +693,40 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         updateBounds(passEndX, passEndY);
                     }
                 } else { // arc
-                    const passRadius = radius + offset;
+                    const passRadius = numericRadius + offset;
                     if (passRadius <= 0) continue;
 
-                    const startRad = startAngle * (Math.PI / 180);
-                    const endRad = endAngle * (Math.PI / 180);
+                    const startRad = numericStartAngle * (Math.PI / 180);
+                    const endRad = numericEndAngle * (Math.PI / 180);
 
-                    const passStartX = centerX + passRadius * Math.cos(startRad);
-                    const passStartY = centerY + passRadius * Math.sin(startRad);
-                    const passEndX = centerX + passRadius * Math.cos(endRad);
-                    const passEndY = centerY + passRadius * Math.sin(endRad);
+                    const passStartX = numericCenterX + passRadius * Math.cos(startRad);
+                    const passStartY = numericCenterY + passRadius * Math.sin(startRad);
+                    const passEndX = numericCenterX + passRadius * Math.cos(endRad);
+                    const passEndY = numericCenterY + passRadius * Math.sin(endRad);
 
-                    const gCodeArc = (endAngle > startAngle) ? 'G3' : 'G2';
-                    const sweepFlag = (endAngle > startAngle) ? 1 : 0;
+                    const gCodeArc = (numericEndAngle > numericStartAngle) ? 'G3' : 'G2';
+                    const sweepFlag = (numericEndAngle > numericStartAngle) ? 1 : 0;
                     
-                    const I = centerX - passStartX;
-                    const J = centerY - passStartY;
+                    const I = numericCenterX - passStartX;
+                    const J = numericCenterY - passStartY;
                     
-                    code.push(`G0 Z${safeZ}`);
+                    code.push(`G0 Z${numericSafeZ}`);
                     code.push(`G0 X${passStartX.toFixed(3)} Y${passStartY.toFixed(3)}`);
-                    code.push(`G1 Z${currentDepth.toFixed(3)} F${feed / 2}`);
-                    code.push(`${gCodeArc} X${passEndX.toFixed(3)} Y${passEndY.toFixed(3)} I${I.toFixed(3)} J${J.toFixed(3)} F${feed}`);
+                    code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`);
+                    code.push(`${gCodeArc} X${passEndX.toFixed(3)} Y${passEndY.toFixed(3)} I${I.toFixed(3)} J${J.toFixed(3)} F${numericFeed}`);
                     
                     if (currentDepth === Math.max(numericDepth, -numericDepthPerPass)) {
-                        const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+                        const largeArcFlag = Math.abs(numericEndAngle - numericStartAngle) > 180 ? 1 : 0;
                         paths.push({ d: `M ${passStartX} ${passStartY} A ${passRadius} ${passRadius} 0 ${largeArcFlag} ${sweepFlag} ${passEndX} ${passEndY}`, stroke: 'var(--color-accent-yellow)', fill: 'none', strokeWidth: `${toolDiameter}%` });
                         // Simple bounding box for arc
-                        updateBounds(centerX - passRadius, centerY - passRadius);
-                        updateBounds(centerX + passRadius, centerY + passRadius);
+                        updateBounds(numericCenterX - passRadius, numericCenterY - passRadius);
+                        updateBounds(numericCenterX + passRadius, numericCenterY + passRadius);
                     }
                 }
             }
         }
 
-        code.push(`G0 Z${safeZ}`, `M5`);
+        code.push(`G0 Z${numericSafeZ}`, `M5`);
         return { code, paths, bounds, error: null };
     };
     
@@ -659,6 +740,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ } = textParams;
         if ([height, spacing, startX, startY, depth, feed, spindle, safeZ].some(p => p === '' || p === null) || !text) return { error: "Please fill all required fields.", code: [], paths: [], bounds: {} };
 
+        const numericHeight = Number(height);
+        const numericSpacing = Number(spacing);
+        const numericStartX = Number(startX);
+        const numericStartY = Number(startY);
+        const numericDepth = Number(depth);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
         const fontData = FONTS[font];
         if (!fontData) {
              return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
@@ -669,11 +759,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const FONT_BASE_HEIGHT = 7;
         const FONT_BASE_WIDTH = 5;
 
-        const scale = height / FONT_BASE_HEIGHT;
+        const scale = numericHeight / FONT_BASE_HEIGHT;
         const charWidth = FONT_BASE_WIDTH * scale;
-        const totalTextWidth = (text.length * charWidth) + Math.max(0, (text.length - 1) * spacing);
+        const totalTextWidth = (text.length * charWidth) + Math.max(0, (text.length - 1) * numericSpacing);
 
-        let currentX = startX;
+        let currentX = numericStartX;
         if (alignment === 'center') {
             currentX -= totalTextWidth / 2;
         } else if (alignment === 'right') {
@@ -687,7 +777,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         code.push(`(Text: ${text}, Font: ${font})`);
         // code.push(`T${toolIndex + 1} M6`); // Tool change disabled for non-ATC setups
         code.push(`G21 G90`);
-        code.push(`M3 S${spindle}`);
+        code.push(`M3 S${numericSpindle}`);
 
         for (let i = 0; i < text.length; i++) {
             const char = text[i].toUpperCase();
@@ -697,19 +787,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 if (fontData.type === 'stroke') {
                     for (const stroke of charData) {
                         const p1 = {
-                            x: startOffsetX + i * (charWidth + spacing) + stroke.p1.x * scale,
-                            y: startY + stroke.p1.y * scale
+                            x: startOffsetX + i * (charWidth + numericSpacing) + stroke.p1.x * scale,
+                            y: numericStartY + stroke.p1.y * scale
                         };
                         const p2 = {
-                            x: startOffsetX + i * (charWidth + spacing) + stroke.p2.x * scale,
-                            y: startY + stroke.p2.y * scale
+                            x: startOffsetX + i * (charWidth + numericSpacing) + stroke.p2.x * scale,
+                            y: numericStartY + stroke.p2.y * scale
                         };
 
-                        code.push(`G0 Z${safeZ}`);
+                        code.push(`G0 Z${numericSafeZ}`);
                         code.push(`G0 X${p1.x.toFixed(3)} Y${p1.y.toFixed(3)}`);
-                        code.push(`G1 Z${depth.toFixed(3)} F${feed / 2}`);
-                        code.push(`G1 X${p2.x.toFixed(3)} Y${p2.y.toFixed(3)} F${feed}`);
-                        code.push(`G0 Z${safeZ}`);
+                        code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                        code.push(`G1 X${p2.x.toFixed(3)} Y${p2.y.toFixed(3)} F${numericFeed}`);
+                        code.push(`G0 Z${numericSafeZ}`);
 
                         paths.push({ d: `M${p1.x} ${p1.y} L${p2.x} ${p2.y}`, stroke: 'var(--color-accent-yellow)' });
                     }
@@ -718,22 +808,22 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         if (path.length === 0) continue;
 
                         const scaledPath = path.map(p => ({
-                           x: startOffsetX + i * (charWidth + spacing) + p.x * scale,
-                           y: startY + p.y * scale
+                           x: startOffsetX + i * (charWidth + numericSpacing) + p.x * scale,
+                           y: numericStartY + p.y * scale
                         }));
 
-                        code.push(`G0 Z${safeZ}`);
+                        code.push(`G0 Z${numericSafeZ}`);
                         code.push(`G0 X${scaledPath[0].x.toFixed(3)} Y${scaledPath[0].y.toFixed(3)}`);
-                        code.push(`G1 Z${depth.toFixed(3)} F${feed / 2}`);
+                        code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
                         
                         for (let j = 1; j < scaledPath.length; j++) {
-                           code.push(`G1 X${scaledPath[j].x.toFixed(3)} Y${scaledPath[j].y.toFixed(3)} F${feed}`);
+                           code.push(`G1 X${scaledPath[j].x.toFixed(3)} Y${scaledPath[j].y.toFixed(3)} F${numericFeed}`);
                         }
                         
                         if (scaledPath[0].x !== scaledPath[scaledPath.length-1].x || scaledPath[0].y !== scaledPath[scaledPath.length-1].y) {
-                           code.push(`G1 X${scaledPath[0].x.toFixed(3)} Y${scaledPath[0].y.toFixed(3)} F${feed}`);
+                           code.push(`G1 X${scaledPath[0].x.toFixed(3)} Y${scaledPath[0].y.toFixed(3)} F${numericFeed}`);
                         }
-                        code.push(`G0 Z${safeZ}`);
+                        code.push(`G0 Z${numericSafeZ}`);
 
                         const pathString = "M" + scaledPath.map(p => `${p.x} ${p.y}`).join(" L ") + " Z";
                         paths.push({ d: pathString, stroke: 'var(--color-accent-yellow)', 'strokeWidth': '2%', fill: 'none' });
@@ -743,9 +833,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
 
         code.push('M5');
-        code.push(`G0 X${startX.toFixed(3)} Y${startY.toFixed(3)}`);
+        code.push(`G0 X${numericStartX.toFixed(3)} Y${numericStartY.toFixed(3)}`);
         
-        const bounds = { minX: startOffsetX, maxX: startOffsetX + totalTextWidth, minY: startY, maxY: startY + height };
+        const bounds = { minX: startOffsetX, maxX: startOffsetX + totalTextWidth, minY: numericStartY, maxY: numericStartY + numericHeight };
         
         return { code, paths, bounds, error: null };
     };
@@ -762,8 +852,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const diameter = Number(threadParams.diameter);
         const pitch = Number(threadParams.pitch);
         const depth = Number(threadParams.depth);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
 
-        if ([diameter, pitch, depth, feed, spindle, safeZ].some(p => p === '' || p === null || isNaN(Number(p)) || Number(p) <= 0)) {
+        if ([diameter, pitch, depth, numericFeed, numericSpindle, numericSafeZ].some(p => p === '' || p === null || isNaN(Number(p)) || Number(p) <= 0)) {
             return { error: "Please fill all fields with positive values.", code: [], paths: [], bounds: {} };
         }
         if (toolDiameter >= diameter && type === 'internal') {
@@ -775,11 +868,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             `(Type: ${type}, Hand: ${hand})`,
             `(Diameter: ${diameter}, Pitch: ${pitch}, Depth: ${depth})`,
-            `(Feed: ${feed}, Spindle: ${spindle})`,
+            `(Feed: ${numericFeed}, Spindle: ${numericSpindle})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
             `G21 G90`,
-            `M3 S${spindle}`,
-            `G0 Z${safeZ}`,
+            `M3 S${numericSpindle}`,
+            `G0 Z${numericSafeZ}`,
         ];
         const paths = [];
 
@@ -812,20 +905,20 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Start sequence (move to bottom and lead-in)
         code.push(`G0 X${centerX.toFixed(3)} Y${centerY.toFixed(3)}`);
-        code.push(`G1 Z${(-depth).toFixed(3)} F${feed / 2}`);
-        code.push(`G1 X${startX.toFixed(3)} F${feed}`); // Straight lead-in from center
+        code.push(`G1 Z${(-depth).toFixed(3)} F${numericFeed / 2}`);
+        code.push(`G1 X${startX.toFixed(3)} F${numericFeed}`); // Straight lead-in from center
 
         // Helical motion upwards (climb milling)
         const numericDepth = Number(depth);
         let currentZ = -numericDepth;
         while (currentZ < 0) {
             currentZ = Math.min(0, currentZ + Number(pitch));
-            code.push(`${helicalDirection} X${startX.toFixed(3)} Y${centerY.toFixed(3)} I${-pathRadius.toFixed(3)} J0 Z${currentZ.toFixed(3)} F${Number(feed)}`);
+            code.push(`${helicalDirection} X${startX.toFixed(3)} Y${centerY.toFixed(3)} I${-pathRadius.toFixed(3)} J0 Z${currentZ.toFixed(3)} F${Number(numericFeed)}`);
         }
 
         // Retract
-        code.push(`G1 X${centerX.toFixed(3)} F${feed}`); // Straight lead-out to center
-        code.push(`G0 Z${safeZ.toFixed(3)}`);
+        code.push(`G1 X${centerX.toFixed(3)} F${numericFeed}`); // Straight lead-out to center
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
         code.push(`M5`);
         code.push(`G0 X0 Y0`);
 

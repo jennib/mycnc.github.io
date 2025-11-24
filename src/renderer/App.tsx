@@ -195,84 +195,32 @@ const App: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
   const handleToggleFullscreen = () => {
-    // Check if the electronAPI and its send method exist before calling it
     if (window.electronAPI && typeof window.electronAPI.send === "function") {
       window.electronAPI.send("toggle-fullscreen");
     } else {
-      console.error("Fullscreen API is not available.");
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
     }
   };
   // Global Hotkey Handling
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Do not trigger hotkeys if an input field is focused, or if the key is being held down
-      if (
-        event.repeat ||
-        (document.activeElement &&
-          (document.activeElement.tagName === "INPUT" ||
-            document.activeElement.tagName === "TEXTAREA"))
-      ) {
-        return;
-      }
-
-      // If a jog key is already active, don't start a new one.
-      if (activeJogKeyRef.current) {
-        return;
-      }
-
-      let axis: string | null = null;
-      let direction = 0;
-
-      switch (event.key) {
-        case "ArrowUp": axis = "Y"; direction = 1; break;
-        case "ArrowDown": axis = "Y"; direction = -1; break;
-        case "ArrowLeft": axis = "X"; direction = -1; break;
-        case "ArrowRight": axis = "X"; direction = 1; break;
-        case "PageUp": axis = "Z"; direction = 1; break;
-        case "PageDown": axis = "Z"; direction = -1; break;
-      }
-
-      if (axis && direction !== 0) {
-        event.preventDefault();
-        
-        // Set the ref immediately to block subsequent keydown repeats
-        activeJogKeyRef.current = event.key;
-
-        const { jogFeedRate } = machineSettings;
-        // A large distance simulates continuous movement until key-up/cancel.
-        const distance = direction * 99999;
-        const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
-        
-        connectionActions.sendLine(command).catch(err => {
-            console.error("Failed to start jog:", err);
-            // If the command fails, unblock jogging.
-            activeJogKeyRef.current = null;
-        });
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === activeJogKeyRef.current) {
-        event.preventDefault();
-        handleJogStop();
-        activeJogKeyRef.current = null;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      if (activeJogKeyRef.current) {
-        handleJogStop();
-      }
-    };
-  }, [machineSettings, connectionActions, handleJogStop]);
-
-  // Separate useEffect for non-jog hotkeys
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
@@ -284,6 +232,7 @@ const App: React.FC = () => {
       }
 
       let handled = false;
+      
       switch (event.key) {
         case "Escape":
           handleEmergencyStop();
@@ -498,14 +447,17 @@ const App: React.FC = () => {
   };
 
   const handleProbe = (axes: string) => {
-    const { probeFeedRate, probeTravelDistance } = machineSettings.probe;
-    if (!probeFeedRate || !probeTravelDistance) {
+    logActions.addLog({ type: 'info', message: `Probing axes: ${axes}` });
+    const { probe } = machineSettings;
+    if (!probe || !probe.feedRate || !probe.probeTravelDistance) {
       logActions.addLog({
         type: "error",
         message: "Probe settings are not configured.",
       });
       return;
     }
+
+    const { feedRate, probeTravelDistance } = probe;
 
     let command = "";
     // The probe command G38.2 moves one or more axes. The first axis to touch the probe
@@ -522,7 +474,9 @@ const App: React.FC = () => {
     }
 
     if (command) {
-      connectionActions.sendLine(`G38.2 ${command.trim()} F${probeFeedRate}`);
+      const gcode = `G38.2 ${command.trim()} F${feedRate}`;
+      logActions.addLog({ type: 'info', message: `Sending probe command: ${gcode}` });
+      connectionActions.sendLine(gcode);
     }
   };
 

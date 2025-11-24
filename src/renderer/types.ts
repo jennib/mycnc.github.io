@@ -59,8 +59,9 @@ export interface MachineSettings {
     workArea: { x: number; y: number; z: number };
     jogFeedRate: number;
     spindle: { min: number; max: number; warmupDelay: number; };
-    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number };
+    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number; probeTravelDistance: number; };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
+    runStartupScript: boolean;
     isConfigured?: boolean;
 }
 

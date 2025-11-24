@@ -72,9 +72,13 @@ export class SerialManager {
     }
 
     async connect(baudRate: number) {
-        if (this.port) { // Already connected or connecting
-            this.callbacks.onError("A connection attempt is already in progress.");
-            return;
+        if (this.port) {
+            try {
+                await this.port.close();
+            } catch (e) {
+                // Ignore errors, as we are trying to connect anyway.
+            }
+            this.port = null;
         }
         if (!('serial' in navigator)) {
             this.callbacks.onError("Web Serial API not supported.");
@@ -248,22 +252,17 @@ export class SerialManager {
     }
 
     async disconnect() {
-        if (this.isDisconnecting || (!this.port && this.connectionType !== 'tcp')) return;
-        this.isDisconnecting = true;
-    
         if (this.statusInterval) {
             clearInterval(this.statusInterval);
             this.statusInterval = null;
         }
 
-        // If a command is pending, reject it.
         if (this.linePromiseReject) {
             this.linePromiseReject(new Error('Connection disconnected.'));
             this.linePromiseResolve = null;
             this.linePromiseReject = null;
         }
 
-        // If a job was running, send a soft-reset to stop the machine.
         if (this.isJobRunning) {
             this.isJobRunning = false;
             this.isPaused = false;
@@ -272,10 +271,18 @@ export class SerialManager {
         }
     
         try {
-            if (this.connectionType === 'usb' && this.port) {
-                // Let port.close() handle the stream cancellations.
+            if (this.reader) {
+                await this.reader.cancel();
+                this.reader.releaseLock();
+            }
+            if (this.writer) {
+                await this.writer.close();
+                this.writer.releaseLock();
+            }
+            if (this.port) {
                 await this.port.close();
-            } else if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
+            }
+            if (this.connectionType === 'tcp' && this.isElectron && window.electronAPI) {
                 window.electronAPI.disconnectTCP();
             }
         } catch (error) {
@@ -285,7 +292,6 @@ export class SerialManager {
             this.reader = null;
             this.writer = null;
             this.connectionType = null;
-            this.isDisconnecting = false;
             this.callbacks.onDisconnect();
         }
     }
@@ -391,11 +397,10 @@ export class SerialManager {
     async readLoop() {
         const decoder = new TextDecoder();
         let buffer = '';
-        while (this.port?.readable && this.reader) {
-            try {
+        try {
+            while (this.port?.readable && this.reader) {
                 const { value, done } = await this.reader.read();
                 if (done) {
-                    this.reader.releaseLock();
                     break;
                 }
                 if (value) {
@@ -407,23 +412,14 @@ export class SerialManager {
                         this.processIncomingData(line);
                     });
                 }
-            } catch (error) {
-                if (this.linePromiseReject) {
-                    this.linePromiseReject(new Error("Serial connection lost during read."));
-                    this.linePromiseResolve = null;
-                    this.linePromiseReject = null;
-                }
-                const errorMessage = error instanceof Error ? error.message : "Unknown error";
-                 if (this.isDisconnecting) {
-                    // Error is expected during a manual disconnect.
-                } else if (errorMessage.includes("device has been lost") || errorMessage.includes("The port is closed.")) {
-                    this.callbacks.onError("Device disconnected unexpectedly. Please reconnect.");
-                    this.disconnect();
-                } else {
-                    this.callbacks.onError("Error reading from serial port.");
-                }
-                break;
             }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            if (!errorMessage.includes('The port has been closed.')) {
+                this.callbacks.onError("Error reading from serial port: " + errorMessage);
+            }
+        } finally {
+            this.disconnect();
         }
     }
 
@@ -542,6 +538,7 @@ export class SerialManager {
     }
 
     async sendLine(line: string, log = true) {
+        this.callbacks.onLog({ type: 'info', message: `Sending line: ${line}` });
         // Guard against sending empty or whitespace-only lines to GRBL.
         if (!line || line.trim() === '') {
             return;

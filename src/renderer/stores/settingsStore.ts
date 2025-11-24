@@ -29,6 +29,7 @@ interface SettingsState {
     setMachineSettings: (settings: MachineSettings | ((prev: MachineSettings) => MachineSettings)) => void;
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
     setGeneratorSettings: (settings: GeneratorSettings | ((prev: GeneratorSettings) => GeneratorSettings)) => void;
+    resetSettings: () => void;
   };
 }
 
@@ -50,6 +51,7 @@ export const useSettingsStore = create<SettingsState>()(
         setMachineSettings: (settings) => set((state) => ({ machineSettings: typeof settings === 'function' ? settings(state.machineSettings) : settings })),
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
         setGeneratorSettings: (settings) => set((state) => ({ generatorSettings: typeof settings === 'function' ? settings(state.generatorSettings) : settings })),
+        resetSettings: () => set({ machineSettings: DEFAULT_SETTINGS, generatorSettings: DEFAULT_GENERATOR_SETTINGS }),
       },
     }),
     {
@@ -78,12 +80,15 @@ export const useSettingsStore = create<SettingsState>()(
             return result;
         };
 
-        return {
-            ...currentState,
-            ...state,
-            machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
-            generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
-        };
+        const mergedState = { ...currentState, ...state };
+        if (state.machineSettings) {
+            mergedState.machineSettings = deepMerge(currentState.machineSettings, state.machineSettings);
+        }
+        if (state.generatorSettings) {
+            mergedState.generatorSettings = deepMerge(currentState.generatorSettings, state.generatorSettings);
+        }
+
+        return mergedState;
       },
     }
   )
