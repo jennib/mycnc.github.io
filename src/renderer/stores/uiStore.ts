@@ -15,6 +15,7 @@ type UIState = {
   isToolLibraryModalOpen: boolean;
   isContactModalOpen: boolean;
   isGCodeModalOpen: boolean;
+  activeGeneratorTab: string; // Add this
   isSpindleModalOpen: boolean;
   spindleModalArgs: SpindleModalArgs;
   isInfoModalOpen: boolean;
@@ -36,6 +37,7 @@ type UIState = {
     closeContactModal: () => void;
     openGCodeModal: () => void;
     closeGCodeModal: () => void;
+    setActiveGeneratorTab: (tab: string) => void; // Add this
     openSpindleModal: (args: SpindleModalArgs) => void;
     closeSpindleModal: () => void;
     openInfoModal: (title: string, message: string) => void;
@@ -53,6 +55,7 @@ export const useUIStore = create<UIState>((set) => ({
   isToolLibraryModalOpen: false,
   isContactModalOpen: false,
   isGCodeModalOpen: false,
+  activeGeneratorTab: 'surfacing', // Add this
   isSpindleModalOpen: false,
   spindleModalArgs: {
     onConfirm: () => {},
@@ -78,6 +81,7 @@ export const useUIStore = create<UIState>((set) => ({
     closeContactModal: () => set({ isContactModalOpen: false }),
     openGCodeModal: () => set({ isGCodeModalOpen: true }),
     closeGCodeModal: () => set({ isGCodeModalOpen: false }),
+    setActiveGeneratorTab: (tab) => set({ activeGeneratorTab: tab }), // Add this
     openSpindleModal: (args) => set({ isSpindleModalOpen: true, spindleModalArgs: args }),
     closeSpindleModal: () => set({ isSpindleModalOpen: false }),
     openInfoModal: (title, message) => set({ isInfoModalOpen: true, infoModalTitle: title, infoModalMessage: message }),

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Plus, Trash2, Pencil } from './Icons';
 import { Tool } from '@/types';
+import Modal from './Modal';
+import ConfirmationModal from './ConfirmationModal';
 
 interface ToolLibraryModalProps {
     isOpen: boolean;
-    onCancel: () => void;
+    onClose: () => void;
     onSave: (library: Tool[]) => void;
     library: Tool[];
 }
@@ -15,19 +17,17 @@ const newToolInitialState: Omit<Tool, 'id'> & { id: number | null, diameter: num
     diameter: '',
 };
 
-const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, onSave, library }) => {
+const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onClose, onSave, library }) => {
     const [localLibrary, setLocalLibrary] = useState<Tool[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id'> & { id: number | null }>(newToolInitialState);
+    const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
 
     useEffect(() => {
         if (isOpen) {
-            // Ensure every tool has a unique ID, even if not saved before.
             setLocalLibrary(library.map((tool, index) => ({ ...tool, id: tool.id ?? Date.now() + index })));
         }
     }, [isOpen, library]);
-
-    if (!isOpen) return null;
 
     const handleEdit = (tool) => {
         setCurrentTool(tool);
@@ -57,30 +57,42 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
         handleCancelEdit();
     };
 
-    const handleDelete = (toolId) => {
-        if (window.confirm('Are you sure you want to delete this tool?')) {
-            setLocalLibrary(lib => lib.filter(t => t.id !== toolId));
+    const handleDelete = (tool: Tool) => {
+        setToolToDelete(tool);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (toolToDelete) {
+            setLocalLibrary(lib => lib.filter(t => t.id !== toolToDelete.id));
         }
+        setToolToDelete(null);
     };
 
     const handleSaveAndClose = () => {
         onSave(localLibrary);
-        onCancel();
+        onClose();
     };
 
-    return (
-        <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
-            aria-modal="true" role="dialog"
+    const footer = (
+        <button
+            onClick={handleSaveAndClose}
+            disabled={isEditing}
+            className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2 disabled:bg-secondary disabled:cursor-not-allowed"
         >
-            <div
-                className="bg-surface rounded-lg shadow-2xl w-full max-w-md border border-secondary transform transition-all max-h-[80vh] flex flex-col"
+            <Save className="w-5 h-5" />Save & Close
+        </button>
+    );
+
+    return (
+        <>
+            <Modal
+                isOpen={isOpen && !toolToDelete}
+                onClose={onClose}
+                title="Tool Library"
+                footer={footer}
+                size="md"
             >
-                <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-text-primary">Tool Library</h2>
-                    <button onClick={onCancel} className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary"><X className="w-6 h-6" /></button>
-                </div>
-                <div className="p-6 space-y-4 overflow-y-auto">
+                <div className="space-y-4">
                     {!isEditing ? (
                         <button
                             onClick={handleAddNew}
@@ -129,7 +141,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={() => handleEdit(tool)} className="p-1 text-text-secondary hover:text-primary"><Pencil className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDelete(tool.id)} className="p-1 text-text-secondary hover:text-accent-red"><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleDelete(tool)} className="p-1 text-text-secondary hover:text-accent-red"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                             ))
@@ -138,17 +150,18 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                         )}
                     </div>
                 </div>
-                <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
-                    <button
-                        onClick={handleSaveAndClose}
-                        disabled={isEditing}
-                        className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2 disabled:bg-secondary disabled:cursor-not-allowed"
-                    >
-                        <Save className="w-5 h-5" />Save & Close
-                    </button>
-                </div>
-            </div>
-        </div>
+            </Modal>
+            {toolToDelete && (
+                <ConfirmationModal
+                    isOpen={!!toolToDelete}
+                    onClose={() => setToolToDelete(null)}
+                    onConfirm={handleDeleteConfirm}
+                    title="Confirm Delete"
+                    message={`Are you sure you want to delete the tool "${toolToDelete.name}"?`}
+                    confirmText="Delete"
+                />
+            )}
+        </>
     );
 };
 
