@@ -4,7 +4,7 @@ import { useConnectionStore } from '@/stores/connectionStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useLogStore } from '@/stores/logStore';
-import { analyzeGCode, getMachineStateAtLine } from '@/services/gcodeAnalyzer.js';
+import { analyzeGCodeWithWorker, getMachineStateAtLine } from '@/services/gcodeAnalyzer.js';
 import { JobStatus, TimeEstimate, Tool } from '@/types';
 
 export function useJob() {
@@ -23,7 +23,7 @@ export function useJob() {
     switch (action) {
       case 'start':
         if (gcodeLines.length > 0) {
-          const warnings = analyzeGCode(gcodeLines, machineSettings);
+          const warnings = await analyzeGCodeWithWorker(gcodeLines, machineSettings);
           setPreflightWarnings(warnings);
           setJobStartOptions({ startLine: options?.startLine ?? 0, isDryRun: false });
           uiActions.openPreflightModal();

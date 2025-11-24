@@ -25,7 +25,6 @@ import {
   BookOpen,
 } from "./components/Icons";
 import {
-  analyzeGCode,
   getMachineStateAtLine,
 } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
