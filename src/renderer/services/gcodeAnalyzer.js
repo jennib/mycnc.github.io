@@ -73,6 +73,7 @@ export const getMachineStateAtLine = (gcodeLines, lineNumber) => {
         workCoordinateSystem: 'G54', // Default WCS
         unitMode: 'G21', // Default to mm
         distanceMode: 'G90', // Default to absolute
+        feedRate: null,
     };
 
     // Don't analyze if there are no lines or lineNumber is invalid
@@ -121,6 +122,12 @@ export const getMachineStateAtLine = (gcodeLines, lineNumber) => {
             state.distanceMode = 'G90';
         } else if (upperLine.includes('G91')) {
             state.distanceMode = 'G91';
+        }
+
+        // Feed Rate
+        const f = getParam(upperLine, 'F');
+        if (f !== null) {
+            state.feedRate = f;
         }
     });
 

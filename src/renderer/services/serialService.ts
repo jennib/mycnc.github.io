@@ -513,7 +513,7 @@ export class SerialManager {
         }
     }
 
-    async sendLineAndWaitForOk(line: string, log = true) {
+    async sendLineAndWaitForOk(line: string, log = true, timeout = 10000) {
         return new Promise<void>((resolve, reject) => {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
@@ -522,8 +522,8 @@ export class SerialManager {
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
-                reject(new Error(`Command timed out after 10s: ${line}`));
-            }, 10000);
+                reject(new Error(`Command timed out after ${timeout / 1000}s: ${line}`));
+            }, timeout);
     
             this.linePromiseResolve = () => {
                 clearTimeout(timeoutId);

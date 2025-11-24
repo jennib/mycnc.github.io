@@ -124,6 +124,7 @@ const App: React.FC = () => {
   const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeJogKeyRef = useRef<string | null>(null);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -164,6 +165,11 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleJogStop = useCallback(() => {
+    // Jog Cancel realtime command 0x85
+    connectionActions.sendRealtimeCommand('\x85');
+  }, [connectionActions]);
+
   const handleManualCommand = useCallback(
     (command: string) => {
       connectionActions.sendLine(command);
@@ -200,7 +206,75 @@ const App: React.FC = () => {
   // Global Hotkey Handling
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Do not trigger hotkeys if an input field is focused
+      // Do not trigger hotkeys if an input field is focused, or if the key is being held down
+      if (
+        event.repeat ||
+        (document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA"))
+      ) {
+        return;
+      }
+
+      // If a jog key is already active, don't start a new one.
+      if (activeJogKeyRef.current) {
+        return;
+      }
+
+      let axis: string | null = null;
+      let direction = 0;
+
+      switch (event.key) {
+        case "ArrowUp": axis = "Y"; direction = 1; break;
+        case "ArrowDown": axis = "Y"; direction = -1; break;
+        case "ArrowLeft": axis = "X"; direction = -1; break;
+        case "ArrowRight": axis = "X"; direction = 1; break;
+        case "PageUp": axis = "Z"; direction = 1; break;
+        case "PageDown": axis = "Z"; direction = -1; break;
+      }
+
+      if (axis && direction !== 0) {
+        event.preventDefault();
+        
+        // Set the ref immediately to block subsequent keydown repeats
+        activeJogKeyRef.current = event.key;
+
+        const { jogFeedRate } = machineSettings;
+        // A large distance simulates continuous movement until key-up/cancel.
+        const distance = direction * 99999;
+        const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
+        
+        connectionActions.sendLine(command).catch(err => {
+            console.error("Failed to start jog:", err);
+            // If the command fails, unblock jogging.
+            activeJogKeyRef.current = null;
+        });
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === activeJogKeyRef.current) {
+        event.preventDefault();
+        handleJogStop();
+        activeJogKeyRef.current = null;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      if (activeJogKeyRef.current) {
+        handleJogStop();
+      }
+    };
+  }, [machineSettings, connectionActions, handleJogStop]);
+
+  // Separate useEffect for non-jog hotkeys
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (
         document.activeElement &&
         (document.activeElement.tagName === "INPUT" ||
@@ -209,9 +283,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Prevent default behavior for handled hotkeys
       let handled = false;
-
       switch (event.key) {
         case "Escape":
           handleEmergencyStop();
@@ -221,31 +293,6 @@ const App: React.FC = () => {
           handleManualCommand("$X");
           handled = true;
           break;
-        // Jogging Hotkeys
-        case "ArrowUp":
-          handleJog("Y", 1, jogStep);
-          handled = true;
-          break;
-        case "ArrowDown":
-          handleJog("Y", -1, jogStep);
-          handled = true;
-          break;
-        case "ArrowLeft":
-          handleJog("X", -1, jogStep);
-          handled = true;
-          break;
-        case "ArrowRight":
-          handleJog("X", 1, jogStep);
-          handled = true;
-          break;
-        case "PageUp":
-          handleJog("Z", 1, jogStep);
-          handled = true;
-          break;
-        case "PageDown":
-          handleJog("Z", -1, jogStep);
-          handled = true;
-          break;
       }
 
       if (handled) {
@@ -253,12 +300,12 @@ const App: React.FC = () => {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleEmergencyStop, handleManualCommand, handleJog, jogStep]);
+  }, [handleEmergencyStop, handleManualCommand]);
 
   const handleDisconnect = () => connectionActions.disconnect();
 
@@ -334,6 +381,9 @@ const App: React.FC = () => {
             state.unitMode,
             state.distanceMode,
           ];
+          if (state.feedRate) {
+            setupCommands.push(`F${state.feedRate}`);
+          }
           if (
             startSpindle &&
             !isDryRun &&
@@ -409,7 +459,8 @@ const App: React.FC = () => {
 
   const handleHome = (axes: "all" | "x" | "y" | "z" | "xy") => {
     if (axes === "all") {
-      connectionActions.sendLine("$H");
+      // Homing can take a long time, so we use a longer timeout.
+      connectionActions.sendLine("$H", 60000);
     }
     // Note: GRBL doesn't support homing individual axes with a single command.
     // This would require a macro or special handling if needed in the future.

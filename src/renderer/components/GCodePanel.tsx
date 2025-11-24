@@ -197,14 +197,18 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
     const renderContent = () => {
         if (gcodeLines.length > 0) {
-            if (view === 'visualizer') return <GCodeVisualizer
-                ref={visualizerRef}
-                gcodeLines={gcodeLines}
-                currentLine={currentLine}
-                unit={unit}
-                hoveredLineIndex={hoveredLineIndex}
-                machineSettings={machineSettings}
-            />;
+            if (view === 'visualizer') return (
+                <div className="absolute inset-0 overflow-auto">
+                    <GCodeVisualizer
+                        ref={visualizerRef}
+                        gcodeLines={gcodeLines}
+                        currentLine={currentLine}
+                        unit={unit}
+                        hoveredLineIndex={hoveredLineIndex}
+                        machineSettings={machineSettings}
+                    />
+                </div>
+            );
             if (view === 'code' && machineSettings) {
                 if (isEditing) return (
                     <textarea

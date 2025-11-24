@@ -17,7 +17,7 @@ interface ConnectionState {
   actions: {
     connect: (options: import('../types').ConnectionOptions | { type: 'simulator' }) => Promise<void>;
     disconnect: () => Promise<void>;
-    sendLine: (line: string) => Promise<void>;
+    sendLine: (line: string, timeout?: number) => Promise<void>;
     sendRealtimeCommand: (command: string) => void;
   };
 }
@@ -151,7 +151,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     disconnect: async () => {
       await get().serialManager?.disconnect();
     },
-    sendLine: (line: string) => {
+    sendLine: (line: string, timeout?: number) => {
       const manager = get().serialManager;
       if (manager) {
         const trimmedLine = line.trim();
@@ -163,7 +163,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             throw error; // Re-throw
           });
         } else {
-          return manager.sendLineAndWaitForOk(line).catch(error => {
+          return (manager as SerialManager).sendLineAndWaitForOk(line, true, timeout).catch(error => {
             useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed: ${error.message}` });
             throw error; // Re-throw
           });
