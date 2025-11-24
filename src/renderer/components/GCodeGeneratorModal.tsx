@@ -1081,7 +1081,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType'].includes(field);
         const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
         if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
 

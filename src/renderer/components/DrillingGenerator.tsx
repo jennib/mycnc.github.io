@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tool, MachineSettings, DrillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
@@ -10,7 +10,9 @@ interface DrillingGeneratorProps {
 }
 
 const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit }) => {
-    console.log('DrillingGenerator params.drillType:', params.drillType);
+    useEffect(() => {
+        console.log('DrillingGenerator params.drillType changed:', params.drillType);
+    }, [params.drillType]);
 
     const handleParamChange = (field: string, value: any) => {
         onParamsChange(field, value);
