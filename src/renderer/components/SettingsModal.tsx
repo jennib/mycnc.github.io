@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Upload, Download } from './Icons';
-import { MachineSettings, GeneratorSettings } from '../types';
+import { MachineSettings, GeneratorSettings } from '@/types';
 
 interface InputGroupProps {
     label: string;
@@ -86,7 +86,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         setLocalSettings(prev => ({
             ...prev,
             [category]: {
-                ...prev[category],
+                ...(prev[category] as Record<string, any>),
                 [field]: value
             }
         }));
@@ -152,12 +152,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
     return (
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex items-center justify-center"
-            onClick={onCancel} aria-modal="true" role="dialog"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            aria-modal="true" role="dialog"
         >
             <div
                 className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all max-h-[90vh] flex flex-col"
-                onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">Machine Settings</h2>
@@ -186,7 +185,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <span className="w-4 text-center text-text-secondary font-semibold">X</span>
                                     <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.g.target.value)} />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
                                     <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                                 </div>

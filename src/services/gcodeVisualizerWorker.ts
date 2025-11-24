@@ -1,77 +1,6 @@
 // src/services/gcodeVisualizerWorker.ts
 
-// --- G-code Parsing Logic (from src/renderer/services/gcodeParser.js) ---
-const getParam = (gcode, param) => {
-    const regex = new RegExp(`${param}\s*([-+]?[0-9]*\.?[0-9]*)`, 'i');
-    const match = gcode.match(regex);
-    return match ? parseFloat(match[1]) : null;
-};
-
-const parseGCode = (gcodeLines) => {
-    const segments = [];
-    const bounds = {
-        minX: Infinity, maxX: -Infinity, 
-        minY: Infinity, maxY: -Infinity,
-        minZ: Infinity, maxZ: -Infinity
-    };
-
-    let currentPos = { x: 0, y: 0, z: 0 };
-    let motionMode = 'G0';
-
-    const updateBounds = (p) => {
-        bounds.minX = Math.min(bounds.minX, p.x);
-        bounds.maxX = Math.max(bounds.maxX, p.x);
-        bounds.minY = Math.min(bounds.minY, p.y);
-        bounds.maxY = Math.max(bounds.maxY, p.y);
-        bounds.minZ = Math.min(bounds.minZ, p.z);
-        bounds.maxZ = Math.max(bounds.maxZ, p.z);
-    };
-    
-    updateBounds(currentPos);
-
-    gcodeLines.forEach((line, lineIndex) => {
-        const cleanLine = line.toUpperCase().replace(/\(.*?\)/g, '').split(';')[0].trim();
-        if (!cleanLine) {
-            return;
-        }
-
-        const gCommand = cleanLine.match(/G(\d+(\.\d+)?)/);
-        if (gCommand) {
-            const gCode = parseInt(gCommand[1], 10);
-            if ([0, 1, 2, 3].includes(gCode)) {
-                motionMode = `G${gCode}`;
-            }
-        }
-
-        if (cleanLine.includes('X') || cleanLine.includes('Y') || cleanLine.includes('Z') || cleanLine.includes('I') || cleanLine.includes('J')) {
-            const start = { ...currentPos };
-            const end = {
-                x: getParam(cleanLine, 'X') ?? currentPos.x,
-                y: getParam(cleanLine, 'Y') ?? currentPos.y,
-                z: getParam(cleanLine, 'Z') ?? currentPos.z
-            };
-            
-            if (motionMode === 'G0' || motionMode === 'G1') {
-                segments.push({ type: motionMode, start, end, line: lineIndex });
-            } else if (motionMode === 'G2' || motionMode === 'G3') {
-                const i = getParam(cleanLine, 'I') ?? 0;
-                const j = getParam(cleanLine, 'J') ?? 0;
-                const center = { x: start.x + i, y: start.y + j, z: start.z };
-                segments.push({ type: motionMode, start, end, center, clockwise: motionMode === 'G2', line: lineIndex });
-            }
-
-            currentPos = end;
-            updateBounds(start);
-            updateBounds(end);
-        }
-    });
-    
-    if (segments.length === 0) {
-      return { segments, bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10, minZ: -2, maxZ: 2 }};
-    }
-
-    return { segments, bounds };
-};
+import { parseGCode, GCodeSegment, GCodePoint } from '../renderer/services/gcodeParser';
 
 // --- Color Constants (from GCodeVisualizer.tsx) ---
 const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
@@ -80,40 +9,134 @@ const PLUNGE_COLOR = [1.0, 0.65, 0.0, 1.0]; // Orange
 const EXECUTED_COLOR = [0.2, 0.2, 0.2, 1.0]; // Dark gray
 const HIGHLIGHT_COLOR = [1.0, 0.0, 1.0, 1.0]; // Magenta
 
+// --- Global Worker State ---
+let _segments: GCodeSegment[] = [];
+let _bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, minZ: Infinity, maxZ: -Infinity };
+let _toolpathSegmentMetadata: ToolpathSegmentMetadata[] = [];
+let _previousToolpathColors: Float32Array | null = null;
+let _gcodeLines: string[] = []; // Store raw lines for potential future use (though not currently used for coloring)
+let _machineSettings: any = {};
+
+interface BoundingBox {
+    minX: number; maxX: number;
+    minY: number; maxY: number;
+    minZ: number; maxZ: number;
+}
+
+export interface ToolpathSegmentMetadata {
+    startVertexIndex: number; // Index in the toolpathVertices array where this segment starts (position values, so 3 per vertex)
+    vertexCount: number; // Number of vertices in this segment
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number; // The index of the original GCodeSegment
+}
+
+interface ColorUpdate {
+    offset: number; // Byte offset in the Float32Array
+    data: Float32Array; // The new color data for this section
+}
+
+// Helper function to generate toolpath colors and identify changes
+const generateToolpathColors = (
+    segments: GCodeSegment[],
+    toolpathSegmentMetadata: ToolpathSegmentMetadata[],
+    currentLine: number,
+    hoveredLineIndex: number | null,
+    previousColors: Float32Array | null
+): { newColors: Float32Array, updates: ColorUpdate[] } => {
+    const newColorsArray: number[] = [];
+    const updates: ColorUpdate[] = [];
+
+    segments.forEach((seg, i) => {
+        let color: number[];
+        const isHovered = i === hoveredLineIndex;
+        const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
+
+        if (isHovered) {
+            color = HIGHLIGHT_COLOR;
+        } else if (i < currentLine) {
+            color = EXECUTED_COLOR;
+        } else if (seg.type === 'G0') {
+            color = RAPID_COLOR;
+        } else if (isPlunge) {
+            color = PLUNGE_COLOR;
+        } else {
+            color = CUTTING_COLOR;
+        }
+        
+        // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
+        const metadata = toolpathSegmentMetadata[i];
+        if (!metadata) { // This should not happen if segments and metadata arrays are in sync
+            console.warn(`No metadata found for segment ${i}`);
+            return;
+        }
+        
+        const segmentColorData: number[] = [];
+        for (let j = 0; j < metadata.vertexCount; j++) {
+            segmentColorData.push(...color);
+        }
+
+        const segmentColorFloat32 = new Float32Array(segmentColorData);
+
+        // Check if color has changed compared to previousColors
+        const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
+        let changed = false;
+        if (previousColors) {
+            for (let k = 0; k < segmentColorFloat32.length; k++) {
+                if (previousColors[offset + k] !== segmentColorFloat32[k]) {
+                    changed = true;
+                    break;
+                }
+            }
+        } else {
+            // If there are no previous colors, it's always a change
+            changed = true;
+        }
+
+        if (changed) {
+            updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
+        }
+        
+        newColorsArray.push(...segmentColorData);
+    });
+
+    return { newColors: new Float32Array(newColorsArray), updates };
+};
+
 // --- createToolModel function (from GCodeVisualizer.tsx) ---
-const createToolModel = (position) => {
-    const { x, y, z } = position;
-    const toolHeight = 20;
-    const toolRadius = 3;
+const createToolModel = (position: GCodePoint) => {
+    // Tool geometry is now generated around (0,0,0).
+    // The actual position will be applied via a modelViewMatrix translation in the main thread.
+    const toolHeight = 50; // Increased size
+    const toolRadius = 10; // Increased size
     const holderHeight = 10;
     const holderRadius = 8;
-    const vertices = [];
+    const vertices: number[] = [];
 
-    const addQuad = (p1, p2, p3, p4) => vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
+    const addQuad = (p1: number[], p2: number[], p3: number[], p4: number[]) => vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
 
-    // Tip
-    vertices.push(x, y, z, x - toolRadius, y, z + toolHeight, x + toolRadius, y, z + toolHeight);
+    // Tip at (0,0,0) - base of the tool is at z=0 relative to its local coordinate system
+    vertices.push(0, 0, 0, -toolRadius, 0, toolHeight, toolRadius, 0, toolHeight);
 
-    // Body (simplified cylinder)
+    // Body (simplified cylinder) around (0,0,0)
     const sides = 8;
     for (let i = 0; i < sides; i++) {
         const a1 = (i / sides) * 2 * Math.PI;
         const a2 = ((i + 1) / sides) * 2 * Math.PI;
         const x1 = Math.cos(a1) * toolRadius;
-        const z1 = Math.sin(a1) * toolRadius;
+        const z1 = Math.sin(a1) * toolRadius; // Y-coordinate is Z in our Z-up system for the circle
         const x2 = Math.cos(a2) * toolRadius;
-        const z2 = Math.sin(a2) * toolRadius;
+        const z2 = Math.sin(a2) * toolRadius; // Y-coordinate is Z in our Z-up system for the circle
         addQuad(
-            [x + x1, y + z1, z + toolHeight],
-            [x + x2, y + z2, z + toolHeight],
-            [x + x2, y + z2, z + toolHeight + holderHeight],
-            [x + x1, y + z1, z + toolHeight + holderHeight]
+            [x1, z1, toolHeight],
+            [x2, z2, toolHeight],
+            [x2, z2, toolHeight + holderHeight],
+            [x1, z1, toolHeight + holderHeight]
         );
     }
 
     return {
         vertices: new Float32Array(vertices),
-        colors: new Float32Array(Array(vertices.length / 3).fill([1.0, 0.2, 0.2, 1.0]).flat()) // Red
+        colors: new Float32Array(Array(vertices.length / 3).fill([0.0, 1.0, 0.0, 1.0]).flat()) // Bright Green
     };
 };
 
@@ -122,31 +145,34 @@ self.onmessage = (event) => {
     const { type, gcodeLines, machineSettings, currentLine, hoveredLineIndex } = event.data;
 
     if (type === 'processGCode') {
+        _gcodeLines = gcodeLines;
+        _machineSettings = machineSettings;
         const parsedGCode = parseGCode(gcodeLines);
-        const segments = parsedGCode.segments;
+        _segments = parsedGCode.segments;
+        _bounds = parsedGCode.bounds;
 
-        const toolpathVertices = [];
-        const toolpathColors = [];
+        const toolpathVertices: number[] = [];
+        _toolpathSegmentMetadata = []; // Clear and re-populate global metadata
 
-        segments.forEach((seg, i) => {
-            let color;
-            const isHovered = i === hoveredLineIndex;
-            const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
+        _segments.forEach((seg, i) => {
+            const startVertexIndex = toolpathVertices.length / 3;
+            let currentSegmentMinX = Infinity, currentSegmentMaxX = -Infinity;
+            let currentSegmentMinY = Infinity, currentSegmentMaxY = -Infinity;
+            let currentSegmentMinZ = Infinity, currentSegmentMaxZ = -Infinity;
 
-            if (isHovered) {
-                color = HIGHLIGHT_COLOR;
-            } else if (i < currentLine) {
-                color = EXECUTED_COLOR;
-            } else if (seg.type === 'G0') {
-                color = RAPID_COLOR;
-            } else if (isPlunge) {
-                color = PLUNGE_COLOR;
-            } else {
-                color = CUTTING_COLOR;
-            }
+            const updateCurrentSegmentBounds = (p: GCodePoint) => {
+                currentSegmentMinX = Math.min(currentSegmentMinX, p.x);
+                currentSegmentMaxX = Math.max(currentSegmentMaxX, p.x);
+                currentSegmentMinY = Math.min(currentSegmentMinY, p.y);
+                currentSegmentMaxY = Math.max(currentSegmentMaxY, p.y);
+                currentSegmentMinZ = Math.min(currentSegmentMinZ, p.z);
+                currentSegmentMaxZ = Math.max(currentSegmentMaxZ, p.z);
+            };
+            
+            updateCurrentSegmentBounds(seg.start);
+            updateCurrentSegmentBounds(seg.end);
 
             if ((seg.type === 'G2' || seg.type === 'G3') && seg.center) {
-                const arcPoints = 20;
                 const radius = Math.hypot(seg.start.x - seg.center.x, seg.start.y - seg.center.y);
                 let startAngle = Math.atan2(seg.start.y - seg.center.y, seg.start.x - seg.center.x);
                 let endAngle = Math.atan2(seg.end.y - seg.center.y, seg.end.x - seg.center.x);
@@ -163,6 +189,14 @@ self.onmessage = (event) => {
                     if (seg.clockwise && angleDiff > 0) angleDiff -= 2 * Math.PI;
                     if (!seg.clockwise && angleDiff < 0) angleDiff += 2 * Math.PI;
                 }
+                
+                // Adaptive arc approximation
+                const arcLength = Math.abs(angleDiff) * radius;
+                const maxSegmentLength = 1.0; // mm or inches
+                const minArcPoints = 5;
+                const maxArcPoints = 100;
+                let arcPoints = Math.ceil(arcLength / maxSegmentLength);
+                arcPoints = Math.max(minArcPoints, Math.min(maxArcPoints, arcPoints));
 
                 for (let j = 0; j < arcPoints; j++) {
                     const p1_angle = startAngle + (j / arcPoints) * angleDiff;
@@ -170,33 +204,64 @@ self.onmessage = (event) => {
                     const p1_z = seg.start.z + (seg.end.z - seg.start.z) * (j / arcPoints);
                     const p2_z = seg.start.z + (seg.end.z - seg.start.z) * ((j + 1) / arcPoints);
 
-                    toolpathVertices.push(
-                        seg.center.x + Math.cos(p1_angle) * radius, seg.center.y + Math.sin(p1_angle) * radius, p1_z,
-                        seg.center.x + Math.cos(p2_angle) * radius, seg.center.y + Math.sin(p2_angle) * radius, p2_z
-                    );
-                    toolpathColors.push(...color, ...color);
+                    const p1_x = seg.center.x + Math.cos(p1_angle) * radius;
+                    const p1_y = seg.center.y + Math.sin(p1_angle) * radius;
+                    const p2_x = seg.center.x + Math.cos(p2_angle) * radius;
+                    const p2_y = seg.center.y + Math.sin(p2_angle) * radius;
+
+                    toolpathVertices.push(p1_x, p1_y, p1_z, p2_x, p2_y, p2_z);
+                    updateCurrentSegmentBounds({x: p1_x, y: p1_y, z: p1_z});
+                    updateCurrentSegmentBounds({x: p2_x, y: p2_y, z: p2_z});
                 }
             } else { // G0, G1
                 toolpathVertices.push(
                     seg.start.x, seg.start.y, seg.start.z,
                     seg.end.x, seg.end.y, seg.end.z
                 );
-                toolpathColors.push(...color, ...color);
             }
+            
+            const vertexCount = (toolpathVertices.length / 3) - startVertexIndex;
+            _toolpathSegmentMetadata.push({
+                startVertexIndex: startVertexIndex,
+                vertexCount: vertexCount,
+                boundingBox: {
+                    minX: currentSegmentMinX, maxX: currentSegmentMaxX,
+                    minY: currentSegmentMinY, maxY: currentSegmentMaxY,
+                    minZ: currentSegmentMinZ, maxZ: currentSegmentMaxZ,
+                },
+                gcodeSegmentIndex: i,
+            });
         });
         
-        let toolModel = null;
-        if(currentLine > 0 && currentLine <= segments.length){
-            toolModel = createToolModel(segments[currentLine - 1].end);
+        const { newColors: initialToolpathColors } = generateToolpathColors(
+            _segments,
+            _toolpathSegmentMetadata,
+            currentLine,
+            hoveredLineIndex,
+            null // Pass null for initial calculation, as there are no previous colors
+        );
+        _previousToolpathColors = initialToolpathColors; // Store the newly generated colors
+
+        let toolModelInitialVertices: Float32Array | null = null;
+        let toolModelInitialColors: Float32Array | null = null;
+        let toolCurrentPosition: GCodePoint | null = null;
+
+        if (currentLine > 0 && currentLine <= _segments.length) {
+            // Generate tool model at origin (0,0,0)
+            const toolModelAtOrigin = createToolModel({ x: 0, y: 0, z: 0 }); 
+            toolModelInitialVertices = toolModelAtOrigin.vertices;
+            toolModelInitialColors = toolModelAtOrigin.colors;
+            // Capture the actual end position for translation later
+            toolCurrentPosition = _segments[currentLine - 1].end;
         }
 
         // --- Create Work Area Buffers ---
-        const workArea = machineSettings.workArea;
-        const gridVertices = [];
-        const boundsVertices = [];
+        const workArea = _machineSettings.workArea;
+        const gridVertices: number[] = [];
+        const boundsVertices: number[] = [];
         const gridColor = [0.2, 0.25, 0.35, 1.0];
         const boundsColor = [0.4, 0.45, 0.55, 1.0];
-        const gridSpacing = 10; // mm
+        const gridSpacing = 10; // mm;
 
         for (let i = 0; i <= workArea.x; i += gridSpacing) {
             gridVertices.push(i, 0, 0, i, workArea.y, 0);
@@ -217,7 +282,7 @@ self.onmessage = (event) => {
         const labelSize = axisLength * 0.1; // Half-size of the letter labels
         const axisLabelOffset = axisLength + labelSize * 2; // Position for the labels to be clearly visible past the axis line
 
-        const axisVertices = [
+        const axisVertices: number[] = [
             // X-axis line
             0, 0, 0,  axisLength, 0, 0,
             // Y-axis line
@@ -260,9 +325,11 @@ self.onmessage = (event) => {
             type: 'processedGCode',
             parsedGCode: parsedGCode,
             toolpathVertices: new Float32Array(toolpathVertices),
-            toolpathColors: new Float32Array(toolpathColors),
-            toolModelVertices: toolModel ? toolModel.vertices : null,
-            toolModelColors: toolModel ? toolModel.colors : null,
+            toolpathColors: initialToolpathColors,
+            toolpathSegmentMetadata: _toolpathSegmentMetadata,
+            toolModelInitialVertices: toolModelInitialVertices, // New field for initial geometry
+            toolModelInitialColors: toolModelInitialColors,     // New field for initial geometry
+            toolCurrentPosition: toolCurrentPosition,           // New field for current position
             workAreaGridVertices: new Float32Array(gridVertices),
             workAreaGridColors: new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat()),
             workAreaBoundsVertices: new Float32Array(boundsVertices),
@@ -271,9 +338,9 @@ self.onmessage = (event) => {
             workAreaAxisColors: new Float32Array(axisColors),
         }, [
             new Float32Array(toolpathVertices).buffer,
-            new Float32Array(toolpathColors).buffer,
-            toolModel ? toolModel.vertices.buffer : null,
-            toolModel ? toolModel.colors.buffer : null,
+            initialToolpathColors.buffer,
+            toolModelInitialVertices ? toolModelInitialVertices.buffer : null, // Transfer initial geometry
+            toolModelInitialColors ? toolModelInitialColors.buffer : null,     // Transfer initial geometry
             new Float32Array(gridVertices).buffer,
             new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat()).buffer,
             new Float32Array(boundsVertices).buffer,
@@ -281,5 +348,30 @@ self.onmessage = (event) => {
             new Float32Array(axisVertices).buffer,
             new Float32Array(axisColors).buffer
         ].filter(Boolean)); // Filter out nulls for toolModel buffers
+    } else if (type === 'updateColors') {
+        if (!_segments || _segments.length === 0 || !_toolpathSegmentMetadata || _toolpathSegmentMetadata.length === 0) return;
+
+        const { newColors: updatedColors, updates } = generateToolpathColors(
+            _segments,
+            _toolpathSegmentMetadata,
+            currentLine,
+            hoveredLineIndex,
+            _previousToolpathColors
+        );
+        _previousToolpathColors = updatedColors;
+
+        let toolCurrentPosition: GCodePoint | null = null;
+        if(currentLine > 0 && currentLine <= _segments.length){
+            toolCurrentPosition = _segments[currentLine - 1].end;
+        }
+
+        const transferableObjects: Transferable[] = [];
+        updates.forEach(update => transferableObjects.push(update.data.buffer));
+
+        self.postMessage({
+            type: 'updatedColors',
+            toolpathColorUpdates: updates,
+            toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
+        }, transferableObjects);
     }
-};
+} // <--- Added this closing brace

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, TextParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface TextGeneratorProps {
@@ -9,11 +9,24 @@ interface TextGeneratorProps {
     unit: 'mm' | 'in';
     settings: MachineSettings;
     fontOptions: string[];
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const TextGenerator: React.FC<TextGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, fontOptions }) => {
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'height', 'spacing', 'startX', 'startY', 'depth',
+            'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (
@@ -46,6 +59,16 @@ const TextGenerator: React.FC<TextGeneratorProps> = ({ params, onParamsChange, t
             </div>
             <RadioGroup label='Alignment' options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} selected={params.alignment} onChange={val => handleParamChange('alignment', val)} />
             <Input label='Engraving Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help="Should be negative" />
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );

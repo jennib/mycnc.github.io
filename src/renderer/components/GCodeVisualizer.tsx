@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
-import { MachineSettings } from '../types';
+import { MachineSettings } from '@/types';
+import { ToolpathSegmentMetadata, BoundingBox } from '../../services/gcodeVisualizerWorker'; // Import the new interfaces
+import { GCodePoint } from '../../services/gcodeParser'; // Import GCodePoint
 
 // --- Color Constants ---
 const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
@@ -179,6 +181,64 @@ const mat4 = {
     }
 };
 
+// --- Frustum Culling Utilities ---
+// A plane is represented as [a, b, c, d] for the equation ax + by + cz + d = 0
+type Plane = [number, number, number, number];
+type Frustum = Plane[];
+
+const createFrustum = (projectionMatrix: Float32Array, modelViewMatrix: Float32Array): Frustum => {
+    const m = mat4.create();
+    mat4.multiply(m, projectionMatrix, modelViewMatrix);
+
+    const frustum: Frustum = [];
+    // Right plane
+    frustum.push([m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]]);
+    // Left plane
+    frustum.push([m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]]);
+    // Bottom plane
+    frustum.push([m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]]);
+    // Top plane
+    frustum.push([m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]]);
+    // Far plane
+    frustum.push([m[3] - m[2], m[7] - m[6], m[11] - m[10], m[15] - m[14]]);
+    // Near plane
+    frustum.push([m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]]);
+
+    // Normalize planes
+    for (let i = 0; i < 6; i++) {
+        const plane = frustum[i];
+        const length = Math.hypot(plane[0], plane[1], plane[2]);
+        plane[0] /= length;
+        plane[1] /= length;
+        plane[2] /= length;
+        plane[3] /= length;
+    }
+    return frustum;
+};
+
+// Test if an Axis-Aligned Bounding Box (AABB) intersects the frustum
+const intersectAABBFrustum = (frustum: Frustum, bbox: BoundingBox): boolean => {
+    for (let i = 0; i < 6; i++) {
+        const plane = frustum[i];
+        
+        // This is a simplified check for point vs plane. A more robust AABB vs Frustum would test all 8 corners.
+        // For simplicity and initial implementation, we'll check the two most extreme points.
+        const p_vertex = [bbox.minX, bbox.minY, bbox.minZ];
+        const n_vertex = [bbox.maxX, bbox.maxY, bbox.maxZ];
+
+        // Adjust for plane normal to get the "positive" and "negative" points
+        if (plane[0] >= 0) { p_vertex[0] = bbox.maxX; n_vertex[0] = bbox.minX; }
+        if (plane[1] >= 0) { p_vertex[1] = bbox.maxY; n_vertex[1] = bbox.minY; }
+        if (plane[2] >= 0) { p_vertex[2] = bbox.maxZ; n_vertex[2] = bbox.minZ; }
+
+        if (plane[0] * n_vertex[0] + plane[1] * n_vertex[1] + plane[2] * n_vertex[2] + plane[3] < 0) {
+            // The negative-most point is behind the plane, so the entire AABB is behind this plane.
+            return false;
+        }
+    }
+    return true; // If not clipped by any plane, it's inside or intersects
+};
+
 interface GCodeVisualizerProps {
     gcodeLines: string[];
     currentLine: number;
@@ -201,7 +261,10 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     const buffersRef = useRef<any>(null);
     
     // This ref will hold all dynamic data for the render loop to access without re-triggering effects.
-    const renderDataRef = useRef<any>({});
+    const renderDataRef = useRef<{camera: {target: number[], distance: number, rotation: number[]}, toolCurrentPosition: GCodePoint | null}>({
+        camera: {target: [0,0,0], distance: 0, rotation: [0,0]},
+        toolCurrentPosition: null
+    });
 
     const [parsedGCode, setParsedGCode] = useState<any>(null);
     const [camera, setCamera] = useState({
@@ -212,7 +275,20 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     const mouseState = useRef({ isDown: false, lastPos: { x: 0, y: 0 }, button: 0 });
     const workerRef = useRef<Worker | null>(null);
 
-    const [workerData, setWorkerData] = useState<any>(null);
+    const [workerData, setWorkerData] = useState<{
+        toolpathVertices: Float32Array | null;
+        toolpathColors: Float32Array | null;
+        toolpathSegmentMetadata: ToolpathSegmentMetadata[] | null;
+        toolModelInitialVertices: Float32Array | null; // Renamed
+        toolModelInitialColors: Float32Array | null;   // Renamed
+        toolCurrentPosition: GCodePoint | null;         // New field
+        workAreaGridVertices: Float32Array | null;
+        workAreaGridColors: Float32Array | null;
+        workAreaBoundsVertices: Float32Array | null;
+        workAreaBoundsColors: Float32Array | null;
+        workAreaAxisVertices: Float32Array | null;
+        workAreaAxisColors: Float32Array | null;
+    } | null>(null);
 
     const fitView = useCallback((bounds: any, newRotation: number[] | null = null) => {
         if (!bounds || bounds.minX === Infinity) {
@@ -255,14 +331,33 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workerRef.current = new Worker(new URL('../../services/gcodeVisualizerWorker.ts', import.meta.url), { type: 'module' });
 
         workerRef.current.onmessage = (event) => {
-            const { type, parsedGCode, toolpathVertices, toolpathColors, toolModelVertices, toolModelColors, workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors } = event.data;
+            const { 
+                type, parsedGCode, toolpathVertices, toolpathColors, toolpathSegmentMetadata,
+                toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition, // Updated to new fields
+                workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors 
+            } = event.data;
+            const gl = glRef.current;
+            const programInfo = programInfoRef.current;
+
             if (type === 'processedGCode') {
                 setParsedGCode(parsedGCode);
                 setWorkerData({
-                    toolpathVertices, toolpathColors, toolModelVertices, toolModelColors,
+                    toolpathVertices, toolpathColors, toolpathSegmentMetadata,
+                    toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition, // Updated fields
                     workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors
                 });
                 fitView(parsedGCode.bounds, [0, Math.PI / 2]);
+            } else if (type === 'updatedColors' && gl && buffersRef.current) {
+                const { toolpathColorUpdates, toolCurrentPosition: newToolCurrentPosition } = event.data; // Only toolCurrentPosition is sent
+                // Apply partial color updates
+                if (buffersRef.current.color && toolpathColorUpdates && toolpathColorUpdates.length > 0) {
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffersRef.current.color);
+                    toolpathColorUpdates.forEach((update: { offset: number, data: Float32Array }) => {
+                        gl.bufferSubData(gl.ARRAY_BUFFER, update.offset, update.data);
+                    });
+                }
+                // Update tool's current position for the render loop
+                renderDataRef.current.toolCurrentPosition = newToolCurrentPosition;
             }
         };
 
@@ -271,17 +366,40 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         };
     }, []);
 
+    // Effect for initial G-code processing (debounced)
     useEffect(() => {
-        if (workerRef.current && gcodeLines.length > 0) {
+        if (!workerRef.current || gcodeLines.length === 0) {
+            setWorkerData(null); // Clear old data if no gcode or worker not ready
+            setParsedGCode(null);
+            return;
+        }
+
+        const handler = setTimeout(() => {
             workerRef.current.postMessage({
                 type: 'processGCode',
                 gcodeLines,
                 machineSettings,
-                currentLine,
-                hoveredLineIndex
+                // currentLine, // These will be sent via updateColors effect
+                // hoveredLineIndex
             });
+        }, 150); // Debounce by 150ms
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [gcodeLines, machineSettings]); // Only trigger on gcodeLines or machineSettings change
+
+    // Effect for dynamic color and tool position updates (not debounced)
+    useEffect(() => {
+        if (!workerRef.current || gcodeLines.length === 0 || !buffersRef.current?.color) {
+            return;
         }
-    }, [gcodeLines, machineSettings, currentLine, hoveredLineIndex]);
+        workerRef.current.postMessage({
+            type: 'updateColors',
+            currentLine,
+            hoveredLineIndex
+        });
+    }, [currentLine, hoveredLineIndex, gcodeLines.length]); // gcodeLines.length to ensure this runs after initial processGCode
 
     // Effect to regenerate buffers when their data sources change.
     useEffect(() => {
@@ -296,7 +414,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workAreaBuffers.gridColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.gridColor);
         gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaGridColors, gl.STATIC_DRAW);
-        workAreaBuffers.gridVertexCount = workerData.workAreaGridVertices.length / 3;
+        workAreaBuffers.gridVertexCount = workerData.workAreaGridVertices ? workerData.workAreaGridVertices.length / 3 : 0;
 
         workAreaBuffers.boundsPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsPosition);
@@ -304,7 +422,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workAreaBuffers.boundsColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsColor);
         gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsColors, gl.STATIC_DRAW);
-        workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices.length / 3;
+        workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices ? workerData.workAreaBoundsVertices.length / 3 : 0;
         
         // --- Create Axis Indicator Buffers ---
         workAreaBuffers.axisPosition = gl.createBuffer();
@@ -313,7 +431,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workAreaBuffers.axisColor = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisColor);
         gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaAxisColors, gl.STATIC_DRAW);
-        workAreaBuffers.axisVertexCount = workerData.workAreaAxisVertices.length / 3;
+        workAreaBuffers.axisVertexCount = workerData.workAreaAxisVertices ? workerData.workAreaAxisVertices.length / 3 : 0;
 
         // --- Create Toolpath Buffers ---
         const positionBuffer = gl.createBuffer();
@@ -325,21 +443,23 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         gl.bufferData(gl.ARRAY_BUFFER, workerData.toolpathColors, gl.STATIC_DRAW);
 
         let toolPositionBuffer = null, toolColorBuffer = null;
-        if (workerData.toolModelVertices) {
+        if (workerData.toolModelInitialVertices) { // Use new field
             toolPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolPositionBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelVertices, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelInitialVertices, gl.STATIC_DRAW); // Use new field
             
             toolColorBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolColorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelColors, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelInitialColors, gl.STATIC_DRAW); // Use new field
         }
         
         if (buffersRef.current) {
             gl.deleteBuffer(buffersRef.current.position);
             gl.deleteBuffer(buffersRef.current.color);
-            gl.deleteBuffer(buffersRef.current.toolPosition);
-            gl.deleteBuffer(buffersRef.current.toolColor);
+            // Delete previous tool model buffers if they exist
+            if (buffersRef.current.toolPosition) gl.deleteBuffer(buffersRef.current.toolPosition);
+            if (buffersRef.current.toolColor) gl.deleteBuffer(buffersRef.current.toolColor);
+            
             if (buffersRef.current.workArea) {
                 gl.deleteBuffer(buffersRef.current.workArea.gridPosition);
                 gl.deleteBuffer(buffersRef.current.workArea.gridColor);
@@ -353,10 +473,11 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         buffersRef.current = { 
             position: positionBuffer, 
             color: colorBuffer, 
-            vertexCount: workerData.toolpathVertices.length / 3,
+            vertexCount: workerData.toolpathVertices ? workerData.toolpathVertices.length / 3 : 0,
+            toolpathSegmentMetadata: workerData.toolpathSegmentMetadata,
             toolPosition: toolPositionBuffer,
             toolColor: toolColorBuffer,
-            toolVertexCount: workerData.toolModelVertices ? workerData.toolModelVertices.length / 3 : 0,
+            toolVertexCount: workerData.toolModelInitialVertices ? workerData.toolModelInitialVertices.length / 3 : 0, // Use new field
             workArea: workAreaBuffers,
         };
 
@@ -436,6 +557,9 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
             gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, viewMatrix);
             
+            // --- Frustum Culling Setup ---
+            const frustum = createFrustum(projectionMatrix, viewMatrix);
+
             if (buffers.workArea) {
                 const wa = buffers.workArea;
                 gl.lineWidth(1.0);
@@ -463,7 +587,22 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.lineWidth(1.0);
             }
 
-            if (buffers.position && buffers.vertexCount > 0) {
+            if (buffers.position && buffers.toolpathSegmentMetadata && buffers.toolpathSegmentMetadata.length > 0) {
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
+                
+                // --- Frustum Culling for Toolpath Segments ---
+                buffers.toolpathSegmentMetadata.forEach((segment: ToolpathSegmentMetadata) => {
+                    if (intersectAABBFrustum(frustum, segment.boundingBox)) {
+                        gl.drawArrays(gl.LINES, segment.startVertexIndex * 3 * 2, segment.vertexCount); // Each segment is 2 points (start and end) * 3 components
+                    }
+                });
+            } else if (buffers.position && buffers.vertexCount > 0) { // Fallback if no metadata (shouldn't happen with new worker)
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
@@ -475,8 +614,16 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.drawArrays(gl.LINES, 0, buffers.vertexCount);
             }
 
-            if (buffers.toolPosition && buffers.toolVertexCount > 0) {
-                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.toolPosition);
+            if (buffers.toolPosition && buffers.toolVertexCount > 0 && renderDataRef.current.toolCurrentPosition) {
+                const toolPosition = renderDataRef.current.toolCurrentPosition;
+                const toolModelViewMatrix = mat4.create();
+                mat4.identity(toolModelViewMatrix); // Start with an identity matrix
+                mat4.multiply(toolModelViewMatrix, viewMatrix, toolModelViewMatrix); // Apply camera view transformation
+                mat4.translate(toolModelViewMatrix, toolModelViewMatrix, [toolPosition.x, toolPosition.y, toolPosition.z]); // Apply translation based on tool's current position
+
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, toolModelViewMatrix); // Use the tool's specific modelViewMatrix
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.toolPosition);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
@@ -485,6 +632,10 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
 
                 gl.drawArrays(gl.TRIANGLES, 0, buffers.toolVertexCount);
+
+                // Revert to the original modelViewMatrix for other elements if needed, though in this case
+                // the next draws (work area, toolpath) will set their own uniform.
+                gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, viewMatrix);
             }
         };
 

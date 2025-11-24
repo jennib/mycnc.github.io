@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, ProfileParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls, Checkbox } from './SharedControls';
 
 interface ProfileGeneratorProps {
@@ -8,11 +8,24 @@ interface ProfileGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const ProfileGenerator: React.FC<ProfileGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'width', 'length', 'cornerRadius', 'diameter', 'depth', 'depthPerPass',
+            'numTabs', 'tabWidth', 'tabHeight', 'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (
@@ -44,6 +57,16 @@ const ProfileGenerator: React.FC<ProfileGeneratorProps> = ({ params, onParamsCha
                     <Input label='Height' value={params.tabHeight} onChange={e => handleParamChange('tabHeight', e.target.value)} unit={unit} />
                 </div>
             )}
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );

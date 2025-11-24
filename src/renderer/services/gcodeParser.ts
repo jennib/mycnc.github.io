@@ -27,9 +27,19 @@ export interface ParsedGCode {
     };
 }
 
+const paramRegexes: { [key: string]: RegExp } = {
+    'X': /X\s*([-+]?[0-9]*\.?[0-9]*)/i,
+    'Y': /Y\s*([-+]?[0-9]*\.?[0-9]*)/i,
+    'Z': /Z\s*([-+]?[0-9]*\.?[0-9]*)/i,
+    'I': /I\s*([-+]?[0-9]*\.?[0-9]*)/i,
+    'J': /J\s*([-+]?[0-9]*\.?[0-9]*)/i,
+};
+
 const getParam = (gcode: string, param: string): number | null => {
-    // Allows for optional whitespace between parameter and value
-    const regex = new RegExp(`${param}\\s*([-+]?[0-9]*\\.?[0-9]*)`, 'i');
+    const regex = paramRegexes[param];
+    if (!regex) {
+        return null;
+    }
     const match = gcode.match(regex);
     return match ? parseFloat(match[1]) : null;
 };

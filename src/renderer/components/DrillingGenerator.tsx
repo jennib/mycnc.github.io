@@ -1,19 +1,34 @@
-import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Tool, MachineSettings, DrillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface DrillingGeneratorProps {
-    params: any;
+    params: DrillingParams;
     onParamsChange: (field: string, value: any) => void;
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
-    settings: MachineSettings;
 }
 
-const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
+const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit }) => {
+    useEffect(() => {
+        console.log('DrillingGenerator params.drillType changed:', params.drillType);
+    }, [params.drillType]);
 
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'singleX', 'singleY', 'rectStartX', 'rectStartY', 'rectCols', 'rectRows',
+            'rectSpacingX', 'rectSpacingY', 'circCenterX', 'circCenterY', 'circRadius',
+            'circHoles', 'circStartAngle', 'depth', 'peck', 'retract',
+            'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     const handleTypeChange = (newType: string) => {
@@ -32,6 +47,18 @@ const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsC
                     { value: 'single', label: 'Single Hole' },
                     { value: 'rect', label: 'Rectangular Pattern' },
                     { value: 'circ', label: 'Circular Pattern' },
+                ]}
+            />
+
+            <hr className='border-secondary' />
+
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
                 ]}
             />
 

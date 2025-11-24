@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect } from "react";
+import React, { useState, memo, useEffect, useRef } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -16,10 +16,12 @@ interface JogPanelProps {
   isConnected: boolean;
   machineState: MachineState | null;
   onJog: (axis: string, direction: number, step: number) => void;
+  onJogStop: () => void;
   onHome: (axes: "all" | "x" | "y" | "z" | "xy") => void;
   onSetZero: (axes: "all" | "x" | "y" | "z" | "xy") => void;
   onSpindleCommand: (command: "cw" | "ccw" | "off", speed: number) => void;
   onProbe: (axes: string) => void;
+  onSendCommand: (command: string) => void;
   jogStep: number;
   onStepChange: (step: number) => void;
   flashingButton: string | null;
@@ -36,6 +38,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isConnected,
     machineState,
     onJog,
+    onJogStop,
     onHome,
     onSetZero,
     onSpindleCommand,
@@ -51,6 +54,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isMacroRunning,
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
+    const pressedJogKey = useRef<string | null>(null);
 
     const isControlDisabled =
       !isConnected ||
@@ -66,120 +70,59 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const stepSizes =
       unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
 
+    const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
+      ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
+      ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
+      ArrowLeft: { axis: "X", direction: -1, id: "jog-x-minus" },
+      ArrowRight: { axis: "X", direction: 1, id: "jog-x-plus" },
+      PageUp: { axis: "Z", direction: 1, id: "jog-z-plus" },
+      PageDown: { axis: "Z", direction: -1, id: "jog-z-minus" },
+    };
+
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        // Ignore hotkeys if the user is typing in an input field
-        const activeElement = document.activeElement;
         if (
-          activeElement &&
-          (activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA")
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
         ) {
-          return;
+          return; // Don't jog if typing in an input field
         }
 
-        if (isControlDisabled) {
-          return;
-        }
-
-        let handled = false;
-        let buttonToFlash: string | null = null;
-
-        switch (event.key) {
-          case "ArrowUp":
-            onJog("Y", 1, jogStep);
-            buttonToFlash = "jog-y-plus";
-            handled = true;
-            break;
-          case "ArrowDown":
-            onJog("Y", -1, jogStep);
-            buttonToFlash = "jog-y-minus";
-            handled = true;
-            break;
-          case "ArrowLeft":
-            onJog("X", -1, jogStep);
-            buttonToFlash = "jog-x-minus";
-            handled = true;
-            break;
-          case "ArrowRight":
-            onJog("X", 1, jogStep);
-            buttonToFlash = "jog-x-plus";
-            handled = true;
-            break;
-          case "PageUp":
-            if (!isZJogDisabledForStep) {
-              onJog("Z", 1, jogStep);
-              buttonToFlash = "jog-z-plus";
-              handled = true;
-            }
-            break;
-          case "PageDown":
-            if (!isZJogDisabledForStep) {
-              onJog("Z", -1, jogStep);
-              buttonToFlash = "jog-z-minus";
-              handled = true;
-            }
-            break;
-          // Step size hotkeys
-          case "1":
-            if (stepSizes[0] !== undefined) {
-              onStepChange(stepSizes[0]);
-              buttonToFlash = `step-${stepSizes[0]}`;
-              handled = true;
-            }
-            break;
-          case "2":
-            if (stepSizes[1] !== undefined) {
-              onStepChange(stepSizes[1]);
-              buttonToFlash = `step-${stepSizes[1]}`;
-              handled = true;
-            }
-            break;
-          case "3":
-            if (stepSizes[2] !== undefined) {
-              onStepChange(stepSizes[2]);
-              buttonToFlash = `step-${stepSizes[2]}`;
-              handled = true;
-            }
-            break;
-          case "4":
-            if (stepSizes[3] !== undefined) {
-              onStepChange(stepSizes[3]);
-              buttonToFlash = `step-${stepSizes[3]}`;
-              handled = true;
-            }
-            break;
-          case "5":
-            if (stepSizes[4] !== undefined) {
-              onStepChange(stepSizes[4]);
-              buttonToFlash = `step-${stepSizes[4]}`;
-              handled = true;
-            }
-            break;
-        }
-
-        if (handled) {
+        const hotkey = jogHotkeys[event.key];
+        if (hotkey && !isControlDisabled) {
           event.preventDefault();
-          if (buttonToFlash) {
-            onFlash(buttonToFlash);
+          if (pressedJogKey.current !== event.key) {
+            pressedJogKey.current = event.key;
+            onFlash(hotkey.id);
+            onJog(hotkey.axis, hotkey.direction, 99999);
           }
         }
       };
 
-      document.addEventListener("keydown", handleKeyDown);
+      const handleKeyUp = (event: KeyboardEvent) => {
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
+
+        if (pressedJogKey.current === event.key) {
+          pressedJogKey.current = null;
+          onJogStop();
+          onFlash(""); // Clear flashing button
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
 
       return () => {
-        document.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
       };
-    }, [
-      onJog,
-      jogStep,
-      isControlDisabled,
-      isZJogDisabledForStep,
-      onFlash,
-      onStepChange,
-      stepSizes,
-    ]);
+    }, [isControlDisabled, onJog, onJogStop, onFlash]);
+
 
     const JogButton = ({
       id,
@@ -197,8 +140,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       hotkey: string;
     }) => {
       const isZButton = axis === "Z";
-      const isDisabled =
-        isControlDisabled || (isZButton && isZJogDisabledForStep);
+      const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
 
       let title = `${label} (${axis}${
         direction > 0 ? "+" : "-"
@@ -209,13 +151,21 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         }`;
       }
 
+      const handleMouseDown = () => {
+        onFlash(id);
+        onJog(axis, direction, 99999); // Large number for continuous jog
+      };
+
+      const handleMouseUp = () => {
+        onJogStop();
+      };
+
       return (
         <button
           id={id}
-          onMouseDown={() => {
-            onJog(axis, direction, jogStep);
-            onFlash(id);
-          }}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           disabled={isDisabled}
           className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${
             flashingButton === id ? "ring-4 ring-white ring-inset" : ""
@@ -291,29 +241,32 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 hotkey="Page Down"
               />
             </div>
-            <div className="flex justify-between items-center mt-3">
-              <span className="text-sm text-text-secondary">Step:</span>
-              <div className="flex gap-1">
-                {stepSizes.map((step) => (
-                  <button
-                    key={step}
-                    id={`step-${step}`}
-                    onClick={() => onStepChange(step)}
-                    disabled={isControlDisabled}
-                    className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                      jogStep === step
-                        ? "bg-primary text-white font-bold"
-                        : "bg-secondary hover:bg-secondary-focus"
-                    } ${
-                      flashingButton === `step-${step}`
-                        ? "ring-2 ring-white ring-inset"
-                        : ""
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {step}
-                  </button>
-                ))}
+            <div className="flex justify-around items-center mt-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-secondary">Step:</span>
+                <div className="flex gap-1">
+                  {stepSizes.map((step) => (
+                    <button
+                      key={step}
+                      id={`step-${step}`}
+                      onClick={() => onStepChange(step)}
+                      disabled={isControlDisabled}
+                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                        jogStep === step
+                          ? "bg-primary text-white font-bold"
+                          : "bg-secondary hover:bg-secondary-focus"
+                      } ${
+                        flashingButton === `step-${step}`
+                          ? "ring-2 ring-white ring-inset"
+                          : ""
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {step}
+                    </button>
+                  ))}
+                </div>
               </div>
+
             </div>
             <div className="mt-3 border-t border-secondary pt-3">
               <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">

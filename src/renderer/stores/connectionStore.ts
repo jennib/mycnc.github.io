@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { SerialManager } from '../services/serialService';
-import { SimulatedSerialManager } from '../services/simulatedSerialService';
-import { MachineSettings } from '../types';
+import { SerialManager } from '@/services/serialService';
+import { SimulatedSerialManager } from '@/services/simulatedSerialService';
+import { MachineSettings, PortInfo } from '@/types';
 
 import { useLogStore } from './logStore';
 import { useMachineStore } from './machineStore';
@@ -17,7 +17,7 @@ interface ConnectionState {
   actions: {
     connect: (options: import('../types').ConnectionOptions | { type: 'simulator' }) => Promise<void>;
     disconnect: () => Promise<void>;
-    sendLine: (line: string) => Promise<void>;
+    sendLine: (line: string, timeout?: number) => Promise<void>;
     sendRealtimeCommand: (command: string) => void;
   };
 }
@@ -30,7 +30,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   portInfo: null,
   actions: {
     connect: async (options: import('../types').ConnectionOptions | { type: 'simulator' }) => {
-      if (get().isConnecting || get().isConnected) return;
+      // If already connected or connecting, disconnect first to ensure a clean state
+      if (get().isConnected || get().isConnecting) {
+        await get().actions.disconnect();
+      }
 
       set({ isConnecting: true });
 
@@ -42,6 +45,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
       const commonCallbacks = {
         onConnect: (info: any) => {
+          get().serialManager?.sendRealtimeCommand('\x18'); // Send soft-reset on connect
           set({
             isConnected: true,
             isConnecting: false,
@@ -151,7 +155,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     disconnect: async () => {
       await get().serialManager?.disconnect();
     },
-    sendLine: (line: string) => {
+    sendLine: (line: string, timeout?: number) => {
       const manager = get().serialManager;
       if (manager) {
         const trimmedLine = line.trim();
@@ -163,7 +167,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             throw error; // Re-throw
           });
         } else {
-          return manager.sendLineAndWaitForOk(line).catch(error => {
+          return (manager as SerialManager).sendLineAndWaitForOk(line, true, timeout).catch(error => {
             useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed: ${error.message}` });
             throw error; // Re-throw
           });

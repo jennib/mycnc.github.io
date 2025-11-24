@@ -1,19 +1,32 @@
-import { ConsoleLog, MachineState, PortInfo, MachinePosition } from '../types';
+import { ConsoleLog, MachineState, PortInfo, MachinePosition, MachineSettings } from '@/types';
 
-// Declare the Electron API on the Window object
-declare global {
-    interface Window {
-        electronAPI?: {
-            isElectron: boolean;
-            connectTCP: (ip: string, port: number) => Promise<boolean>;
-            sendTCP: (data: string) => void;
-            disconnectTCP: () => void;
-            onTCPData: (callback: (data: string) => void) => void;
-            onTCPError: (callback: (error: string) => void) => void;
-            onTCPDisconnect: (callback: () => void) => void;
-        };
+function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (obj instanceof Date) {
+    return new Date(obj.getTime()) as any;
+  }
+
+  if (Array.isArray(obj)) {
+    const arrCopy = [] as any[];
+    for (let i = 0; i < obj.length; i++) {
+      arrCopy[i] = deepClone(obj[i]);
     }
+    return arrCopy as any;
+  }
+
+  const objCopy = {} as { [key: string]: any };
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      objCopy[key] = deepClone((obj as any)[key]);
+    }
+  }
+
+  return objCopy as T;
 }
+import { parseGrblStatus } from './grblParser';
 
 interface SerialManagerCallbacks {
     onConnect: (info: PortInfo) => void;
@@ -290,103 +303,7 @@ export class SerialManager {
         }
     }
     
-    parseGrblStatus(statusStr: string, lastStatus: MachineState) {
-        try {
-            const content = statusStr.slice(1, -1);
-            const parts = content.split('|');
-            const statusPart = parts[0];
-            const parsed: Partial<MachineState> & { status: string, code: number | null } = { status: 'Idle', code: null };
 
-            const rawStatus = statusPart.split(':')[0].toLowerCase();
-            let status: MachineState['status'];
-            
-            if (rawStatus.startsWith('home')) { // Catches 'home', 'homing', 'homing cycle', etc.
-                status = 'Home';
-            } else if (rawStatus === 'idle') {
-                status = 'Idle';
-            } else if (rawStatus === 'run') {
-                status = 'Run';
-            } else if (rawStatus === 'hold') {
-                status = 'Hold';
-            } else if (rawStatus === 'jog') {
-                status = 'Jog';
-            } else if (rawStatus === 'alarm') {
-                status = 'Alarm';
-            } else if (rawStatus === 'door') {
-                status = 'Door';
-            } else if (rawStatus === 'check') {
-                status = 'Check';
-            } else if (rawStatus === 'sleep') {
-                status = 'Sleep';
-            } else {
-                // Try to capitalize unknown states as a fallback
-                status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
-            }
-
-            let code = null;
-            if (status === 'Alarm') {
-                const alarmMatch = statusPart.match(/Alarm:(\d+)/);
-                if (alarmMatch) {
-                    code = parseInt(alarmMatch[1], 10);
-                }
-            }
-            
-            // Always include status and code to ensure state is fully updated.
-            parsed.status = status;
-            parsed.code = code;
-
-            for (const part of parts) {
-                if (part.startsWith('WPos:')) {
-                    const coords = part.substring(5).split(',');
-                    const wpos = lastStatus.wpos ? { ...lastStatus.wpos } : { x: 0, y: 0, z: 0 };
-                    if (coords.length > 0 && coords[0] !== '' && !isNaN(parseFloat(coords[0]))) wpos.x = parseFloat(coords[0]);
-                    if (coords.length > 1 && coords[1] !== '' && !isNaN(parseFloat(coords[1]))) wpos.y = parseFloat(coords[1]);
-                    if (coords.length > 2 && coords[2] !== '' && !isNaN(parseFloat(coords[2]))) wpos.z = parseFloat(coords[2]);
-                    parsed.wpos = wpos;
-                } else if (part.startsWith('MPos:')) {
-                    const coords = part.substring(5).split(',');
-                    const mpos = lastStatus.mpos ? { ...lastStatus.mpos } : { x: 0, y: 0, z: 0 };
-                    if (coords.length > 0 && coords[0] !== '' && !isNaN(parseFloat(coords[0]))) mpos.x = parseFloat(coords[0]);
-                    if (coords.length > 1 && coords[1] !== '' && !isNaN(parseFloat(coords[1]))) mpos.y = parseFloat(coords[1]);
-                    if (coords.length > 2 && coords[2] !== '' && !isNaN(parseFloat(coords[2]))) mpos.z = parseFloat(coords[2]);
-                    parsed.mpos = mpos;
-                } else if (part.startsWith('WCO:')) {
-                    const coords = part.substring(4).split(',');
-                    const wco = lastStatus.wco ? { ...lastStatus.wco } : { x: 0, y: 0, z: 0 };
-                    if (coords.length > 0 && coords[0] !== '' && !isNaN(parseFloat(coords[0]))) wco.x = parseFloat(coords[0]);
-                    if (coords.length > 1 && coords[1] !== '' && !isNaN(parseFloat(coords[1]))) wco.y = parseFloat(coords[1]);
-                    if (coords.length > 2 && coords[2] !== '' && !isNaN(parseFloat(coords[2]))) wco.z = parseFloat(coords[2]);
-                    parsed.wco = wco;
-                } else if (part.startsWith('FS:')) {
-                    const speeds = part.substring(3).split(',');
-                    if (!parsed.spindle) parsed.spindle = { state: 'off', speed: 0 };
-                    if (speeds.length > 1) {
-                         parsed.spindle.speed = parseFloat(speeds[1]);
-                    }
-                } else if (part.startsWith('Ov:')) {
-                    const ovParts = part.substring(3).split(',');
-                    if (ovParts.length === 3) {
-                        parsed.ov = ovParts.map(p => parseInt(p, 10)) as [number, number, number];
-                    }
-                }
-            }
-
-            // If WPos wasn't in the status string, calculate it from MPos and WCO
-            if (!parsed.wpos && parsed.mpos && (parsed.wco || lastStatus.wco)) {
-                const wcoToUse = parsed.wco || lastStatus.wco!;
-                parsed.wpos = {
-                    x: parsed.mpos.x - wcoToUse.x,
-                    y: parsed.mpos.y - wcoToUse.y,
-                    z: parsed.mpos.z - wcoToUse.z,
-                };
-            }
-
-            return parsed;
-        } catch (e) {
-            console.error("Failed to parse GRBL status:", statusStr, e);
-            return null; // Failed to parse
-        }
-    }
 
     async readLoop() {
         const decoder = new TextDecoder();
@@ -431,7 +348,7 @@ export class SerialManager {
         const trimmedValue = line.trim();
         if (trimmedValue.startsWith('<') && trimmedValue.endsWith('>')) {
             const previousStatus = this.lastStatus.status; // Capture state before processing new status
-            const statusUpdate = this.parseGrblStatus(trimmedValue, this.lastStatus);
+            const statusUpdate = parseGrblStatus(trimmedValue, this.lastStatus);
             if (statusUpdate) {
                 // A more robust state update. Instead of merging with spread syntax,
                 // we explicitly build the new state to prevent stale properties
@@ -450,7 +367,7 @@ export class SerialManager {
                 };
         
                 // Send a deep clone to React to ensure re-render
-                this.callbacks.onStatus(JSON.parse(JSON.stringify(this.lastStatus)), trimmedValue);
+                this.callbacks.onStatus(deepClone(this.lastStatus), trimmedValue);
 
                 const isAlarm = this.lastStatus.status === 'Alarm';
 
@@ -513,7 +430,7 @@ export class SerialManager {
         }
     }
 
-    async sendLineAndWaitForOk(line: string, log = true) {
+    async sendLineAndWaitForOk(line: string, log = true, timeout = 10000) {
         return new Promise<void>((resolve, reject) => {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
@@ -522,8 +439,8 @@ export class SerialManager {
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
-                reject(new Error(`Command timed out after 10s: ${line}`));
-            }, 10000);
+                reject(new Error(`Command timed out after ${timeout / 1000}s: ${line}`));
+            }, timeout);
     
             this.linePromiseResolve = () => {
                 clearTimeout(timeoutId);

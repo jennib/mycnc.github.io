@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+
 import { JobStatus, Tool, ConnectionOptions } from "./types";
 import SerialConnector from "./components/SerialConnector";
 import GCodePanel from "./components/GCodePanel";
@@ -24,7 +25,6 @@ import {
   BookOpen,
 } from "./components/Icons";
 import {
-  analyzeGCode,
   getMachineStateAtLine,
 } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
@@ -41,9 +41,37 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { useConnectionStore } from "./stores/connectionStore";
 import { useMachineStore } from "./stores/machineStore";
 import { useJobStore } from "./stores/jobStore";
+import { useJob } from "./hooks/useJob";
 import { useLogStore } from "./stores/logStore";
 
 const App: React.FC = () => {
+  const machineState = useMachineStore((state) => state.machineState);
+  const isJogging = useMachineStore((state) => state.isJogging);
+  const isHomedSinceConnect = useMachineStore((state) => state.isHomedSinceConnect);
+  const isMacroRunning = useMachineStore((state) => state.isMacroRunning);
+  const handleSetZero = useMachineStore((state) => state.actions.handleSetZero);
+  const handleSpindleCommand = useMachineStore((state) => state.actions.handleSpindleCommand);
+  const handleProbe = useMachineStore((state) => state.actions.handleProbe);
+  const handleJog = useMachineStore((state) => state.actions.handleJog);
+  const handleJogStop = useMachineStore((state) => state.actions.handleJogStop);
+  const handleRunMacro = useMachineStore((state) => state.actions.handleRunMacro);
+  const handleManualCommand = useMachineStore((state) => state.actions.handleManualCommand);
+  const handleUnitChange = useMachineStore((state) => state.actions.handleUnitChange);
+  const handleHome = useMachineStore((state) => state.actions.handleHome);
+
+  const {
+    gcodeLines,
+    fileName,
+    jobStatus,
+    progress,
+    timeEstimate,
+    jobActions,
+    jobStartOptions,
+    preflightWarnings,
+    handleJobControl,
+    handleStartJobConfirmed,
+  } = useJob();
+
   // UI Store
   const {
     isPreflightModalOpen,
@@ -83,25 +111,6 @@ const App: React.FC = () => {
     actions: connectionActions,
   } = useConnectionStore((state) => state);
 
-  // Machine Store
-  const {
-    machineState,
-    isJogging,
-    isHomedSinceConnect,
-    isMacroRunning,
-    actions: machineActions,
-  } = useMachineStore((state) => state);
-
-  // Job Store
-  const {
-    gcodeLines,
-    fileName,
-    jobStatus,
-    progress,
-    timeEstimate,
-    actions: jobActions,
-  } = useJobStore((state) => state);
-
   // Log Store
   const {
     logs,
@@ -114,16 +123,12 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSerialApiSupported, setIsSerialApiSupported] = useState(true);
   const [useSimulator, setUseSimulator] = useState(false);
-  const [jobStartOptions, setJobStartOptions] = useState({
-    startLine: 0,
-    isDryRun: false,
-  });
-  const [preflightWarnings, setPreflightWarnings] = useState<any[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const activeJogKeyRef = useRef<string | null>(null);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -164,30 +169,25 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleManualCommand = useCallback(
-    (command: string) => {
-      connectionActions.sendLine(command);
-    },
-    [connectionActions]
-  );
-
-  const handleJog = useCallback(
-    (axis: string, direction: number, step: number) => {
-      const { jogFeedRate } = machineSettings;
-      const distance = direction * step;
-      const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
-      connectionActions.sendLine(command);
-    },
-    [machineSettings, connectionActions]
-  );
-
   const handleConnect = (options: ConnectionOptions) => {
     if (useSimulator) {
-      connectionActions.connect({ type: "simulator" });
+      connectionActions.connect({ type: "simulator" }); // Always use simulator if toggled
     } else {
       connectionActions.connect(options);
     }
   };
+
+  useEffect(() => {
+    if (window.electronAPI?.on) {
+      const unsubscribe = window.electronAPI.on(
+        "is-fullscreen",
+        (value: boolean) => setIsFullscreen(value)
+      );
+      // Request initial state
+      window.electronAPI.send("get-fullscreen-state");
+      return () => unsubscribe();
+    }
+  }, []);
 
   const handleToggleFullscreen = () => {
     // Check if the electronAPI and its send method exist before calling it
@@ -195,12 +195,107 @@ const App: React.FC = () => {
       window.electronAPI.send("toggle-fullscreen");
     } else {
       console.error("Fullscreen API is not available.");
+      // Fallback for non-electron environment
+      setIsFullscreen((prev) => !prev);
     }
   };
   // Global Hotkey Handling
+  const lastJogStopTimeRef = useRef<number>(0);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Do not trigger hotkeys if an input field is focused
+      // Do not trigger hotkeys if an input field is focused, or if the key is being held down
+      if (
+        event.repeat ||
+        (document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA"))
+      ) {
+        return;
+      }
+
+      // If a jog key is already active, don't start a new one.
+      if (activeJogKeyRef.current) {
+        return;
+      }
+
+      // Debounce jog commands
+      if (Date.now() - lastJogStopTimeRef.current < 50) {
+        return;
+      }
+
+      let axis: string | null = null;
+      let direction = 0;
+
+      switch (event.key) {
+        case "ArrowUp":
+          axis = "Y";
+          direction = 1;
+          break;
+        case "ArrowDown":
+          axis = "Y";
+          direction = -1;
+          break;
+        case "ArrowLeft":
+          axis = "X";
+          direction = -1;
+          break;
+        case "ArrowRight":
+          axis = "X";
+          direction = 1;
+          break;
+        case "PageUp":
+          axis = "Z";
+          direction = 1;
+          break;
+        case "PageDown":
+          axis = "Z";
+          direction = -1;
+          break;
+      }
+
+      if (axis && direction !== 0) {
+        event.preventDefault();
+
+        // Set the ref immediately to block subsequent keydown repeats
+        activeJogKeyRef.current = event.key;
+
+        const { jogFeedRate } = machineSettings;
+        // A large distance simulates continuous movement until key-up/cancel.
+        const distance = direction * 99999;
+        const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
+
+        connectionActions.sendLine(command).catch((err) => {
+          console.error("Failed to start jog:", err);
+          // If the command fails, unblock jogging.
+          activeJogKeyRef.current = null;
+        });
+      }
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === activeJogKeyRef.current) {
+        event.preventDefault();
+        handleJogStop();
+        activeJogKeyRef.current = null;
+        lastJogStopTimeRef.current = Date.now();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      if (activeJogKeyRef.current) {
+        handleJogStop();
+      }
+    };
+  }, [machineSettings, connectionActions, handleJogStop]);
+
+  // Separate useEffect for non-jog hotkeys
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (
         document.activeElement &&
         (document.activeElement.tagName === "INPUT" ||
@@ -209,9 +304,7 @@ const App: React.FC = () => {
         return;
       }
 
-      // Prevent default behavior for handled hotkeys
       let handled = false;
-
       switch (event.key) {
         case "Escape":
           handleEmergencyStop();
@@ -221,31 +314,6 @@ const App: React.FC = () => {
           handleManualCommand("$X");
           handled = true;
           break;
-        // Jogging Hotkeys
-        case "ArrowUp":
-          handleJog("Y", 1, jogStep);
-          handled = true;
-          break;
-        case "ArrowDown":
-          handleJog("Y", -1, jogStep);
-          handled = true;
-          break;
-        case "ArrowLeft":
-          handleJog("X", -1, jogStep);
-          handled = true;
-          break;
-        case "ArrowRight":
-          handleJog("X", 1, jogStep);
-          handled = true;
-          break;
-        case "PageUp":
-          handleJog("Z", 1, jogStep);
-          handled = true;
-          break;
-        case "PageDown":
-          handleJog("Z", -1, jogStep);
-          handled = true;
-          break;
       }
 
       if (handled) {
@@ -253,144 +321,14 @@ const App: React.FC = () => {
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleEmergencyStop, handleManualCommand, handleJog, jogStep]);
+  }, [handleEmergencyStop, handleManualCommand]);
 
   const handleDisconnect = () => connectionActions.disconnect();
-
-  const handleJobControl = async (
-    action: "start" | "pause" | "resume" | "stop",
-    options?: { startLine?: number }
-  ) => {
-    const manager = useConnectionStore.getState().serialManager;
-    if (!manager || !isConnected) return;
-
-    switch (action) {
-      case "start":
-        if (gcodeLines.length > 0) {
-          const warnings = analyzeGCode(gcodeLines, machineSettings);
-          setPreflightWarnings(warnings);
-          setJobStartOptions({
-            startLine: options?.startLine ?? 0,
-            isDryRun: false,
-          });
-          uiActions.openPreflightModal();
-        }
-        break;
-      case "pause":
-        if (jobStatus === JobStatus.Running) {
-          if (
-            machineState &&
-            machineState.spindle &&
-            machineState.spindle.state !== "off" &&
-            machineState.spindle.speed > 0
-          ) {
-            uiActions.openInfoModal(
-              "Spindle Warning",
-              "Pause was initiated but the spindle has been left running. Proceed with caution."
-            );
-          }
-          await manager.pause();
-          jobActions.setJobStatus(JobStatus.Paused);
-        }
-        break;
-      case "resume":
-        if (jobStatus === JobStatus.Paused) {
-          await manager.resume();
-          jobActions.setJobStatus(JobStatus.Running);
-        }
-        break;
-      case "stop":
-        if (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused) {
-          manager.stopJob();
-          jobActions.setProgress(0);
-          jobActions.setJobStatus(JobStatus.Stopped);
-        }
-        break;
-    }
-  };
-
-  const handleStartJobConfirmed = useCallback(
-    (options: { isDryRun: boolean }) => {
-      const manager = useConnectionStore.getState().serialManager;
-      if (!manager || !isConnected || gcodeLines.length === 0) return;
-
-      const { startLine } = jobStartOptions;
-      const { isDryRun } = options;
-
-      const startJob = async (startSpindle: boolean) => {
-        if (startLine > 0) {
-          logActions.addLog({
-            type: "status",
-            message: `Calculating machine state for line ${startLine + 1}...`,
-          });
-          const state = getMachineStateAtLine(gcodeLines, startLine);
-          const setupCommands: string[] = [
-            state.workCoordinateSystem,
-            state.unitMode,
-            state.distanceMode,
-          ];
-          if (
-            startSpindle &&
-            !isDryRun &&
-            (state.spindle === "M3" || state.spindle === "M4") &&
-            state.speed &&
-            state.speed > 0
-          ) {
-            setupCommands.push(`${state.spindle} S${state.speed}`, "G4 P1");
-          }
-          if (!isDryRun && (state.coolant === "M7" || state.coolant === "M8")) {
-            setupCommands.push(state.coolant);
-          }
-          logActions.addLog({
-            type: "status",
-            message: `Restoring machine state: ${setupCommands.join(", ")}`,
-          });
-          for (const command of setupCommands) {
-            try {
-              await manager.sendLineAndWaitForOk(command);
-            } catch (error) {
-              const errorMessage =
-                error instanceof Error ? error.message : "Unknown error";
-              logActions.addLog({
-                type: "error",
-                message: `Failed to set initial state with command '${command}': ${errorMessage}`,
-              });
-              jobActions.setJobStatus(JobStatus.Idle);
-              return;
-            }
-          }
-        }
-        jobActions.setJobStatus(JobStatus.Running);
-        manager.sendGCode(gcodeLines, { startLine, isDryRun });
-      };
-
-      uiActions.closePreflightModal();
-      if (startLine === 0) {
-        startJob(true);
-      } else {
-        uiActions.openSpindleModal({
-          onConfirm: startJob,
-          title: "Start Job from Line",
-          message: `Starting from line ${
-            startLine + 1
-          }. Do you want to turn the spindle on?`,
-        });
-      }
-    },
-    [
-      isConnected,
-      gcodeLines,
-      jobStartOptions,
-      logActions,
-      jobActions,
-      uiActions,
-    ]
-  );
 
   const handleFeedOverride = (
     command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
@@ -405,96 +343,6 @@ const App: React.FC = () => {
     if (commandMap[command]) {
       connectionActions.sendRealtimeCommand(commandMap[command]);
     }
-  };
-
-  const handleHome = (axes: "all" | "x" | "y" | "z" | "xy") => {
-    if (axes === "all") {
-      connectionActions.sendLine("$H");
-    }
-    // Note: GRBL doesn't support homing individual axes with a single command.
-    // This would require a macro or special handling if needed in the future.
-  };
-
-  const handleSetZero = (axes: "all" | "x" | "y" | "z" | "xy") => {
-    const commandMap = {
-      all: "G10 L20 P1 X0 Y0 Z0",
-      x: "G10 L20 P1 X0",
-      y: "G10 L20 P1 Y0",
-      z: "G10 L20 P1 Z0",
-      xy: "G10 L20 P1 X0 Y0",
-    };
-    const command = commandMap[axes];
-    if (command) {
-      connectionActions.sendLine(command);
-    }
-  };
-
-  const handleSpindleCommand = (
-    command: "cw" | "ccw" | "off",
-    speed: number
-  ) => {
-    switch (command) {
-      case "cw":
-        connectionActions.sendLine(`M3 S${speed}`);
-        break;
-      case "ccw":
-        connectionActions.sendLine(`M4 S${speed}`);
-        break;
-      case "off":
-        connectionActions.sendLine("M5");
-        break;
-    }
-  };
-
-  const handleProbe = (axes: string) => {
-    const { probeFeedRate, probeTravelDistance } = machineSettings.probe;
-    if (!probeFeedRate || !probeTravelDistance) {
-      logActions.addLog({
-        type: "error",
-        message: "Probe settings are not configured.",
-      });
-      return;
-    }
-
-    let command = "";
-    // The probe command G38.2 moves one or more axes. The first axis to touch the probe
-    // stops all axes and records the coordinates.
-    // We assume a negative direction for probing.
-    if (axes.includes("X")) {
-      command += `X-${probeTravelDistance} `;
-    }
-    if (axes.includes("Y")) {
-      command += `Y-${probeTravelDistance} `;
-    }
-    if (axes.includes("Z")) {
-      command += `Z-${probeTravelDistance} `;
-    }
-
-    if (command) {
-      connectionActions.sendLine(`G38.2 ${command.trim()} F${probeFeedRate}`);
-    }
-  };
-
-  const handleUnitChange = (newUnit: "mm" | "in") => {
-    settingsActions.setUnit(newUnit);
-    connectionActions.sendLine(newUnit === "mm" ? "G21" : "G20");
-  };
-
-  const handleRunMacro = async (commands: string[]) => {
-    machineActions.setIsMacroRunning(true);
-    logActions.addLog({ type: "info", message: `Running macro...` });
-    for (const command of commands) {
-      if (command.trim()) {
-        try {
-          await connectionActions.sendLine(command);
-        } catch (error) {
-          // Error is already logged by the connection store
-          break; // Stop macro on error
-        }
-      }
-    }
-    logActions.addLog({ type: "info", message: "Macro finished." });
-    machineActions.setIsMacroRunning(false);
   };
 
   const alarmInfo =
@@ -757,6 +605,7 @@ const App: React.FC = () => {
             selectedToolId={selectedToolId}
             onToolSelect={setSelectedToolId}
             onOpenGenerator={uiActions.openGCodeModal}
+            isSimulated={useSimulator}
           />
         </div>
         <div className="flex flex-col gap-4 overflow-hidden min-h-0">
@@ -764,11 +613,11 @@ const App: React.FC = () => {
             isConnected={isConnected}
             machineState={machineState}
             onJog={handleJog}
-            onHome={handleHome}
+            onHome={() => handleHome('all')}
             onSetZero={handleSetZero}
             onSpindleCommand={handleSpindleCommand}
             onProbe={handleProbe}
-            onCommand={handleManualCommand}
+            onSendCommand={handleManualCommand}
             jogStep={jogStep}
             onStepChange={settingsActions.setJogStep}
             flashingButton={flashingButton}
@@ -778,6 +627,7 @@ const App: React.FC = () => {
             isJobActive={isJobActive}
             isJogging={isJogging}
             isMacroRunning={isMacroRunning}
+            onJogStop={handleJogStop}
           />
           <WebcamPanel />
           <MacrosPanel

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Power, PowerOff, Cpu } from './Icons';
-import { PortInfo } from '../types'; // Import PortInfo
+import { Power, PowerOff } from './Icons';
+import { PortInfo, ConnectionOptions } from '@/types'; // Import PortInfo and ConnectionOptions
 
 interface SerialConnectorProps {
     isConnected: boolean;

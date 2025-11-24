@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tool, MachineSettings } from '../types';
+import { Tool, MachineSettings, PocketParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
 interface PocketGeneratorProps {
@@ -8,11 +8,24 @@ interface PocketGeneratorProps {
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
     settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
 const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        // For numeric inputs, ensure the value is a number or null
+        const numericFields = [
+            'width', 'length', 'cornerRadius', 'diameter', 'depth', 'depthPerPass',
+            'stepover', 'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
+        ];
+
+        if (numericFields.includes(field)) {
+            const numValue = parseFloat(value);
+            onParamsChange(field, isNaN(numValue) ? null : numValue);
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     return (
@@ -35,11 +48,21 @@ const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChang
                 <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
             </div>
             <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <SpindleAndFeedControls 
                 params={params} 
                 onParamChange={handleParamChange} 
                 unit={unit}
-                includePlungeFeed={true} 
+                plunge={true} 
             />
         </div>
     );

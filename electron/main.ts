@@ -4,9 +4,7 @@ import path from "path";
 import net from "net";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require("electron-squirrel-startup")) {
-  app.quit();
-}
+
 
 let mainWindow: BrowserWindow;
 let tcpSocket: net.Socket | null = null;
@@ -56,7 +54,7 @@ const createWindow = () => {
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true, // Enable context isolation
-      sandbox: false, // Disable sandbox to allow preload script access
+      sandbox: true, // Re-enable sandbox for security
     },
   });
 
@@ -115,6 +113,10 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
     tcpSocket = new net.Socket();
 
     const connectionTimeout = setTimeout(() => {
+      mainWindow.webContents.send("tcp-error", {
+        message: "Connection timed out.",
+        code: "CONNECTION_TIMEOUT",
+      });
       reject(new Error("Connection timed out."));
       tcpSocket?.destroy();
       tcpSocket = null;
@@ -133,7 +135,10 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
     tcpSocket.on("error", (err) => {
       clearTimeout(connectionTimeout);
       console.error("TCP Socket Error:", err.message);
-      mainWindow.webContents.send("tcp-error", err.message);
+      mainWindow.webContents.send("tcp-error", {
+        message: err.message,
+        code: "TCP_SOCKET_ERROR",
+      });
       reject(new Error(err.message));
       tcpSocket?.destroy();
       tcpSocket = null;
@@ -158,7 +163,10 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
       console.warn(
         "Attempted to send data on a non-existent or destroyed TCP socket."
       );
-      mainWindow.webContents.send("tcp-error", "Not connected to TCP device.");
+      mainWindow.webContents.send("tcp-error", {
+        message: "Not connected to TCP device.",
+        code: "NOT_CONNECTED",
+      });
     }
   });
   ipcMain.on("disconnect-tcp", () => {
@@ -208,7 +216,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
   mainWindow.webContents.session.once('select-serial-port', handleSelectSerialPort);
 
   mainWindow.webContents.session.setPermissionCheckHandler((webContents, permission) => {
-    console.log(`[Main Process] Checking permission for: ${permission}`);
+
     if (permission === 'serial' || permission === 'media') {
       return true;
     }
@@ -224,16 +232,16 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
   // --- Webcam/Media Permission Handler ---
   mainWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
-    console.log(`[Main Process] Permission request for: ${permission} from origin ${details.requestingUrl}`);
+
     if (permission === 'media') {
       // In a real app, you'd want to ask the user, but for now, we'll grant it.
       // This will cover 'video' and 'audio' permissions.
-      console.log('[Main Process] Granting media permission.');
+
       return callback(true);
     }
     // Handle individual camera/microphone requests if they come separately
     if (permission === 'camera' || permission === 'microphone') {
-        console.log(`[Main Process] Granting ${permission} permission.`);
+
         return callback(true);
     }
     // Deny other requests
@@ -253,10 +261,20 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
   // Set a Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL;    let csp = "";
+
+    if (isDevelopment) {
+      // Relaxed CSP for development
+      csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
+    } else {
+      // Stricter CSP for production
+      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self'; style-src 'self'; media-src 'self'; img-src 'self' data:;`;
+    }
+
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self' http://localhost:3000; connect-src 'self' http://localhost:3000 ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *;"]
+        'Content-Security-Policy': [csp]
       }
     });
   });
