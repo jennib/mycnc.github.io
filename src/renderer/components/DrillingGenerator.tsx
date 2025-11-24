@@ -9,7 +9,8 @@ interface DrillingGeneratorProps {
     unit: 'mm' | 'in';
 }
 
-const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
+const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit }) => {
+    console.log('DrillingGenerator params.drillType:', params.drillType);
 
     const handleParamChange = (field: string, value: any) => {
         onParamsChange(field, value);
