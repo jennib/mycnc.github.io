@@ -205,7 +205,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             points.push({ x: numericSingleX, y: numericSingleY });
         } else if (drillParams.drillType === 'rect') {
             const numericRectCols = Number(drillParams.rectCols);
-            const numericRectRows = Number(drillParams.rectSpacingX);
+            const numericRectRows = Number(drillParams.rectRows);
             const numericRectSpacingX = Number(drillParams.rectSpacingX);
             const numericRectSpacingY = Number(drillParams.rectSpacingY);
             const numericRectStartX = Number(drillParams.rectStartX);
