@@ -26,6 +26,16 @@ const SurfacingGenerator: React.FC<SurfacingGeneratorProps> = ({ params, onParam
                 <Input label={`Length (Y)`} value={params.length} onChange={e => handleParamChange('length', e.target.value)} unit={unit} />
             </div>
             <RadioGroup label='Milling Direction' options={[{ value: 'horizontal', label: 'Horizontal (X)' }, { value: 'vertical', label: 'Vertical (Y)' }]} selected={params.direction} onChange={val => handleParamChange('direction', val)} />
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <Input label='Final Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help='Should be negative' />
             <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
             <SpindleAndFeedControls params={params} onParamChange={(field, value) => handleParamChange(field, value)} unit={unit} />

@@ -261,12 +261,11 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
   // Set a Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL;
-    let csp = "";
+    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL;    let csp = "";
 
     if (isDevelopment) {
       // Relaxed CSP for development
-      csp = `default-src 'self' http://localhost:3000; connect-src 'self' http://localhost:3000 ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
+      csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
     } else {
       // Stricter CSP for production
       csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self'; style-src 'self'; media-src 'self'; img-src 'self' data:;`;

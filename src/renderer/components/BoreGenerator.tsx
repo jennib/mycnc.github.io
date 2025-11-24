@@ -46,6 +46,17 @@ const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, t
             <hr className='border-secondary' />
             
             <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             
             <SpindleAndFeedControls 
                 params={params} 

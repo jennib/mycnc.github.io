@@ -48,6 +48,16 @@ const TextGenerator: React.FC<TextGeneratorProps> = ({ params, onParamsChange, t
             </div>
             <RadioGroup label='Alignment' options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} selected={params.alignment} onChange={val => handleParamChange('alignment', val)} />
             <Input label='Engraving Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help="Should be negative" />
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );

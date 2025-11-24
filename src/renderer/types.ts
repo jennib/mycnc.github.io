@@ -64,6 +64,8 @@ export interface MachineSettings {
     isConfigured?: boolean;
 }
 
+export type ToolpathOrigin = 'front_left_top' | 'top_center';
+
 export interface SurfacingParams {
     width: number | '';
     length: number | '';
@@ -76,6 +78,7 @@ export interface SurfacingParams {
     startY: number | '';
     toolId: number | null;
     direction: 'horizontal' | 'vertical';
+    toolpathOrigin: ToolpathOrigin;
 }
 
 export interface DrillingParams {
@@ -99,6 +102,7 @@ export interface DrillingParams {
     circRadius: number | '';
     circHoles: number | '';
     circStartAngle: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -115,6 +119,7 @@ export interface BoreParams {
     plungeFeed: number | '';
     spindle: number | '';
     safeZ: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -131,6 +136,7 @@ export interface PocketParams {
     plungeFeed: number | '';
     spindle: number | '';
     safeZ: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -150,6 +156,7 @@ export interface ProfileParams {
     feed: number | '';
     spindle: number | '';
     safeZ: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -170,6 +177,7 @@ export interface SlotParams {
     radius: number | '';
     startAngle: number | '';
     endAngle: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -185,6 +193,7 @@ export interface TextParams {
     feed: number | '';
     spindle: number | '';
     safeZ: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 
@@ -197,6 +206,7 @@ export interface ThreadMillingParams {
     feed: number | '';
     spindle: number | '';
     safeZ: number | '';
+    toolpathOrigin: ToolpathOrigin;
     toolId: number | null;
 }
 

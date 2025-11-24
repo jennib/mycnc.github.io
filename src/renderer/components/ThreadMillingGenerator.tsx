@@ -29,6 +29,16 @@ const ThreadMillingGenerator: React.FC<ThreadMillingGeneratorProps> = ({ params,
                 <Input label='Pitch' value={params.pitch} onChange={e => handleParamChange('pitch', e.target.value)} unit={unit} help='Distance between threads' />
             </div>
             <Input label='Thread Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help='Length of thread' />
+            <hr className='border-secondary' />
+            <RadioGroup
+                label='Toolpath Origin'
+                selected={params.toolpathOrigin}
+                onChange={(value) => handleParamChange('toolpathOrigin', value)}
+                options={[
+                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
+                    { value: 'top_center', label: 'Top Center' },
+                ]}
+            />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );
