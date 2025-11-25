@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Upload, Download } from './Icons';
 import { MachineSettings, GeneratorSettings } from '@/types';
+import Modal from './Modal';
 
 interface InputGroupProps {
     label: string;
@@ -151,90 +152,83 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
     };
 
     return (
-        <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
-            aria-modal="true" role="dialog"
-        >
-            <div
-                className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all max-h-[90vh] flex flex-col"
-            >
-                <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-text-primary">Machine Settings</h2>
-                    <button onClick={onCancel} className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary"><X className="w-6 h-6" /></button>
-                </div>
-                <div className="p-6 space-y-6 overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4 bg-background p-4 rounded-md">
-                            <InputGroup label="Work Area Dimensions (mm)">
-                                <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
-                                <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
-                                <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
-                            </InputGroup>
-                            <InputGroup label="Jog Feed Rate (mm/min)">
-                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
-                            </InputGroup>
-                            <InputGroup label="Spindle Speed Range (RPM)">
-                                <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
-                                <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
-                            </InputGroup>
-                            <InputGroup label="Spindle Warmup Delay (ms)">
-                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
-                            </InputGroup>
-                            <InputGroup label="Probe (mm)">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-4 text-center text-text-secondary font-semibold">X</span>
-                                    <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
-                                    <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
-                                    <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
-                                    <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
-                                </div>
-                            </InputGroup>
-                            <InputGroup label="Probe Feed Rate">
-                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
-                            </InputGroup>
-                        </div>
-                        <div className="space-y-4 bg-background p-4 rounded-md">
-                            <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
-                            <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
-                            <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
-                        </div>
-                    </div>
-                    <div className="bg-background p-4 rounded-md">
-                        <h3 className="text-sm font-bold text-text-secondary mb-2">Configuration</h3>
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm">Export/Import all settings, macros, and tools.</p>
-                            <div className="flex gap-2">
-                                <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
-                                <button onClick={() => importFileRef.current.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
-                                    <Upload className="w-4 h-4" />Import
-                                </button>
-                                <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
-                                    <Download className="w-4 h-4" />Export
-                                </button>
+        <Modal isOpen={isOpen} onClose={onCancel}>
+            <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
+                <h2 className="text-2xl font-bold text-text-primary">Machine Settings</h2>
+                <button onClick={onCancel} className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary"><X className="w-6 h-6" /></button>
+            </div>
+            <div className="p-6 space-y-6 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4 bg-background p-4 rounded-md">
+                        <InputGroup label="Work Area Dimensions (mm)">
+                            <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
+                            <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
+                            <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
+                        </InputGroup>
+                        <InputGroup label="Jog Feed Rate (mm/min)">
+                            <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
+                        </InputGroup>
+                        <InputGroup label="Spindle Speed Range (RPM)">
+                            <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
+                            <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
+                        </InputGroup>
+                        <InputGroup label="Spindle Warmup Delay (ms)">
+                            <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
+                        </InputGroup>
+                        <InputGroup label="Probe (mm)">
+                            <div className="flex items-center gap-2">
+                                <span className="w-4 text-center text-text-secondary font-semibold">X</span>
+                                <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
+                                <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
+                                <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
+                                <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
+                                <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                             </div>
-                        </div>
+                        </InputGroup>
+                        <InputGroup label="Probe Feed Rate">
+                            <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
+                        </InputGroup>
                     </div>
-                    <div className="bg-background p-4 rounded-md">
-                        <h3 className="text-sm font-bold text-text-secondary mb-2">Interface Settings</h3>
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm">Reset "Don't show again" dialogs.</p>
-                            <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
-                                Reset Dialogs
+                    <div className="space-y-4 bg-background p-4 rounded-md">
+                        <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
+                        <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
+                        <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
+                    </div>
+                </div>
+                <div className="bg-background p-4 rounded-md">
+                    <h3 className="text-sm font-bold text-text-secondary mb-2">Configuration</h3>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm">Export/Import all settings, macros, and tools.</p>
+                        <div className="flex gap-2">
+                            <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
+                            <button onClick={() => importFileRef.current.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
+                                <Upload className="w-4 h-4" />Import
+                            </button>
+                            <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
+                                <Download className="w-4 h-4" />Export
                             </button>
                         </div>
                     </div>
                 </div>
-                <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
-                    <div className="flex items-center gap-4">
-                        <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
-                            <Save className="w-5 h-5" />Save Settings
+                <div className="bg-background p-4 rounded-md">
+                    <h3 className="text-sm font-bold text-text-secondary mb-2">Interface Settings</h3>
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm">Reset "Don't show again" dialogs.</p>
+                        <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
+                            Reset Dialogs
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+            <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
+                <div className="flex items-center gap-4">
+                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
+                    <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
+                        <Save className="w-5 h-5" />Save Settings
+                    </button>
+                </div>
+            </div>
+        </Modal>
     );
 };
 

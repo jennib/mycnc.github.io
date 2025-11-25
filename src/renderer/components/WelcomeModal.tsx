@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Settings, BookOpen, Zap } from './Icons';
+import Modal from './Modal';
 
 interface WelcomeModalProps {
     isOpen: boolean;
@@ -37,40 +38,38 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all" onClick={e => e.stopPropagation()}>
-                <div className="p-6 border-b border-secondary flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-text-primary">Welcome to mycnc.app!</h2>
-                    <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <div className="p-6 border-b border-secondary flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-text-primary">Welcome to mycnc.app!</h2>
+                <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+                <p className="text-base text-text-primary">
+                    <b>mycnc.app</b> is a web-based G-code sender that runs in your browser to control your CNC machine. Connect via USB to jog, send files, and monitor jobs in real-time. It includes a 3D toolpath visualizer, a machine simulator, and G-code generators for simple operations.
+                </p>
+                <hr className="border-secondary" />
+                <p className="text-sm text-text-secondary">To get started, please complete the two steps below. This will configure the application for your specific machine.</p>
+                <div className="space-y-3">
+                    <SetupStep title="Machine Setup" description="Define your machine's work area and spindle speeds." isComplete={isMachineSetupComplete} onAction={onOpenSettings} actionText="Open Settings" />
+                    <SetupStep title="Tool Library" description="Add at least one tool to your library." isComplete={isToolLibrarySetupComplete} onAction={onOpenToolLibrary} actionText="Open Tool Library" />
                 </div>
-                <div className="p-6 space-y-4">
-                    <p className="text-base text-text-primary">
-                        <b>mycnc.app</b> is a web-based G-code sender that runs in your browser to control your CNC machine. Connect via USB to jog, send files, and monitor jobs in real-time. It includes a 3D toolpath visualizer, a machine simulator, and G-code generators for simple operations.
-                    </p>
-                    <hr className="border-secondary" />
-                    <p className="text-sm text-text-secondary">To get started, please complete the two steps below. This will configure the application for your specific machine.</p>
-                    <div className="space-y-3">
-                        <SetupStep title="Machine Setup" description="Define your machine's work area and spindle speeds." isComplete={isMachineSetupComplete} onAction={onOpenSettings} actionText="Open Settings" />
-                        <SetupStep title="Tool Library" description="Add at least one tool to your library." isComplete={isToolLibrarySetupComplete} onAction={onOpenToolLibrary} actionText="Open Tool Library" />
-                    </div>
-                    <div className="pt-6 border-t border-secondary space-y-4">
-                        <button
-                            onClick={onClose}
-                            disabled={!isMachineSetupComplete || !isToolLibrarySetupComplete}
-                            className="w-full flex items-center justify-center gap-3 p-4 bg-primary text-white font-bold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-xl"
-                        >
-                            Get Started
+                <div className="pt-6 border-t border-secondary space-y-4">
+                    <button
+                        onClick={onClose}
+                        disabled={!isMachineSetupComplete || !isToolLibrarySetupComplete}
+                        className="w-full flex items-center justify-center gap-3 p-4 bg-primary text-white font-bold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-xl"
+                    >
+                        Get Started
+                    </button>
+                    <div className="text-center">
+                        <p className="text-sm text-text-secondary mb-2">Or, if you just want to try out the software:</p>
+                        <button onClick={onTrySimulator} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus flex items-center gap-2 mx-auto">
+                            <Zap className="w-5 h-5" />Try the Simulator
                         </button>
-                        <div className="text-center">
-                            <p className="text-sm text-text-secondary mb-2">Or, if you just want to try out the software:</p>
-                            <button onClick={onTrySimulator} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus flex items-center gap-2 mx-auto">
-                                <Zap className="w-5 h-5" />Try the Simulator
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 };
 
