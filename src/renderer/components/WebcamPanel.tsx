@@ -250,15 +250,17 @@ const WebcamPanel: React.FC = () => {
     const handleLeavePiP = useCallback(() => {
         console.log("handleLeavePiP: PiP window closed. isWebcamOn:", isWebcamOn, "webcamMode:", webcamMode);
         setIsInPiP(false);
-        // When leaving PiP, ensure the video stream is re-attached and playing in the main component
-        if (isWebcamOn && videoRef.current && streamRef.current) {
-            videoRef.current.srcObject = streamRef.current;
-            videoRef.current.muted = isMuted;
-            videoRef.current.volume = isMuted ? 0 : volume;
-            videoRef.current.play().catch(e => console.error("Error playing video after PiP exit:", e));
-            console.log("handleLeavePiP: Video stream re-attached and play attempted.");
+        // Force re-initialization of the stream in the main component
+        if (isWebcamOn) {
+            if (webcamMode === 'local') {
+                console.log("handleLeavePiP: Re-initializing local webcam.");
+                getDevices(); // Call getDevices to restart local stream
+            } else if (webcamMode === 'webrtc') {
+                console.log("handleLeavePiP: Re-initializing WebRTC stream.");
+                connectWebRTC(); // Call connectWebRTC to restart WebRTC stream
+            }
         }
-    }, [isWebcamOn, isMuted, volume]);
+    }, [isWebcamOn, webcamMode, getDevices, connectWebRTC]);
 
     useEffect(() => {
         const videoElement = videoRef.current;
