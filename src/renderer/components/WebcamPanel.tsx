@@ -34,7 +34,16 @@ const WebcamPanel: React.FC = () => {
         if (videoRef.current) {
             try {
                 if (!document.pictureInPictureElement) {
-                    // Directly request PiP to ensure it's within a user gesture
+                    // Clear the video element's source object before entering PiP
+                    // This ensures the main video element is blank while in PiP
+                    // and allows a clean re-initialization upon exiting PiP.
+                    videoRef.current.srcObject = null;
+
+                    // If in WebRTC mode, proactively disconnect to allow clean re-connection later
+                    if (webcamMode === 'webrtc' && isWebRTCConnected) {
+                        disconnectWebRTC();
+                    }
+
                     await videoRef.current.requestPictureInPicture();
                     setIsInPiP(true);
                 } else {
@@ -47,7 +56,7 @@ const WebcamPanel: React.FC = () => {
                 setIsInPiP(!!document.pictureInPictureElement);
             }
         }
-    }, []);
+    }, [isWebRTCConnected, webcamMode, disconnectWebRTC]);
 
     // --- Start of reordered useCallback definitions ---
 
