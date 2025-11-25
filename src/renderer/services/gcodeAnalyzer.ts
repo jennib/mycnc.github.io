@@ -1,19 +1,27 @@
 
 
-// import { parseGCode } from './gcodeParser.js'; // No longer needed here
+interface MachineState {
+    spindle: 'M3' | 'M4' | 'M5';
+    speed: number | null;
+    coolant: 'M7' | 'M8' | 'M9';
+    workCoordinateSystem: string; // e.g., 'G54', 'G55', etc.
+    unitMode: 'G20' | 'G21';
+    distanceMode: 'G90' | 'G91';
+    feedRate: number | null;
+}
 
 // Pre-compile regexes for efficiency
 const sParamRegex = /S\s*([-+]?[0-9]*\.?[0-9]*)/i;
 const fParamRegex = /F\s*([-+]?[0-9]*\.?[0-9]*)/i;
 const g5xParamRegex = /G5[4-9]/;
 
-const getParam = (gcode, regex) => {
+const getParam = (gcode: string, regex: RegExp): number | null => {
     const match = gcode.match(regex);
     return match ? parseFloat(match[1]) : null;
 };
 
-export const getMachineStateAtLine = (gcodeLines, lineNumber) => {
-    const state = {
+export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number): MachineState => {
+    const state: MachineState = {
         spindle: 'M5', // Default to spindle off
         speed: null,
         coolant: 'M9', // Default to coolant off
@@ -84,7 +92,7 @@ export const getMachineStateAtLine = (gcodeLines, lineNumber) => {
 // Create a new Web Worker instance
 const analysisWorker = new Worker(new URL('../../services/gcodeAnalysisWorker', import.meta.url), { type: 'module' });
 
-export const analyzeGCodeWithWorker = (gcodeLines, settings) => {
+export const analyzeGCodeWithWorker = (gcodeLines: string[], settings: any): Promise<any> => {
     return new Promise((resolve, reject) => {
         analysisWorker.onmessage = (event) => {
             resolve(event.data);
