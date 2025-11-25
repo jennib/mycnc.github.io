@@ -26,6 +26,21 @@ const WebcamPanel: React.FC = () => {
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
+    const disconnectWebRTC = useCallback(() => {
+        console.log("disconnectWebRTC called. pcRef:", pcRef.current, "wsRef:", wsRef.current);
+        if (pcRef.current) {
+            console.log("Attempting to close peer connection:", pcRef.current);
+            pcRef.current.close();
+            pcRef.current = null;
+        }
+        if (wsRef.current) {
+            console.log("Attempting to close WebSocket:", wsRef.current);
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+        setIsWebRTCConnected(false);
+    }, []);
+
     const handleToggleWebcam = useCallback(() => {
         setIsWebcamOn(prev => !prev);
     }, []);
@@ -57,23 +72,6 @@ const WebcamPanel: React.FC = () => {
             }
         }
     }, [isWebRTCConnected, webcamMode, disconnectWebRTC]);
-
-    // --- Start of reordered useCallback definitions ---
-
-    const disconnectWebRTC = useCallback(() => {
-        console.log("disconnectWebRTC called. pcRef:", pcRef.current, "wsRef:", wsRef.current);
-        if (pcRef.current) {
-            console.log("Attempting to close peer connection:", pcRef.current);
-            pcRef.current.close();
-            pcRef.current = null;
-        }
-        if (wsRef.current) {
-            console.log("Attempting to close WebSocket:", wsRef.current);
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-        setIsWebRTCConnected(false);
-    }, []);
 
 
     const connectWebRTC = useCallback(() => {
