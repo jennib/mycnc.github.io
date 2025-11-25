@@ -27,14 +27,11 @@ const WebcamPanel: React.FC = () => {
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
     const disconnectWebRTC = useCallback(() => {
-        console.log("disconnectWebRTC called. pcRef:", pcRef.current, "wsRef:", wsRef.current);
         if (pcRef.current) {
-            console.log("Attempting to close peer connection:", pcRef.current);
             pcRef.current.close();
             pcRef.current = null;
         }
         if (wsRef.current) {
-            console.log("Attempting to close WebSocket:", wsRef.current);
             wsRef.current.close();
             wsRef.current = null;
         }
@@ -48,41 +45,21 @@ const WebcamPanel: React.FC = () => {
     const handleTogglePiP = useCallback(async () => {
         if (videoRef.current) {
             try {
-                if (!document.pictureInPictureElement) {
-                    // Immediately request PiP to ensure it's within a user gesture.
-                    // Perform other cleanup/state changes *after* this synchronous call.
+                if (videoRef.current !== document.pictureInPictureElement) {
                     await videoRef.current.requestPictureInPicture();
-                    setIsInPiP(true); // Set state immediately after successful PiP request
-
-                    // Now perform cleanup:
-                    // Clear the video element's source object as it's now in the PiP window.
-                    // This ensures the main video element is blank while in PiP
-                    // and allows a clean re-initialization upon exiting PiP.
-                    videoRef.current.srcObject = null;
-
-                    // If in WebRTC mode, proactively disconnect to allow clean re-connection later
-                    if (webcamMode === 'webrtc' && isWebRTCConnected) {
-                        disconnectWebRTC();
-                    }
-
                 } else {
                     await document.exitPictureInPicture();
-                    setIsInPiP(false);
                 }
             } catch (error) {
                 console.error("PiP action failed:", error);
-                // Even if request/exit fails, try to update state as it might be out of sync
-                setIsInPiP(!!document.pictureInPictureElement);
             }
         }
-    }, [isWebRTCConnected, webcamMode, disconnectWebRTC]);
-
+    }, []);
 
     const connectWebRTC = useCallback(() => {
         if (!isElectron || isWebRTCConnected) return; // Prevent multiple connections
         setIsLoading(true);
         setError(null);
-        console.log("Attempting WebRTC connection...");
 
         try {
             const peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
@@ -107,7 +84,6 @@ const WebcamPanel: React.FC = () => {
             };
 
             peerConnection.oniceconnectionstatechange = () => {
-                console.log("ICE Connection State:", peerConnection.iceConnectionState);
                 if (peerConnection.iceConnectionState === 'connected') {
                     setIsLoading(false);
                     setIsWebRTCConnected(true);
@@ -166,7 +142,6 @@ const WebcamPanel: React.FC = () => {
                 disconnectWebRTC(); // Ensure full cleanup
             };
             ws.onclose = () => {
-                console.log("WebSocket closed.");
                 if (isWebRTCConnected) { // Only trigger disconnect if it was actually connected
                     disconnectWebRTC();
                 }
@@ -179,37 +154,28 @@ const WebcamPanel: React.FC = () => {
             setIsWebRTCConnected(false);
             disconnectWebRTC(); // Clean up if initial setup fails
         }
-    }, [isElectron, isWebRTCConnected, setIsLoading, setError, webRTCUrl, isMuted, disconnectWebRTC, isWebcamOn]);
+    }, [isElectron, isWebRTCConnected, setIsLoading, setError, webRTCUrl, isMuted, disconnectWebRTC]);
 
     const getDevices = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        console.log("getDevices: Starting device enumeration...");
         try {
             const mediaDevices = await navigator.mediaDevices.enumerateDevices();
             const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
             const audioInputDevices = mediaDevices.filter(device => device.kind === 'audioinput');
             setDevices(videoDevices);
             setAudioInputDevices(audioInputDevices);
-            console.log("getDevices: Found video devices:", videoDevices);
-            console.log("getDevices: Found audio input devices:", audioInputDevices);
 
             let selectedVideoDeviceId = selectedDeviceId;
             if (!selectedVideoDeviceId || !videoDevices.some(d => d.deviceId === selectedVideoDeviceId)) {
                 selectedVideoDeviceId = videoDevices[0]?.deviceId || '';
                 setWebcamSettings({ selectedDeviceId: selectedVideoDeviceId });
-                console.log("getDevices: No saved video device or not found, selecting first available:", selectedVideoDeviceId);
-            } else {
-                console.log("getDevices: Using saved video device:", selectedVideoDeviceId);
             }
 
             let selectedAudioInputDeviceId = selectedAudioDeviceId;
             if (!selectedAudioInputDeviceId || !audioInputDevices.some(d => d.deviceId === selectedAudioInputDeviceId)) {
                 selectedAudioInputDeviceId = audioInputDevices[0]?.deviceId || '';
                 setWebcamSettings({ selectedAudioDeviceId: selectedAudioInputDeviceId });
-                console.log("getDevices: No saved audio device or not found, selecting first available:", selectedAudioInputDeviceId);
-            } else {
-                console.log("getDevices: Using saved audio device:", selectedAudioInputDeviceId);
             }
 
             if (selectedVideoDeviceId) {
@@ -218,27 +184,22 @@ const WebcamPanel: React.FC = () => {
                     streamRef.current.getTracks().forEach(track => track.stop());
                     streamRef.current = null;
                     if (videoRef.current) videoRef.current.srcObject = null;
-                    console.log("getDevices: Stopped existing stream.");
                 }
 
-                console.log("getDevices: Attempting getUserMedia with videoDeviceId:", selectedVideoDeviceId, "audioDeviceId:", selectedAudioInputDeviceId);
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { deviceId: selectedVideoDeviceId ? { exact: selectedVideoDeviceId } : undefined },
                     audio: { deviceId: selectedAudioInputDeviceId ? { exact: selectedAudioInputDeviceId } : undefined }
                 });
-                console.log("getDevices: getUserMedia successful, stream:", stream);
                 if (videoRef.current) {
                     videoRef.current.srcObject = stream;
                     videoRef.current.muted = isMuted; // Apply mute setting
                     videoRef.current.volume = isMuted ? 0 : volume; // Apply volume setting
                     await videoRef.current.play(); // Explicitly play to ensure metadata loads and video starts
-                    console.log("getDevices: Video element srcObject set and play attempted.");
                 }
                 streamRef.current = stream;
                 setError(null);
             } else {
                 setError('No camera found.');
-                console.log("getDevices: No selected video device, cannot start stream.");
             }
         } catch (err) {
             console.error("getDevices: Error accessing media devices:", err);
@@ -252,49 +213,44 @@ const WebcamPanel: React.FC = () => {
             }
         } finally {
             setIsLoading(false);
-            console.log("getDevices: Finished device enumeration and stream attempt.");
         }
     }, [selectedDeviceId, selectedAudioDeviceId, setWebcamSettings, isMuted, volume, videoRef]);
 
-    // --- End of reordered useCallback definitions ---
-
-    const handleLeavePiP = useCallback(() => {
-        console.log("handleLeavePiP: PiP window closed. isWebcamOn:", isWebcamOn, "webcamMode:", webcamMode);
-        setIsInPiP(false);
-        // Force re-initialization of the stream in the main component
-        if (isWebcamOn) {
-            if (webcamMode === 'local') {
-                console.log("handleLeavePiP: Re-initializing local webcam.");
-                getDevices(); // Call getDevices to restart local stream
-            } else if (webcamMode === 'webrtc') {
-                console.log("handleLeavePiP: Re-initializing WebRTC stream.");
-                connectWebRTC(); // Call connectWebRTC to restart WebRTC stream
-            }
-        }
-    }, [isWebcamOn, webcamMode, getDevices, connectWebRTC]);
-
     useEffect(() => {
         const videoElement = videoRef.current;
-        if (videoElement) {
-            videoElement.addEventListener('leavepictureinpicture', handleLeavePiP);
-            return () => {
-                videoElement.removeEventListener('leavepictureinpicture', handleLeavePiP);
-            };
-        }
-    }, [handleLeavePiP]);
+        if (!videoElement) return;
+
+        const onEnterPiP = () => setIsInPiP(true);
+        const onLeavePiP = () => {
+            setIsInPiP(false);
+            // When leaving PiP, the browser should restore the stream.
+            // If the video appears black, it might be paused.
+            if (videoElement.paused) {
+                videoElement.play().catch(e => console.error("Failed to resume video post-PiP:", e));
+            }
+        };
+
+        // Set initial state in case PiP is already active when component mounts/updates
+        setIsInPiP(document.pictureInPictureElement === videoElement);
+
+        videoElement.addEventListener('enterpictureinpicture', onEnterPiP);
+        videoElement.addEventListener('leavepictureinpicture', onLeavePiP);
+
+        return () => {
+            videoElement.removeEventListener('enterpictureinpicture', onEnterPiP);
+            videoElement.removeEventListener('leavepictureinpicture', onLeavePiP);
+        };
+    });
 
     // New useEffect to manage webcam stream lifecycle
     useEffect(() => {
         if (isWebcamOn) {
             if (webcamMode === 'local') {
-                console.log("Stream Effect: Starting local webcam via getDevices().");
                 getDevices();
             } else if (webcamMode === 'webrtc') {
-                console.log("Stream Effect: Starting WebRTC connection.");
                 connectWebRTC();
             }
         } else {
-            console.log("Stream Effect: isWebcamOn is false, stopping all streams.");
             // Stop local stream if active
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
@@ -310,7 +266,6 @@ const WebcamPanel: React.FC = () => {
 
         // Cleanup function for the effect
         return () => {
-            console.log("Stream Effect Cleanup: Stopping all streams.");
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
                 streamRef.current = null;
@@ -326,14 +281,23 @@ const WebcamPanel: React.FC = () => {
         if (!isWebcamOn) return null;
         if (isInPiP) {
             return (
-                <div className="relative aspect-video bg-background rounded-md">
-                    <button
-                        onClick={handleTogglePiP}
-                        title="Dock to Panel"
-                        className="absolute top-2 right-2 flex items-center gap-2 p-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        <Dock className="w-5 h-5" />
-                    </button>
+                <div className="relative aspect-video bg-background rounded-md flex items-center justify-center">
+                    {/* Keep video element in DOM but hidden for PiP to work correctly */}
+                    <video ref={videoRef} style={{ display: 'none' }} />
+
+                    <div className="text-center">
+                        <p className="text-text-secondary font-medium mb-4">
+                            Webcam is in Picture-in-Picture mode.
+                        </p>
+                        <button
+                            onClick={handleTogglePiP}
+                            title="Dock to Panel"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <Dock className="w-5 h-5" />
+                            Dock to Panel
+                        </button>
+                    </div>
                 </div>
             );
         }
