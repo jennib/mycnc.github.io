@@ -279,9 +279,9 @@ const WebcamPanel: React.FC = () => {
                     startLocalWebcam();
                 }
             } else if (webcamMode === 'webrtc') {
-                // Ensure local stream is started for WebRTC transmission
-                startLocalWebcam();
-                // connectWebRTC will be called when the user clicks 'Connect'
+                stopWebcam();
+                // When in webrtc mode, we don't start any stream automatically.
+                // The connection is initiated by the user clicking "Connect".
             }
         } else {
             stopWebcam();
