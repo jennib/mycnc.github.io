@@ -1,4 +1,12 @@
-import { Macro, MachineSettings, Tool, GeneratorSettings } from './types';
+import { Macro, MachineSettings, Tool, GeneratorSettings, WebcamSettings } from './types';
+
+export const DEFAULT_WEBCAM_SETTINGS: WebcamSettings = {
+    selectedDeviceId: '',
+    selectedAudioDeviceId: '',
+    volume: 0.5,
+    isMuted: true,
+};
+
 
 export const GRBL_ALARM_CODES: { [key: number | string]: { name: string; desc: string; resolution: string } } = {
     1: { name: 'Hard limit', desc: 'A limit switch was triggered. Usually due to machine travel limits.', resolution: 'Check for obstructions. The machine may need to be moved off the switch manually. Use the "$X" command to unlock after clearing the issue, then perform a homing cycle ($H).' },

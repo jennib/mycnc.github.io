@@ -226,3 +226,10 @@ export interface TimeEstimate {
     remainingTime: number;
 }
 
+export interface WebcamSettings {
+    selectedDeviceId: string;
+    selectedAudioDeviceId: string;
+    volume: number;
+    isMuted: boolean;
+}
+

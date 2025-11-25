@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MachineSettings, Tool, Macro, GeneratorSettings } from '@/types';
-import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS } from '@/constants';
+import { MachineSettings, Tool, Macro, GeneratorSettings, WebcamSettings } from '@/types';
+import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS, DEFAULT_WEBCAM_SETTINGS } from '@/constants';
 
 interface SettingsState {
   jogStep: number;
@@ -11,6 +11,7 @@ interface SettingsState {
   machineSettings: MachineSettings;
   toolLibrary: Tool[];
   generatorSettings: GeneratorSettings;
+  webcamSettings: WebcamSettings;
   actions: {
     setJogStep: (step: number) => void;
     setUnit: (unit: 'mm' | 'in') => void;
@@ -19,6 +20,7 @@ interface SettingsState {
     setMachineSettings: (settings: MachineSettings | ((prev: MachineSettings) => MachineSettings)) => void;
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
     setGeneratorSettings: (settings: GeneratorSettings | ((prev: GeneratorSettings) => GeneratorSettings)) => void;
+    setWebcamSettings: (settings: Partial<WebcamSettings>) => void;
   };
 }
 
@@ -32,6 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
       machineSettings: DEFAULT_SETTINGS,
       toolLibrary: DEFAULT_TOOLS,
       generatorSettings: DEFAULT_GENERATOR_SETTINGS,
+      webcamSettings: DEFAULT_WEBCAM_SETTINGS,
       actions: {
         setJogStep: (step) => set({ jogStep: step }),
         setUnit: (unit) => set({ unit: unit }),
@@ -40,12 +43,11 @@ export const useSettingsStore = create<SettingsState>()(
         setMachineSettings: (settings) => set((state) => ({ machineSettings: typeof settings === 'function' ? settings(state.machineSettings) : settings })),
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
         setGeneratorSettings: (settings) => set((state) => ({ generatorSettings: typeof settings === 'function' ? settings(state.generatorSettings) : settings })),
+        setWebcamSettings: (settings) => set((state) => ({ webcamSettings: { ...state.webcamSettings, ...settings } })),
       },
     }),
     {
       name: 'cnc-app-settings', // The base key for local storage
-      // We can specify which parts of the state to persist.
-      // Here, we persist everything except the actions.
       partialize: (state) =>
         Object.fromEntries(
           Object.entries(state).filter(([key]) => key !== 'actions')
@@ -73,6 +75,7 @@ export const useSettingsStore = create<SettingsState>()(
             ...state,
             machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
             generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
+            webcamSettings: { ...currentState.webcamSettings, ...(state.webcamSettings || {}) },
         };
       },
     }
