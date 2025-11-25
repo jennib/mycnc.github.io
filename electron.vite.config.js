@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => ({
         },
         output: {
           format: 'cjs'
-        }
+        },
+        external: ['electron']
       }
     }
   },

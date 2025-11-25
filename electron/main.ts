@@ -1,5 +1,4 @@
-import * as electron from "electron";
-const { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } = electron;
+import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } from "electron";
 import path from "path";
 import net from "net";
 
@@ -288,6 +287,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
   }
 };
 
+console.log('Electron app object:', app);
 app.on("ready", createWindow);
 
 app.on("window-all-closed", () => {
