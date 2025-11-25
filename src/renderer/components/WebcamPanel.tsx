@@ -49,7 +49,13 @@ const WebcamPanel: React.FC = () => {
         if (videoRef.current) {
             try {
                 if (!document.pictureInPictureElement) {
-                    // Clear the video element's source object before entering PiP
+                    // Immediately request PiP to ensure it's within a user gesture.
+                    // Perform other cleanup/state changes *after* this synchronous call.
+                    await videoRef.current.requestPictureInPicture();
+                    setIsInPiP(true); // Set state immediately after successful PiP request
+
+                    // Now perform cleanup:
+                    // Clear the video element's source object as it's now in the PiP window.
                     // This ensures the main video element is blank while in PiP
                     // and allows a clean re-initialization upon exiting PiP.
                     videoRef.current.srcObject = null;
@@ -59,8 +65,6 @@ const WebcamPanel: React.FC = () => {
                         disconnectWebRTC();
                     }
 
-                    await videoRef.current.requestPictureInPicture();
-                    setIsInPiP(true);
                 } else {
                     await document.exitPictureInPicture();
                     setIsInPiP(false);
