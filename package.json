@@ -16,7 +16,8 @@
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
-    "test": "vitest"
+    "test": "vitest",
+    "electron:clean": "Remove-Item -Path 'dist', 'out', 'node_modules', '.vite' -Recurse -Force -ErrorAction SilentlyContinue"
   },
   "build": {
     "appId": "com.mycnc.app",
