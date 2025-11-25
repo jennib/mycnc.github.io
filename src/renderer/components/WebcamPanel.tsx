@@ -14,6 +14,8 @@ const WebcamPanel: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const iceCandidateQueueRef = useRef<RTCIceCandidate[]>([]);
+    const pcRef = useRef<RTCPeerConnection | null>(null); // Ref to store RTCPeerConnection
+    const wsRef = useRef<WebSocket | null>(null); // Ref to store WebSocket
 
     const { webcamSettings, actions: { setWebcamSettings } } = useSettingsStore();
     const { selectedDeviceId, selectedAudioDeviceId, volume, isMuted } = webcamSettings;
@@ -24,87 +26,33 @@ const WebcamPanel: React.FC = () => {
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
-    const handleTogglePiP = async () => {
-        if (!videoRef.current || !isPiPSupported) return;
-        try {
-            if (document.pictureInPictureElement) {
-                await document.exitPictureInPicture();
-            } else if (videoRef.current.srcObject) {
-                await videoRef.current.requestPictureInPicture();
-            }
-        } catch (pipError) {
-            console.error("PiP Error:", pipError);
-            setError("Could not enter Picture-in-Picture mode.");
+    const disconnectWebRTC = useCallback(() => {
+        console.log("disconnectWebRTC called. pcRef:", pcRef.current, "wsRef:", wsRef.current);
+        if (pcRef.current) {
+            console.log("Attempting to close peer connection:", pcRef.current);
+            pcRef.current.close();
+            pcRef.current = null;
         }
-    };
-    
-    const getDevices = useCallback(async () => {
+        if (wsRef.current) {
+            console.log("Attempting to close WebSocket:", wsRef.current);
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+        setIsWebRTCConnected(false);
+    }, []);
+
+    const connectWebRTC = useCallback(() => {
+        if (!isElectron || isWebRTCConnected) return; // Prevent multiple connections
         setIsLoading(true);
         setError(null);
-        try {
-            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            tempStream.getTracks().forEach(track => track.stop());
-
-            const allDevices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
-            const audioInputDevices = allDevices.filter(device => device.kind === 'audioinput');
-            
-            setDevices(videoDevices);
-            setAudioInputDevices(audioInputDevices);
-
-            if (videoDevices.length > 0 && !selectedDeviceId) {
-                setWebcamSettings({ selectedDeviceId: videoDevices[0].deviceId });
-            }
-            if (audioInputDevices.length > 0 && !selectedAudioDeviceId) {
-                setWebcamSettings({ selectedAudioDeviceId: audioInputDevices[0].deviceId });
-            }
-            if (videoDevices.length === 0) {
-                setError("No webcam found. Please connect a camera and try again.");
-            }
-        } catch (err) {
-            handleStreamError(err);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [selectedDeviceId, selectedAudioDeviceId, setWebcamSettings]);
-
-    const handleToggleWebcam = () => {
-        if (isWebcamOn && document.pictureInPictureElement) {
-            document.exitPictureInPicture();
-        }
-        setIsWebcamOn(prev => !prev);
-    };
-
-    const stopWebcam = () => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-    };
-
-    const handleStreamError = (err: any) => {
-        console.error("Webcam Error:", err);
-        if (err instanceof Error && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
-            setError("Webcam access denied. Please allow camera permissions in your OS settings.");
-        } else if (err instanceof Error && (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError')) {
-            setError("No webcam found. Please connect a camera and try again.");
-        } else {
-            setError("Could not access webcam. The device may be in use by another application.");
-        }
-        setIsWebcamOn(false);
-    };
-
-    const connectWebRTC = useCallback((): { peerConnection: RTCPeerConnection, ws: WebSocket } | undefined => {
-        if (!isElectron) return;
-        setIsLoading(true);
-        setError(null);
+        console.log("Attempting WebRTC connection...");
 
         try {
             const peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
             const ws = new WebSocket(webRTCUrl);
+
+            pcRef.current = peerConnection;
+            wsRef.current = ws;
 
             peerConnection.ontrack = (event) => {
                 if (videoRef.current) {
@@ -120,9 +68,24 @@ const WebcamPanel: React.FC = () => {
                     videoRef.current.muted = isMuted;
                 }
             };
-            // peerConnection.oniceconnectionstatechange will now be handled by the useEffect consuming this function.
 
-            ws.onopen = async () => {};
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log("ICE Connection State:", peerConnection.iceConnectionState);
+                if (peerConnection.iceConnectionState === 'connected') {
+                    setIsLoading(false);
+                    setIsWebRTCConnected(true);
+                    setError(null);
+                } else if (['failed', 'disconnected', 'closed'].includes(peerConnection.iceConnectionState)) {
+                    setError('WebRTC connection failed, disconnected, or closed.');
+                    setIsLoading(false);
+                    setIsWebRTCConnected(false);
+                    disconnectWebRTC(); // Clean up on failure/disconnection
+                }
+            };
+
+            ws.onopen = async () => {
+                // Not creating offer here, waiting for server to send one
+            };
             ws.onmessage = async (event) => {
                 if (typeof event.data === 'string') {
                     const message = JSON.parse(event.data);
@@ -159,149 +122,28 @@ const WebcamPanel: React.FC = () => {
             peerConnection.addTransceiver('video', { direction: 'recvonly' });
             peerConnection.addTransceiver('audio', { direction: 'recvonly' });
             ws.onerror = (err) => {
+                console.error("WebSocket error:", err);
                 setError('WebSocket connection error. Check the server URL and make sure the server is running.');
                 setIsLoading(false);
+                setIsWebRTCConnected(false);
+                disconnectWebRTC(); // Ensure full cleanup
+            };
+            ws.onclose = () => {
+                console.log("WebSocket closed.");
+                if (isWebRTCConnected) { // Only trigger disconnect if it was actually connected
+                    disconnectWebRTC();
+                }
             };
 
-            return { peerConnection, ws };
         } catch (e) {
+            console.error("Failed to initiate WebRTC connection:", e);
             setError('Failed to initiate WebRTC connection.');
             setIsLoading(false);
-            return undefined;
+            setIsWebRTCConnected(false);
+            disconnectWebRTC(); // Clean up if initial setup fails
         }
-    }, [isElectron, setIsLoading, setError, webRTCUrl, isMuted]); // iceCandidateQueueRef is a ref, so not a dependency for useCallback
+    }, [isElectron, isWebRTCConnected, setIsLoading, setError, webRTCUrl, isMuted, disconnectWebRTC]);
 
-    const disconnectWebRTC = (pc: RTCPeerConnection | null, currentWs: WebSocket | null) => {
-        if (pc) {
-            pc.close();
-        }
-        if (currentWs) {
-            currentWs.close();
-        }
-    };
-
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        if (!videoElement) return;
-        const onEnterPiP = () => setIsInPiP(true);
-        const onLeavePiP = () => setIsInPiP(false);
-        videoElement.addEventListener('enterpictureinpicture', onEnterPiP);
-        videoElement.addEventListener('leavepictureinpicture', onLeavePiP);
-        return () => {
-            videoElement.removeEventListener('enterpictureinpicture', onEnterPiP);
-            videoElement.removeEventListener('leavepictureinpicture', onLeavePiP);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.muted = isMuted;
-            videoRef.current.volume = volume;
-        }
-    }, [isMuted, volume]);
-
-    useEffect(() => {
-        const startLocalWebcam = async () => {
-            try {
-                if (streamRef.current) {
-                    streamRef.current.getTracks().forEach(track => track.stop());
-                }
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
-                    audio: { deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined }
-                });
-                streamRef.current = stream;
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    videoRef.current.muted = isMuted;
-                }
-                setError(null);
-            } catch (err) {
-                handleStreamError(err);
-            }
-        };
-
-        let activePeerConnection: RTCPeerConnection | null = null;
-        let activeWebSocket: WebSocket | null = null;
-
-        if (isWebcamOn) {
-            if (webcamMode === 'local') {
-                // Ensure any existing WebRTC connection is explicitly closed if we switch from webrtc to local mode
-                if (activePeerConnection || activeWebSocket) {
-                     disconnectWebRTC(activePeerConnection, activeWebSocket);
-                     setIsWebRTCConnected(false); // Update global state
-                     if (videoRef.current) videoRef.current.srcObject = null;
-                }
-                stopWebcam(); // Stop any previous local webcam stream
-                setIsWebRTCConnected(false); // Just in case it was true
-
-                if (devices.length === 0) {
-                    if (!isLoading && !error) {
-                        getDevices();
-                    }
-                } else if (selectedDeviceId) {
-                    startLocalWebcam();
-                }
-            } else if (webcamMode === 'webrtc') {
-                stopWebcam(); // Stop local webcam if it was active
-                if (!isWebRTCConnected) { // Only try to connect if not already connected
-                    const connections = connectWebRTC();
-                    if (connections) {
-                        activePeerConnection = connections.peerConnection;
-                        activeWebSocket = connections.ws;
-
-                        activePeerConnection.oniceconnectionstatechange = () => {
-                            if (activePeerConnection?.iceConnectionState === 'connected') {
-                                setIsLoading(false);
-                                setIsWebRTCConnected(true);
-                                setError(null);
-                            } else if (activePeerConnection?.iceConnectionState === 'failed' || activePeerConnection?.iceConnectionState === 'disconnected') {
-                                setError('WebRTC connection failed or disconnected.');
-                                setIsLoading(false);
-                                setIsWebRTCConnected(false);
-                                disconnectWebRTC(activePeerConnection, activeWebSocket); // Clean up on failure
-                            }
-                        };
-
-                        activeWebSocket.onclose = () => {
-                            console.log("WebSocket closed.");
-                            setIsWebRTCConnected(false);
-                            setIsLoading(false);
-                            if (activePeerConnection?.iceConnectionState !== 'closed') {
-                                disconnectWebRTC(activePeerConnection, activeWebSocket);
-                            }
-                        };
-                        activeWebSocket.onerror = (err) => {
-                            console.error("WebSocket error:", err);
-                            setError('WebSocket connection error. Check the server URL and make sure the server is running.');
-                            setIsLoading(false);
-                            setIsWebRTCConnected(false);
-                            disconnectWebRTC(activePeerConnection, activeWebSocket);
-                        };
-
-                    } else {
-                        // connectWebRTC failed to return connections, error already set inside
-                        setIsWebRTCConnected(false);
-                        setIsLoading(false);
-                    }
-                }
-            }
-        } else { // isWebcamOn is false
-            stopWebcam(); // Stop local webcam
-            disconnectWebRTC(activePeerConnection, activeWebSocket); // Disconnect any active WebRTC
-            setIsWebRTCConnected(false); // Update global state
-            if (videoRef.current) videoRef.current.srcObject = null;
-            setDevices([]);
-        }
-
-        return () => {
-            console.log("useEffect cleanup running.");
-            stopWebcam(); // Always stop local stream
-            disconnectWebRTC(activePeerConnection, activeWebSocket); // Disconnect specific instances
-            setIsWebRTCConnected(false); // Update global state
-            if (videoRef.current) videoRef.current.srcObject = null;
-        };
-    }, [isWebcamOn, selectedDeviceId, selectedAudioDeviceId, devices.length, webcamMode, isMuted, getDevices, isLoading, error, connectWebRTC, setIsWebRTCConnected, setIsLoading, setError, videoRef]);
 
     const renderBody = () => {
         if (!isWebcamOn) return null;
