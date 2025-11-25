@@ -4,19 +4,14 @@ import { useConnectionStore } from './connectionStore';
 import { useSettingsStore } from './settingsStore';
 import { useLogStore } from './logStore';
 
-// Can be 'X+', 'X-', 'Y+', 'Y-', 'Z+', 'Z-'
-export type ActiveJog = string | null;
-
 interface MachineStoreState {
   machineState: MachineState | null;
   isJogging: boolean;
   isHomedSinceConnect: boolean;
   isMacroRunning: boolean;
-  activeJog: ActiveJog;
   actions: {
     setMachineState: (state: MachineState | null) => void;
     setIsJogging: (isJogging: boolean) => void;
-    setActiveJog: (jog: ActiveJog) => void;
     setIsHomedSinceConnect: (isHomed: boolean) => void;
     setIsMacroRunning: (isRunning: boolean) => void;
     reset: () => void;
@@ -37,7 +32,6 @@ const initialState = {
   isJogging: false,
   isHomedSinceConnect: false,
   isMacroRunning: false,
-  activeJog: null,
 };
 
 export const useMachineStore = create<MachineStoreState>((set) => ({
@@ -45,7 +39,6 @@ export const useMachineStore = create<MachineStoreState>((set) => ({
   actions: {
     setMachineState: (state) => set({ machineState: state }),
     setIsJogging: (isJogging) => set({ isJogging }),
-    setActiveJog: (jog) => set({ activeJog: jog }),
     setIsHomedSinceConnect: (isHomed) => set({ isHomedSinceConnect: isHomed }),
     setIsMacroRunning: (isRunning) => set({ isMacroRunning: isRunning }),
     reset: () => set(initialState),
@@ -125,30 +118,27 @@ export const useMachineStore = create<MachineStoreState>((set) => ({
     handleJog: (axis, direction, step) => {
       const { machineSettings } = useSettingsStore.getState();
       const { actions: connectionActions } = useConnectionStore.getState();
-      const { machineState } = useMachineStore.getState();
+      const { machineState } = useMachineStore.getState(); // Access current machineState
       
       const { jogFeedRate } = machineSettings;
       const distance = direction * step;
       const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
       
       if (machineState) {
-        set((state) => ({
+        set((state) => ({ // Use set to update machineState
           machineState: {
             ...state.machineState,
             status: 'Jog',
-          } as MachineState,
+          } as MachineState, // Explicitly cast to MachineState
         }));
       }
 
-      const jogId = `jog-${axis.toLowerCase()}${direction > 0 ? '-plus' : '-minus'}`;
-      set({ activeJog: jogId });
       connectionActions.sendLine(command);
     },
 
     handleJogStop: () => {
       const { actions: connectionActions } = useConnectionStore.getState();
       connectionActions.sendRealtimeCommand('\x85');
-      set({ activeJog: null });
     },
 
     handleManualCommand: (command) => {

@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, memo, useEffect, useRef } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -11,7 +11,6 @@ import {
   Probe,
 } from "./Icons";
 import { MachineState } from "../types";
-import { useMachineStore } from "../stores/machineStore";
 
 interface JogPanelProps {
   isConnected: boolean;
@@ -55,7 +54,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isMacroRunning,
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
-    const activeJog = useMachineStore((state) => state.activeJog);
+    const pressedJogKey = useRef<string | null>(null);
 
     const isControlDisabled =
       !isConnected ||
@@ -70,6 +69,60 @@ const JogPanel: React.FC<JogPanelProps> = memo(
 
     const stepSizes =
       unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
+
+    const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
+      ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
+      ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
+      ArrowLeft: { axis: "X", direction: -1, id: "jog-x-minus" },
+      ArrowRight: { axis: "X", direction: 1, id: "jog-x-plus" },
+      PageUp: { axis: "Z", direction: 1, id: "jog-z-plus" },
+      PageDown: { axis: "Z", direction: -1, id: "jog-z-minus" },
+    };
+
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
+        ) {
+          return; // Don't jog if typing in an input field
+        }
+
+        const hotkey = jogHotkeys[event.key];
+        if (hotkey && !isControlDisabled) {
+          event.preventDefault();
+          if (pressedJogKey.current !== event.key) {
+            pressedJogKey.current = event.key;
+            onFlash(hotkey.id);
+            onJog(hotkey.axis, hotkey.direction, 99999);
+          }
+        }
+      };
+
+      const handleKeyUp = (event: KeyboardEvent) => {
+        if (
+          event.target instanceof HTMLInputElement ||
+          event.target instanceof HTMLTextAreaElement
+        ) {
+          return;
+        }
+
+        if (pressedJogKey.current === event.key) {
+          pressedJogKey.current = null;
+          onJogStop();
+          onFlash(""); // Clear flashing button
+        }
+      };
+
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
+
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
+      };
+    }, [isControlDisabled, onJog, onJogStop, onFlash]);
+
 
     const JogButton = ({
       id,
@@ -88,7 +141,6 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     }) => {
       const isZButton = axis === "Z";
       const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
-      const isActive = activeJog === id;
 
       let title = `${label} (${axis}${
         direction > 0 ? "+" : "-"
@@ -115,9 +167,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           disabled={isDisabled}
-          className={`flex items-center justify-center p-4 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-            isActive ? "bg-primary text-white" : "bg-secondary hover:bg-secondary-focus"
-          } ${
+          className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${
             flashingButton === id ? "ring-4 ring-white ring-inset" : ""
           }`}
           title={title}

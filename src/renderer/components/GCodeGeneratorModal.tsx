@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
+import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS } from '@/services/cncFonts.js';
 import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams } from '@/types';
@@ -11,8 +11,6 @@ import ProfileGenerator from './ProfileGenerator';
 import PocketGenerator from './PocketGenerator';
 import ThreadMillingGenerator from './ThreadMillingGenerator';
 import TextGenerator from './TextGenerator';
-import Modal from './Modal';
-import { useUIStore } from '@/stores/uiStore';
 
 interface TabProps {
     label: string;
@@ -54,6 +52,7 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
         const startX = Math.floor(vbMinX / spacing) * spacing;
         for (let x = startX; x <= vbMinX + vbWidth; x += spacing) {
             gridElements.push(<line key={`v-${x}`} x1={x} y1={vbMinY} x2={x} y2={vbMinY + vbHeight} style={gridLineStyle as React.CSSProperties} />);
+            // Add labels along the top edge
             labelElements.push(
                 <text key={`lx-${x}`} x={x} y={vbMinY} transform="scale(1, -1)" style={{ ...labelStyle, textAnchor: 'middle', dominantBaseline: 'hanging' } as React.CSSProperties}>
                     {Number(x).toFixed(0)}
@@ -66,6 +65,7 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
         for (let y = startY; y <= vbMinY + vbHeight; y += spacing) {
             gridElements.push(<line key={`h-${y}`} x1={vbMinX} y1={y} x2={vbMinX + vbWidth} y2={y} style={gridLineStyle as React.CSSProperties} />);
             const yFlipped = -y;
+            // Add labels along the left edge
             labelElements.push(
                 <text key={`ly-${y}`} x={vbMinX} y={y} transform="scale(1, -1)" style={{ ...labelStyle, textAnchor: 'start', dominantBaseline: 'middle' } as React.CSSProperties}>
                     {Number(yFlipped).toFixed(0)}
@@ -74,9 +74,11 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
         }
     }
     
+    // Y-Axis
     if (0 >= vbMinX && 0 <= vbMinX + vbWidth) {
         gridElements.push(<line key="axis-y" x1={0} y1={vbMinY} x2={0} y2={vbMinY + vbHeight} style={axisLineStyle as React.CSSProperties} />);
     }
+    // X-Axis
     if (0 >= vbMinY && 0 <= vbMinY + vbHeight) {
         gridElements.push(<line key="axis-x" x1={vbMinX} y1={0} x2={vbMinX + vbWidth} y2={0} style={axisLineStyle as React.CSSProperties} />);
     }
@@ -85,6 +87,7 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
         <div className="aspect-square w-full bg-secondary rounded">
             <svg viewBox={viewBox} className="w-full h-full">
                 <g transform="scale(1, -1)">
+                    {/* Work Area Rectangle */}
                     {machineSettings.workArea && (
                         <rect 
                             x={0} 
@@ -131,13 +134,13 @@ interface GCodeGeneratorModalProps {
 }
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
-    const activeTab = useUIStore(state => state.activeGeneratorTab);
-    const setActiveTab = useUIStore(state => state.actions.setActiveGeneratorTab);
-    
+    const [activeTab, setActiveTab] = useState('surfacing');
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
     const [viewBox, setViewBox] = useState('0 0 100 100'); 
     const [generationError, setGenerationError] = useState<string | null>(null);
+    
+    // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
         isEnabled: false,
         pattern: 'rect',
@@ -145,17 +148,977 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         circCopies: 6, circRadius: 40, circCenterX: 50, circCenterY: 50, circStartAngle: 0,
     });
     
-    // Generation logic remains the same, so it's collapsed for brevity
-    const generateDrillingCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateProfileCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateSurfacingCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generatePocketCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateBoreCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateSlotCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateTextCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
-    const generateThreadMillingCode = (machineSettings: MachineSettings) => { return { code: [], paths: [], bounds: {}, error: null }; };
+    const calculateViewBox = useCallback((bounds) => {
+        if (!bounds || bounds.minX === Infinity) return '0 -100 100 100';
+        const { minX = 0, minY = 0, maxX = 100, maxY = 100 } = bounds;
+        const width = Math.abs(maxX - minX) || 100;
+        const height = Math.abs(maxY - minY) || 100;
+        const padding = Math.max(width, height) * 0.15;
+
+        const vbMinX = minX - padding;
+        const vbWidth = width + padding * 2;
+        
+        // Because of the scale(1, -1) transform, the Y coordinates are flipped.
+        // The top of the viewbox needs to be the negated maximum Y coordinate.
+        const vbMinY = -(maxY + padding);
+        const vbHeight = height + padding * 2;
+
+        return `${vbMinX} ${vbMinY} ${vbWidth} ${vbHeight}`;
+    }, [previewPaths.bounds?.minX, previewPaths.bounds?.minY, previewPaths.bounds?.maxX, previewPaths.bounds?.maxY]);
+
+    const fitView = useCallback(() => {
+        setViewBox(calculateViewBox(previewPaths.bounds));
+    }, [previewPaths.bounds, calculateViewBox]);
+
+    // This effect automatically fits the view whenever the preview bounds change.
+    useEffect(() => {
+        if (previewPaths.bounds && previewPaths.bounds.minX !== Infinity)
+            fitView();
+    }, [fitView]);
+
+    const generateDrillingCode = (machineSettings: MachineSettings) => {
+        const drillParams = generatorSettings.drilling;
+        const toolIndex = toolLibrary.findIndex(t => t.id === drillParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+
+        const { depth, peck, retract, feed, spindle, safeZ, toolpathOrigin } = drillParams;
+        
+        const numericDepth = Number(depth);
+        const numericPeck = Number(peck);
+        const numericRetract = Number(retract);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }
+
+        const code = [
+            `(--- Drilling Operation: ${drillParams.drillType} ---)`,
+            `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
+            `G21 G90`, `M3 S${numericSpindle}`
+        ];
+        const paths = [];
+        const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        const updateBounds = (x, y) => {
+            bounds.minX = Math.min(bounds.minX, x);
+            bounds.maxX = Math.max(bounds.maxX, x);
+            bounds.minY = Math.min(bounds.minY, y);
+            bounds.maxY = Math.max(bounds.maxY, y);
+        };
+
+        const points = [];
+        if (drillParams.drillType === 'single') {
+            const numericSingleX = Number(drillParams.singleX);
+            const numericSingleY = Number(drillParams.singleY);
+            if (isNaN(numericSingleX) || isNaN(numericSingleY)) {
+                return { error: "Please fill all required fields with valid numbers for single drilling.", code: [], paths: [], bounds: {} };
+            }
+            points.push({ x: numericSingleX + originOffsetX, y: numericSingleY + originOffsetY });
+        } else if (drillParams.drillType === 'rect') {
+            const numericRectCols = Number(drillParams.rectCols);
+            const numericRectRows = Number(drillParams.rectRows);
+            const numericRectSpacingX = Number(drillParams.rectSpacingX);
+            const numericRectSpacingY = Number(drillParams.rectSpacingY);
+            const numericRectStartX = Number(drillParams.rectStartX);
+            const numericRectStartY = Number(drillParams.rectStartY);
+
+            if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY, numericRectStartX, numericRectStartY].some(isNaN)) {
+                return { error: "Please fill all required fields with valid numbers for rectangular drilling.", code: [], paths: [], bounds: {} };
+            }
+
+            for (let row = 0; row < numericRectRows; row++) {
+                for (let col = 0; col < numericRectCols; col++) {
+                    points.push({
+                        x: numericRectStartX + col * numericRectSpacingX + originOffsetX,
+                        y: numericRectStartY + row * numericRectSpacingY + originOffsetY
+                    });
+                }
+            }
+        } else { // circ
+            const numericCircHoles = Number(drillParams.circHoles);
+            const numericCircRadius = Number(drillParams.circRadius);
+            const numericCircCenterX = Number(drillParams.circCenterX);
+            const numericCircCenterY = Number(drillParams.circCenterY);
+            const numericCircStartAngle = Number(drillParams.circStartAngle);
+
+            if ([numericCircHoles, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
+                return { error: "Please fill all required fields with valid numbers for circular drilling.", code: [], paths: [], bounds: {} };
+            }
+            
+            const angleStep = numericCircHoles > 0 ? 360 / numericCircHoles : 0;
+            for (let i = 0; i < numericCircHoles; i++) {
+                const angle = (numericCircStartAngle + i * angleStep) * (Math.PI / 180);
+                points.push({
+                    x: numericCircCenterX + numericCircRadius * Math.cos(angle) + originOffsetX,
+                    y: numericCircCenterY + numericCircRadius * Math.sin(angle) + originOffsetY
+                });
+            }
+        }
+
+        // Use G83 Peck Drilling Cycle
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push(`G83 Z${numericDepth.toFixed(3)} Q${numericPeck.toFixed(3)} R${numericRetract.toFixed(3)} F${numericFeed.toFixed(3)}`);
+        points.forEach(p => {
+            code.push(`X${p.x.toFixed(3)} Y${p.y.toFixed(3)}`);
+            paths.push({ cx: p.x, cy: p.y, r: selectedTool.diameter / 2, stroke: 'var(--color-accent-yellow)', fill: 'var(--color-accent-yellow-transparent)' });
+            updateBounds(p.x, p.y);
+        });
+        code.push('G80'); // Cancel cycle
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push('M5');
+
+        return { code, paths, bounds, error: null };
+    };
+
+    const generateProfileCode = (machineSettings: MachineSettings) => {
+        const profileParams = generatorSettings.profile;
+        const toolIndex = toolLibrary.findIndex(t => t.id === profileParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const toolDiameter = selectedTool.diameter;
+
+        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ, toolpathOrigin } = profileParams;
+        
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericCornerRadius = Number(cornerRadius);
+        const numericDiameter = Number(diameter);
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        const numericNumTabs = Number(numTabs);
+        const numericTabWidth = Number(tabWidth);
+        const numericTabHeight = Number(tabHeight);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
+            // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
+            `G21 G90`, `M3 S${numericSpindle}`];
+        const paths = [];
+        const toolRadius = toolDiameter / 2;
+        let offset = 0;
+        if (cutSide === 'outside') offset = toolRadius;
+        if (cutSide === 'inside') offset = -toolRadius;
+
+        code.push(`G0 Z${numericSafeZ}`, `M5`);
+        const bounds = shape === 'rect' ? {
+            minX: -offset + originOffsetX,
+            minY: -offset + originOffsetY,
+            maxX: numericWidth + offset + originOffsetX,
+            maxY: numericLength + offset + originOffsetY
+        } : {
+            minX: numericDiameter / 2 - radius + originOffsetX,
+            minY: numericDiameter / 2 - radius + originOffsetY,
+            maxX: numericDiameter / 2 + radius + originOffsetX,
+            maxY: numericDiameter / 2 + radius + originOffsetY
+        };
+        return { code, paths, bounds, error: null };
+    };
+
+
+
+    const generateSurfacingCode = (machineSettings: MachineSettings) => {
+        const surfaceParams = generatorSettings.surfacing;
+        const toolIndex = toolLibrary.findIndex(t => t.id === surfaceParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+
+        const { width, length, depth, stepover, feed, spindle, safeZ, direction, toolpathOrigin } = surfaceParams;
+        
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericDepth = Number(depth);
+        const numericStepover = Number(stepover);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericWidth, numericLength, numericDepth, numericStepover, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(--- Surfacing Operation ---)`,
+            `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
+            `G21 G90`, `M3 S${numericSpindle}`
+        ];
+        const paths = [];
+        const toolRadius = selectedTool.diameter / 2;
+        const stepoverDist = selectedTool.diameter * (numericStepover / 100);
+
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+
+        if (direction === 'horizontal') {
+            let y = toolRadius;
+            let xDirection = 1; // 1 for right, -1 for left
+            while (y <= numericLength + toolRadius) {
+                const startX = (xDirection === 1) ? -toolRadius : numericWidth + toolRadius;
+                const endX = (xDirection === 1) ? numericWidth + toolRadius : -toolRadius;
+                code.push(`G0 X${(startX + originOffsetX).toFixed(3)} Y${(y + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                code.push(`G1 X${(endX + originOffsetX).toFixed(3)} F${numericFeed}`);
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+                paths.push({ d: `M ${(startX + originOffsetX)} ${(y + originOffsetY)} L ${(endX + originOffsetX)} ${(y + originOffsetY)}`, stroke: 'var(--color-accent-yellow)' });
+                y += stepoverDist;
+                xDirection *= -1; // Reverse direction for next pass
+            }
+        } else { // vertical
+            let x = toolRadius;
+            let yDirection = 1; // 1 for up, -1 for down
+            while (x <= numericWidth + toolRadius) {
+                const startY = (yDirection === 1) ? -toolRadius : numericLength + toolRadius;
+                const endY = (yDirection === 1) ? numericLength + toolRadius : -toolRadius;
+                code.push(`G0 X${(x + originOffsetX).toFixed(3)} Y${(startY + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                code.push(`G1 Y${(endY + originOffsetY).toFixed(3)} F${numericFeed}`);
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+                paths.push({ d: `M ${(x + originOffsetX).toFixed(3)} ${(startY + originOffsetY).toFixed(3)} L ${(x + originOffsetX).toFixed(3)} ${(endY + originOffsetY).toFixed(3)}`, stroke: 'var(--color-accent-yellow)' });
+                x += stepoverDist;
+                yDirection *= -1; // Reverse direction for next pass
+            }
+        }
+
+        code.push(`M5`);
+        const bounds = {
+            minX: originOffsetX,
+            minY: originOffsetY,
+            maxX: numericWidth + originOffsetX,
+            maxY: numericLength + originOffsetY
+        };
+        return { code, paths, bounds, error: null };
+    };
+
+    const generatePocketCode = (machineSettings: MachineSettings) => {
+        const pocketParams = generatorSettings.pocket;
+        const toolIndex = toolLibrary.findIndex(t => t.id === pocketParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+
+        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ, toolpathOrigin } = pocketParams;
+        
+        const numericWidth = Number(width);
+        const numericLength = Number(length);
+        const numericCornerRadius = Number(cornerRadius); // Not directly used in current pocket code, but good to convert
+        const numericDiameter = Number(diameter);
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        const numericStepover = Number(stepover);
+        const numericFeed = Number(feed);
+        const numericPlungeFeed = Number(plungeFeed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericDepth, numericDepthPerPass, numericStepover, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(--- Pocket Operation: ${shape} ---)`,
+            `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
+            `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ}`
+        ];
+        const paths = [];
+        const toolRadius = selectedTool.diameter / 2;
+        const stepoverDist = selectedTool.diameter * (numericStepover / 100);
+
+        let currentDepth = 0;
+        while (currentDepth > numericDepth) {
+            currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
+            code.push(`(--- Pass at Z=${currentDepth.toFixed(3)} ---)`);
+
+            if (shape === 'rect') {
+                const centerX = numericWidth / 2;
+                const centerY = numericLength / 2;
+                code.push(`G0 X${(centerX + originOffsetX).toFixed(3)} Y${(centerY + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericPlungeFeed}`);
+
+                // Simplified raster clearing for now
+                let y = toolRadius;
+                while (y <= numericLength - toolRadius) {
+                    code.push(`G1 X${(numericWidth - toolRadius + originOffsetX).toFixed(3)} Y${(y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                    paths.push({ d: `M${(toolRadius + originOffsetX)} ${(y + originOffsetY)} L${(numericWidth - toolRadius + originOffsetX)} ${(y + originOffsetY)}`, stroke: 'var(--color-accent-yellow)' });
+                    y += stepoverDist;
+                    if (y <= numericLength - toolRadius) {
+                        code.push(`G1 X${(toolRadius + originOffsetX).toFixed(3)} Y${(y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                        paths.push({ d: `M${(numericWidth - toolRadius + originOffsetX)} ${(y - stepoverDist + originOffsetY)} L${(numericWidth - toolRadius + originOffsetX)} ${(y + originOffsetY)}`, stroke: 'var(--color-text-secondary)' });
+                    }
+                }
+            } else { // Circle
+                const centerX = numericDiameter / 2;
+                const centerY = numericDiameter / 2;
+                const maxRadius = numericDiameter / 2 - toolRadius; // Used for pocketing, not for bounding box
+                code.push(`G0 X${(centerX + originOffsetX).toFixed(3)} Y${(centerY + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericPlungeFeed}`);
+                // Simplified for now, would need helical interpolation
+            }
+        }
+
+        code.push(`G0 Z${numericSafeZ}`, `M5`, `G0 X0 Y0`);
+        const bounds = shape === 'rect' ? {
+            minX: originOffsetX,
+            minY: originOffsetY,
+            maxX: numericWidth + originOffsetX,
+            maxY: numericLength + originOffsetY
+        } : {
+            minX: originOffsetX,
+            minY: originOffsetY,
+            maxX: numericDiameter + originOffsetX,
+            maxY: numericDiameter + originOffsetY
+        };
+        return { code, paths, bounds, error: null };
+    };
+    const generateBoreCode = (machineSettings: MachineSettings) => {
+        const boreParams = generatorSettings.bore;
+        const toolIndex = toolLibrary.findIndex(t => t.id === boreParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+
+        const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ, toolpathOrigin } = boreParams;
+
+        const numericCenterX = Number(centerX);
+        const numericCenterY = Number(centerY);
+        const numericHoleDiameter = Number(holeDiameter);
+        const numericHoleDepth = Number(holeDepth);
+        const numericCbDiameter = Number(cbDiameter);
+        const numericCbDepth = Number(cbDepth);
+        const numericDepthPerPass = Number(depthPerPass);
+        const numericFeed = Number(feed);
+        const numericPlungeFeed = Number(plungeFeed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericCenterX, numericCenterY, numericHoleDiameter, numericHoleDepth, numericDepthPerPass, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (counterboreEnabled && ([numericCbDiameter, numericCbDepth].some(isNaN)))) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+        
+        if (numericHoleDiameter <= selectedTool.diameter) {
+            return { error: "Tool must be smaller than hole diameter.", code: [], paths: [], bounds: {} };
+        }
+        if (counterboreEnabled && numericCbDiameter <= selectedTool.diameter) {
+            return { error: "Tool must be smaller than counterbore diameter.", code: [], paths: [], bounds: {} };
+        }
+        if (counterboreEnabled && numericCbDiameter <= numericHoleDiameter) {
+            return { error: "Counterbore must be larger than hole diameter.", code: [], paths: [], bounds: {} };
+        }
+
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericHoleDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Hole Depth.", code: [], paths: [], bounds: {} };
+        }
+        if (counterboreEnabled && numericDepthPerPass > Math.abs(numericCbDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Counterbore Depth.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(--- Bore Operation ---)`,
+            `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
+            `G21 G90`, `M3 S${numericSpindle}`
+        ];
+        const paths = [];
+        const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        const updateBounds = (x, y, r) => {
+            bounds.minX = Math.min(bounds.minX, x - r);
+            bounds.maxX = Math.max(bounds.maxX, x + r);
+            bounds.minY = Math.min(bounds.minY, y - r);
+            bounds.maxY = Math.max(bounds.maxY, y + r);
+        };
+
+        const doHelicalBore = (targetDiameter: number, targetDepth: number, startZ: number = 0) => {
+            const pathRadius = (targetDiameter - selectedTool.diameter) / 2;
+            if (pathRadius <= 0) return;
+
+            const currentCenterX = numericCenterX + originOffsetX;
+            const currentCenterY = numericCenterY + originOffsetY;
+
+            code.push(`(Boring to Ø${targetDiameter} at Z=${targetDepth})`);
+            paths.push({ cx: currentCenterX, cy: currentCenterY, r: targetDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
+            updateBounds(currentCenterX, currentCenterY, targetDiameter / 2);
+
+            code.push(`G0 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} Z${numericSafeZ.toFixed(3)}`);
+            code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
+
+            let currentDepth = startZ;
+            while (currentDepth > targetDepth) {
+                currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
+                // Ramp in
+                code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
+                // Full circle
+                code.push(`G2 I${-pathRadius.toFixed(3)} J0`);
+                // Ramp out
+                code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius / 2} J0`);
+
+                if (currentDepth === Math.max(targetDepth, startZ - numericDepthPerPass)) {
+                    paths.push({ cx: currentCenterX, cy: currentCenterY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
+                }
+            }
+        };
+
+        if (counterboreEnabled) {
+            // Order depths from shallowest to deepest
+            if (numericCbDepth > numericHoleDepth) {
+                doHelicalBore(numericCbDiameter, numericCbDepth);
+                doHelicalBore(numericHoleDiameter, numericHoleDepth, numericCbDepth);
+            } else {
+                // This case is less common but possible
+                doHelicalBore(numericHoleDiameter, numericHoleDepth);
+                doHelicalBore(numericCbDiameter, numericCbDepth); // This will just re-trace in air, but handles the logic simply
+            }
+        } else {
+            doHelicalBore(numericHoleDiameter, numericHoleDepth);
+        }
+
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push(`M5`);
+        code.push(`G0 X0 Y0`);
+
+        return { code, paths, bounds, error: null };
+    };
+
+    const generateSlotCode = (machineSettings: MachineSettings) => {
+        const slotParams = generatorSettings.slot;
+        const toolIndex = toolLibrary.findIndex(t => t.id === slotParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const toolDiameter = selectedTool.diameter;
+        
+        const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle, toolpathOrigin } = slotParams;
+        
+        const numericSlotWidth = Number(slotWidth);
+        const numericDepth = Number(depth);
+        const numericDepthPerPass = Number(depthPerPass);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+        const numericStartX = Number(startX);
+        const numericStartY = Number(startY);
+        const numericEndX = Number(endX);
+        const numericEndY = Number(endY);
+        const numericCenterX = Number(centerX);
+        const numericCenterY = Number(centerY);
+        const numericRadius = Number(radius);
+        const numericStartAngle = Number(startAngle);
+        const numericEndAngle = Number(endAngle);
+
+        if ([numericSlotWidth, numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (type === 'straight' && [numericStartX, numericStartY, numericEndX, numericEndY].some(isNaN)) || (type === 'arc' && [numericCenterX, numericCenterY, numericRadius, numericStartAngle, numericEndAngle].some(isNaN))) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+
+        if (numericDepthPerPass <= 0) {
+            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+        }
+        if (numericDepthPerPass > Math.abs(numericDepth)) {
+            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(--- Slot Operation: ${type} ---)`,
+            `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
+            // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
+            `G21 G90`, `M3 S${numericSpindle}`
+        ];
+        const paths = [];
+        let bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        const updateBounds = (x: number, y: number) => {
+            bounds.minX = Math.min(bounds.minX, x);
+            bounds.maxX = Math.max(bounds.maxX, x);
+            bounds.minY = Math.min(bounds.minY, y);
+            bounds.maxY = Math.max(bounds.maxY, y);
+        };
+        
+        const offsets = [];
+        if (numericSlotWidth <= toolDiameter) {
+            offsets.push(0);
+        } else {
+            const wallOffset = (numericSlotWidth - toolDiameter) / 2;
+            offsets.push(-wallOffset, wallOffset);
+            if (numericSlotWidth > toolDiameter * 2) {
+                 offsets.push(0); // Add a center pass
+            }
+        }
+        offsets.sort((a,b) => a-b);
+
+
+        let currentDepth = 0;
+        while (currentDepth > numericDepth) {
+            currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
+            code.push(`(--- Pass at Z=${currentDepth.toFixed(3)} ---)`);
+
+            for (const offset of offsets) {
+                if (type === 'straight') {
+                    const angle = Math.atan2(numericEndY - numericStartY, numericEndX - numericStartX);
+                    const perpAngle = angle + Math.PI / 2;
+
+                    const dx = Math.cos(perpAngle) * offset;
+                    const dy = Math.sin(perpAngle) * offset;
+
+                    const passStartX = numericStartX + dx;
+                    const passStartY = numericStartY + dy;
+                    const passEndX = numericEndX + dx;
+                    const passEndY = numericEndY + dy;
+
+                    code.push(`G0 Z${numericSafeZ}`);
+                    code.push(`G0 X${(passStartX + originOffsetX).toFixed(3)} Y${(passStartY + originOffsetY).toFixed(3)}`);
+                    code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`);
+                    code.push(`G1 X${(passEndX + originOffsetX).toFixed(3)} Y${(passEndY + originOffsetY).toFixed(3)} F${numericFeed}`);
+
+                    if (currentDepth === Math.max(numericDepth, -numericDepthPerPass)) {
+                        paths.push({ d: `M${(passStartX + originOffsetX)} ${(passStartY + originOffsetY)} L${(passEndX + originOffsetX)} ${(passEndY + originOffsetY)}`, stroke: 'var(--color-accent-yellow)', strokeWidth: `${toolDiameter}%` });
+                        updateBounds(passStartX + originOffsetX, passStartY + originOffsetY);
+                        updateBounds(passEndX + originOffsetX, passEndY + originOffsetY);
+                    }
+                } else { // arc
+                    const passRadius = numericRadius + offset;
+                    if (passRadius <= 0) continue;
+
+                    const startRad = numericStartAngle * (Math.PI / 180);
+                    const endRad = numericEndAngle * (Math.PI / 180);
+
+                    const passStartX = numericCenterX + passRadius * Math.cos(startRad);
+                    const passStartY = numericCenterY + passRadius * Math.sin(startRad);
+                    const passEndX = numericCenterX + passRadius * Math.cos(endRad);
+                    const passEndY = numericCenterY + passRadius * Math.sin(endRad);
+
+                    const gCodeArc = (numericEndAngle > numericStartAngle) ? 'G3' : 'G2';
+                    const sweepFlag = (numericEndAngle > numericStartAngle) ? 1 : 0;
+                    
+                    const I = numericCenterX - passStartX;
+                    const J = numericCenterY - passStartY;
+                    
+                    code.push(`G0 Z${numericSafeZ}`);
+                    code.push(`G0 X${(passStartX + originOffsetX).toFixed(3)} Y${(passStartY + originOffsetY).toFixed(3)}`);
+                    code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`);
+                    code.push(`${gCodeArc} X${(passEndX + originOffsetX).toFixed(3)} Y${(passEndY + originOffsetY).toFixed(3)} I${I.toFixed(3)} J${J.toFixed(3)} F${numericFeed}`);
+                    
+                    if (currentDepth === Math.max(numericDepth, -numericDepthPerPass)) {
+                        const largeArcFlag = Math.abs(numericEndAngle - numericStartAngle) > 180 ? 1 : 0;
+                        paths.push({ d: `M ${(passStartX + originOffsetX)} ${(passStartY + originOffsetY)} A ${passRadius} ${passRadius} 0 ${largeArcFlag} ${sweepFlag} ${(passEndX + originOffsetX)} ${(passEndY + originOffsetY)}`, stroke: 'var(--color-accent-yellow)', fill: 'none', strokeWidth: `${toolDiameter}%` });
+                        // Simple bounding box for arc
+                        updateBounds(numericCenterX - passRadius + originOffsetX, numericCenterY - passRadius + originOffsetY);
+                        updateBounds(numericCenterX + passRadius + originOffsetX, numericCenterY + passRadius + originOffsetY);
+                    }
+                }
+            }
+        }
+
+        code.push(`G0 Z${numericSafeZ}`, `M5`);
+        // Final bounds adjustment
+        bounds.minX += originOffsetX;
+        bounds.maxX += originOffsetX;
+        bounds.minY += originOffsetY;
+        bounds.maxY += originOffsetY;
+
+        return { code, paths, bounds, error: null };
+    };
     
-    const applyArrayPattern = useCallback((singleOpResult) => { return singleOpResult; }, [arraySettings]);
+    const generateTextCode = (machineSettings: MachineSettings) => {
+        const textParams = generatorSettings.text;
+        const toolIndex = toolLibrary.findIndex(t => t.id === textParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+
+        const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ, toolpathOrigin } = textParams;
+        
+        const numericHeight = Number(height);
+        const numericSpacing = Number(spacing);
+        const numericStartX = Number(startX);
+        const numericStartY = Number(startY);
+        const numericDepth = Number(depth);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericHeight, numericSpacing, numericStartX, numericStartY, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || !text) {
+            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+
+        const fontData = FONTS[font];
+        if (!fontData) {
+             return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [];
+        const paths = [];
+        const FONT_BASE_HEIGHT = 7;
+        const FONT_BASE_WIDTH = 5;
+
+        const scale = numericHeight / FONT_BASE_HEIGHT;
+        const charWidth = FONT_BASE_WIDTH * scale;
+        const totalTextWidth = (text.length * charWidth) + Math.max(0, (text.length - 1) * numericSpacing);
+
+        let currentX = numericStartX;
+        if (alignment === 'center') {
+            currentX -= totalTextWidth / 2;
+        } else if (alignment === 'right') {
+            currentX -= totalTextWidth;
+        }
+
+        const startOffsetX = currentX;
+
+        code.push(`(--- Text Engraving ---)`);
+        code.push(`(Tool: ${selectedTool.name})`);
+        code.push(`(Text: ${text}, Font: ${font})`);
+        // code.push(`T${toolIndex + 1} M6`); // Tool change disabled for non-ATC setups
+        code.push(`G21 G90`);
+        code.push(`M3 S${numericSpindle}`);
+
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i].toUpperCase();
+            const charData = fontData.characters[char];
+            
+            if (charData) {
+                if (fontData.type === 'stroke') {
+                    for (const stroke of charData) {
+                        const p1 = {
+                            x: startOffsetX + i * (charWidth + numericSpacing) + stroke.p1.x * scale,
+                            y: numericStartY + stroke.p1.y * scale
+                        };
+                        const p2 = {
+                            x: startOffsetX + i * (charWidth + numericSpacing) + stroke.p2.x * scale,
+                            y: numericStartY + stroke.p2.y * scale
+                        };
+
+                        code.push(`G0 Z${numericSafeZ}`);
+                        code.push(`G0 X${(p1.x + originOffsetX).toFixed(3)} Y${(p1.y + originOffsetY).toFixed(3)}`);
+                        code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                        code.push(`G1 X${(p2.x + originOffsetX).toFixed(3)} Y${(p2.y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                        code.push(`G0 Z${numericSafeZ}`);
+
+                        paths.push({ d: `M${(p1.x + originOffsetX)} ${(p1.y + originOffsetY)} L${(p2.x + originOffsetX)} ${(p2.y + originOffsetY)}`, stroke: 'var(--color-accent-yellow)' });
+                    }
+                } else if (fontData.type === 'outline') {
+                    for (const path of charData) {
+                        if (path.length === 0) continue;
+
+                        const scaledPath = path.map(p => ({
+                           x: startOffsetX + i * (charWidth + numericSpacing) + p.x * scale,
+                           y: numericStartY + p.y * scale
+                        }));
+
+                        code.push(`G0 Z${numericSafeZ}`);
+                        code.push(`G0 X${(scaledPath[0].x + originOffsetX).toFixed(3)} Y${(scaledPath[0].y + originOffsetY).toFixed(3)}`);
+                        code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+                        
+                        for (let j = 1; j < scaledPath.length; j++) {
+                           code.push(`G1 X${(scaledPath[j].x + originOffsetX).toFixed(3)} Y${(scaledPath[j].y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                        }
+                        
+                        if (scaledPath[0].x !== scaledPath[scaledPath.length-1].x || scaledPath[0].y !== scaledPath[scaledPath.length-1].y) {
+                           code.push(`G1 X${(scaledPath[0].x + originOffsetX).toFixed(3)} Y${(scaledPath[0].y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                        }
+                        code.push(`G0 Z${numericSafeZ}`);
+
+                        const pathString = "M" + scaledPath.map(p => `${(p.x + originOffsetX)} ${(p.y + originOffsetY)}`).join(" L ") + " Z";
+                        paths.push({ d: pathString, stroke: 'var(--color-accent-yellow)', 'strokeWidth': '2%', fill: 'none' });
+                    }
+                }
+            }
+        }
+
+        code.push('M5');
+        code.push(`G0 X${(numericStartX + originOffsetX).toFixed(3)} Y${(numericStartY + originOffsetY).toFixed(3)}`);
+        
+        const bounds = {
+            minX: startOffsetX + originOffsetX,
+            maxX: startOffsetX + totalTextWidth + originOffsetX,
+            minY: numericStartY + originOffsetY,
+            maxY: numericStartY + numericHeight + originOffsetY
+        };
+        
+        return { code, paths, bounds, error: null };
+    };
+
+    const generateThreadMillingCode = (machineSettings: MachineSettings) => {
+        const threadParams = generatorSettings.thread;
+        const toolIndex = toolLibrary.findIndex(t => t.id === threadParams.toolId);
+        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
+        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        const toolDiameter = selectedTool.diameter;
+
+        const { type, hand, feed, spindle, safeZ, toolpathOrigin } = threadParams;
+        const numericDiameter = Number(threadParams.diameter);
+        const numericPitch = Number(threadParams.pitch);
+        const numericDepth = Number(threadParams.depth);
+        const numericFeed = Number(feed);
+        const numericSpindle = Number(spindle);
+        const numericSafeZ = Number(safeZ);
+
+        if ([numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || [numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(p => p <= 0)) {
+            return { error: "Please fill all fields with positive values.", code: [], paths: [], bounds: {} };
+        }
+        if (toolDiameter >= numericDiameter && type === 'internal') {
+            return { error: "Tool diameter must be smaller than thread diameter for internal threads.", code: [], paths: [], bounds: {} };
+        }
+
+        let originOffsetX = 0;
+        let originOffsetY = 0;
+
+        if (toolpathOrigin === 'top_center') {
+            originOffsetX = machineSettings.workArea.x / 2;
+            originOffsetY = machineSettings.workArea.y / 2;
+        } else if (toolpathOrigin === 'front_left_top') {
+            // Default to 0,0 offset for front_left_top
+            originOffsetX = 0;
+            originOffsetY = 0;
+        }        const code = [
+            `(--- Thread Milling Operation ---)`,
+            `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
+            `(Type: ${type}, Hand: ${hand})`,
+            `(Diameter: ${numericDiameter}, Pitch: ${numericPitch}, Depth: ${numericDepth})`,
+            `(Feed: ${numericFeed}, Spindle: ${numericSpindle})`,
+            // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
+            `G21 G90`,
+            `M3 S${numericSpindle}`,
+            `G0 Z${numericSafeZ}`,
+        ];
+        const paths = [];
+
+        const centerX = 0; // Assume centered at origin for simplicity
+        const centerY = 0;
+        
+        let pathRadius, helicalDirection;
+
+        // Climb milling logic
+        if (type === 'internal') {
+            pathRadius = (numericDiameter - toolDiameter) / 2;
+            helicalDirection = (hand === 'right') ? 'G3' : 'G2'; // CCW for RH internal climb
+        } else { // external
+            pathRadius = (numericDiameter + toolDiameter) / 2;
+            helicalDirection = (hand === 'right') ? 'G2' : 'G3'; // CW for RH external climb
+        }
+        
+        if (pathRadius <= 0) return { error: "Invalid tool/thread diameter combination.", code: [], paths: [], bounds: {} };
+
+        // Preview paths
+        paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: numericDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '2%', fill: 'none' });
+        paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: pathRadius, stroke: 'var(--color-accent-yellow)', strokeWidth: '3%', fill: 'none' });
+
+        if (type === 'internal') {
+            const preDrillRadius = numericDiameter - numericPitch; // Approximation for pre-drill size
+            paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: preDrillRadius / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '2 2', strokeWidth: '2%', fill: 'none' });
+        }
+        
+        const startX = centerX + pathRadius;
+
+        // Start sequence (move to bottom and lead-in)
+        code.push(`G0 X${(centerX + originOffsetX).toFixed(3)} Y${(centerY + originOffsetY).toFixed(3)}`);
+        code.push(`G1 Z${(-numericDepth).toFixed(3)} F${numericFeed / 2}`);
+        code.push(`G1 X${(startX + originOffsetX).toFixed(3)} F${numericFeed}`); // Straight lead-in from center
+
+        // Helical motion upwards (climb milling)
+        let currentZ = -numericDepth;
+        while (currentZ < 0) {
+            currentZ = Math.min(0, currentZ + numericPitch);
+            code.push(`${helicalDirection} X${(startX + originOffsetX).toFixed(3)} Y${(centerY + originOffsetY).toFixed(3)} I${-pathRadius.toFixed(3)} J0 Z${currentZ.toFixed(3)} F${numericFeed}`);
+        }
+
+        // Retract
+        code.push(`G1 X${(centerX + originOffsetX).toFixed(3)} F${numericFeed}`); // Straight lead-out to center
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push(`M5`);
+        code.push(`G0 X0 Y0`);
+
+        const boundsRadius = type === 'internal' ? numericDiameter / 2 : pathRadius;
+        const bounds = {
+            minX: centerX - boundsRadius + originOffsetX,
+            maxX: centerX + boundsRadius + originOffsetX,
+            minY: centerY - boundsRadius + originOffsetY,
+            maxY: centerY + boundsRadius + originOffsetY
+        };
+        
+        return { code, paths, bounds, error: null };
+    };
+    
+    const applyArrayPattern = useCallback((singleOpResult) => {
+        const { code: singleCode, paths: singlePaths, bounds: singleBounds } = singleOpResult;
+        const { pattern, rectCols, rectRows, rectSpacingX, rectSpacingY, circCopies, circRadius, circCenterX, circCenterY, circStartAngle } = arraySettings;
+        
+        const numericRectCols = Number(rectCols);
+        const numericRectRows = Number(rectRows);
+        const numericRectSpacingX = Number(rectSpacingX);
+        const numericRectSpacingY = Number(rectSpacingY);
+        const numericCircCopies = Number(circCopies);
+        const numericCircRadius = Number(circRadius);
+        const numericCircCenterX = Number(circCenterX);
+        const numericCircCenterY = Number(circCenterY);
+        const numericCircStartAngle = Number(circStartAngle);
+
+        const inputLines = singleCode;
+        
+        const transformLine = (line: string, offset: { x: number; y: number }) => {
+            const upperLine = line.toUpperCase();
+            if (!/G[0-3]\s/.test(upperLine) || (!upperLine.includes('X') && !upperLine.includes('Y'))) {
+                 return line;
+            }
+             
+            let transformed = line;
+            transformed = transformed.replace(/X\s*([-+]?\d*\.?\d+)/i, (match, val) => `X${(parseFloat(val) + offset.x).toFixed(3)}`);
+            transformed = transformed.replace(/Y\s*([-+]?\d*\.?\d+)/i, (match, val) => `Y${(parseFloat(val) + offset.y).toFixed(3)}`);
+            
+            return transformed;
+        };
+        
+        const offsets = [];
+        if (pattern === 'rect') {
+            if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY].some(isNaN)) {
+                // If any is NaN, return empty. Error should ideally be caught higher up.
+                return { code: [], paths: [], bounds: {}, error: "Invalid array pattern parameters." };
+            }
+            for (let row = 0; row < numericRectRows; row++) {
+                for (let col = 0; col < numericRectCols; col++) {
+                    offsets.push({ x: col * numericRectSpacingX, y: row * numericRectSpacingY });
+                }
+            }
+        } else { // circ
+            if ([numericCircCopies, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
+                 return { code: [], paths: [], bounds: {}, error: "Invalid array pattern parameters." };
+            }
+            const angleStep = numericCircCopies > 0 ? 360 / numericCircCopies : 0;
+            for (let i = 0; i < numericCircCopies; i++) {
+                const angle = (numericCircStartAngle + i * angleStep) * (Math.PI / 180);
+                offsets.push({
+                    x: numericCircCenterX + numericCircRadius * Math.cos(angle),
+                    y: numericCircCenterY + numericCircRadius * Math.sin(angle),
+                });
+            }
+        }
+
+        const finalCode: string[] = [];
+        const finalPaths: any[] = [];
+        const finalBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+        
+        offsets.forEach(offset => {
+            finalCode.push(`(--- Repetition at X${offset.x.toFixed(3)} Y${offset.y.toFixed(3)} ---)`);
+            inputLines.forEach(line => {
+                // Don't transform metadata or tool changes
+                if (line.startsWith('(') || /T\d+\s*M6/.test(line)) {
+                    // Only add tool change once
+                    if (!finalCode.includes(line)) finalCode.unshift(line);
+                } else {
+                    finalCode.push(transformLine(line, offset));
+                }
+            });
+
+            singlePaths.forEach(p => {
+                 let newPath = {...p};
+                 if(p.d) { // path
+                     newPath.d = p.d.replace(/([ML])(\s*[\d\.-]+)(\s*,?\s*)([\d\.-]+)/g, (match, cmd, x, sep, y) => {
+                         return `${cmd} ${(parseFloat(x) + offset.x).toFixed(3)} ${sep} ${(parseFloat(y) + offset.y).toFixed(3)}`;
+                     });
+                 }
+                 if(p.cx !== undefined) { // circle
+                     newPath.cx = p.cx + offset.x;
+                     newPath.cy = p.cy + offset.y;
+                 }
+                 finalPaths.push(newPath);
+            });
+            
+            finalBounds.minX = Math.min(finalBounds.minX, singleBounds.minX + offset.x);
+            finalBounds.maxX = Math.max(finalBounds.maxX, singleBounds.maxX + offset.x);
+            finalBounds.minY = Math.min(finalBounds.minY, singleBounds.minY + offset.y);
+            finalBounds.maxY = Math.max(finalBounds.maxY, singleBounds.maxY + offset.y);
+        });
+
+        return { code: finalCode, paths: finalPaths, bounds: finalBounds, error: null };
+    }, [arraySettings]);
 
     const handleGenerate = useCallback(() => {
         setGenerationError(null);
@@ -172,7 +1135,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (result.error) {
             setGenerationError(result.error);
             setGeneratedGCode('');
-            setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+            setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } }); // Reset preview on error
             return;
         }
 
@@ -183,68 +1146,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         setGeneratedGCode(result.code ? result.code.join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
-    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, settings]);
-    
-    const calculateViewBox = useCallback((bounds) => {
-        if (!bounds || bounds.minX === Infinity) return '0 -100 100 100';
-        const { minX = 0, minY = 0, maxX = 100, maxY = 100 } = bounds;
-        const width = Math.abs(maxX - minX) || 100;
-        const height = Math.abs(maxY - minY) || 100;
-        const padding = Math.max(width, height) * 0.15;
-        const vbMinX = minX - padding;
-        const vbWidth = width + padding * 2;
-        const vbMinY = -(maxY + padding);
-        const vbHeight = height + padding * 2;
-        return `${vbMinX} ${vbMinY} ${vbWidth} ${vbHeight}`;
-    }, []);
+    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode]);
 
-    const fitView = useCallback(() => {
-        setViewBox(calculateViewBox(previewPaths.bounds));
-    }, [previewPaths.bounds, calculateViewBox]);
-
-    useEffect(() => {
-        if (previewPaths.bounds && previewPaths.bounds.minX !== Infinity) fitView();
-    }, [fitView, previewPaths.bounds]);
-    
     const handleGenerateRef = React.useRef(handleGenerate);
     useEffect(() => {
         handleGenerateRef.current = handleGenerate;
     }, [handleGenerate]);
-    
-    useEffect(() => {
-        if (isOpen) {
-            handleGenerateRef.current();
-        }
-    }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
-    
-    const currentParams = useMemo(() => {
-        return generatorSettings[activeTab];
-    }, [activeTab, generatorSettings]);
-
-    useEffect(() => {
-        if (isOpen && selectedToolId !== null && currentParams?.toolId !== selectedToolId) {
-            handleToolChange(selectedToolId);
-        }
-    }, [isOpen, selectedToolId, currentParams, handleToolChange]);
-
-    const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'toolpathOrigin'].includes(field);
-        const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
-        if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
-
-        onSettingsChange({
-            ...generatorSettings,
-            [activeTab]: { ...generatorSettings[activeTab], [field]: parsedValue }
-        });
-    }, [activeTab, generatorSettings, onSettingsChange]);
-
-    const handleToolChange = useCallback((toolId: number | null) => {
-        onToolSelect(toolId);
-        onSettingsChange({
-            ...generatorSettings,
-            [activeTab]: { ...generatorSettings[activeTab], toolId: toolId }
-        });
-    }, [activeTab, generatorSettings, onSettingsChange, onToolSelect]);
 
     const handleZoom = (factor) => {
         setViewBox(currentViewBox => {
@@ -258,6 +1165,49 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return `${newX} ${newY} ${newW} ${newH}`;
         });
     };
+
+    const handleParamChange = useCallback((field: string, value: any) => {
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'toolpathOrigin'].includes(field);
+        const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
+        if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
+
+        onSettingsChange({
+            ...generatorSettings,
+            [activeTab]: { ...generatorSettings[activeTab], [field]: parsedValue }
+        });
+    }, [activeTab, generatorSettings, onSettingsChange]);
+
+    const handleToolChange = useCallback((toolId: number | null) => {
+        // First, update the global selected tool ID in the App state
+        onToolSelect(toolId);
+
+        // Then, persist this change into the generator settings for the active tab
+        onSettingsChange({
+            ...generatorSettings,
+            [activeTab]: { ...generatorSettings[activeTab], toolId: toolId }
+        });
+    }, [activeTab, generatorSettings, onSettingsChange, onToolSelect]);
+
+    const currentParams = useMemo(() => {
+        return generatorSettings[activeTab];
+    }, [activeTab, generatorSettings]);
+
+    // Effect to automatically trigger G-code generation when relevant parameters change
+    useEffect(() => {
+        if (isOpen) {
+            // Use the ref to call the latest handleGenerate without creating an infinite loop
+            handleGenerateRef.current();
+        }
+    }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
+    
+    // When the selected tool from outside changes (e.g. from auto-selection),
+    // update the active tab's settings
+    useEffect(() => {
+        if (selectedToolId !== null && currentParams?.toolId !== selectedToolId) {
+            handleToolChange(selectedToolId);
+        }
+    }, [selectedToolId, activeTab, currentParams, handleToolChange]);
+
 
     const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || currentParams.toolId === null;
 
@@ -283,86 +1233,172 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return <Preview paths={previewPaths.paths} viewBox={viewBox} machineSettings={settings} />;
     };
 
-    const footer = (
-        <>
-            <button onClick={onClose} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">
-                Cancel
-            </button>
-            <button
-                onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)}
-                disabled={isLoadDisabled}
-                title={isLoadDisabled ? (generationError || 'Please select a tool') : 'Load G-Code'}
-                className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
-            >
-                <Save className="w-5 h-5" />
-                Load into Sender
-            </button>
-        </>
-    );
-
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="G-Code Generator"
-            footer={footer}
-            size="4xl"
-        >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <div className="flex border-b border-secondary flex-wrap">
-                        <div className="w-full text-xs text-text-secondary uppercase tracking-wider">Milling</div>
-                        <Tab label="Surfacing" isActive={activeTab === 'surfacing'} onClick={() => setActiveTab('surfacing')} />
-                        <Tab label="Drilling" isActive={activeTab === 'drilling'} onClick={() => setActiveTab('drilling')} />
-                        <Tab label="Bore" isActive={activeTab === 'bore'} onClick={() => setActiveTab('bore')} />
-                        <Tab label="Pocket" isActive={activeTab === 'pocket'} onClick={() => setActiveTab('pocket')} />
-                        <Tab label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-                        <Tab label="Slot" isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
-                        <Tab label="Thread Milling" isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
-                        <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Text & Engraving</div>
-                        <Tab label="Text" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-4xl border border-secondary transform transition-all max-h-[90vh] flex flex-col">
+                <div className="p-6 border-b border-secondary flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-text-primary">G-Code Generator</h2>
+                    <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                <div className="p-6 flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
+                    <div className="space-y-4">
+                        <div className="flex border-b border-secondary flex-wrap">
+                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider">Milling</div>
+                            <Tab label="Surfacing" isActive={activeTab === 'surfacing'} onClick={() => setActiveTab('surfacing')} />
+                            <Tab label="Drilling" isActive={activeTab === 'drilling'} onClick={() => setActiveTab('drilling')} />
+                            <Tab label="Bore" isActive={activeTab === 'bore'} onClick={() => setActiveTab('bore')} />
+                            <Tab label="Pocket" isActive={activeTab === 'pocket'} onClick={() => setActiveTab('pocket')} />
+                            <Tab label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+                            <Tab label="Slot" isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
+                            <Tab label="Thread Milling" isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
+                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Text & Engraving</div>
+                            <Tab label="Text" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+                        </div>
+                        <div className="py-4">
+                            {activeTab === 'surfacing' && (
+                                <SurfacingGenerator
+                                    params={generatorSettings.surfacing as SurfacingParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'drilling' && (
+                                <DrillingGenerator
+                                    params={generatorSettings.drilling as DrillingParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'bore' && (
+                                <BoreGenerator
+                                    params={generatorSettings.bore as BoreParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'pocket' && (
+                                <PocketGenerator
+                                    params={generatorSettings.pocket as PocketParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'profile' && (
+                                <ProfileGenerator
+                                    params={generatorSettings.profile as ProfileParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'slot' && (
+                                <SlotGenerator
+                                    params={generatorSettings.slot as SlotParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'text' && (
+                                <TextGenerator
+                                    params={generatorSettings.text as TextParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    fontOptions={Object.keys(FONTS)}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )} 
+                            {activeTab === 'thread' && (
+                                <ThreadMillingGenerator
+                                    params={generatorSettings.thread as ThreadMillingParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                        </div>
                     </div>
-                    <div className="py-4">
-                        {activeTab === 'surfacing' && <SurfacingGenerator params={generatorSettings.surfacing as SurfacingParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'drilling' && <DrillingGenerator params={generatorSettings.drilling as DrillingParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'bore' && <BoreGenerator params={generatorSettings.bore as BoreParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'pocket' && <PocketGenerator params={generatorSettings.pocket as PocketParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'profile' && <ProfileGenerator params={generatorSettings.profile as ProfileParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'slot' && <SlotGenerator params={generatorSettings.slot as SlotParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'text' && <TextGenerator params={generatorSettings.text as TextParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} fontOptions={Object.keys(FONTS)} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
-                        {activeTab === 'thread' && <ThreadMillingGenerator params={generatorSettings.thread as ThreadMillingParams} onParamsChange={handleParamChange} toolLibrary={toolLibrary} unit={unit} settings={settings} selectedToolId={selectedToolId} onToolSelect={onToolSelect} />}
+                    <div className="bg-background p-4 rounded-md flex flex-col gap-4">
+                        <div className="flex justify-between items-center border-b border-secondary pb-2 mb-2">
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold">2D Preview</h3>
+                                <button
+                                    onClick={handleGenerate}
+                                    title="Regenerate G-Code and Preview"
+                                    className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
+                                >
+                                    <Zap className="w-4 h-4" />
+                                    Generate
+                                </button>
+                            </div>
+                            <h3 className="font-bold">2D Preview</h3>
+                            <div className="flex items-center gap-1">
+                                <button onClick={() => handleZoom(1.5)} title="Zoom Out" className="p-1.5 rounded-md hover:bg-secondary">
+                                    <ZoomOut className="w-5 h-5 text-text-secondary" />
+                                </button>
+                                <button onClick={() => handleZoom(1 / 1.5)} title="Zoom In" className="p-1.5 rounded-md hover:bg-secondary">
+                                    <ZoomIn className="w-5 h-5 text-text-secondary" />
+                                </button>
+                                <button onClick={fitView} title="Fit to View" className="p-1.5 rounded-md hover:bg-secondary">
+                                    <Maximize className="w-5 h-5 text-text-secondary" />
+                                </button>
+                            </div>
+                        </div>
+                        {renderPreviewContent()}
+                        <textarea
+                            readOnly
+                            value={generatedGCode}
+                            className="w-full flex-grow bg-secondary font-mono text-sm p-2 rounded-md border border-secondary focus:outline-none focus:ring-1 focus:ring-primary"
+                            rows={8}
+                        />
                     </div>
                 </div>
-                <div className="bg-background p-4 rounded-md flex flex-col gap-4">
-                    <div className="flex justify-between items-center border-b border-secondary pb-2 mb-2">
-                        <div className="flex items-center gap-2">
-                            <h3 className="font-bold">2D Preview</h3>
-                            <button
-                                onClick={handleGenerate}
-                                title="Regenerate G-Code and Preview"
-                                className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                                <Zap className="w-4 h-4" />
-                                Generate
-                            </button>
-                        </div>
-                        <h3 className="font-bold">2D Preview</h3>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => handleZoom(1.5)} title="Zoom Out" className="p-1.5 rounded-md hover:bg-secondary"><ZoomOut className="w-5 h-5 text-text-secondary" /></button>
-                            <button onClick={() => handleZoom(1 / 1.5)} title="Zoom In" className="p-1.5 rounded-md hover:bg-secondary"><ZoomIn className="w-5 h-5 text-text-secondary" /></button>
-                            <button onClick={fitView} title="Fit to View" className="p-1.5 rounded-md hover:bg-secondary"><Maximize className="w-5 h-5 text-text-secondary" /></button>
-                        </div>
-                    </div>
-                    {renderPreviewContent()}
-                    <textarea
-                        readOnly
-                        value={generatedGCode}
-                        className="w-full flex-grow bg-secondary font-mono text-sm p-2 rounded-md border border-secondary focus:outline-none focus:ring-1 focus:ring-primary"
-                        rows={8}
-                    />
+                <div className="bg-background px-6 py-4 flex justify-end gap-4 rounded-b-lg">
+                    <button onClick={onClose} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)}
+                        disabled={isLoadDisabled}
+                        title={isLoadDisabled ? (generationError || 'Please select a tool') : 'Load G-Code'}
+                        className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        <Save className="w-5 h-5" />
+                        Load into Sender
+                    </button>
                 </div>
             </div>
-        </Modal>
+        </div>
     );
 };
 
