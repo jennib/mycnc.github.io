@@ -104,7 +104,7 @@ const WebcamPanel: React.FC = () => {
                     const message = JSON.parse(event.data);
                     if (message.type === 'offer') {
                         if (peerConnection.signalingState === 'closed') {
-                            console.warn('Peer connection is closed, cannot set remote description for offer.');
+                            
                             return;
                         }
                         await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
@@ -121,7 +121,7 @@ const WebcamPanel: React.FC = () => {
 
                     } else if (message.type === 'iceCandidate') {
                         if (peerConnection.signalingState === 'closed') {
-                            console.warn('Peer connection is closed, cannot add ICE candidate.');
+                            
                             return;
                         }
                         if (!peerConnection.remoteDescription) {
@@ -202,7 +202,7 @@ const WebcamPanel: React.FC = () => {
                 setError('No camera found.');
             }
         } catch (err) {
-            console.error("getDevices: Error accessing media devices:", err);
+                        console.error("getDevices: Error accessing media devices:", err);
             setError(`Failed to access camera: ${err instanceof Error ? err.message : String(err)}`);
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());

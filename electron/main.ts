@@ -123,7 +123,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
     tcpSocket.on("connect", () => {
       clearTimeout(connectionTimeout);
-      console.log(`TCP Connected to ${ip}:${port}`);
+      
       resolve(true);
     });
 
@@ -145,7 +145,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
     tcpSocket.on("close", () => {
       clearTimeout(connectionTimeout);
-      console.log("TCP Socket Closed");
+      
       mainWindow.webContents.send("tcp-disconnect");
       tcpSocket?.destroy();
       tcpSocket = null;
@@ -256,7 +256,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
   // and load the index.html of the electron.app.
   // Log the environment variable to the console.
-  console.log("VITE_DEV_SERVER_URL:", process.env.VITE_DEV_SERVER_URL);
+  
 
   // Set a Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -287,7 +287,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
   }
 };
 
-console.log('Electron app object:', app);
+
 app.on("ready", createWindow);
 
 app.on("window-all-closed", () => {
