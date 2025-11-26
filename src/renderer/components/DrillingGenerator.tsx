@@ -11,7 +11,7 @@ interface DrillingGeneratorProps {
 
 const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit }) => {
     useEffect(() => {
-        console.log('DrillingGenerator params.drillType changed:', params.drillType);
+    
     }, [params.drillType]);
 
     const handleParamChange = (field: string, value: any) => {
