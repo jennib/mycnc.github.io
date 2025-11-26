@@ -21,11 +21,15 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { useConnectionStore } from "./stores/connectionStore";
 import { useMachineStore } from "./stores/machineStore";
 import { useJob } from "./hooks/useJob";
+import { useAppHotkeys } from "./hooks/useAppHotkeys";
 import { useHotkeys } from "./hooks/useHotkeys";
+import { useSerialApiSupport } from "./hooks/useSerialApiSupport";
 import { useFlashingButton } from "./hooks/useFlashingButton";
+import { useThemeToggle } from "./hooks/useThemeToggle";
 import { useLogStore } from "./stores/logStore";
 import { Tour } from "./components/Tour";
 import { EVENTS } from 'react-joyride';
+import { ModalType } from "./stores/uiStore"; // Added import
 import Header from "./components/Header";
 import AppModals from "./AppModals";
 import Alerts from "./components/Alerts";
@@ -75,6 +79,7 @@ const App: React.FC = () => {
   // Connection Store
   const {
     isConnected,
+    isConnecting, // Retrieve isConnecting state
     actions: connectionActions,
   } = useConnectionStore((state) => state);
 
@@ -87,33 +92,17 @@ const App: React.FC = () => {
 
   // Local state that doesn't belong in a store
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isSerialApiSupported, setIsSerialApiSupported] = useState(true);
+  const { isSerialApiSupported, error, setError } = useSerialApiSupport();
   const [useSimulator, setUseSimulator] = useState(false);
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
 
   const { flashingButton, handleFlash } = useFlashingButton();
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("light-mode", isLightMode);
-  }, [isLightMode]);
+  useThemeToggle();
 
-  useEffect(() => {
-    if ("serial" in navigator) {
-      setIsSerialApiSupported(true);
-    } else {
-      setIsSerialApiSupported(false);
-      setError(
-        "This web browser does not support serial connections. You can still use the simulator. Or use a compatible browser like Chrome or, Edge to connect to your machine."
-      );
-    }
-  }, []);
 
-  useHotkeys({
-    handleEmergencyStop: connectionActions.emergencyStop,
-    handleManualCommand,
-    handleJogStop,
-  });
+
+  useHotkeys();
 
 
 
@@ -137,6 +126,7 @@ const App: React.FC = () => {
         isSerialApiSupported={isSerialApiSupported}
         useSimulator={useSimulator}
         setUseSimulator={setUseSimulator}
+        isConnecting={isConnecting} // Pass isConnecting to Header
       />
 
       <StatusBar
@@ -177,7 +167,7 @@ const App: React.FC = () => {
             toolLibrary={toolLibrary}
             selectedToolId={selectedToolId}
             onToolSelect={uiActions.setSelectedToolId}
-            onOpenGenerator={uiActions.openGCodeModal}
+            onOpenGenerator={() => uiActions.openModal(ModalType.GCodeGenerator)}
             isSimulated={useSimulator}
           />
         </div>
@@ -224,12 +214,12 @@ const App: React.FC = () => {
           />
         </div>
       </main>
-      <Footer onContactClick={uiActions.openContactModal} />
+      <Footer onContactClick={() => uiActions.openModal(ModalType.Contact)} />
       <Tour
         run={isTourOpen}
         callback={(data) => {
-          const { status, type } = data;
-          const finishedStatuses: string[] = [EVENTS.FINISHED, EVENTS.SKIPPED];
+          const { type } = data;
+          const finishedStatuses: string[] = ['tour:end', 'tour:skipped'];
           if (finishedStatuses.includes(type)) {
             uiActions.closeTour();
           }
