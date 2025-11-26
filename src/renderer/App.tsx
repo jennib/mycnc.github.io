@@ -22,6 +22,7 @@ import { useConnectionStore } from "./stores/connectionStore";
 import { useMachineStore } from "./stores/machineStore";
 import { useJob } from "./hooks/useJob";
 import { useHotkeys } from "./hooks/useHotkeys";
+import { useFlashingButton } from "./hooks/useFlashingButton";
 import { useLogStore } from "./stores/logStore";
 import { Tour } from "./components/Tour";
 import { EVENTS } from 'react-joyride';
@@ -90,24 +91,8 @@ const App: React.FC = () => {
   const [isSerialApiSupported, setIsSerialApiSupported] = useState(true);
   const [useSimulator, setUseSimulator] = useState(false);
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
-  const [flashingButton, setFlashingButton] = useState<string | null>(null);
-  const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFlash = useCallback((buttonId: string) => {
-    if (flashTimeoutRef.current) {
-      clearTimeout(flashTimeoutRef.current);
-    }
-    setFlashingButton(buttonId);
-    flashTimeoutRef.current = setTimeout(() => {
-      setFlashingButton(null);
-    }, 150); // Flash for 150ms
-  }, []);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () =>
-      flashTimeoutRef.current && clearTimeout(flashTimeoutRef.current);
-  }, []);
+  const { flashingButton, handleFlash } = useFlashingButton();
 
   useEffect(() => {
     document.documentElement.classList.toggle("light-mode", isLightMode);
@@ -124,34 +109,13 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Define handlers before they are used in the hotkey useEffect
-  const handleEmergencyStop = useCallback(() => {
-    const manager = useConnectionStore.getState().serialManager;
-    if (manager) {
-      manager.emergencyStop();
-    }
-  }, []);
-
   useHotkeys({
-    handleEmergencyStop,
+    handleEmergencyStop: connectionActions.emergencyStop,
     handleManualCommand,
     handleJogStop,
   });
 
-  const handleFeedOverride = (
-    command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
-  ) => {
-    const commandMap = {
-      reset: "\x90",
-      inc10: "\x91",
-      dec10: "\x92",
-      inc1: "\x93",
-      dec1: "\x94",
-    };
-    if (commandMap[command]) {
-      connectionActions.sendRealtimeCommand(commandMap[command]);
-    }
-  };
+
 
   const alarmInfo =
     machineState?.status === "Alarm"
@@ -179,7 +143,7 @@ const App: React.FC = () => {
         isConnected={isConnected}
         machineState={machineState}
         unit={unit}
-        onEmergencyStop={handleEmergencyStop}
+        onEmergencyStop={connectionActions.emergencyStop}
         flashingButton={flashingButton}
       />
 
@@ -207,7 +171,7 @@ const App: React.FC = () => {
             onGCodeChange={jobActions.updateGCode}
             onClearFile={jobActions.clearFile}
             machineState={machineState}
-            onFeedOverride={handleFeedOverride}
+            onFeedOverride={connectionActions.feedOverride}
             timeEstimate={timeEstimate}
             machineSettings={machineSettings}
             toolLibrary={toolLibrary}

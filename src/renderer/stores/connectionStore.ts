@@ -19,6 +19,8 @@ interface ConnectionState {
     disconnect: () => Promise<void>;
     sendLine: (line: string, timeout?: number) => Promise<void>;
     sendRealtimeCommand: (command: string) => void;
+    emergencyStop: () => void;
+    feedOverride: (command: "reset" | "inc10" | "dec10" | "inc1" | "dec1") => void;
   };
 }
 
@@ -177,6 +179,21 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     },
     sendRealtimeCommand: (command: string) => {
       get().serialManager?.sendRealtimeCommand(command);
+    },
+    emergencyStop: () => {
+      get().serialManager?.emergencyStop();
+    },
+    feedOverride: (command: "reset" | "inc10" | "dec10" | "inc1" | "dec1") => {
+      const commandMap = {
+        reset: "\x90",
+        inc10: "\x91",
+        dec10: "\x92",
+        inc1: "\x93",
+        dec1: "\x94",
+      };
+      if (commandMap[command]) {
+        get().serialManager?.sendRealtimeCommand(commandMap[command]);
+      }
     }
   },
 }));
