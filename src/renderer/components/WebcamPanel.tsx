@@ -26,6 +26,54 @@ const WebcamPanel: React.FC = () => {
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
+    const stopStream = useCallback(() => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+    }, []);
+
+    const getDevices = useCallback(async () => {
+        if (!isElectron) return;
+        setIsLoading(true);
+        setError(null);
+        try {
+            // Request permission first by trying to get a stream
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            // Immediately stop the tracks of the temporary stream, as we only needed it for permission
+            tempStream.getTracks().forEach(track => track.stop());
+
+            const allDevices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = allDevices.filter(device => device.kind === 'videoinput');
+            const audioDevices = allDevices.filter(device => device.kind === 'audioinput');
+
+            setDevices(videoDevices);
+            setAudioInputDevices(audioDevices);
+
+            if (videoDevices.length > 0 && !selectedDeviceId) {
+                setWebcamSettings({ selectedDeviceId: videoDevices[0].deviceId });
+            }
+            if (audioDevices.length > 0 && !selectedAudioDeviceId) {
+                setWebcamSettings({ selectedAudioDeviceId: audioDevices[0].deviceId });
+            }
+            if (videoDevices.length === 0) {
+                setError("No camera found. Please ensure it's connected and permissions are granted.");
+            }
+        } catch (err) {
+            console.error("Error enumerating devices:", err);
+            if (err instanceof Error && err.name === 'NotAllowedError') {
+                setError("Camera access was denied. Please grant permission in your system settings.");
+            } else {
+                setError("Could not access camera. Please check permissions and connections.");
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isElectron, selectedDeviceId, selectedAudioDeviceId, setWebcamSettings]);
+
     const disconnectWebRTC = useCallback(() => {
         if (pcRef.current) {
             pcRef.current.close();
@@ -156,127 +204,90 @@ const WebcamPanel: React.FC = () => {
         }
     }, [isElectron, isWebRTCConnected, setIsLoading, setError, webRTCUrl, isMuted, disconnectWebRTC]);
 
-    const getDevices = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const mediaDevices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
-            const audioInputDevices = mediaDevices.filter(device => device.kind === 'audioinput');
-            setDevices(videoDevices);
-            setAudioInputDevices(audioInputDevices);
+    const handleToggleWebcam = () => {
+        setIsWebcamOn(prev => !prev);
+    };
 
-            let selectedVideoDeviceId = selectedDeviceId;
-            if (!selectedVideoDeviceId || !videoDevices.some(d => d.deviceId === selectedVideoDeviceId)) {
-                selectedVideoDeviceId = videoDevices[0]?.deviceId || '';
-                setWebcamSettings({ selectedDeviceId: selectedVideoDeviceId });
-            }
-
-            let selectedAudioInputDeviceId = selectedAudioDeviceId;
-            if (!selectedAudioInputDeviceId || !audioInputDevices.some(d => d.deviceId === selectedAudioInputDeviceId)) {
-                selectedAudioInputDeviceId = audioInputDevices[0]?.deviceId || '';
-                setWebcamSettings({ selectedAudioDeviceId: selectedAudioInputDeviceId });
-            }
-
-            if (selectedVideoDeviceId) {
-                // Stop any existing stream first to avoid conflicts
-                if (streamRef.current) {
-                    streamRef.current.getTracks().forEach(track => track.stop());
-                    streamRef.current = null;
-                    if (videoRef.current) videoRef.current.srcObject = null;
-                }
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: selectedVideoDeviceId ? { exact: selectedVideoDeviceId } : undefined },
-                    audio: { deviceId: selectedAudioInputDeviceId ? { exact: selectedAudioInputDeviceId } : undefined }
-                });
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                    videoRef.current.muted = isMuted; // Apply mute setting
-                    videoRef.current.volume = isMuted ? 0 : volume; // Apply volume setting
-                    await videoRef.current.play(); // Explicitly play to ensure metadata loads and video starts
-                }
-                streamRef.current = stream;
-                setError(null);
-            } else {
-                setError('No camera found.');
-            }
-        } catch (err) {
-                        console.error("getDevices: Error accessing media devices:", err);
-            setError(`Failed to access camera: ${err instanceof Error ? err.message : String(err)}`);
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-                streamRef.current = null;
-            }
-            if (videoRef.current) {
-                videoRef.current.srcObject = null;
-            }
-        } finally {
-            setIsLoading(false);
+    const handleTogglePiP = async () => {
+        if (!videoRef.current) return;
+        if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+        } else if (isPiPSupported) {
+            await videoRef.current.requestPictureInPicture();
         }
-    }, [selectedDeviceId, selectedAudioDeviceId, setWebcamSettings, isMuted, volume, videoRef]);
+    };
 
     useEffect(() => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
-        const onEnterPiP = () => setIsInPiP(true);
-        const onLeavePiP = () => {
-            setIsInPiP(false);
-            // When leaving PiP, the browser should restore the stream.
-            // If the video appears black, it might be paused.
-            if (videoElement.paused) {
-                videoElement.play().catch(e => console.error("Failed to resume video post-PiP:", e));
-            }
-        };
+        const handleEnterPiP = () => setIsInPiP(true);
+        const handleLeavePiP = () => setIsInPiP(false);
 
-        // Set initial state in case PiP is already active when component mounts/updates
-        setIsInPiP(document.pictureInPictureElement === videoElement);
-
-        videoElement.addEventListener('enterpictureinpicture', onEnterPiP);
-        videoElement.addEventListener('leavepictureinpicture', onLeavePiP);
+        videoElement.addEventListener('enterpictureinpicture', handleEnterPiP);
+        videoElement.addEventListener('leavepictureinpicture', handleLeavePiP);
 
         return () => {
-            videoElement.removeEventListener('enterpictureinpicture', onEnterPiP);
-            videoElement.removeEventListener('leavepictureinpicture', onLeavePiP);
+            videoElement.removeEventListener('enterpictureinpicture', handleEnterPiP);
+            videoElement.removeEventListener('leavepictureinpicture', handleLeavePiP);
         };
-    });
+    }, []);
 
-    // New useEffect to manage webcam stream lifecycle
     useEffect(() => {
         if (isWebcamOn) {
+            setError(null);
             if (webcamMode === 'local') {
-                getDevices();
-            } else if (webcamMode === 'webrtc') {
+                disconnectWebRTC();
+                if (devices.length === 0) {
+                    getDevices();
+                }
+            } else {
+                stopStream();
                 connectWebRTC();
             }
         } else {
-            // Stop local stream if active
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-                streamRef.current = null;
-                if (videoRef.current) videoRef.current.srcObject = null;
-            }
-            // Disconnect WebRTC if active
-            if (isWebRTCConnected) {
-                disconnectWebRTC();
-            }
-            setError(null); // Clear any errors
+            stopStream();
+            disconnectWebRTC();
         }
-
-        // Cleanup function for the effect
         return () => {
-            if (streamRef.current) {
-                streamRef.current.getTracks().forEach(track => track.stop());
-                streamRef.current = null;
-                if (videoRef.current) videoRef.current.srcObject = null;
-            }
-            if (isWebRTCConnected) {
-                disconnectWebRTC();
-            }
+            stopStream();
+            disconnectWebRTC();
         };
-    }, [isWebcamOn, webcamMode, getDevices, connectWebRTC, disconnectWebRTC, isWebRTCConnected, streamRef, videoRef]);
+    }, [isWebcamOn, webcamMode, getDevices, connectWebRTC, stopStream, disconnectWebRTC, devices.length]);
 
+    useEffect(() => {
+        if (isWebcamOn && webcamMode === 'local' && selectedDeviceId && isElectron) {
+            stopStream();
+            const constraints = {
+                video: { deviceId: { exact: selectedDeviceId } },
+                audio: selectedAudioDeviceId ? { deviceId: { exact: selectedAudioDeviceId } } : false
+            };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    streamRef.current = stream;
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = stream;
+                        videoRef.current.play().catch(e => console.error("Autoplay failed:", e));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error starting local stream:', err);
+                    setError('Failed to start camera. It might be in use by another application.');
+                });
+        }
+    }, [isWebcamOn, webcamMode, selectedDeviceId, selectedAudioDeviceId, isElectron, stopStream]);
+
+    const handleModeChange = (newMode: 'local' | 'webrtc') => {
+        if (webcamMode === newMode) return;
+        
+        // Clean up previous mode before switching
+        if (webcamMode === 'local') {
+            stopStream();
+        } else {
+            disconnectWebRTC();
+        }
+        setWebcamMode(newMode);
+    };
     const renderBody = () => {
         if (!isWebcamOn) return null;
         if (isInPiP) {
@@ -303,7 +314,7 @@ const WebcamPanel: React.FC = () => {
         }
         return (
             <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full" />
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
                         <div className="text-center text-text-secondary p-4">
@@ -312,9 +323,9 @@ const WebcamPanel: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {error && (
+                {error && !isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
-                        <div className="text-center text-accent-yellow p-4">
+                        <div className="text-center text-accent-yellow p-4 max-w-xs">
                             <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
                             <p className="text-sm font-semibold">{error}</p>
                             <button onClick={webcamMode === 'webrtc' ? connectWebRTC : getDevices} className="mt-4 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus text-sm">
@@ -335,7 +346,7 @@ const WebcamPanel: React.FC = () => {
                     Webcam
                 </div>
                 <div className="flex items-center gap-2">
-                    {(isWebcamOn && isPiPSupported && !isInPiP) && (
+                    {(isWebcamOn && videoRef.current?.srcObject && isPiPSupported && !isInPiP) && (
                         <button onClick={handleTogglePiP} title="Picture-in-Picture" className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
                             <PictureInPicture className="w-5 h-5" />
                         </button>
@@ -351,11 +362,11 @@ const WebcamPanel: React.FC = () => {
                 <div className="mb-4">
                      <div className="flex items-center gap-4 mb-2">
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="local" checked={webcamMode === 'local'} onChange={() => setWebcamMode('local')} className="form-radio text-primary focus:ring-primary"/>
+                            <input type="radio" name="webcamMode" value="local" checked={webcamMode === 'local'} onChange={() => handleModeChange('local')} className="form-radio text-primary focus:ring-primary"/>
                             <span className="text-sm font-medium text-text-secondary">Local Camera</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="webrtc" checked={webcamMode === 'webrtc'} onChange={() => setWebcamMode('webrtc')} className="form-radio text-primary focus:ring-primary"/>
+                            <input type="radio" name="webcamMode" value="webrtc" checked={webcamMode === 'webrtc'} onChange={() => handleModeChange('webrtc')} className="form-radio text-primary focus:ring-primary"/>
                             <span className="text-sm font-medium text-text-secondary">WebRTC Stream</span>
                         </label>
                     </div>
@@ -369,6 +380,7 @@ const WebcamPanel: React.FC = () => {
                         </div>
                     )}
 
+                    {(isWebcamOn && videoRef.current?.srcObject && (webcamMode === 'webrtc' || (webcamMode === 'local' && audioInputDevices.length > 0))) &&
                     <div className="flex items-center gap-2 mt-4">
                         <button onClick={() => setWebcamSettings({ isMuted: !isMuted })} title={isMuted ? "Unmute" : "Mute"} className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
                             {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -381,19 +393,19 @@ const WebcamPanel: React.FC = () => {
                             value={isMuted ? 0 : volume}
                             onChange={(e) => {
                                 const newVolume = parseFloat(e.target.value);
-                                setWebcamSettings({ volume: newVolume });
-                                if (newVolume > 0) setWebcamSettings({ isMuted: false });
+                                setWebcamSettings({ volume: newVolume, isMuted: newVolume === 0 });
+                                if (videoRef.current) videoRef.current.volume = newVolume;
                             }}
                             className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                            disabled={isMuted}
                         />
                     </div>
+                    }
                 </div>
             )}
 
-            {isWebcamOn && webcamMode === 'local' && (devices.length > 1 || audioInputDevices.length > 1) && (
+            {isWebcamOn && webcamMode === 'local' && (devices.length > 0 || audioInputDevices.length > 0) && (
                 <div className="flex gap-2 mb-4">
-                    {devices.length > 1 && (
+                    {devices.length > 0 && (
                         <div className="w-1/2">
                             <label htmlFor="camera-select" className="block text-xs font-medium text-text-secondary mb-1">Select Camera</label>
                             <select
@@ -411,7 +423,7 @@ const WebcamPanel: React.FC = () => {
                         </div>
                     )}
 
-                    {audioInputDevices.length > 1 && (
+                    {audioInputDevices.length > 0 && (
                         <div className="w-1/2">
                             <label htmlFor="audio-input-select" className="block text-xs font-medium text-text-secondary mb-1">Select Microphone</label>
                             <select
