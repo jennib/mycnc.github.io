@@ -24,9 +24,7 @@ import {
   Minimize,
   BookOpen,
 } from "./components/Icons";
-import {
-  getMachineStateAtLine,
-} from "./services/gcodeAnalyzer.js";
+import { getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 import Footer from "./components/Footer";
@@ -47,16 +45,26 @@ import { useLogStore } from "./stores/logStore";
 const App: React.FC = () => {
   const machineState = useMachineStore((state) => state.machineState);
   const isJogging = useMachineStore((state) => state.isJogging);
-  const isHomedSinceConnect = useMachineStore((state) => state.isHomedSinceConnect);
+  const isHomedSinceConnect = useMachineStore(
+    (state) => state.isHomedSinceConnect
+  );
   const isMacroRunning = useMachineStore((state) => state.isMacroRunning);
   const handleSetZero = useMachineStore((state) => state.actions.handleSetZero);
-  const handleSpindleCommand = useMachineStore((state) => state.actions.handleSpindleCommand);
+  const handleSpindleCommand = useMachineStore(
+    (state) => state.actions.handleSpindleCommand
+  );
   const handleProbe = useMachineStore((state) => state.actions.handleProbe);
   const handleJog = useMachineStore((state) => state.actions.handleJog);
   const handleJogStop = useMachineStore((state) => state.actions.handleJogStop);
-  const handleRunMacro = useMachineStore((state) => state.actions.handleRunMacro);
-  const handleManualCommand = useMachineStore((state) => state.actions.handleManualCommand);
-  const handleUnitChange = useMachineStore((state) => state.actions.handleUnitChange);
+  const handleRunMacro = useMachineStore(
+    (state) => state.actions.handleRunMacro
+  );
+  const handleManualCommand = useMachineStore(
+    (state) => state.actions.handleManualCommand
+  );
+  const handleUnitChange = useMachineStore(
+    (state) => state.actions.handleUnitChange
+  );
   const handleHome = useMachineStore((state) => state.actions.handleHome);
 
   const {
@@ -474,8 +482,10 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      <header className="bg-surface shadow-md p-4 flex justify-between items-center z-10 flex-shrink-0 gap-4">
-        <div className="flex items-center gap-4">{/* Logo */}</div>
+      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-4">
+        <div className="flex items-center gap-4">
+          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-12 w-auto" />
+        </div>
         <div className="flex items-center gap-4">
           <button
             onClick={handleToggleFullscreen}
@@ -613,7 +623,7 @@ const App: React.FC = () => {
             isConnected={isConnected}
             machineState={machineState}
             onJog={handleJog}
-            onHome={() => handleHome('all')}
+            onHome={() => handleHome("all")}
             onSetZero={handleSetZero}
             onSpindleCommand={handleSpindleCommand}
             onProbe={handleProbe}
