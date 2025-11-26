@@ -22,6 +22,7 @@ type UIState = {
   infoModalMessage: string;
   returnToWelcome: boolean;
   isTourOpen: boolean;
+  selectedToolId: number | null;
   actions: {
     openPreflightModal: () => void;
     closePreflightModal: () => void;
@@ -44,6 +45,7 @@ type UIState = {
     setReturnToWelcome: (shouldReturn: boolean) => void;
     openTour: () => void;
     closeTour: () => void;
+    setSelectedToolId: (id: number | null) => void;
   };
 };
 
@@ -67,6 +69,7 @@ export const useUIStore = create<UIState>((set) => ({
   infoModalMessage: '',
   returnToWelcome: false,
   isTourOpen: false,
+  selectedToolId: null,
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
     closePreflightModal: () => set({ isPreflightModalOpen: false }),
@@ -89,5 +92,6 @@ export const useUIStore = create<UIState>((set) => ({
     setReturnToWelcome: (shouldReturn) => set({ returnToWelcome: shouldReturn }),
     openTour: () => set({ isTourOpen: true }),
     closeTour: () => set({ isTourOpen: false }),
+    setSelectedToolId: (id) => set({ selectedToolId: id }),
   },
 }));
