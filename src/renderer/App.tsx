@@ -102,7 +102,11 @@ const App: React.FC = () => {
 
 
 
-  useHotkeys();
+  useHotkeys({
+    handleEmergencyStop: connectionActions.emergencyStop,
+    handleManualCommand: handleManualCommand,
+    handleJogStop: handleJogStop,
+  });
 
 
 
