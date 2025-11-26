@@ -45,7 +45,16 @@ export const useMachineStore = create<MachineStoreState>((set) => ({
 
     handleHome: (axes) => {
       const { actions: connectionActions } = useConnectionStore.getState();
+      const { machineState } = useMachineStore.getState(); // Access current machineState
+
       if (axes === 'all') {
+        // Explicitly set machine state to 'Home' when homing starts
+        set((state) => ({
+          machineState: {
+            ...state.machineState,
+            status: 'Home',
+          } as MachineState,
+        }));
         connectionActions.sendLine('$H', 60000);
       }
     },

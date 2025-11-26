@@ -6,82 +6,80 @@ type SpindleModalArgs = {
   message: string;
 };
 
+// Define an enum for modal types
+export enum ModalType {
+  Welcome = 'WelcomeModal',
+  Contact = 'ContactModal',
+  Preflight = 'PreflightChecklistModal',
+  SpindleConfirmation = 'SpindleConfirmationModal',
+  Info = 'InfoModal',
+  MacroEditor = 'MacroEditorModal',
+  Settings = 'SettingsModal',
+  ToolLibrary = 'ToolLibraryModal',
+  GCodeGenerator = 'GCodeGeneratorModal',
+}
+
 type UIState = {
-  isPreflightModalOpen: boolean;
-  isWelcomeModalOpen: boolean;
-  isMacroEditorOpen: boolean;
-  editingMacroIndex: number | null;
-  isSettingsModalOpen: boolean;
-  isToolLibraryModalOpen: boolean;
-  isContactModalOpen: boolean;
-  isGCodeModalOpen: boolean;
-  isSpindleModalOpen: boolean;
+  // Generic modal management
+  activeModal: ModalType | null;
+  modalProps: any; // To pass any necessary props to the active modal
+
+  // Specific state for Spindle and Info modals (as they have required args)
   spindleModalArgs: SpindleModalArgs;
-  isInfoModalOpen: boolean;
   infoModalTitle: string;
   infoModalMessage: string;
+
+  // Other UI states
+  editingMacroIndex: number | null;
   returnToWelcome: boolean;
+  isTourOpen: boolean;
+  selectedToolId: number | null;
+
   actions: {
-    openPreflightModal: () => void;
-    closePreflightModal: () => void;
-    openWelcomeModal: () => void;
-    closeWelcomeModal: () => void;
-    openMacroEditor: (index: number | null) => void;
-    closeMacroEditor: () => void;
-    openSettingsModal: () => void;
-    closeSettingsModal: () => void;
-    openToolLibraryModal: () => void;
-    closeToolLibraryModal: () => void;
-    openContactModal: () => void;
-    closeContactModal: () => void;
-    openGCodeModal: () => void;
-    closeGCodeModal: () => void;
-    openSpindleModal: (args: SpindleModalArgs) => void;
-    closeSpindleModal: () => void;
-    openInfoModal: (title: string, message: string) => void;
-    closeInfoModal: () => void;
+    openModal: (type: ModalType, props?: any) => void;
+    closeModal: () => void;
+    // Specific actions that might set additional state
+    openMacroEditor: (index: number | null) => void; // Keeps specific arg
+    openSpindleModal: (args: SpindleModalArgs) => void; // Keeps specific arg
+    openInfoModal: (title: string, message: string) => void; // Keeps specific arg
     setReturnToWelcome: (shouldReturn: boolean) => void;
+    openTour: () => void;
+    closeTour: () => void;
+    setSelectedToolId: (id: number | null) => void;
   };
 };
 
 export const useUIStore = create<UIState>((set) => ({
-  isPreflightModalOpen: false,
-  isWelcomeModalOpen: false,
-  isMacroEditorOpen: false,
-  editingMacroIndex: null,
-  isSettingsModalOpen: false,
-  isToolLibraryModalOpen: false,
-  isContactModalOpen: false,
-  isGCodeModalOpen: false,
-  isSpindleModalOpen: false,
+  // Initial state for generic modal management
+  activeModal: null,
+  modalProps: {},
+
+  // Initial state for specific modal args
   spindleModalArgs: {
     onConfirm: () => {},
     title: '',
     message: '',
   },
-  isInfoModalOpen: false,
   infoModalTitle: '',
   infoModalMessage: '',
+
+  // Initial state for other UI states
+  editingMacroIndex: null,
   returnToWelcome: false,
+  isTourOpen: false,
+  selectedToolId: null,
+
   actions: {
-    openPreflightModal: () => set({ isPreflightModalOpen: true }),
-    closePreflightModal: () => set({ isPreflightModalOpen: false }),
-    openWelcomeModal: () => set({ isWelcomeModalOpen: true }),
-    closeWelcomeModal: () => set({ isWelcomeModalOpen: false }),
-    openMacroEditor: (index) => set({ isMacroEditorOpen: true, editingMacroIndex: index }),
-    closeMacroEditor: () => set({ isMacroEditorOpen: false, editingMacroIndex: null }),
-    openSettingsModal: () => set({ isSettingsModalOpen: true }),
-    closeSettingsModal: () => set({ isSettingsModalOpen: false }),
-    openToolLibraryModal: () => set({ isToolLibraryModalOpen: true }),
-    closeToolLibraryModal: () => set({ isToolLibraryModalOpen: false }),
-    openContactModal: () => set({ isContactModalOpen: true }),
-    closeContactModal: () => set({ isContactModalOpen: false }),
-    openGCodeModal: () => set({ isGCodeModalOpen: true }),
-    closeGCodeModal: () => set({ isGCodeModalOpen: false }),
-    openSpindleModal: (args) => set({ isSpindleModalOpen: true, spindleModalArgs: args }),
-    closeSpindleModal: () => set({ isSpindleModalOpen: false }),
-    openInfoModal: (title, message) => set({ isInfoModalOpen: true, infoModalTitle: title, infoModalMessage: message }),
-    closeInfoModal: () => set({ isInfoModalOpen: false }),
+    openModal: (type, props = {}) => set({ activeModal: type, modalProps: props }),
+    closeModal: () => set({ activeModal: null, modalProps: {} }),
+
+    openMacroEditor: (index) => set({ activeModal: ModalType.MacroEditor, editingMacroIndex: index }),
+    openSpindleModal: (args) => set({ activeModal: ModalType.SpindleConfirmation, spindleModalArgs: args }),
+    openInfoModal: (title, message) => set({ activeModal: ModalType.Info, infoModalTitle: title, infoModalMessage: message }),
+
     setReturnToWelcome: (shouldReturn) => set({ returnToWelcome: shouldReturn }),
+    openTour: () => set({ isTourOpen: true }),
+    closeTour: () => set({ isTourOpen: false }),
+    setSelectedToolId: (id) => set({ selectedToolId: id }),
   },
 }));

@@ -397,8 +397,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   };
 
   const renderJobControls = () => {
+    let content;
     if (isReadyToStart) {
-      return (
+      content = (
         <button
           onClick={() => onJobControl("start", { startLine: 0 })}
           disabled={!isReadyToStart}
@@ -408,10 +409,8 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           Start Job
         </button>
       );
-    }
-
-    if (jobStatus === JobStatus.Running) {
-      return (
+    } else if (jobStatus === JobStatus.Running) {
+      content = (
         <>
           <button
             key="pause"
@@ -435,10 +434,8 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           </div>
         </>
       );
-    }
-
-    if (jobStatus === JobStatus.Paused) {
-      return (
+    } else if (jobStatus === JobStatus.Paused) {
+      content = (
         <>
           <button
             key="resume"
@@ -462,9 +459,11 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           </div>
         </>
       );
+    } else {
+        return null;
     }
 
-    return null;
+    return <div className="job-controls grid grid-cols-3 gap-4">{content}</div>;
   };
 
   const { totalSeconds, cumulativeSeconds } = timeEstimate || {

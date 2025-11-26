@@ -1,21 +1,35 @@
+interface EstimatorMachineState {
+    x: number;
+    y: number;
+    z: number;
+    feedRate: number;
+    isAbsolute: boolean;
+    motionMode: string;
+}
+
+interface TimeEstimate {
+    totalSeconds: number;
+    cumulativeSeconds: number[];
+}
+
 // A sensible default for rapid moves in mm/min. Adjust based on typical machine capabilities.
 const RAPID_FEED_RATE = 4000;
 // A fallback feed rate if none is specified in the G-code.
 const DEFAULT_FEED_RATE = 500;
 
-const getParam = (gcode, param) => {
+const getParam = (gcode: string, param: string): number | null => {
     // Allows for optional whitespace between parameter and value
     const regex = new RegExp(`${param}\\s*([-+]?[0-9]*\\.?[0-9]*)`, 'i');
     const match = gcode.match(regex);
     return match ? parseFloat(match[1]) : null;
 };
 
-export const estimateGCodeTime = (gcodeLines) => {
+export const estimateGCodeTime = (gcodeLines: string[]): TimeEstimate => {
     let totalSeconds = 0;
-    const cumulativeSeconds = [];
+    const cumulativeSeconds: number[] = [];
     
     // Machine state simulation
-    let state = {
+    let state: EstimatorMachineState = {
         x: 0, y: 0, z: 0,
         feedRate: DEFAULT_FEED_RATE,
         isAbsolute: true, // G90 is default

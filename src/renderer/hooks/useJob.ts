@@ -4,7 +4,7 @@ import { useConnectionStore } from '@/stores/connectionStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useLogStore } from '@/stores/logStore';
-import { analyzeGCodeWithWorker, getMachineStateAtLine } from '@/services/gcodeAnalyzer.js';
+import { analyzeGCodeWithWorker, getMachineStateAtLine } from '@/services/gcodeAnalyzer';
 import { JobStatus, TimeEstimate, Tool } from '@/types';
 
 export function useJob() {

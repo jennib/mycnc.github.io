@@ -1350,17 +1350,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     </div>
                     <div className="bg-background p-4 rounded-md flex flex-col gap-4">
                         <div className="flex justify-between items-center border-b border-secondary pb-2 mb-2">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold">2D Preview</h3>
-                                <button
-                                    onClick={handleGenerate}
-                                    title="Regenerate G-Code and Preview"
-                                    className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
-                                >
-                                    <Zap className="w-4 h-4" />
-                                    Generate
-                                </button>
-                            </div>
                             <h3 className="font-bold">2D Preview</h3>
                             <div className="flex items-center gap-1">
                                 <button onClick={() => handleZoom(1.5)} title="Zoom Out" className="p-1.5 rounded-md hover:bg-secondary">

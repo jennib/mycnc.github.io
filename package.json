@@ -16,7 +16,8 @@
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
-    "test": "vitest"
+    "test": "vitest",
+    "electron:clean": "Remove-Item -Path 'dist', 'out', 'node_modules', '.vite' -Recurse -Force -ErrorAction SilentlyContinue"
   },
   "build": {
     "appId": "com.mycnc.app",
@@ -51,29 +52,31 @@
     }
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "@vercel/analytics": "^1.5.0",
     "@xstate/react": "^6.0.0",
+    "react-joyride": "^2.9.3",
     "xstate": "^5.24.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
-    "autoprefixer": "^10.4.19",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
     "cross-env": "^10.1.0",
-    "electron": "^39.2.3",
+    "electron": "^29.0.1",
     "electron-builder": "^26.3.1",
     "electron-vite": "^4.0.1",
     "jsdom": "^27.2.0",
-    "postcss": "^8.4.38",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.4",
-    "typescript": "^5.5.2",
-    "vite": "^5.2.13",
-    "vitest": "^4.0.13"
+    "postcss": "^8.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.14"
   }
 }
