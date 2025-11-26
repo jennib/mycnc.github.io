@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-console.log("Preload script loaded and executing!");
+
 
 contextBridge.exposeInMainWorld("electronAPI", {
   isElectron: true,

@@ -75,25 +75,39 @@ const WebcamPanel: React.FC = () => {
     }, [isElectron, selectedDeviceId, selectedAudioDeviceId, setWebcamSettings]);
 
     const disconnectWebRTC = useCallback(() => {
-        console.log("disconnectWebRTC called. pcRef:", pcRef.current, "wsRef:", wsRef.current);
         if (pcRef.current) {
-            console.log("Attempting to close peer connection:", pcRef.current);
             pcRef.current.close();
             pcRef.current = null;
         }
         if (wsRef.current) {
-            console.log("Attempting to close WebSocket:", wsRef.current);
             wsRef.current.close();
             wsRef.current = null;
         }
         setIsWebRTCConnected(false);
     }, []);
 
+    const handleToggleWebcam = useCallback(() => {
+        setIsWebcamOn(prev => !prev);
+    }, []);
+
+    const handleTogglePiP = useCallback(async () => {
+        if (videoRef.current) {
+            try {
+                if (videoRef.current !== document.pictureInPictureElement) {
+                    await videoRef.current.requestPictureInPicture();
+                } else {
+                    await document.exitPictureInPicture();
+                }
+            } catch (error) {
+                console.error("PiP action failed:", error);
+            }
+        }
+    }, []);
+
     const connectWebRTC = useCallback(() => {
         if (!isElectron || isWebRTCConnected) return; // Prevent multiple connections
         setIsLoading(true);
         setError(null);
-        console.log("Attempting WebRTC connection...");
 
         try {
             const peerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
@@ -118,7 +132,6 @@ const WebcamPanel: React.FC = () => {
             };
 
             peerConnection.oniceconnectionstatechange = () => {
-                console.log("ICE Connection State:", peerConnection.iceConnectionState);
                 if (peerConnection.iceConnectionState === 'connected') {
                     setIsLoading(false);
                     setIsWebRTCConnected(true);
@@ -139,7 +152,7 @@ const WebcamPanel: React.FC = () => {
                     const message = JSON.parse(event.data);
                     if (message.type === 'offer') {
                         if (peerConnection.signalingState === 'closed') {
-                            console.warn('Peer connection is closed, cannot set remote description for offer.');
+                            
                             return;
                         }
                         await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
@@ -156,7 +169,7 @@ const WebcamPanel: React.FC = () => {
 
                     } else if (message.type === 'iceCandidate') {
                         if (peerConnection.signalingState === 'closed') {
-                            console.warn('Peer connection is closed, cannot add ICE candidate.');
+                            
                             return;
                         }
                         if (!peerConnection.remoteDescription) {
@@ -177,7 +190,6 @@ const WebcamPanel: React.FC = () => {
                 disconnectWebRTC(); // Ensure full cleanup
             };
             ws.onclose = () => {
-                console.log("WebSocket closed.");
                 if (isWebRTCConnected) { // Only trigger disconnect if it was actually connected
                     disconnectWebRTC();
                 }
@@ -241,7 +253,7 @@ const WebcamPanel: React.FC = () => {
             stopStream();
             disconnectWebRTC();
         };
-    }, [isWebcamOn, webcamMode]);
+    }, [isWebcamOn, webcamMode, getDevices, connectWebRTC, stopStream, disconnectWebRTC, devices.length]);
 
     useEffect(() => {
         if (isWebcamOn && webcamMode === 'local' && selectedDeviceId && isElectron) {
@@ -280,14 +292,23 @@ const WebcamPanel: React.FC = () => {
         if (!isWebcamOn) return null;
         if (isInPiP) {
             return (
-                <div className="relative aspect-video bg-background rounded-md">
-                    <button
-                        onClick={handleTogglePiP}
-                        title="Dock to Panel"
-                        className="absolute top-2 right-2 flex items-center gap-2 p-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                        <Dock className="w-5 h-5" />
-                    </button>
+                <div className="relative aspect-video bg-background rounded-md flex items-center justify-center">
+                    {/* Keep video element in DOM but hidden for PiP to work correctly */}
+                    <video ref={videoRef} style={{ display: 'none' }} />
+
+                    <div className="text-center">
+                        <p className="text-text-secondary font-medium mb-4">
+                            Webcam is in Picture-in-Picture mode.
+                        </p>
+                        <button
+                            onClick={handleTogglePiP}
+                            title="Dock to Panel"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <Dock className="w-5 h-5" />
+                            Dock to Panel
+                        </button>
+                    </div>
                 </div>
             );
         }

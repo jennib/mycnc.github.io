@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { JobStatus } from '@/types';
-import { estimateGCodeTime } from '@/services/gcodeTimeEstimator.js';
+import { estimateGCodeTime } from '@/services/gcodeTimeEstimator';
 
 interface TimeEstimate {
   totalSeconds: number;

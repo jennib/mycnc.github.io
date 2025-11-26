@@ -4,7 +4,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => ({
   main: {
-    plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
         input: {
@@ -12,13 +11,11 @@ export default defineConfig(({ mode }) => ({
         },
         output: {
           format: 'cjs'
-        },
-        external: ['electron']
+        }
       }
     }
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
         input: {
