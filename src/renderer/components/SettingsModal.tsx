@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, X, Upload, Download } from './Icons';
+import { Save, X, Upload, Download, RefreshCw } from './Icons';
 import { MachineSettings, GeneratorSettings } from '@/types';
 import Modal from './Modal';
 
@@ -64,6 +64,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport }) => {
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
+    const [isSaving, setIsSaving] = useState(false);
     const importFileRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -103,7 +104,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         }));
     };
     
-    const handleSave = () => {
+    const handleSave = async () => {
+        setIsSaving(true);
+        await new Promise(res => setTimeout(res, 500));
+
         // Deep clone to avoid mutating state directly
         const settingsToSave = JSON.parse(JSON.stringify(localSettings));
         
@@ -129,6 +133,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         settingsToSave.jogFeedRate = parseFloat(settingsToSave.jogFeedRate) || 0;
 
         onSave(settingsToSave, localGeneratorSettings);
+        setIsSaving(false);
         onCancel();
     };
 
@@ -222,9 +227,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             </div>
             <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
                 <div className="flex items-center gap-4">
-                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
-                        <Save className="w-5 h-5" />Save Settings
+                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus" disabled={isSaving}>Cancel</button>
+                    <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2 disabled:bg-secondary disabled:cursor-not-allowed" disabled={isSaving}>
+                        {isSaving ? (
+                            <RefreshCw className="w-5 h-5 animate-spin" />
+                        ) : (
+                            <Save className="w-5 h-5" />
+                        )}
+                        {isSaving ? 'Saving...' : 'Save Settings'}
                     </button>
                 </div>
             </div>

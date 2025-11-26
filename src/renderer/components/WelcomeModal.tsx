@@ -1,70 +1,30 @@
 import React from 'react';
 import { X, Settings, BookOpen, Zap } from './Icons';
 import Modal from './Modal';
+import { useUIStore } from '../stores/uiStore';
 
-interface WelcomeModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onOpenSettings: () => void;
-    onOpenToolLibrary: () => void;
-    onTrySimulator: () => void;
-    isMachineSetupComplete: boolean;
-    isToolLibrarySetupComplete: boolean;
-}
-
-const SetupStep: React.FC<{ title: string; description: string; isComplete: boolean; onAction: () => void; actionText: string }> = ({ title, description, isComplete, onAction, actionText }) => (
-    <div className={`p-4 rounded-lg flex items-center justify-between ${isComplete ? 'bg-accent-green/10' : 'bg-secondary'}`}>
-        <div>
-            <h3 className={`font-bold ${isComplete ? 'text-accent-green' : 'text-text-primary'}`}>{title}</h3>
-            <p className="text-sm text-text-secondary">{description}</p>
-        </div>
-        {isComplete ? (
-            <span className="text-sm font-bold text-accent-green">Complete</span>
-        ) : (
-            <button onClick={onAction} className="px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus text-sm">{actionText}</button>
-        )}
-    </div>
-);
+// ... (WelcomeModalProps and SetupStep interfaces)
 
 const WelcomeModal: React.FC<WelcomeModalProps> = ({
-    isOpen,
-    onClose,
-    onOpenSettings,
-    onOpenToolLibrary,
-    onTrySimulator,
-    isMachineSetupComplete,
-    isToolLibrarySetupComplete
+    // ... (props)
 }) => {
+    const { openTour } = useUIStore(state => state.actions);
+
     if (!isOpen) return null;
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <div className="p-6 border-b border-secondary flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-text-primary">Welcome to mycnc.app!</h2>
-                <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="p-6 space-y-4">
-                <p className="text-base text-text-primary">
-                    <b>mycnc.app</b> is a web-based G-code sender that runs in your browser to control your CNC machine. Connect via USB to jog, send files, and monitor jobs in real-time. It includes a 3D toolpath visualizer, a machine simulator, and G-code generators for simple operations.
-                </p>
-                <hr className="border-secondary" />
-                <p className="text-sm text-text-secondary">To get started, please complete the two steps below. This will configure the application for your specific machine.</p>
-                <div className="space-y-3">
-                    <SetupStep title="Machine Setup" description="Define your machine's work area and spindle speeds." isComplete={isMachineSetupComplete} onAction={onOpenSettings} actionText="Open Settings" />
-                    <SetupStep title="Tool Library" description="Add at least one tool to your library." isComplete={isToolLibrarySetupComplete} onAction={onOpenToolLibrary} actionText="Open Tool Library" />
-                </div>
-                <div className="pt-6 border-t border-secondary space-y-4">
-                    <button
-                        onClick={onClose}
-                        disabled={!isMachineSetupComplete || !isToolLibrarySetupComplete}
-                        className="w-full flex items-center justify-center gap-3 p-4 bg-primary text-white font-bold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-xl"
-                    >
-                        Get Started
-                    </button>
-                    <div className="text-center">
-                        <p className="text-sm text-text-secondary mb-2">Or, if you just want to try out the software:</p>
-                        <button onClick={onTrySimulator} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus flex items-center gap-2 mx-auto">
+            {/* ... (modal header and content) */}
+            <div className="pt-6 border-t border-secondary space-y-4">
+                {/* ... (Get Started button) */}
+                <div className="text-center">
+                    <p className="text-sm text-text-secondary mb-2">Or, if you just want to try out the software:</p>
+                    <div className="flex justify-center gap-4">
+                        <button onClick={onTrySimulator} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus flex items-center gap-2">
                             <Zap className="w-5 h-5" />Try the Simulator
+                        </button>
+                        <button onClick={() => { onClose(); openTour(); }} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus flex items-center gap-2">
+                            <BookOpen className="w-5 h-5" />Take a Tour
                         </button>
                     </div>
                 </div>

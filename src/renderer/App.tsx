@@ -44,6 +44,8 @@ import { useJobStore } from "./stores/jobStore";
 import { useJob } from "./hooks/useJob";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { useLogStore } from "./stores/logStore";
+import { Tour } from "./components/Tour";
+import { EVENTS } from 'react-joyride';
 
 const App: React.FC = () => {
   const machineState = useMachineStore((state) => state.machineState);
@@ -89,6 +91,7 @@ const App: React.FC = () => {
     infoModalTitle,
     infoModalMessage,
     returnToWelcome,
+    isTourOpen,
     actions: uiActions,
   } = useUIStore((state) => state);
 
@@ -388,6 +391,7 @@ const App: React.FC = () => {
             onToggle={() => settingsActions.setIsLightMode(!isLightMode)}
           />
           <SerialConnector
+            className="serial-connector"
             isConnected={isConnected}
             portInfo={portInfo}
             onConnect={handleConnect}
@@ -463,7 +467,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-grow p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-        <div className="min-h-[60vh] lg:min-h-0">
+        <div className="min-h-[60vh] lg:min-h-0 gcode-panel">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -488,6 +492,7 @@ const App: React.FC = () => {
         </div>
         <div className="flex flex-col gap-4 overflow-hidden min-h-0">
           <JogPanel
+            className="jog-panel"
             isConnected={isConnected}
             machineState={machineState}
             onJog={handleJog}
@@ -529,6 +534,16 @@ const App: React.FC = () => {
         </div>
       </main>
       <Footer onContactClick={uiActions.openContactModal} />
+      <Tour
+        run={isTourOpen}
+        callback={(data) => {
+          const { status, type } = data;
+          const finishedStatuses: string[] = [EVENTS.FINISHED, EVENTS.SKIPPED];
+          if (finishedStatuses.includes(type)) {
+            uiActions.closeTour();
+          }
+        }}
+      />
     </div>
   );
 };
