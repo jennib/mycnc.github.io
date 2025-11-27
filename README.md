@@ -40,7 +40,14 @@ Scroll down to view a sample screenshot of the app in action.
   It’s a simple, browser-based interface for sending and generating G-code, designed to work with CNC machines connected by USB to your computer.
 - Since USB access is required, **only browsers supporting WebSerial** will work — such as **Google Chrome** or **Microsoft Edge**.  
   Firefox may work with third-party extensions, but it’s not officially supported.
-- **GRBL** specific at the moment as that is all I have for testing. HINT!
+- **Multi-controller support:** Compatible with 7 popular CNC firmwares:
+  - **GRBL** (fully tested with simulator)
+  - **FluidNC** (WiFi-enabled GRBL variant)
+  - **grblHAL** (GRBL with advanced features)
+  - **Smoothieware** (32-bit GRBL-compatible)
+  - **Marlin** (3D printer/CNC firmware)
+  - **TinyG** (JSON protocol support)
+  - **LinuxCNC** (basic implementation)
 
 ---
 
