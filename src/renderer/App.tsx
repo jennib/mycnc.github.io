@@ -114,7 +114,6 @@ const App: React.FC = () => {
   // Connection Store
   const {
     isConnected,
-    isSimulated,
     portInfo,
     actions: connectionActions,
   } = useConnectionStore((state) => state);
@@ -157,8 +156,9 @@ const App: React.FC = () => {
 
   // Cleanup timeout on unmount
   useEffect(() => {
-    return () =>
-      flashTimeoutRef.current && clearTimeout(flashTimeoutRef.current);
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -178,9 +178,9 @@ const App: React.FC = () => {
 
   // Define handlers before they are used in the hotkey useEffect
   const handleEmergencyStop = useCallback(() => {
-    const manager = useConnectionStore.getState().serialManager;
-    if (manager) {
-      manager.emergencyStop();
+    const controller = useConnectionStore.getState().controller;
+    if (controller) {
+      controller.emergencyStop();
     }
   }, []);
 
@@ -532,7 +532,7 @@ const App: React.FC = () => {
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
             isApiSupported={isSerialApiSupported}
-            isSimulated={isSimulated}
+            isSimulated={portInfo?.type === 'simulator'}
             useSimulator={useSimulator}
             onSimulatorChange={setUseSimulator}
             isElectron={!!window.electronAPI?.isElectron}

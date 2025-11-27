@@ -7,9 +7,12 @@ interface DrillingGeneratorProps {
     onParamsChange: (field: string, value: any) => void;
     toolLibrary: Tool[];
     unit: 'mm' | 'in';
+    settings: MachineSettings;
+    selectedToolId: number | null;
+    onToolSelect: (id: number | null) => void;
 }
 
-const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit }) => {
+const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, selectedToolId, onToolSelect }) => {
     useEffect(() => {
         console.log('DrillingGenerator params.drillType changed:', params.drillType);
     }, [params.drillType]);
