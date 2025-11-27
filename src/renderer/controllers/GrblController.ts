@@ -2,6 +2,7 @@ import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../t
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
 import { parseGrblStatus } from '../services/grblParser';
+import { GrblSimulator } from '../services/simulators/GrblSimulator';
 
 // A simple event emitter
 type Listener = (data: any) => void;
@@ -34,6 +35,12 @@ export class GrblController implements Controller {
 
     isHandshakeInProgress = false;
     isDisconnecting = false;
+
+    // Job state
+    private isJobRunning = false;
+    private isPaused = false;
+    private jobAbortController: AbortController | null = null;
+
     linePromiseResolve: (() => void) | null = null;
     linePromiseReject: ((reason?: any) => void) | null = null;
     lastStatus: MachineState = {
@@ -65,8 +72,14 @@ export class GrblController implements Controller {
 
         this.isHandshakeInProgress = true;
         try {
-            const portInfo = await this.serialService.connect(options);
-            
+            let portInfo: PortInfo;
+            if (options.type === 'simulator') {
+                const simulator = new GrblSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
+            } else {
+                portInfo = await this.serialService.connect(options);
+            }
+
             // Reset state for new connection
             this.lastStatus = {
                 status: 'Idle',
@@ -103,7 +116,7 @@ export class GrblController implements Controller {
             this.isHandshakeInProgress = false;
 
             this.emitter.emit('state', { type: 'connect', data: portInfo });
-            
+
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
             this.isPollingInAlarmState = false;
 
@@ -119,7 +132,7 @@ export class GrblController implements Controller {
     disconnect(): void {
         if (this.isDisconnecting || !this.serialService.isConnected) return;
         this.isDisconnecting = true;
-    
+
         if (this.statusInterval) {
             clearInterval(this.statusInterval);
             this.statusInterval = null;
@@ -131,7 +144,7 @@ export class GrblController implements Controller {
             this.linePromiseResolve = null;
             this.linePromiseReject = null;
         }
-    
+
         try {
             this.serialService.disconnect();
         } catch (error) {
@@ -151,7 +164,7 @@ export class GrblController implements Controller {
                     ...this.lastStatus,
                     ...statusUpdate
                 };
-        
+
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
             }
         } else if (trimmedValue) {
@@ -182,23 +195,23 @@ export class GrblController implements Controller {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
-    
+
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
                 reject(new Error(`Command timed out after ${timeout / 1000}s: ${command}`));
             }, timeout);
-    
+
             this.linePromiseResolve = () => {
                 clearTimeout(timeoutId);
                 resolve('ok');
             };
-    
+
             this.linePromiseReject = (reason) => {
                 clearTimeout(timeoutId);
                 reject(reason);
             };
-    
+
             this.serialService.send(command + '\n').catch(err => {
                 this.linePromiseReject?.(err);
             });
@@ -208,7 +221,7 @@ export class GrblController implements Controller {
     sendRealtimeCommand(command: string): void {
         this.serialService.send(command);
     }
-    
+
     requestStatusUpdate() {
         this.sendRealtimeCommand('?');
     }
@@ -225,8 +238,79 @@ export class GrblController implements Controller {
     }
 
     emergencyStop(): void {
+        this.stopJob();
         this.sendRealtimeCommand('\x18');
     }
+
+    async sendGCode(lines: string[], options: { startLine?: number; isDryRun?: boolean } = {}) {
+        if (this.isJobRunning) return;
+        this.isJobRunning = true;
+        this.isPaused = false;
+        this.jobAbortController = new AbortController();
+        const { signal } = this.jobAbortController;
+
+        const startLine = options.startLine || 0;
+
+        // Notify start?
+
+        for (let i = startLine; i < lines.length; i++) {
+            if (signal.aborted) break;
+
+            // Handle pause
+            while (this.isPaused) {
+                if (signal.aborted) break;
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            if (signal.aborted) break;
+
+            const line = lines[i];
+
+            try {
+                // If dry run, maybe skip commands or just send them?
+                // GRBL check mode ($C) is better for dry run.
+                // But for now let's just send them.
+                await this.sendCommand(line);
+
+                this.emitter.emit('progress', {
+                    percentage: ((i + 1) / lines.length) * 100,
+                    linesSent: i + 1,
+                    totalLines: lines.length
+                });
+            } catch (error) {
+                this.emitter.emit('error', `Job error at line ${i + 1}: ${error}`);
+                this.stopJob();
+                break;
+            }
+        }
+
+        this.isJobRunning = false;
+        this.jobAbortController = null;
+        this.emitter.emit('job', { status: 'complete' });
+    }
+
+    async pause() {
+        if (this.isJobRunning && !this.isPaused) {
+            this.isPaused = true;
+            this.sendRealtimeCommand('!'); // Feed Hold
+        }
+    }
+
+    async resume() {
+        if (this.isJobRunning && this.isPaused) {
+            this.isPaused = false;
+            this.sendRealtimeCommand('~'); // Cycle Start
+        }
+    }
+
+    stopJob() {
+        if (this.isJobRunning) {
+            this.jobAbortController?.abort();
+            this.isJobRunning = false;
+            this.isPaused = false;
+            this.sendRealtimeCommand('\x18'); // Soft Reset
+        }
+    }
+
 
     on(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
         this.emitter.on(event, listener);

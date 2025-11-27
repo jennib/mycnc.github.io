@@ -1,4 +1,5 @@
 import { PortInfo, ConnectionOptions } from '@/types';
+import { Simulator } from './simulators/Simulator';
 
 interface SerialServiceCallbacks {
     onData: (data: string) => void;
@@ -11,15 +12,16 @@ export class SerialService {
     private writer: any = null;
     private callbacks: SerialServiceCallbacks;
     private isDisconnecting = false;
-    private connectionType: 'usb' | 'tcp' | null = null;
+    private connectionType: 'usb' | 'tcp' | 'simulator' | null = null;
     private tcpBuffer: string = '';
+    private simulator: Simulator | null = null;
 
     constructor(callbacks: SerialServiceCallbacks) {
         this.callbacks = callbacks;
     }
 
     get isConnected(): boolean {
-        return (this.port !== null || this.connectionType === 'tcp');
+        return (this.port !== null || this.connectionType === 'tcp' || this.connectionType === 'simulator');
     }
 
     async connect(options: ConnectionOptions): Promise<PortInfo> {
@@ -31,6 +33,29 @@ export class SerialService {
             return this.connectUSB(options.baudRate);
         } else if (options.type === 'tcp') {
             return this.connectTCP(options.ip, options.port);
+        } else if (options.type === 'simulator') {
+            // The controller is responsible for creating the simulator and passing it to connectSimulator
+            // But here we are in connect().
+            // We need a way to pass the simulator instance or create it here?
+            // The plan said: "In GrblController.connect(), if options.type === 'simulator', instantiate GrblSimulator and call serialService.connectSimulator()."
+            // But SerialService.connect() is called by GrblController.connect().
+            // So GrblController should call connectSimulator INSTEAD of connect?
+            // Or connect() should handle it?
+            // If I change connect() signature, I break the interface.
+            // Let's make connect() throw if type is simulator, and expect connectSimulator to be called directly?
+            // Or better, let connect() handle it if we can pass the simulator?
+            // But ConnectionOptions doesn't have the simulator instance.
+            // So GrblController should call connectSimulator directly.
+            // But GrblController.connect takes ConnectionOptions.
+            // So GrblController will see type='simulator', create the simulator, and call connectSimulator.
+            // So here in SerialService.connect, we might not need to handle 'simulator' if GrblController handles it.
+            // BUT, SerialService.connect is the main entry point.
+            // Let's add a check here to throw or return dummy info if called with simulator type, 
+            // but really GrblController should call connectSimulator.
+            // Actually, let's allow connect() to be called with type='simulator' IF we have a way to get the simulator.
+            // But we don't.
+            // So let's throw an error here saying "Use connectSimulator for simulation".
+            throw new Error("Use connectSimulator for simulation.");
         } else {
             throw new Error("Unsupported connection type.");
         }
@@ -44,9 +69,9 @@ export class SerialService {
         try {
             this.port = await (navigator as any).serial.requestPort();
             await this.port.open({ baudRate });
-            
+
             this.connectionType = 'usb';
-            
+
             this.port.addEventListener('disconnect', () => {
                 this.disconnect();
             });
@@ -106,15 +131,53 @@ export class SerialService {
         }
     }
 
+    async connectSimulator(simulator: Simulator): Promise<PortInfo> {
+        if (this.isConnected) {
+            throw new Error("A connection is already active.");
+        }
+
+        this.simulator = simulator;
+        this.simulator.on('data', (data) => {
+            // Simulator sends raw data (lines or partial lines).
+            // We should buffer it like we do for TCP/USB?
+            // GrblSimulator emits full lines with \r\n usually.
+            // But let's assume it behaves like a stream.
+            // Actually GrblSimulator emits 'data' which are strings.
+            // Let's just pass them to onData.
+            // But wait, SerialService usually splits by newline.
+            // GrblSimulator emits "ok\r\n".
+            // If we just pass "ok\r\n" to onData, does onData handle it?
+            // onData expects a line.
+            // So we should probably split by newline here too.
+            const lines = data.split('\n');
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (trimmed) {
+                    this.callbacks.onData(trimmed);
+                }
+            });
+        });
+
+        await this.simulator.connect();
+        this.connectionType = 'simulator';
+
+        return {
+            type: 'simulator',
+            portName: 'Simulator',
+        };
+    }
+
     disconnect() {
         if (this.isDisconnecting || !this.isConnected) return;
         this.isDisconnecting = true;
-    
+
         try {
             if (this.connectionType === 'usb' && this.port) {
                 this.port.close();
             } else if (this.connectionType === 'tcp' && window.electronAPI) {
                 window.electronAPI.disconnectTCP();
+            } else if (this.connectionType === 'simulator' && this.simulator) {
+                this.simulator.disconnect().catch(console.error);
             }
         } catch (error) {
             console.error("Error during disconnect:", error);
@@ -122,6 +185,7 @@ export class SerialService {
             this.port = null;
             this.reader = null;
             this.writer = null;
+            this.simulator = null;
             this.connectionType = null;
             this.isDisconnecting = false;
         }
@@ -148,7 +212,7 @@ export class SerialService {
                 }
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : "Unknown error";
-                 if (!this.isDisconnecting) {
+                if (!this.isDisconnecting) {
                     this.callbacks.onError(errorMessage);
                 }
                 break;
@@ -176,6 +240,13 @@ export class SerialService {
                 window.electronAPI.sendTCP(data);
             } catch (error) {
                 this.callbacks.onError("Error writing to TCP socket.");
+                throw error;
+            }
+        } else if (this.connectionType === 'simulator' && this.simulator) {
+            try {
+                await this.simulator.write(data);
+            } catch (error) {
+                this.callbacks.onError("Error writing to simulator.");
                 throw error;
             }
         }

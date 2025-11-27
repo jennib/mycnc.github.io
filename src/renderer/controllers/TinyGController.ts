@@ -26,24 +26,20 @@ class EventEmitter {
 }
 
 /**
- * Marlin Controller
+ * TinyG Controller
  * 
- * Marlin is a popular firmware for 3D printers and CNC machines.
- * Protocol differences from GRBL:
- * - No realtime commands (?, !, ~)
- * - Temperature control (M104, M109, M140, M190)
- * - Different position reporting (M114)
- * - Different status format
- * - Bed leveling (G29, M420)
+ * TinyG uses a JSON-based protocol for commands and responses.
+ * Command format: {"gc":"G0 X10"} or {"x":null} for queries
+ * Response format: {"r":{"x":10.000},"f":[1,0,6]}
+ * Status reports are automatic JSON objects: {"sr":{"stat":3,"posx":0.000,...}}
  */
-export class MarlinController implements Controller {
+export class TinyGController implements Controller {
     private emitter = new EventEmitter();
     private serialService: SerialService;
     private settings: MachineSettings;
 
     private isConnecting = false;
-    private linePromiseResolve: (() => void) | null = null;
-    private linePromiseReject: ((reason?: any) => void) | null = null;
+    private commandQueue: Array<{ resolve: (value: any) => void, reject: (reason?: any) => void }> = [];
 
     private lastStatus: MachineState = {
         status: 'Idle',
@@ -59,10 +55,11 @@ export class MarlinController implements Controller {
     private isJobRunning = false;
     private isPaused = false;
     private jobAbortController: AbortController | null = null;
+    private jsonBuffer: string = '';
 
     constructor(settings?: MachineSettings) {
         this.settings = settings || {
-            controllerType: 'marlin',
+            controllerType: 'tinyg',
             workArea: { x: 200, y: 200, z: 200 },
             jogFeedRate: 1000,
             spindle: { min: 0, max: 24000, warmupDelay: 0 },
@@ -85,9 +82,7 @@ export class MarlinController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                // For now, we don't have a Marlin simulator
-                // You could create MarlinSimulator similar to GrblSimulator
-                throw new Error('Marlin simulator not implemented yet');
+                throw new Error('TinyG simulator not implemented yet');
             } else {
                 portInfo = await this.serialService.connect(options);
             }
@@ -106,18 +101,18 @@ export class MarlinController implements Controller {
             // Wait for connection to stabilize
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Marlin doesn't have a welcome message like GRBL, but we can send M115 for version
+            // Request firmware version
             try {
-                await this.sendCommand('M115'); // Get firmware info
+                await this.sendJSONCommand({ fv: null });
             } catch (error) {
-                console.warn('Could not get Marlin firmware info:', error);
+                console.warn('Could not get TinyG firmware info:', error);
             }
 
             this.isConnecting = false;
             this.emitter.emit('state', { type: 'connect', data: portInfo });
 
-            // Start status polling (Marlin doesn't have realtime status like GRBL)
-            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 1000);
+            // TinyG sends automatic status reports, but we can also poll
+            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 250);
 
         } catch (error) {
             this.isConnecting = false;
@@ -134,11 +129,9 @@ export class MarlinController implements Controller {
             this.statusInterval = null;
         }
 
-        if (this.linePromiseReject) {
-            this.linePromiseReject(new Error('Connection disconnected.'));
-            this.linePromiseResolve = null;
-            this.linePromiseReject = null;
-        }
+        // Reject all pending commands
+        this.commandQueue.forEach(cmd => cmd.reject(new Error('Connection disconnected')));
+        this.commandQueue = [];
 
         try {
             this.serialService.disconnect();
@@ -150,107 +143,142 @@ export class MarlinController implements Controller {
     }
 
     private processIncomingData(line: string) {
-        const trimmed = line.trim();
-        if (!trimmed) return;
+        // TinyG sends JSON, buffer until we have complete JSON
+        this.jsonBuffer += line;
 
-        // Marlin responses
-        if (trimmed.startsWith('X:')) {
-            // Position report from M114: "X:0.00 Y:0.00 Z:0.00 E:0.00 Count X:0 Y:0 Z:0"
-            this.parsePositionReport(trimmed);
-        } else if (trimmed === 'ok') {
-            if (this.linePromiseResolve) {
-                this.linePromiseResolve();
-                this.linePromiseResolve = null;
-                this.linePromiseReject = null;
+        // Try to parse JSON
+        try {
+            const json = JSON.parse(this.jsonBuffer);
+            this.jsonBuffer = ''; // Clear buffer on success
+
+            this.handleJSONResponse(json);
+        } catch (e) {
+            // Not complete JSON yet, keep buffering
+            // But if buffer gets too large, clear it
+            if (this.jsonBuffer.length > 10000) {
+                console.warn('JSON buffer too large, clearing');
+                this.jsonBuffer = '';
             }
-            this.emitter.emit('data', { type: 'received', message: trimmed });
-        } else if (trimmed.startsWith('Error:') || trimmed.startsWith('!!')) {
-            if (this.linePromiseReject) {
-                this.linePromiseReject(new Error(trimmed));
-                this.linePromiseResolve = null;
-                this.linePromiseReject = null;
-            } else {
-                this.emitter.emit('error', `Marlin Error: ${trimmed}`);
-            }
-        } else {
-            // Other responses (firmware info, temperature, etc.)
-            this.emitter.emit('data', { type: 'received', message: trimmed });
         }
     }
 
-    private parsePositionReport(line: string) {
-        // Parse "X:10.00 Y:20.00 Z:5.00 E:0.00"
-        const xMatch = line.match(/X:([+-]?\d+\.?\d*)/);
-        const yMatch = line.match(/Y:([+-]?\d+\.?\d*)/);
-        const zMatch = line.match(/Z:([+-]?\d+\.?\d*)/);
+    private handleJSONResponse(json: any) {
+        // TinyG response format: {"r":{...},"f":[1,0,6]}
+        // Status report: {"sr":{"stat":3,"posx":0.000,...}}
 
-        if (xMatch) this.lastStatus.mpos.x = parseFloat(xMatch[1]);
-        if (yMatch) this.lastStatus.mpos.y = parseFloat(yMatch[1]);
-        if (zMatch) this.lastStatus.mpos.z = parseFloat(zMatch[1]);
+        if (json.r !== undefined) {
+            // Command response
+            const response = json.r;
+            const footer = json.f; // [status_code, line_number, checksum]
 
-        // Marlin typically reports machine position; work position would need WCO
-        this.lastStatus.wpos.x = this.lastStatus.mpos.x - this.lastStatus.wco.x;
-        this.lastStatus.wpos.y = this.lastStatus.mpos.y - this.lastStatus.wco.y;
-        this.lastStatus.wpos.z = this.lastStatus.mpos.z - this.lastStatus.wco.z;
+            if (this.commandQueue.length > 0) {
+                const cmd = this.commandQueue.shift()!;
+                if (footer[0] === 0) {
+                    cmd.resolve(response);
+                } else {
+                    cmd.reject(new Error(`TinyG error ${footer[0]}`));
+                }
+            }
+
+            this.emitter.emit('data', { type: 'received', message: JSON.stringify(response) });
+        }
+
+        if (json.sr !== undefined) {
+            // Status report
+            this.parseStatusReport(json.sr);
+        }
+    }
+
+    private parseStatusReport(sr: any) {
+        // TinyG status codes: 0=init, 1=ready, 2=alarm, 3=stop, 4=end, 5=run, 6=hold, 9=homing
+        const statMap: { [key: number]: MachineState['status'] } = {
+            0: 'Idle',  // init
+            1: 'Idle',  // ready
+            2: 'Alarm', // alarm
+            3: 'Idle',  // stop
+            4: 'Idle',  // end
+            5: 'Run',   // run
+            6: 'Hold',  // hold
+            9: 'Home',  // homing
+        };
+
+        if (sr.stat !== undefined) {
+            this.lastStatus.status = statMap[sr.stat] || 'Idle';
+        }
+
+        // Position: posx, posy, posz are work coordinates
+        if (sr.posx !== undefined) this.lastStatus.wpos.x = sr.posx;
+        if (sr.posy !== undefined) this.lastStatus.wpos.y = sr.posy;
+        if (sr.posz !== undefined) this.lastStatus.wpos.z = sr.posz;
+
+        // Machine position: mpox, mpoy, mpoz
+        if (sr.mpox !== undefined) this.lastStatus.mpos.x = sr.mpox;
+        if (sr.mpoy !== undefined) this.lastStatus.mpos.y = sr.mpoy;
+        if (sr.mpoz !== undefined) this.lastStatus.mpos.z = sr.mpoz;
+
+        // Calculate WCO if we have both
+        this.lastStatus.wco.x = this.lastStatus.mpos.x - this.lastStatus.wpos.x;
+        this.lastStatus.wco.y = this.lastStatus.mpos.y - this.lastStatus.wpos.y;
+        this.lastStatus.wco.z = this.lastStatus.mpos.z - this.lastStatus.wpos.z;
 
         this.emitter.emit('state', { type: 'state', data: this.lastStatus });
     }
 
-    async sendCommand(command: string, timeout = 10000): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            if (this.linePromiseResolve) {
-                return reject(new Error("Cannot send new command while another is awaiting 'ok'."));
-            }
-
+    private async sendJSONCommand(cmd: any, timeout = 10000): Promise<any> {
+        return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                this.linePromiseResolve = null;
-                this.linePromiseReject = null;
-                reject(new Error(`Command timed out after ${timeout / 1000}s: ${command}`));
+                const index = this.commandQueue.findIndex(c => c.resolve === resolve);
+                if (index >= 0) this.commandQueue.splice(index, 1);
+                reject(new Error(`Command timed out: ${JSON.stringify(cmd)}`));
             }, timeout);
 
-            this.linePromiseResolve = () => {
+            const wrappedResolve = (value: any) => {
                 clearTimeout(timeoutId);
-                resolve('ok');
+                resolve(value);
             };
 
-            this.linePromiseReject = (reason) => {
+            const wrappedReject = (reason: any) => {
                 clearTimeout(timeoutId);
                 reject(reason);
             };
 
-            this.serialService.send(command + '\n').catch(err => {
-                this.linePromiseReject?.(err);
-            });
+            this.commandQueue.push({ resolve: wrappedResolve, reject: wrappedReject });
+            this.serialService.send(JSON.stringify(cmd) + '\n').catch(wrappedReject);
         });
     }
 
+    async sendCommand(command: string, timeout = 10000): Promise<string> {
+        // Wrap G-code in JSON
+        const response = await this.sendJSONCommand({ gc: command }, timeout);
+        return 'ok';
+    }
+
     sendRealtimeCommand(command: string): void {
-        // Marlin doesn't support realtime commands like GRBL
-        // For emergency stop, we'd need to send M112 as a regular command
-        console.warn('Marlin does not support realtime commands');
+        // TinyG supports some realtime commands
+        // ! = feedhold, ~ = cycle start, ^x = reset
+        this.serialService.send(command).catch(console.error);
     }
 
     private requestStatusUpdate() {
-        // Request position report
-        if (!this.linePromiseResolve) {
-            this.sendCommand('M114').catch(err => {
-                console.warn('Failed to get position:', err);
-            });
-        }
+        // Request status report
+        this.sendJSONCommand({ sr: null }).catch(err => {
+            console.warn('Failed to get status:', err);
+        });
     }
 
     jog(x: number, y: number, z: number, feedRate: number): void {
-        // Marlin jogging: G91 (relative), G0, G90 (back to absolute)
-        const command = `G91\nG0 X${x} Y${y} Z${z} F${feedRate}\nG90`;
+        // TinyG jogging - send as G-code
+        const command = `G91 G0 X${x} Y${y} Z${z} F${feedRate} G90`;
         this.sendCommand(command).catch(err => {
             console.error('Jog command failed:', err);
         });
     }
 
     home(axis: 'all' | 'x' | 'y' | 'z'): void {
-        let command = 'G28'; // Home all
+        // TinyG homing
+        let command = 'G28.2 X0 Y0 Z0'; // Home all
         if (axis !== 'all') {
-            command = `G28 ${axis.toUpperCase()}0`; // Home specific axis
+            command = `G28.2 ${axis.toUpperCase()}0`;
         }
         this.sendCommand(command).catch(err => {
             console.error('Home command failed:', err);
@@ -259,8 +287,8 @@ export class MarlinController implements Controller {
 
     emergencyStop(): void {
         this.stopJob();
-        // M112 is emergency stop in Marlin
-        this.serialService.send('M112\n').catch(console.error);
+        // Send ^x for reset
+        this.sendRealtimeCommand('\x18');
     }
 
     async sendGCode(lines: string[], options: { startLine?: number; isDryRun?: boolean } = {}) {
@@ -309,8 +337,7 @@ export class MarlinController implements Controller {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
             this.lastStatus.status = 'Hold';
-            // Marlin: Send M0 for pause
-            await this.sendCommand('M0');
+            this.sendRealtimeCommand('!'); // Feed hold
         }
     }
 
@@ -318,7 +345,7 @@ export class MarlinController implements Controller {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
             this.lastStatus.status = 'Run';
-            // Marlin resumes automatically after M0 when you send next command
+            this.sendRealtimeCommand('~'); // Cycle start
         }
     }
 
@@ -328,8 +355,7 @@ export class MarlinController implements Controller {
             this.isJobRunning = false;
             this.isPaused = false;
             this.lastStatus.status = 'Idle';
-            // Send M112 for emergency stop
-            this.serialService.send('M112\n').catch(console.error);
+            this.sendRealtimeCommand('\x18'); // Reset
         }
     }
 

@@ -26,17 +26,22 @@ class EventEmitter {
 }
 
 /**
- * Marlin Controller
+ * LinuxCNC Controller
  * 
- * Marlin is a popular firmware for 3D printers and CNC machines.
- * Protocol differences from GRBL:
- * - No realtime commands (?, !, ~)
- * - Temperature control (M104, M109, M140, M190)
- * - Different position reporting (M114)
- * - Different status format
- * - Bed leveling (G29, M420)
+ * LinuxCNC is a comprehensive CNC control system primarily for Linux.
+ * This is a SIMPLIFIED implementation that assumes a network interface
+ * or serial protocol for remote control.
+ * 
+ * Note: Full LinuxCNC integration would require:
+ * - HAL (Hardware Abstraction Layer) integration
+ * - INI file configuration
+ * - NML (Neutral Message Language) protocol
+ * - Possibly using linuxcncrsh (remote shell) protocol
+ * 
+ * This implementation uses a simplified command/response protocol
+ * similar to GRBL for basic MDI (Manual Data Input) operations.
  */
-export class MarlinController implements Controller {
+export class LinuxCNCController implements Controller {
     private emitter = new EventEmitter();
     private serialService: SerialService;
     private settings: MachineSettings;
@@ -62,7 +67,7 @@ export class MarlinController implements Controller {
 
     constructor(settings?: MachineSettings) {
         this.settings = settings || {
-            controllerType: 'marlin',
+            controllerType: 'linuxcnc',
             workArea: { x: 200, y: 200, z: 200 },
             jogFeedRate: 1000,
             spindle: { min: 0, max: 24000, warmupDelay: 0 },
@@ -85,10 +90,9 @@ export class MarlinController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                // For now, we don't have a Marlin simulator
-                // You could create MarlinSimulator similar to GrblSimulator
-                throw new Error('Marlin simulator not implemented yet');
+                throw new Error('LinuxCNC simulator not implemented yet');
             } else {
+                // LinuxCNC typically uses TCP connection
                 portInfo = await this.serialService.connect(options);
             }
 
@@ -106,18 +110,18 @@ export class MarlinController implements Controller {
             // Wait for connection to stabilize
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Marlin doesn't have a welcome message like GRBL, but we can send M115 for version
+            // Send hello command (simplified protocol)
             try {
-                await this.sendCommand('M115'); // Get firmware info
+                await this.sendCommand('hello EMC user-typing-at-keyboard 1.0');
             } catch (error) {
-                console.warn('Could not get Marlin firmware info:', error);
+                console.warn('Could not send LinuxCNC hello:', error);
             }
 
             this.isConnecting = false;
             this.emitter.emit('state', { type: 'connect', data: portInfo });
 
-            // Start status polling (Marlin doesn't have realtime status like GRBL)
-            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 1000);
+            // Start status polling
+            this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), 500);
 
         } catch (error) {
             this.isConnecting = false;
@@ -153,45 +157,61 @@ export class MarlinController implements Controller {
         const trimmed = line.trim();
         if (!trimmed) return;
 
-        // Marlin responses
-        if (trimmed.startsWith('X:')) {
-            // Position report from M114: "X:0.00 Y:0.00 Z:0.00 E:0.00 Count X:0 Y:0 Z:0"
-            this.parsePositionReport(trimmed);
-        } else if (trimmed === 'ok') {
+        // LinuxCNC remote shell responses
+        // Simplified parsing - real LinuxCNC would need full protocol parser
+
+        if (trimmed.startsWith('HELLO ACK')) {
+            // Connection acknowledged
+            this.emitter.emit('data', { type: 'received', message: trimmed });
+        } else if (trimmed.startsWith('ERROR')) {
+            if (this.linePromiseReject) {
+                this.linePromiseReject(new Error(trimmed));
+                this.linePromiseResolve = null;
+                this.linePromiseReject = null;
+            } else {
+                this.emitter.emit('error', `LinuxCNC Error: ${trimmed}`);
+            }
+        } else if (trimmed === 'OK' || trimmed.startsWith('OK')) {
             if (this.linePromiseResolve) {
                 this.linePromiseResolve();
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
             }
             this.emitter.emit('data', { type: 'received', message: trimmed });
-        } else if (trimmed.startsWith('Error:') || trimmed.startsWith('!!')) {
-            if (this.linePromiseReject) {
-                this.linePromiseReject(new Error(trimmed));
-                this.linePromiseResolve = null;
-                this.linePromiseReject = null;
-            } else {
-                this.emitter.emit('error', `Marlin Error: ${trimmed}`);
-            }
+        } else if (trimmed.startsWith('STAT ')) {
+            // Status response - parse it
+            this.parseStatusResponse(trimmed);
         } else {
-            // Other responses (firmware info, temperature, etc.)
+            // Other responses
             this.emitter.emit('data', { type: 'received', message: trimmed });
         }
     }
 
-    private parsePositionReport(line: string) {
-        // Parse "X:10.00 Y:20.00 Z:5.00 E:0.00"
-        const xMatch = line.match(/X:([+-]?\d+\.?\d*)/);
-        const yMatch = line.match(/Y:([+-]?\d+\.?\d*)/);
-        const zMatch = line.match(/Z:([+-]?\d+\.?\d*)/);
+    private parseStatusResponse(line: string) {
+        // Simplified status parsing
+        // Real LinuxCNC would return structured status data
+        // Format example: "STAT x:10.0 y:20.0 z:5.0 state:INTERP_IDLE"
+
+        const xMatch = line.match(/x:([+-]?\d+\.?\d*)/);
+        const yMatch = line.match(/y:([+-]?\d+\.?\d*)/);
+        const zMatch = line.match(/z:([+-]?\d+\.?\d*)/);
+        const stateMatch = line.match(/state:(\w+)/);
 
         if (xMatch) this.lastStatus.mpos.x = parseFloat(xMatch[1]);
         if (yMatch) this.lastStatus.mpos.y = parseFloat(yMatch[1]);
         if (zMatch) this.lastStatus.mpos.z = parseFloat(zMatch[1]);
 
-        // Marlin typically reports machine position; work position would need WCO
-        this.lastStatus.wpos.x = this.lastStatus.mpos.x - this.lastStatus.wco.x;
-        this.lastStatus.wpos.y = this.lastStatus.mpos.y - this.lastStatus.wco.y;
-        this.lastStatus.wpos.z = this.lastStatus.mpos.z - this.lastStatus.wco.z;
+        // Map LinuxCNC states to our states
+        if (stateMatch) {
+            const stateName = stateMatch[1];
+            if (stateName.includes('IDLE')) this.lastStatus.status = 'Idle';
+            else if (stateName.includes('RUN')) this.lastStatus.status = 'Run';
+            else if (stateName.includes('PAUSED')) this.lastStatus.status = 'Hold';
+            else this.lastStatus.status = 'Idle';
+        }
+
+        // Update work position (assuming no offset for now)
+        this.lastStatus.wpos = { ...this.lastStatus.mpos };
 
         this.emitter.emit('state', { type: 'state', data: this.lastStatus });
     }
@@ -199,7 +219,7 @@ export class MarlinController implements Controller {
     async sendCommand(command: string, timeout = 10000): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.linePromiseResolve) {
-                return reject(new Error("Cannot send new command while another is awaiting 'ok'."));
+                return reject(new Error("Cannot send new command while another is awaiting response."));
             }
 
             const timeoutId = setTimeout(() => {
@@ -218,39 +238,52 @@ export class MarlinController implements Controller {
                 reject(reason);
             };
 
-            this.serialService.send(command + '\n').catch(err => {
+            // For MDI commands, prefix with 'set mdi'
+            const mdiCommand = command.startsWith('set ') ? command : `set mdi ${command}`;
+            this.serialService.send(mdiCommand + '\n').catch(err => {
                 this.linePromiseReject?.(err);
             });
         });
     }
 
     sendRealtimeCommand(command: string): void {
-        // Marlin doesn't support realtime commands like GRBL
-        // For emergency stop, we'd need to send M112 as a regular command
-        console.warn('Marlin does not support realtime commands');
+        // LinuxCNC doesn't use realtime commands in the same way
+        // For abort, we'd use 'set abort'
+        if (command === '\x18') {
+            this.serialService.send('set abort\n').catch(console.error);
+        }
     }
 
     private requestStatusUpdate() {
-        // Request position report
+        // Request status
         if (!this.linePromiseResolve) {
-            this.sendCommand('M114').catch(err => {
-                console.warn('Failed to get position:', err);
-            });
+            this.serialService.send('get state\n').catch(console.error);
         }
     }
 
     jog(x: number, y: number, z: number, feedRate: number): void {
-        // Marlin jogging: G91 (relative), G0, G90 (back to absolute)
-        const command = `G91\nG0 X${x} Y${y} Z${z} F${feedRate}\nG90`;
-        this.sendCommand(command).catch(err => {
-            console.error('Jog command failed:', err);
+        // LinuxCNC jogging
+        // Use incremental mode for jogging
+        const commands = [
+            'set mode auto',
+            'set auto',
+            `G91 G0 X${x} Y${y} Z${z} F${feedRate}`,
+            'G90'
+        ];
+
+        commands.forEach(cmd => {
+            this.sendCommand(cmd).catch(err => {
+                console.error('Jog command failed:', err);
+            });
         });
     }
 
     home(axis: 'all' | 'x' | 'y' | 'z'): void {
-        let command = 'G28'; // Home all
+        // LinuxCNC homing
+        let command = 'set home -1'; // Home all axes
         if (axis !== 'all') {
-            command = `G28 ${axis.toUpperCase()}0`; // Home specific axis
+            const axisNum = { x: 0, y: 1, z: 2 }[axis];
+            command = `set home ${axisNum}`;
         }
         this.sendCommand(command).catch(err => {
             console.error('Home command failed:', err);
@@ -259,8 +292,7 @@ export class MarlinController implements Controller {
 
     emergencyStop(): void {
         this.stopJob();
-        // M112 is emergency stop in Marlin
-        this.serialService.send('M112\n').catch(console.error);
+        this.sendRealtimeCommand('\x18'); // Sends 'set abort'
     }
 
     async sendGCode(lines: string[], options: { startLine?: number; isDryRun?: boolean } = {}) {
@@ -272,6 +304,9 @@ export class MarlinController implements Controller {
 
         const startLine = options.startLine || 0;
         this.lastStatus.status = 'Run';
+
+        // Put LinuxCNC into auto mode
+        await this.sendCommand('set mode auto');
 
         for (let i = startLine; i < lines.length; i++) {
             if (signal.aborted) break;
@@ -309,8 +344,7 @@ export class MarlinController implements Controller {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
             this.lastStatus.status = 'Hold';
-            // Marlin: Send M0 for pause
-            await this.sendCommand('M0');
+            await this.sendCommand('set pause');
         }
     }
 
@@ -318,7 +352,7 @@ export class MarlinController implements Controller {
         if (this.isJobRunning && this.isPaused) {
             this.isPaused = false;
             this.lastStatus.status = 'Run';
-            // Marlin resumes automatically after M0 when you send next command
+            await this.sendCommand('set resume');
         }
     }
 
@@ -328,8 +362,7 @@ export class MarlinController implements Controller {
             this.isJobRunning = false;
             this.isPaused = false;
             this.lastStatus.status = 'Idle';
-            // Send M112 for emergency stop
-            this.serialService.send('M112\n').catch(console.error);
+            this.serialService.send('set abort\n').catch(console.error);
         }
     }
 
