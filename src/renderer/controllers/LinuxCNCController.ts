@@ -33,7 +33,7 @@ export class LinuxCNCController implements Controller {
 
     private lastStatus: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -81,7 +81,7 @@ export class LinuxCNCController implements Controller {
             // Reset state
             this.lastStatus = {
                 status: 'Idle',
-                code: null,
+                code: undefined,
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
@@ -203,6 +203,8 @@ export class LinuxCNCController implements Controller {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new command while another is awaiting response."));
             }
+
+            this.emitter.emit('data', { type: 'sent', message: command });
 
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;

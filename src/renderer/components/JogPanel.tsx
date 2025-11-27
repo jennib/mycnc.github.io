@@ -142,34 +142,25 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       const isZButton = axis === "Z";
       const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
 
-      let title = `${label} (${axis}${
-        direction > 0 ? "+" : "-"
-      }) (Hotkey: ${hotkey})`;
+      let title = `${label} (${axis}${direction > 0 ? "+" : "-"
+        }) (Hotkey: ${hotkey})`;
       if (isZButton && isZJogDisabledForStep) {
-        title = `Z-Jog disabled for step size > ${
-          unit === "mm" ? "10mm" : "1in"
-        }`;
+        title = `Z-Jog disabled for step size > ${unit === "mm" ? "10mm" : "1in"
+          }`;
       }
 
-      const handleMouseDown = () => {
+      const handleClick = () => {
         onFlash(id);
-        onJog(axis, direction, 99999); // Large number for continuous jog
-      };
-
-      const handleMouseUp = () => {
-        onJogStop();
+        onJog(axis, direction, jogStep);
       };
 
       return (
         <button
           id={id}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onClick={handleClick}
           disabled={isDisabled}
-          className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${
-            flashingButton === id ? "ring-4 ring-white ring-inset" : ""
-          }`}
+          className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
+            }`}
           title={title}
         >
           {icon}
@@ -251,15 +242,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                       id={`step-${step}`}
                       onClick={() => onStepChange(step)}
                       disabled={isControlDisabled}
-                      className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                        jogStep === step
+                      className={`px-2 py-1 text-xs rounded-md transition-colors ${jogStep === step
                           ? "bg-primary text-white font-bold"
                           : "bg-secondary hover:bg-secondary-focus"
-                      } ${
-                        flashingButton === `step-${step}`
+                        } ${flashingButton === `step-${step}`
                           ? "ring-2 ring-white ring-inset"
                           : ""
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {step}
                     </button>
@@ -322,22 +311,20 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onUnitChange("mm")}
                   disabled={isControlDisabled}
-                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${
-                    unit === "mm"
+                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "mm"
                       ? "bg-primary text-white"
                       : "hover:bg-secondary-focus"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   mm
                 </button>
                 <button
                   onClick={() => onUnitChange("in")}
                   disabled={isControlDisabled}
-                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${
-                    unit === "in"
+                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "in"
                       ? "bg-primary text-white"
                       : "hover:bg-secondary-focus"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   in
                 </button>

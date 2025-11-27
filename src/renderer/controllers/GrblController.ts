@@ -22,7 +22,7 @@ export class GrblController implements Controller {
     linePromiseReject: ((reason?: any) => void) | null = null;
     lastStatus: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -60,7 +60,7 @@ export class GrblController implements Controller {
             // Reset state for new connection
             this.lastStatus = {
                 status: 'Idle',
-                code: null,
+                code: undefined,
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
@@ -173,6 +173,8 @@ export class GrblController implements Controller {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
+
+            this.emitter.emit('data', { type: 'sent', message: command });
 
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
