@@ -56,6 +56,7 @@ export interface Macro {
 }
 
 export interface MachineSettings {
+    controllerType: string;
     workArea: { x: number; y: number; z: number };
     jogFeedRate: number;
     spindle: { min: number; max: number; warmupDelay: number; };

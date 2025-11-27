@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session, MenuItemConstructorOptions } from "electron";
 import path from "path";
 import net from "net";
 

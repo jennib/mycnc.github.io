@@ -177,6 +177,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
                                 <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
                             </InputGroup>
+                            <InputGroup label="Controller Type">
+                                <select
+                                    id="controller-type"
+                                    value={localSettings.controllerType}
+                                    onChange={e => handleNumericChange('controllerType', e.target.value)}
+                                    className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="grbl">Grbl</option>
+                                    <option value="marlin">Marlin</option>
+                                </select>
+                            </InputGroup>
                             <InputGroup label="Spindle Warmup Delay (ms)">
                                 <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
                             </InputGroup>
