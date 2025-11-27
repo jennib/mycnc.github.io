@@ -1,29 +1,10 @@
 import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../types';
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
+import { EventEmitter } from '../utils/EventEmitter';
+import { MarlinSimulator } from '../services/simulators/MarlinSimulator';
 
-type Listener = (data: any) => void;
 
-class EventEmitter {
-    private listeners: { [event: string]: Listener[] } = {};
-
-    on(event: string, listener: Listener) {
-        if (!this.listeners[event]) {
-            this.listeners[event] = [];
-        }
-        this.listeners[event].push(listener);
-    }
-
-    off(event: string, listener: Listener) {
-        if (!this.listeners[event]) return;
-        this.listeners[event] = this.listeners[event].filter(l => l !== listener);
-    }
-
-    emit(event: string, data: any) {
-        if (!this.listeners[event]) return;
-        this.listeners[event].forEach(listener => listener(data));
-    }
-}
 
 /**
  * Marlin Controller
@@ -37,7 +18,7 @@ class EventEmitter {
  * - Bed leveling (G29, M420)
  */
 export class MarlinController implements Controller {
-    private emitter = new EventEmitter();
+    private emitter = new EventEmitter<'data' | 'state' | 'error' | 'progress' | 'job'>();
     private serialService: SerialService;
     private settings: MachineSettings;
 
@@ -85,9 +66,8 @@ export class MarlinController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                // For now, we don't have a Marlin simulator
-                // You could create MarlinSimulator similar to GrblSimulator
-                throw new Error('Marlin simulator not implemented yet');
+                const simulator = new MarlinSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 portInfo = await this.serialService.connect(options);
             }

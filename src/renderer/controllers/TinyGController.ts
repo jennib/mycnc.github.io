@@ -1,29 +1,10 @@
 import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../types';
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
+import { EventEmitter } from '../utils/EventEmitter';
+import { TinyGSimulator } from '../services/simulators/TinyGSimulator';
 
-type Listener = (data: any) => void;
 
-class EventEmitter {
-    private listeners: { [event: string]: Listener[] } = {};
-
-    on(event: string, listener: Listener) {
-        if (!this.listeners[event]) {
-            this.listeners[event] = [];
-        }
-        this.listeners[event].push(listener);
-    }
-
-    off(event: string, listener: Listener) {
-        if (!this.listeners[event]) return;
-        this.listeners[event] = this.listeners[event].filter(l => l !== listener);
-    }
-
-    emit(event: string, data: any) {
-        if (!this.listeners[event]) return;
-        this.listeners[event].forEach(listener => listener(data));
-    }
-}
 
 /**
  * TinyG Controller
@@ -34,7 +15,7 @@ class EventEmitter {
  * Status reports are automatic JSON objects: {"sr":{"stat":3,"posx":0.000,...}}
  */
 export class TinyGController implements Controller {
-    private emitter = new EventEmitter();
+    private emitter = new EventEmitter<'data' | 'state' | 'error' | 'progress' | 'job'>();
     private serialService: SerialService;
     private settings: MachineSettings;
 
@@ -82,7 +63,8 @@ export class TinyGController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                throw new Error('TinyG simulator not implemented yet');
+                const simulator = new TinyGSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 portInfo = await this.serialService.connect(options);
             }

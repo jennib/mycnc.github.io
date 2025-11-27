@@ -5,6 +5,7 @@ import { Send, Trash2, Maximize, Minimize } from "./Icons";
 interface ConsoleProps {
   logs: ConsoleLog[];
   onSendCommand: (command: string) => void;
+  onClearLogs: () => void;
   isConnected: boolean;
   isJobActive: boolean;
   isMacroRunning: boolean;
@@ -16,6 +17,7 @@ interface ConsoleProps {
 const Console: React.FC<ConsoleProps> = ({
   logs,
   onSendCommand,
+  onClearLogs,
   isConnected,
   isJobActive,
   isMacroRunning,
@@ -117,8 +119,8 @@ const Console: React.FC<ConsoleProps> = ({
             Autoscroll
           </label>
           <button
-            onClick={() => setCommandHistory([])}
-            title="Clear History"
+            onClick={onClearLogs}
+            title="Clear Console Logs"
             className="p-1 rounded-md hover:bg-secondary"
           >
             <Trash2 className="w-4 h-4 text-text-secondary" />

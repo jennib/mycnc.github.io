@@ -378,13 +378,13 @@ const App: React.FC = () => {
           uiActions.setReturnToWelcome(true);
           uiActions.openToolLibraryModal();
         }}
-        onTrySimulator={() => {}}
+        onTrySimulator={() => { }}
         isMachineSetupComplete={!!machineSettings.isConfigured}
         isToolLibrarySetupComplete={toolLibrary.length > 0}
       />
       <NotificationContainer
         notifications={notifications}
-        onDismiss={() => {}}
+        onDismiss={() => { }}
       />
       <ContactModal
         isOpen={isContactModalOpen}
@@ -423,8 +423,8 @@ const App: React.FC = () => {
       <MacroEditorModal
         isOpen={isMacroEditorOpen}
         onCancel={uiActions.closeMacroEditor}
-        onSave={() => {}}
-        onDelete={() => {}}
+        onSave={() => { }}
+        onDelete={() => { }}
         macro={editingMacroIndex !== null ? macros[editingMacroIndex] : null}
         index={editingMacroIndex}
       />
@@ -446,9 +446,9 @@ const App: React.FC = () => {
         }}
         settings={machineSettings}
         generatorSettings={generatorSettings}
-        onResetDialogs={() => {}}
-        onExport={() => {}}
-        onImport={() => {}}
+        onResetDialogs={() => { }}
+        onExport={() => { }}
+        onImport={() => { }}
       />
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}
@@ -559,11 +559,10 @@ const App: React.FC = () => {
             id="unlock-button"
             title="Unlock Machine (Hotkey: x)"
             onClick={() => handleManualCommand("$X")}
-            className={`ml-4 flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-100 ${
-              flashingButton === "unlock-button"
+            className={`ml-4 flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-100 ${flashingButton === "unlock-button"
                 ? "ring-4 ring-white ring-inset"
                 : ""
-            }`}
+              }`}
           >
             <Unlock className="w-5 h-5" /> Unlock ($X)
           </button>
@@ -651,6 +650,7 @@ const App: React.FC = () => {
           <Console
             logs={logs}
             onSendCommand={handleManualCommand}
+            onClearLogs={logActions.clearLogs}
             isConnected={isConnected}
             isJobActive={isJobActive}
             isMacroRunning={isMacroRunning}

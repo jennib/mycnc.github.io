@@ -101,12 +101,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             }
         }));
     };
-    
+
     const handleSave = () => {
         // Deep clone to avoid mutating state directly
         const settingsToSave = JSON.parse(JSON.stringify(localSettings));
-        
-        
+
+
         // Define which fields need to be parsed to numbers
         const numericFields = {
             workArea: ['x', 'y', 'z'],
@@ -184,8 +184,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     onChange={e => handleNumericChange('controllerType', e.target.value)}
                                     className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
-                                    <option value="grbl">Grbl</option>
-                                    <option value="marlin">Marlin</option>
+                                    <option value="grbl">GRBL (Standard 3-axis CNC)</option>
+                                    <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
+                                    <option value="grblhal">grblHAL (Advanced GRBL)</option>
+                                    <option value="smoothieware">Smoothieware (32-bit GRBL-like)</option>
+                                    <option value="marlin">Marlin (3D Printer/CNC)</option>
+                                    <option value="tinyg">TinyG (JSON Protocol)</option>
+                                    <option value="linuxcnc">LinuxCNC (Linux-based)</option>
                                 </select>
                             </InputGroup>
                             <InputGroup label="Spindle Warmup Delay (ms)">

@@ -3,33 +3,10 @@ import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
 import { parseGrblStatus } from '../services/grblParser';
 import { GrblSimulator } from '../services/simulators/GrblSimulator';
-
-// A simple event emitter
-type Listener = (data: any) => void;
-
-class EventEmitter {
-    private listeners: { [event: string]: Listener[] } = {};
-
-    on(event: string, listener: Listener) {
-        if (!this.listeners[event]) {
-            this.listeners[event] = [];
-        }
-        this.listeners[event].push(listener);
-    }
-
-    off(event: string, listener: Listener) {
-        if (!this.listeners[event]) return;
-        this.listeners[event] = this.listeners[event].filter(l => l !== listener);
-    }
-
-    emit(event: string, data: any) {
-        if (!this.listeners[event]) return;
-        this.listeners[event].forEach(listener => listener(data));
-    }
-}
+import { EventEmitter } from '../utils/EventEmitter';
 
 export class GrblController implements Controller {
-    private emitter = new EventEmitter();
+    private emitter = new EventEmitter<'data' | 'state' | 'error' | 'progress' | 'job'>();
     private serialService: SerialService;
     settings: MachineSettings;
 

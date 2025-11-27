@@ -1,29 +1,10 @@
 import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../types';
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
+import { EventEmitter } from '../utils/EventEmitter';
+import { LinuxCNCSimulator } from '../services/simulators/LinuxCNCSimulator';
 
-type Listener = (data: any) => void;
 
-class EventEmitter {
-    private listeners: { [event: string]: Listener[] } = {};
-
-    on(event: string, listener: Listener) {
-        if (!this.listeners[event]) {
-            this.listeners[event] = [];
-        }
-        this.listeners[event].push(listener);
-    }
-
-    off(event: string, listener: Listener) {
-        if (!this.listeners[event]) return;
-        this.listeners[event] = this.listeners[event].filter(l => l !== listener);
-    }
-
-    emit(event: string, data: any) {
-        if (!this.listeners[event]) return;
-        this.listeners[event].forEach(listener => listener(data));
-    }
-}
 
 /**
  * LinuxCNC Controller
@@ -42,7 +23,7 @@ class EventEmitter {
  * similar to GRBL for basic MDI (Manual Data Input) operations.
  */
 export class LinuxCNCController implements Controller {
-    private emitter = new EventEmitter();
+    private emitter = new EventEmitter<'data' | 'state' | 'error' | 'progress' | 'job'>();
     private serialService: SerialService;
     private settings: MachineSettings;
 
@@ -90,7 +71,8 @@ export class LinuxCNCController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                throw new Error('LinuxCNC simulator not implemented yet');
+                const simulator = new LinuxCNCSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 // LinuxCNC typically uses TCP connection
                 portInfo = await this.serialService.connect(options);
