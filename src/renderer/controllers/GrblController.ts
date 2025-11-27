@@ -100,8 +100,9 @@ export class GrblController implements Controller {
                     reject(new Error("Connection timed out. No GRBL welcome message received."));
                 }, 2500); // 2.5 second timeout
 
-                const dataListener = (data: string) => {
-                    if (data.toLowerCase().includes('grbl')) {
+                const dataListener = (data: any) => {
+                    const payload = typeof data === 'string' ? data : data?.message;
+                    if (payload && payload.toLowerCase().includes('grbl')) {
                         clearTimeout(timeout);
                         this.off('data', dataListener);
                         resolve();
