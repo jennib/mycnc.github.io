@@ -2,6 +2,7 @@ import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../t
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
 import { EventEmitter } from '../utils/EventEmitter';
+import { LinuxCNCSimulator } from '../services/simulators/LinuxCNCSimulator';
 
 
 
@@ -70,7 +71,8 @@ export class LinuxCNCController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                throw new Error('LinuxCNC simulator not implemented yet');
+                const simulator = new LinuxCNCSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 // LinuxCNC typically uses TCP connection
                 portInfo = await this.serialService.connect(options);

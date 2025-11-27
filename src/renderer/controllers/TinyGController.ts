@@ -2,6 +2,7 @@ import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../t
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
 import { EventEmitter } from '../utils/EventEmitter';
+import { TinyGSimulator } from '../services/simulators/TinyGSimulator';
 
 
 
@@ -62,7 +63,8 @@ export class TinyGController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                throw new Error('TinyG simulator not implemented yet');
+                const simulator = new TinyGSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 portInfo = await this.serialService.connect(options);
             }

@@ -2,6 +2,7 @@ import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from '../t
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
 import { EventEmitter } from '../utils/EventEmitter';
+import { MarlinSimulator } from '../services/simulators/MarlinSimulator';
 
 
 
@@ -65,9 +66,8 @@ export class MarlinController implements Controller {
         try {
             let portInfo: PortInfo;
             if (options.type === 'simulator') {
-                // For now, we don't have a Marlin simulator
-                // You could create MarlinSimulator similar to GrblSimulator
-                throw new Error('Marlin simulator not implemented yet');
+                const simulator = new MarlinSimulator();
+                portInfo = await this.serialService.connectSimulator(simulator);
             } else {
                 portInfo = await this.serialService.connect(options);
             }
