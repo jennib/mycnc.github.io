@@ -73,7 +73,7 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
             );
         }
     }
-    
+
     // Y-Axis
     if (0 >= vbMinX && 0 <= vbMinX + vbWidth) {
         gridElements.push(<line key="axis-y" x1={0} y1={vbMinY} x2={0} y2={vbMinY + vbHeight} style={axisLineStyle as React.CSSProperties} />);
@@ -89,16 +89,16 @@ const Preview: React.FC<PreviewProps> = ({ paths, viewBox, machineSettings }) =>
                 <g transform="scale(1, -1)">
                     {/* Work Area Rectangle */}
                     {machineSettings.workArea && (
-                        <rect 
-                            x={0} 
-                            y={-machineSettings.workArea.y} 
-                            width={machineSettings.workArea.x} 
-                            height={machineSettings.workArea.y} 
-                            stroke='var(--color-primary)' 
-                            strokeWidth='1%' 
-                            fill='none' 
-                            strokeDasharray='5 5' 
-                            style={{ vectorEffect: 'non-scaling-stroke' }} 
+                        <rect
+                            x={0}
+                            y={-machineSettings.workArea.y}
+                            width={machineSettings.workArea.x}
+                            height={machineSettings.workArea.y}
+                            stroke='var(--color-primary)'
+                            strokeWidth='1%'
+                            fill='none'
+                            strokeDasharray='5 5'
+                            style={{ vectorEffect: 'non-scaling-stroke' }}
                         />
                     )}
                     <g key="grid-group">{gridElements}</g>
@@ -137,9 +137,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const [activeTab, setActiveTab] = useState('surfacing');
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
-    const [viewBox, setViewBox] = useState('0 0 100 100'); 
+    const [viewBox, setViewBox] = useState('0 0 100 100');
     const [generationError, setGenerationError] = useState<string | null>(null);
-    
+
     // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
         isEnabled: false,
@@ -147,7 +147,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         rectCols: 3, rectRows: 2, rectSpacingX: 15, rectSpacingY: 15,
         circCopies: 6, circRadius: 40, circCenterX: 50, circCenterY: 50, circStartAngle: 0,
     });
-    
+
     const calculateViewBox = useCallback((bounds) => {
         if (!bounds || bounds.minX === Infinity) return '0 -100 100 100';
         const { minX = 0, minY = 0, maxX = 100, maxY = 100 } = bounds;
@@ -157,7 +157,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const vbMinX = minX - padding;
         const vbWidth = width + padding * 2;
-        
+
         // Because of the scale(1, -1) transform, the Y coordinates are flipped.
         // The top of the viewbox needs to be the negated maximum Y coordinate.
         const vbMinY = -(maxY + padding);
@@ -184,7 +184,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
         const { depth, peck, retract, feed, spindle, safeZ, toolpathOrigin } = drillParams;
-        
+
         const numericDepth = Number(depth);
         const numericPeck = Number(peck);
         const numericRetract = Number(retract);
@@ -256,7 +256,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             if ([numericCircHoles, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
                 return { error: "Please fill all required fields with valid numbers for circular drilling.", code: [], paths: [], bounds: {} };
             }
-            
+
             const angleStep = numericCircHoles > 0 ? 360 / numericCircHoles : 0;
             for (let i = 0; i < numericCircHoles; i++) {
                 const angle = (numericCircStartAngle + i * angleStep) * (Math.PI / 180);
@@ -291,7 +291,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const toolDiameter = selectedTool.diameter;
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ, toolpathOrigin } = profileParams;
-        
+
         const numericWidth = Number(width);
         const numericLength = Number(length);
         const numericCornerRadius = Number(cornerRadius);
@@ -325,7 +325,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
             `G21 G90`, `M3 S${numericSpindle}`];
@@ -342,10 +342,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             maxX: numericWidth + offset + originOffsetX,
             maxY: numericLength + offset + originOffsetY
         } : {
-            minX: numericDiameter / 2 - radius + originOffsetX,
-            minY: numericDiameter / 2 - radius + originOffsetY,
-            maxX: numericDiameter / 2 + radius + originOffsetX,
-            maxY: numericDiameter / 2 + radius + originOffsetY
+            minX: -(numericDiameter / 2 + offset) + originOffsetX,
+            minY: -(numericDiameter / 2 + offset) + originOffsetY,
+            maxX: (numericDiameter / 2 + offset) + originOffsetX,
+            maxY: (numericDiameter / 2 + offset) + originOffsetY
         };
         return { code, paths, bounds, error: null };
     };
@@ -360,7 +360,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
         const { width, length, depth, stepover, feed, spindle, safeZ, direction, toolpathOrigin } = surfaceParams;
-        
+
         const numericWidth = Number(width);
         const numericLength = Number(length);
         const numericDepth = Number(depth);
@@ -383,7 +383,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(--- Surfacing Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -442,7 +442,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ, toolpathOrigin } = pocketParams;
-        
+
         const numericWidth = Number(width);
         const numericLength = Number(length);
         const numericCornerRadius = Number(cornerRadius); // Not directly used in current pocket code, but good to convert
@@ -475,7 +475,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(--- Pocket Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ}`
@@ -554,7 +554,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if ([numericCenterX, numericCenterY, numericHoleDiameter, numericHoleDepth, numericDepthPerPass, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (counterboreEnabled && ([numericCbDiameter, numericCbDepth].some(isNaN)))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
         }
-        
+
         if (numericHoleDiameter <= selectedTool.diameter) {
             return { error: "Tool must be smaller than hole diameter.", code: [], paths: [], bounds: {} };
         }
@@ -585,7 +585,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(--- Bore Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${selectedTool.diameter}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -657,9 +657,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const toolDiameter = selectedTool.diameter;
-        
+
         const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle, toolpathOrigin } = slotParams;
-        
+
         const numericSlotWidth = Number(slotWidth);
         const numericDepth = Number(depth);
         const numericDepthPerPass = Number(depthPerPass);
@@ -697,7 +697,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(--- Slot Operation: ${type} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
@@ -711,7 +711,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             bounds.minY = Math.min(bounds.minY, y);
             bounds.maxY = Math.max(bounds.maxY, y);
         };
-        
+
         const offsets = [];
         if (numericSlotWidth <= toolDiameter) {
             offsets.push(0);
@@ -719,10 +719,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const wallOffset = (numericSlotWidth - toolDiameter) / 2;
             offsets.push(-wallOffset, wallOffset);
             if (numericSlotWidth > toolDiameter * 2) {
-                 offsets.push(0); // Add a center pass
+                offsets.push(0); // Add a center pass
             }
         }
-        offsets.sort((a,b) => a-b);
+        offsets.sort((a, b) => a - b);
 
 
         let currentDepth = 0;
@@ -767,15 +767,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
                     const gCodeArc = (numericEndAngle > numericStartAngle) ? 'G3' : 'G2';
                     const sweepFlag = (numericEndAngle > numericStartAngle) ? 1 : 0;
-                    
+
                     const I = numericCenterX - passStartX;
                     const J = numericCenterY - passStartY;
-                    
+
                     code.push(`G0 Z${numericSafeZ}`);
                     code.push(`G0 X${(passStartX + originOffsetX).toFixed(3)} Y${(passStartY + originOffsetY).toFixed(3)}`);
                     code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`);
                     code.push(`${gCodeArc} X${(passEndX + originOffsetX).toFixed(3)} Y${(passEndY + originOffsetY).toFixed(3)} I${I.toFixed(3)} J${J.toFixed(3)} F${numericFeed}`);
-                    
+
                     if (currentDepth === Math.max(numericDepth, -numericDepthPerPass)) {
                         const largeArcFlag = Math.abs(numericEndAngle - numericStartAngle) > 180 ? 1 : 0;
                         paths.push({ d: `M ${(passStartX + originOffsetX)} ${(passStartY + originOffsetY)} A ${passRadius} ${passRadius} 0 ${largeArcFlag} ${sweepFlag} ${(passEndX + originOffsetX)} ${(passEndY + originOffsetY)}`, stroke: 'var(--color-accent-yellow)', fill: 'none', strokeWidth: `${toolDiameter}%` });
@@ -796,7 +796,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         return { code, paths, bounds, error: null };
     };
-    
+
     const generateTextCode = (machineSettings: MachineSettings) => {
         const textParams = generatorSettings.text;
         const toolIndex = toolLibrary.findIndex(t => t.id === textParams.toolId);
@@ -805,7 +805,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
         const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ, toolpathOrigin } = textParams;
-        
+
         const numericHeight = Number(height);
         const numericSpacing = Number(spacing);
         const numericStartX = Number(startX);
@@ -821,7 +821,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const fontData = FONTS[font];
         if (!fontData) {
-             return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
+            return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
         }
 
         let originOffsetX = 0;
@@ -834,7 +834,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [];
+        } const code = [];
         const paths = [];
         const FONT_BASE_HEIGHT = 7;
         const FONT_BASE_WIDTH = 5;
@@ -862,7 +862,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         for (let i = 0; i < text.length; i++) {
             const char = text[i].toUpperCase();
             const charData = fontData.characters[char];
-            
+
             if (charData) {
                 if (fontData.type === 'stroke') {
                     for (const stroke of charData) {
@@ -888,20 +888,20 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         if (path.length === 0) continue;
 
                         const scaledPath = path.map(p => ({
-                           x: startOffsetX + i * (charWidth + numericSpacing) + p.x * scale,
-                           y: numericStartY + p.y * scale
+                            x: startOffsetX + i * (charWidth + numericSpacing) + p.x * scale,
+                            y: numericStartY + p.y * scale
                         }));
 
                         code.push(`G0 Z${numericSafeZ}`);
                         code.push(`G0 X${(scaledPath[0].x + originOffsetX).toFixed(3)} Y${(scaledPath[0].y + originOffsetY).toFixed(3)}`);
                         code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
-                        
+
                         for (let j = 1; j < scaledPath.length; j++) {
-                           code.push(`G1 X${(scaledPath[j].x + originOffsetX).toFixed(3)} Y${(scaledPath[j].y + originOffsetY).toFixed(3)} F${numericFeed}`);
+                            code.push(`G1 X${(scaledPath[j].x + originOffsetX).toFixed(3)} Y${(scaledPath[j].y + originOffsetY).toFixed(3)} F${numericFeed}`);
                         }
-                        
-                        if (scaledPath[0].x !== scaledPath[scaledPath.length-1].x || scaledPath[0].y !== scaledPath[scaledPath.length-1].y) {
-                           code.push(`G1 X${(scaledPath[0].x + originOffsetX).toFixed(3)} Y${(scaledPath[0].y + originOffsetY).toFixed(3)} F${numericFeed}`);
+
+                        if (scaledPath[0].x !== scaledPath[scaledPath.length - 1].x || scaledPath[0].y !== scaledPath[scaledPath.length - 1].y) {
+                            code.push(`G1 X${(scaledPath[0].x + originOffsetX).toFixed(3)} Y${(scaledPath[0].y + originOffsetY).toFixed(3)} F${numericFeed}`);
                         }
                         code.push(`G0 Z${numericSafeZ}`);
 
@@ -914,14 +914,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         code.push('M5');
         code.push(`G0 X${(numericStartX + originOffsetX).toFixed(3)} Y${(numericStartY + originOffsetY).toFixed(3)}`);
-        
+
         const bounds = {
             minX: startOffsetX + originOffsetX,
             maxX: startOffsetX + totalTextWidth + originOffsetX,
             minY: numericStartY + originOffsetY,
             maxY: numericStartY + numericHeight + originOffsetY
         };
-        
+
         return { code, paths, bounds, error: null };
     };
 
@@ -958,7 +958,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Default to 0,0 offset for front_left_top
             originOffsetX = 0;
             originOffsetY = 0;
-        }        const code = [
+        } const code = [
             `(--- Thread Milling Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             `(Type: ${type}, Hand: ${hand})`,
@@ -973,7 +973,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const centerX = 0; // Assume centered at origin for simplicity
         const centerY = 0;
-        
+
         let pathRadius, helicalDirection;
 
         // Climb milling logic
@@ -984,7 +984,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             pathRadius = (numericDiameter + toolDiameter) / 2;
             helicalDirection = (hand === 'right') ? 'G2' : 'G3'; // CW for RH external climb
         }
-        
+
         if (pathRadius <= 0) return { error: "Invalid tool/thread diameter combination.", code: [], paths: [], bounds: {} };
 
         // Preview paths
@@ -995,7 +995,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const preDrillRadius = numericDiameter - numericPitch; // Approximation for pre-drill size
             paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: preDrillRadius / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '2 2', strokeWidth: '2%', fill: 'none' });
         }
-        
+
         const startX = centerX + pathRadius;
 
         // Start sequence (move to bottom and lead-in)
@@ -1023,14 +1023,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             minY: centerY - boundsRadius + originOffsetY,
             maxY: centerY + boundsRadius + originOffsetY
         };
-        
+
         return { code, paths, bounds, error: null };
     };
-    
+
     const applyArrayPattern = useCallback((singleOpResult) => {
         const { code: singleCode, paths: singlePaths, bounds: singleBounds } = singleOpResult;
         const { pattern, rectCols, rectRows, rectSpacingX, rectSpacingY, circCopies, circRadius, circCenterX, circCenterY, circStartAngle } = arraySettings;
-        
+
         const numericRectCols = Number(rectCols);
         const numericRectRows = Number(rectRows);
         const numericRectSpacingX = Number(rectSpacingX);
@@ -1042,20 +1042,20 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericCircStartAngle = Number(circStartAngle);
 
         const inputLines = singleCode;
-        
+
         const transformLine = (line: string, offset: { x: number; y: number }) => {
             const upperLine = line.toUpperCase();
             if (!/G[0-3]\s/.test(upperLine) || (!upperLine.includes('X') && !upperLine.includes('Y'))) {
-                 return line;
+                return line;
             }
-             
+
             let transformed = line;
             transformed = transformed.replace(/X\s*([-+]?\d*\.?\d+)/i, (match, val) => `X${(parseFloat(val) + offset.x).toFixed(3)}`);
             transformed = transformed.replace(/Y\s*([-+]?\d*\.?\d+)/i, (match, val) => `Y${(parseFloat(val) + offset.y).toFixed(3)}`);
-            
+
             return transformed;
         };
-        
+
         const offsets = [];
         if (pattern === 'rect') {
             if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY].some(isNaN)) {
@@ -1069,7 +1069,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             }
         } else { // circ
             if ([numericCircCopies, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
-                 return { code: [], paths: [], bounds: {}, error: "Invalid array pattern parameters." };
+                return { code: [], paths: [], bounds: {}, error: "Invalid array pattern parameters." };
             }
             const angleStep = numericCircCopies > 0 ? 360 / numericCircCopies : 0;
             for (let i = 0; i < numericCircCopies; i++) {
@@ -1084,7 +1084,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const finalCode: string[] = [];
         const finalPaths: any[] = [];
         const finalBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-        
+
         offsets.forEach(offset => {
             finalCode.push(`(--- Repetition at X${offset.x.toFixed(3)} Y${offset.y.toFixed(3)} ---)`);
             inputLines.forEach(line => {
@@ -1098,19 +1098,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             });
 
             singlePaths.forEach(p => {
-                 let newPath = {...p};
-                 if(p.d) { // path
-                     newPath.d = p.d.replace(/([ML])(\s*[\d\.-]+)(\s*,?\s*)([\d\.-]+)/g, (match, cmd, x, sep, y) => {
-                         return `${cmd} ${(parseFloat(x) + offset.x).toFixed(3)} ${sep} ${(parseFloat(y) + offset.y).toFixed(3)}`;
-                     });
-                 }
-                 if(p.cx !== undefined) { // circle
-                     newPath.cx = p.cx + offset.x;
-                     newPath.cy = p.cy + offset.y;
-                 }
-                 finalPaths.push(newPath);
+                let newPath = { ...p };
+                if (p.d) { // path
+                    newPath.d = p.d.replace(/([ML])(\s*[\d\.-]+)(\s*,?\s*)([\d\.-]+)/g, (match, cmd, x, sep, y) => {
+                        return `${cmd} ${(parseFloat(x) + offset.x).toFixed(3)} ${sep} ${(parseFloat(y) + offset.y).toFixed(3)}`;
+                    });
+                }
+                if (p.cx !== undefined) { // circle
+                    newPath.cx = p.cx + offset.x;
+                    newPath.cy = p.cy + offset.y;
+                }
+                finalPaths.push(newPath);
             });
-            
+
             finalBounds.minX = Math.min(finalBounds.minX, singleBounds.minX + offset.x);
             finalBounds.maxX = Math.max(finalBounds.maxX, singleBounds.maxX + offset.x);
             finalBounds.minY = Math.min(finalBounds.minY, singleBounds.minY + offset.y);
@@ -1131,7 +1131,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         else if (activeTab === 'slot') result = generateSlotCode(settings);
         else if (activeTab === 'text') result = generateTextCode(settings);
         else if (activeTab === 'thread') result = generateThreadMillingCode(settings);
-        
+
         if (result.error) {
             setGenerationError(result.error);
             setGeneratedGCode('');
@@ -1141,7 +1141,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const showArray = !['surfacing', 'drilling'].includes(activeTab);
         if (showArray && arraySettings.isEnabled && result.code.length > 0) {
-             result = applyArrayPattern(result);
+            result = applyArrayPattern(result);
         }
 
         setGeneratedGCode(result.code ? result.code.join('\n') : '');
@@ -1199,7 +1199,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             handleGenerateRef.current();
         }
     }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
-    
+
     // When the selected tool from outside changes (e.g. from auto-selection),
     // update the active tab's settings
     useEffect(() => {
@@ -1334,7 +1334,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     selectedToolId={selectedToolId}
                                     onToolSelect={onToolSelect}
                                 />
-                            )} 
+                            )}
                             {activeTab === 'thread' && (
                                 <ThreadMillingGenerator
                                     params={generatorSettings.thread as ThreadMillingParams}
@@ -1361,7 +1361,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     Generate
                                 </button>
                             </div>
-                            <h3 className="font-bold">2D Preview</h3>
+
                             <div className="flex items-center gap-1">
                                 <button onClick={() => handleZoom(1.5)} title="Zoom Out" className="p-1.5 rounded-md hover:bg-secondary">
                                     <ZoomOut className="w-5 h-5 text-text-secondary" />
