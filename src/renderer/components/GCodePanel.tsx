@@ -178,6 +178,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const startIndex = Math.floor(scrollTop / lineHeight);
   const endIndex = Math.min(gcodeLines.length - 1, startIndex + visibleLines);
 
+  const totalLines = gcodeLines.length;
+  const currentLine = Math.floor((progress / 100) * totalLines);
+
   const visualizerCurrentLine = isJobActive ? currentLine : scrubberLine;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -253,8 +256,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       jobStatus === JobStatus.Stopped ||
       jobStatus === JobStatus.Complete) &&
     !isHoming;
-  const totalLines = gcodeLines.length;
-  const currentLine = Math.floor((progress / 100) * totalLines);
 
   useEffect(() => {
     if (
@@ -506,20 +507,18 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             <button
               onClick={() => setView("visualizer")}
               title="Visualizer View"
-              className={`p-1 rounded transition-colors ${
-                view === "visualizer"
+              className={`p-1 rounded transition-colors ${view === "visualizer"
                   ? "bg-primary text-white"
                   : "hover:bg-secondary"
-              }`}
+                }`}
             >
               <Eye className="w-5 h-5" />
             </button>
             <button
               onClick={() => setView("code")}
               title="Code View"
-              className={`p-1 rounded transition-colors ${
-                view === "code" ? "bg-primary text-white" : "hover:bg-secondary"
-              }`}
+              className={`p-1 rounded transition-colors ${view === "code" ? "bg-primary text-white" : "hover:bg-secondary"
+                }`}
             >
               <Code className="w-5 h-5" />
             </button>

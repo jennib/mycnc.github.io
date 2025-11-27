@@ -88,6 +88,19 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           return; // Don't jog if typing in an input field
         }
 
+        // Handle step size hotkeys (1-5)
+        if (['1', '2', '3', '4', '5'].includes(event.key) && !isControlDisabled) {
+          event.preventDefault();
+          const stepIndex = parseInt(event.key) - 1;
+          const newStep = stepSizes[stepIndex];
+          if (newStep !== undefined) {
+            onFlash(`step-${newStep}`);
+            onStepChange(newStep);
+            setTimeout(() => onFlash(""), 150); // Clear flash after 150ms
+          }
+          return;
+        }
+
         const hotkey = jogHotkeys[event.key];
         if (hotkey && !isControlDisabled) {
           event.preventDefault();
@@ -121,7 +134,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
       };
-    }, [isControlDisabled, onJog, onJogStop, onFlash]);
+    }, [isControlDisabled, onJog, onJogStop, onFlash, stepSizes, onStepChange]);
 
 
     const JogButton = ({
@@ -236,20 +249,24 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               <div className="flex items-center gap-2">
                 <span className="text-sm text-text-secondary">Step:</span>
                 <div className="flex gap-1">
-                  {stepSizes.map((step) => (
+                  {stepSizes.map((step, index) => (
                     <button
                       key={step}
                       id={`step-${step}`}
                       onClick={() => onStepChange(step)}
                       disabled={isControlDisabled}
-                      className={`px-2 py-1 text-xs rounded-md transition-colors ${jogStep === step
+                      className={`px-2 py-1 text-xs rounded-md transition-colors relative ${jogStep === step
                         ? "bg-primary text-white font-bold"
                         : "bg-secondary hover:bg-secondary-focus"
                         } ${flashingButton === `step-${step}`
                           ? "ring-2 ring-white ring-inset"
                           : ""
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      title={`Step size: ${step} (Hotkey: ${index + 1})`}
                     >
+                      <span className="absolute -top-1 -right-1 text-[8px] opacity-50">
+                        {index + 1}
+                      </span>
                       {step}
                     </button>
                   ))}

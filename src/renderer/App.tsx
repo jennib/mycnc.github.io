@@ -285,18 +285,25 @@ const App: React.FC = () => {
         activeJogKeyRef.current = null;
         lastJogStopTimeRef.current = Date.now();
       };
+    };
 
-      window.addEventListener("keydown", handleKeyDown);
-      window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
-      return () => {
-        window.removeEventListener("keydown", handleKeyDown);
-        window.removeEventListener("keyup", handleKeyUp);
-        if (activeJogKeyRef.current) {
-          handleJogStop();
-        }
-      };
-    }, [machineSettings, connectionActions, handleJogStop, handleJog, jogStep]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      if (activeJogKeyRef.current) {
+        handleJogStop();
+      }
+    };
+  }, [
+    machineSettings,
+    connectionActions,
+    handleJogStop,
+    handleJog,
+    jogStep
+  ]);
 
   // Separate useEffect for non-jog hotkeys
   useEffect(() => {

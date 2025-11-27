@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
 import { MachineSettings } from '@/types';
-import { ToolpathSegmentMetadata, BoundingBox } from '../../services/gcodeVisualizerWorker'; // Import the new interfaces
-import { GCodePoint } from '../../services/gcodeParser'; // Import GCodePoint
+import { ToolpathSegmentMetadata, BoundingBox } from '../../services/gcodeVisualizerWorker';
+import { GCodePoint } from '../services/gcodeParser';
 
 // --- Color Constants ---
 const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
@@ -63,7 +63,7 @@ const fragmentShaderSource = `
 // --- Matrix Math (gl-matrix simplified) ---
 const mat4 = {
     create: () => new Float32Array(16),
-    identity: (out: Float32Array) => { out.set([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); return out; },
+    identity: (out: Float32Array) => { out.set([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); return out; },
     multiply: (out: Float32Array, a: Float32Array, b: Float32Array) => {
         let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
         let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
@@ -100,7 +100,7 @@ const mat4 = {
         return out;
     },
     rotate: (out: Float32Array, a: Float32Array, rad: number, axis: number[]) => {
-        let x = axis[0], y = axis[1], z = axis[2], len = Math.hypot(x,y,z);
+        let x = axis[0], y = axis[1], z = axis[2], len = Math.hypot(x, y, z);
         if (len < 1e-6) return null;
         len = 1 / len; x *= len; y *= len; z *= len;
         let s = Math.sin(rad), c = Math.cos(rad), t = 1 - c;
@@ -220,7 +220,7 @@ const createFrustum = (projectionMatrix: Float32Array, modelViewMatrix: Float32A
 const intersectAABBFrustum = (frustum: Frustum, bbox: BoundingBox): boolean => {
     for (let i = 0; i < 6; i++) {
         const plane = frustum[i];
-        
+
         // This is a simplified check for point vs plane. A more robust AABB vs Frustum would test all 8 corners.
         // For simplicity and initial implementation, we'll check the two most extreme points.
         const p_vertex = [bbox.minX, bbox.minY, bbox.minZ];
@@ -259,10 +259,10 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     const glRef = useRef<WebGLRenderingContext | null>(null);
     const programInfoRef = useRef<any>(null);
     const buffersRef = useRef<any>(null);
-    
+
     // This ref will hold all dynamic data for the render loop to access without re-triggering effects.
-    const renderDataRef = useRef<{camera: {target: number[], distance: number, rotation: number[]}, toolCurrentPosition: GCodePoint | null}>({
-        camera: {target: [0,0,0], distance: 0, rotation: [0,0]},
+    const renderDataRef = useRef<{ camera: { target: number[], distance: number, rotation: number[] }, toolCurrentPosition: GCodePoint | null }>({
+        camera: { target: [0, 0, 0], distance: 0, rotation: [0, 0] },
         toolCurrentPosition: null
     });
 
@@ -309,7 +309,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         const sizeY = bounds.maxY - bounds.minY;
         const sizeZ = bounds.maxZ - bounds.minZ;
         const maxDim = Math.max(sizeX, sizeY, sizeZ);
-        
+
         const distance = maxDim * 1.5;
 
         setCamera(prev => ({
@@ -322,8 +322,8 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
 
     useImperativeHandle(ref, () => ({
         fitView: () => fitView(parsedGCode?.bounds),
-        zoomIn: () => setCamera(c => ({...c, distance: c.distance / 1.5})),
-        zoomOut: () => setCamera(c => ({...c, distance: c.distance * 1.5})),
+        zoomIn: () => setCamera(c => ({ ...c, distance: c.distance / 1.5 })),
+        zoomOut: () => setCamera(c => ({ ...c, distance: c.distance * 1.5 })),
         resetView: () => fitView(parsedGCode?.bounds, [0, Math.PI / 2]),
     }));
 
@@ -331,10 +331,10 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workerRef.current = new Worker(new URL('../../services/gcodeVisualizerWorker.ts', import.meta.url), { type: 'module' });
 
         workerRef.current.onmessage = (event) => {
-            const { 
+            const {
                 type, parsedGCode, toolpathVertices, toolpathColors, toolpathSegmentMetadata,
                 toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition, // Updated to new fields
-                workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors 
+                workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors
             } = event.data;
             const gl = glRef.current;
             const programInfo = programInfoRef.current;
@@ -375,7 +375,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         }
 
         const handler = setTimeout(() => {
-            workerRef.current.postMessage({
+            workerRef.current?.postMessage({
                 type: 'processGCode',
                 gcodeLines,
                 machineSettings,
@@ -423,7 +423,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.boundsColor);
         gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsColors, gl.STATIC_DRAW);
         workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices ? workerData.workAreaBoundsVertices.length / 3 : 0;
-        
+
         // --- Create Axis Indicator Buffers ---
         workAreaBuffers.axisPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisPosition);
@@ -447,19 +447,19 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             toolPositionBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolPositionBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelInitialVertices, gl.STATIC_DRAW); // Use new field
-            
+
             toolColorBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, toolColorBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, workerData.toolModelInitialColors, gl.STATIC_DRAW); // Use new field
         }
-        
+
         if (buffersRef.current) {
             gl.deleteBuffer(buffersRef.current.position);
             gl.deleteBuffer(buffersRef.current.color);
             // Delete previous tool model buffers if they exist
             if (buffersRef.current.toolPosition) gl.deleteBuffer(buffersRef.current.toolPosition);
             if (buffersRef.current.toolColor) gl.deleteBuffer(buffersRef.current.toolColor);
-            
+
             if (buffersRef.current.workArea) {
                 gl.deleteBuffer(buffersRef.current.workArea.gridPosition);
                 gl.deleteBuffer(buffersRef.current.workArea.gridColor);
@@ -470,9 +470,9 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             }
         }
 
-        buffersRef.current = { 
-            position: positionBuffer, 
-            color: colorBuffer, 
+        buffersRef.current = {
+            position: positionBuffer,
+            color: colorBuffer,
             vertexCount: workerData.toolpathVertices ? workerData.toolpathVertices.length / 3 : 0,
             toolpathSegmentMetadata: workerData.toolpathSegmentMetadata,
             toolPosition: toolPositionBuffer,
@@ -482,7 +482,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         };
 
     }, [workerData]);
-    
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -509,7 +509,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         };
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
-        
+
         let animationFrameId: number;
 
         const renderLoop = () => {
@@ -520,7 +520,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             const programInfo = programInfoRef.current;
 
             if (!gl || !programInfo) return;
-            
+
             const canvasElement = gl.canvas;
             if (canvasElement instanceof HTMLCanvasElement) {
                 if (canvasElement.width !== canvasElement.clientWidth || canvasElement.height !== canvasElement.clientHeight) {
@@ -540,7 +540,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             mat4.perspective(projectionMatrix, 45 * Math.PI / 180, aspect, 0.1, 10000);
 
             const viewMatrix = mat4.create();
-            
+
             const eye = [
                 camera.target[0] + camera.distance * Math.cos(camera.rotation[0]) * Math.cos(camera.rotation[1]),
                 camera.target[1] + camera.distance * Math.sin(camera.rotation[0]) * Math.cos(camera.rotation[1]),
@@ -556,14 +556,14 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             gl.useProgram(programInfo.program);
             gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
             gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, viewMatrix);
-            
+
             // --- Frustum Culling Setup ---
             const frustum = createFrustum(projectionMatrix, viewMatrix);
 
             if (buffers.workArea) {
                 const wa = buffers.workArea;
                 gl.lineWidth(1.0);
-                
+
                 gl.bindBuffer(gl.ARRAY_BUFFER, wa.gridPosition);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
@@ -595,7 +595,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
-                
+
                 // --- Frustum Culling for Toolpath Segments ---
                 buffers.toolpathSegmentMetadata.forEach((segment: ToolpathSegmentMetadata) => {
                     if (intersectAABBFrustum(frustum, segment.boundingBox)) {
@@ -610,7 +610,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
-                
+
                 gl.drawArrays(gl.LINES, 0, buffers.vertexCount);
             }
 
@@ -647,9 +647,11 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     }, []);
 
     useEffect(() => {
-        renderDataRef.current = { camera };
+        if (renderDataRef.current) {
+            renderDataRef.current.camera = camera;
+        }
     });
-    
+
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -676,19 +678,19 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 setCamera(c => {
                     const factor = 0.1 * (c.distance / 100);
                     const newTarget = [...c.target];
-                    
+
                     const sYaw = Math.sin(c.rotation[0]);
                     const cYaw = Math.cos(c.rotation[0]);
                     const sPitch = Math.sin(c.rotation[1]);
                     const cPitch = Math.cos(c.rotation[1]);
-                    
+
                     const rightX = -sYaw;
                     const rightY = cYaw;
-                    
+
                     const upX = -cYaw * sPitch;
                     const upY = -sYaw * sPitch;
                     const upZ = cPitch;
-                    
+
                     newTarget[0] -= (dx * rightX - dy * upX) * factor;
                     newTarget[1] -= (dx * rightY - dy * upY) * factor;
                     newTarget[2] -= (-dy * upZ) * factor;
@@ -705,14 +707,14 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             setCamera(c => ({ ...c, distance: Math.max(1, c.distance * scale) }));
         };
         const handleContextMenu = (e: MouseEvent) => e.preventDefault();
-        
+
         canvas.addEventListener('mousedown', handleMouseDown);
         canvas.addEventListener('mouseup', handleMouseUp);
         canvas.addEventListener('mouseleave', handleMouseUp);
         canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('wheel', handleWheel);
         canvas.addEventListener('contextmenu', handleContextMenu);
-        
+
         return () => {
             canvas.removeEventListener('mousedown', handleMouseDown);
             canvas.removeEventListener('mouseup', handleMouseUp);

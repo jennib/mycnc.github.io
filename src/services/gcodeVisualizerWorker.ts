@@ -17,7 +17,7 @@ let _previousToolpathColors: Float32Array | null = null;
 let _gcodeLines: string[] = []; // Store raw lines for potential future use (though not currently used for coloring)
 let _machineSettings: any = {};
 
-interface BoundingBox {
+export interface BoundingBox {
     minX: number; maxX: number;
     minY: number; maxY: number;
     minZ: number; maxZ: number;
@@ -62,14 +62,14 @@ const generateToolpathColors = (
         } else {
             color = CUTTING_COLOR;
         }
-        
+
         // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
         const metadata = toolpathSegmentMetadata[i];
         if (!metadata) { // This should not happen if segments and metadata arrays are in sync
             console.warn(`No metadata found for segment ${i}`);
             return;
         }
-        
+
         const segmentColorData: number[] = [];
         for (let j = 0; j < metadata.vertexCount; j++) {
             segmentColorData.push(...color);
@@ -95,7 +95,7 @@ const generateToolpathColors = (
         if (changed) {
             updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
         }
-        
+
         newColorsArray.push(...segmentColorData);
     });
 
@@ -168,7 +168,7 @@ self.onmessage = (event) => {
                 currentSegmentMinZ = Math.min(currentSegmentMinZ, p.z);
                 currentSegmentMaxZ = Math.max(currentSegmentMaxZ, p.z);
             };
-            
+
             updateCurrentSegmentBounds(seg.start);
             updateCurrentSegmentBounds(seg.end);
 
@@ -176,12 +176,12 @@ self.onmessage = (event) => {
                 const radius = Math.hypot(seg.start.x - seg.center.x, seg.start.y - seg.center.y);
                 let startAngle = Math.atan2(seg.start.y - seg.center.y, seg.start.x - seg.center.x);
                 let endAngle = Math.atan2(seg.end.y - seg.center.y, seg.end.x - seg.center.x);
-                
+
                 let angleDiff = endAngle - startAngle;
 
                 const isFullCircle = Math.abs(seg.start.x - seg.end.x) < 1e-6 &&
-                                     Math.abs(seg.start.y - seg.end.y) < 1e-6 &&
-                                     radius > 1e-6;
+                    Math.abs(seg.start.y - seg.end.y) < 1e-6 &&
+                    radius > 1e-6;
 
                 if (isFullCircle) {
                     angleDiff = seg.clockwise ? -2 * Math.PI : 2 * Math.PI;
@@ -189,7 +189,7 @@ self.onmessage = (event) => {
                     if (seg.clockwise && angleDiff > 0) angleDiff -= 2 * Math.PI;
                     if (!seg.clockwise && angleDiff < 0) angleDiff += 2 * Math.PI;
                 }
-                
+
                 // Adaptive arc approximation
                 const arcLength = Math.abs(angleDiff) * radius;
                 const maxSegmentLength = 1.0; // mm or inches
@@ -210,8 +210,8 @@ self.onmessage = (event) => {
                     const p2_y = seg.center.y + Math.sin(p2_angle) * radius;
 
                     toolpathVertices.push(p1_x, p1_y, p1_z, p2_x, p2_y, p2_z);
-                    updateCurrentSegmentBounds({x: p1_x, y: p1_y, z: p1_z});
-                    updateCurrentSegmentBounds({x: p2_x, y: p2_y, z: p2_z});
+                    updateCurrentSegmentBounds({ x: p1_x, y: p1_y, z: p1_z });
+                    updateCurrentSegmentBounds({ x: p2_x, y: p2_y, z: p2_z });
                 }
             } else { // G0, G1
                 toolpathVertices.push(
@@ -219,7 +219,7 @@ self.onmessage = (event) => {
                     seg.end.x, seg.end.y, seg.end.z
                 );
             }
-            
+
             const vertexCount = (toolpathVertices.length / 3) - startVertexIndex;
             _toolpathSegmentMetadata.push({
                 startVertexIndex: startVertexIndex,
@@ -232,7 +232,7 @@ self.onmessage = (event) => {
                 gcodeSegmentIndex: i,
             });
         });
-        
+
         const { newColors: initialToolpathColors } = generateToolpathColors(
             _segments,
             _toolpathSegmentMetadata,
@@ -248,7 +248,7 @@ self.onmessage = (event) => {
 
         if (currentLine > 0 && currentLine <= _segments.length) {
             // Generate tool model at origin (0,0,0)
-            const toolModelAtOrigin = createToolModel({ x: 0, y: 0, z: 0 }); 
+            const toolModelAtOrigin = createToolModel({ x: 0, y: 0, z: 0 });
             toolModelInitialVertices = toolModelAtOrigin.vertices;
             toolModelInitialColors = toolModelAtOrigin.colors;
             // Capture the actual end position for translation later
@@ -269,12 +269,12 @@ self.onmessage = (event) => {
         for (let i = 0; i <= workArea.y; i += gridSpacing) {
             gridVertices.push(0, i, 0, workArea.x, i, 0);
         }
-        
+
         const wx = workArea.x, wy = workArea.y, wz = workArea.z;
         boundsVertices.push(
-            0, 0, 0, wx, 0, 0,  wx, 0, 0, wx, wy, 0,  wx, wy, 0, 0, wy, 0,  0, wy, 0, 0, 0, 0, // bottom
-            0, 0, wz, wx, 0, wz,  wx, 0, wz, wx, wy, wz,  wx, wy, wz, 0, wy, wz,  0, wy, wz, 0, 0, wz, // top
-            0, 0, 0, 0, 0, wz,  wx, 0, 0, wx, 0, wz,  wx, wy, 0, wx, wy, wz,  0, wy, 0, 0, wy, wz // sides
+            0, 0, 0, wx, 0, 0, wx, 0, 0, wx, wy, 0, wx, wy, 0, 0, wy, 0, 0, wy, 0, 0, 0, 0, // bottom
+            0, 0, wz, wx, 0, wz, wx, 0, wz, wx, wy, wz, wx, wy, wz, 0, wy, wz, 0, wy, wz, 0, 0, wz, // top
+            0, 0, 0, 0, 0, wz, wx, 0, 0, wx, 0, wz, wx, wy, 0, wx, wy, wz, 0, wy, 0, 0, wy, wz // sides
         );
 
         // --- Create Axis Indicator Buffers ---
@@ -284,11 +284,11 @@ self.onmessage = (event) => {
 
         const axisVertices: number[] = [
             // X-axis line
-            0, 0, 0,  axisLength, 0, 0,
+            0, 0, 0, axisLength, 0, 0,
             // Y-axis line
-            0, 0, 0,  0, axisLength, 0,
+            0, 0, 0, 0, axisLength, 0,
             // Z-axis line
-            0, 0, 0,  0, 0, axisLength
+            0, 0, 0, 0, 0, axisLength
         ];
         const red = [1.0, 0.3, 0.3, 1.0];
         const green = [0.3, 1.0, 0.3, 1.0];
@@ -297,26 +297,26 @@ self.onmessage = (event) => {
 
         // 'X' Label vertices
         const xLabel = [
-            axisLabelOffset - labelSize, -labelSize, 0,   axisLabelOffset + labelSize,  labelSize, 0,
-            axisLabelOffset - labelSize,  labelSize, 0,   axisLabelOffset + labelSize, -labelSize, 0,
+            axisLabelOffset - labelSize, -labelSize, 0, axisLabelOffset + labelSize, labelSize, 0,
+            axisLabelOffset - labelSize, labelSize, 0, axisLabelOffset + labelSize, -labelSize, 0,
         ];
         axisVertices.push(...xLabel);
         axisColors.push(...Array(4).fill(red).flat());
 
         // 'Y' Label vertices
         const yLabel = [
-            -labelSize, axisLabelOffset + labelSize, 0,   0, axisLabelOffset, 0,
-             labelSize, axisLabelOffset + labelSize, 0,   0, axisLabelOffset, 0,
-             0, axisLabelOffset, 0,                     0, axisLabelOffset - labelSize, 0,
+            -labelSize, axisLabelOffset + labelSize, 0, 0, axisLabelOffset, 0,
+            labelSize, axisLabelOffset + labelSize, 0, 0, axisLabelOffset, 0,
+            0, axisLabelOffset, 0, 0, axisLabelOffset - labelSize, 0,
         ];
         axisVertices.push(...yLabel);
         axisColors.push(...Array(6).fill(green).flat());
 
         // 'Z' Label vertices
         const zLabel = [
-            -labelSize, 0, axisLabelOffset + labelSize,    labelSize, 0, axisLabelOffset + labelSize,
-             labelSize, 0, axisLabelOffset + labelSize,   -labelSize, 0, axisLabelOffset - labelSize,
-            -labelSize, 0, axisLabelOffset - labelSize,    labelSize, 0, axisLabelOffset - labelSize,
+            -labelSize, 0, axisLabelOffset + labelSize, labelSize, 0, axisLabelOffset + labelSize,
+            labelSize, 0, axisLabelOffset + labelSize, -labelSize, 0, axisLabelOffset - labelSize,
+            -labelSize, 0, axisLabelOffset - labelSize, labelSize, 0, axisLabelOffset - labelSize,
         ];
         axisVertices.push(...zLabel);
         axisColors.push(...Array(6).fill(blue).flat());
@@ -361,7 +361,7 @@ self.onmessage = (event) => {
         _previousToolpathColors = updatedColors;
 
         let toolCurrentPosition: GCodePoint | null = null;
-        if(currentLine > 0 && currentLine <= _segments.length){
+        if (currentLine > 0 && currentLine <= _segments.length) {
             toolCurrentPosition = _segments[currentLine - 1].end;
         }
 
@@ -374,4 +374,4 @@ self.onmessage = (event) => {
             toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
         }, transferableObjects);
     }
-} // <--- Added this closing brace
+}
