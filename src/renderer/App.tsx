@@ -148,6 +148,13 @@ const App: React.FC = () => {
     }, 150); // Flash for 150ms
   }, []);
 
+  // Show welcome modal on first run
+  useEffect(() => {
+    if (!machineSettings.isConfigured) {
+      uiActions.openWelcomeModal();
+    }
+  }, [machineSettings.isConfigured, uiActions]);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () =>
@@ -560,8 +567,8 @@ const App: React.FC = () => {
             title="Unlock Machine (Hotkey: x)"
             onClick={() => handleManualCommand("$X")}
             className={`ml-4 flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-100 ${flashingButton === "unlock-button"
-                ? "ring-4 ring-white ring-inset"
-                : ""
+              ? "ring-4 ring-white ring-inset"
+              : ""
               }`}
           >
             <Unlock className="w-5 h-5" /> Unlock ($X)
