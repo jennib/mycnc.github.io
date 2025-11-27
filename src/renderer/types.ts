@@ -21,7 +21,7 @@ export interface MachinePosition {
 export interface PortInfo {
     portName?: string;
     manufacturer?: string;
-    type: 'usb' | 'tcp';
+    type: 'usb' | 'tcp' | 'simulator';
     ip?: string;
     port?: number;
     usbVendorId?: number;
@@ -29,9 +29,10 @@ export interface PortInfo {
 }
 
 export interface ConnectionOptions {
-    type: 'usb' | 'tcp';
+    type: 'usb' | 'tcp' | 'simulator';
     ip?: string;
     port?: number;
+    baudRate?: number;
 }
 
 export interface MachineState {
@@ -56,6 +57,7 @@ export interface Macro {
 }
 
 export interface MachineSettings {
+    controllerType: string;
     workArea: { x: number; y: number; z: number };
     jogFeedRate: number;
     spindle: { min: number; max: number; warmupDelay: number; };

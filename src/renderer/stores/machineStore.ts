@@ -34,7 +34,7 @@ const initialState = {
   isMacroRunning: false,
 };
 
-export const useMachineStore = create<MachineStoreState>((set) => ({
+export const useMachineStore = create<MachineStoreState>((set, get) => ({
   ...initialState,
   actions: {
     setMachineState: (state) => set({ machineState: state }),
@@ -44,9 +44,9 @@ export const useMachineStore = create<MachineStoreState>((set) => ({
     reset: () => set(initialState),
 
     handleHome: (axes) => {
-      const { actions: connectionActions } = useConnectionStore.getState();
+      const { controller } = useConnectionStore.getState();
       if (axes === 'all') {
-        connectionActions.sendLine('$H', 60000);
+        controller?.home('all');
       }
     },
 
@@ -117,28 +117,19 @@ export const useMachineStore = create<MachineStoreState>((set) => ({
 
     handleJog: (axis, direction, step) => {
       const { machineSettings } = useSettingsStore.getState();
-      const { actions: connectionActions } = useConnectionStore.getState();
-      const { machineState } = useMachineStore.getState(); // Access current machineState
+      const { controller } = useConnectionStore.getState();
       
       const { jogFeedRate } = machineSettings;
-      const distance = direction * step;
-      const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
+      const x = axis === 'X' ? direction * step : 0;
+      const y = axis === 'Y' ? direction * step : 0;
+      const z = axis === 'Z' ? direction * step : 0;
       
-      if (machineState) {
-        set((state) => ({ // Use set to update machineState
-          machineState: {
-            ...state.machineState,
-            status: 'Jog',
-          } as MachineState, // Explicitly cast to MachineState
-        }));
-      }
-
-      connectionActions.sendLine(command);
+      controller?.jog(x, y, z, jogFeedRate);
     },
 
     handleJogStop: () => {
-      const { actions: connectionActions } = useConnectionStore.getState();
-      connectionActions.sendRealtimeCommand('\x85');
+        const { controller } = useConnectionStore.getState();
+        controller?.sendRealtimeCommand('\x85');
     },
 
     handleManualCommand: (command) => {

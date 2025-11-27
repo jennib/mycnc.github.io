@@ -75,6 +75,7 @@ export const DEFAULT_TOOLS: Tool[] = [
 ];
 
 export const DEFAULT_SETTINGS: MachineSettings = {
+    controllerType: 'grbl',
     workArea: { x: 300, y: 300, z: 80 },
     jogFeedRate: 1000,
     spindle: { min: 0, max: 12000, warmupDelay: 0 },
