@@ -274,39 +274,29 @@ const App: React.FC = () => {
         // Set the ref immediately to block subsequent keydown repeats
         activeJogKeyRef.current = event.key;
 
-        const { jogFeedRate } = machineSettings;
-        // A large distance simulates continuous movement until key-up/cancel.
-        const distance = direction * 99999;
-        const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
-
-        connectionActions.sendLine(command).catch((err) => {
-          console.error("Failed to start jog:", err);
-          // If the command fails, unblock jogging.
-          activeJogKeyRef.current = null;
-        });
+        handleJog(axis, direction, jogStep);
       }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
       if (event.key === activeJogKeyRef.current) {
         event.preventDefault();
-        handleJogStop();
+        // handleJogStop(); // Don't stop on key up for step jogging
         activeJogKeyRef.current = null;
         lastJogStopTimeRef.current = Date.now();
-      }
-    };
+      };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("keyup", handleKeyUp);
 
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      if (activeJogKeyRef.current) {
-        handleJogStop();
-      }
-    };
-  }, [machineSettings, connectionActions, handleJogStop]);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("keyup", handleKeyUp);
+        if (activeJogKeyRef.current) {
+          handleJogStop();
+        }
+      };
+    }, [machineSettings, connectionActions, handleJogStop, handleJog, jogStep]);
 
   // Separate useEffect for non-jog hotkeys
   useEffect(() => {

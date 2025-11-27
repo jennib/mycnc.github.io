@@ -94,7 +94,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           if (pressedJogKey.current !== event.key) {
             pressedJogKey.current = event.key;
             onFlash(hotkey.id);
-            onJog(hotkey.axis, hotkey.direction, 99999);
+            onJog(hotkey.axis, hotkey.direction, jogStep);
           }
         }
       };
@@ -109,7 +109,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
 
         if (pressedJogKey.current === event.key) {
           pressedJogKey.current = null;
-          onJogStop();
+          // onJogStop(); // Don't stop on key up for step jogging
           onFlash(""); // Clear flashing button
         }
       };
@@ -243,8 +243,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                       onClick={() => onStepChange(step)}
                       disabled={isControlDisabled}
                       className={`px-2 py-1 text-xs rounded-md transition-colors ${jogStep === step
-                          ? "bg-primary text-white font-bold"
-                          : "bg-secondary hover:bg-secondary-focus"
+                        ? "bg-primary text-white font-bold"
+                        : "bg-secondary hover:bg-secondary-focus"
                         } ${flashingButton === `step-${step}`
                           ? "ring-2 ring-white ring-inset"
                           : ""
@@ -312,8 +312,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   onClick={() => onUnitChange("mm")}
                   disabled={isControlDisabled}
                   className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "mm"
-                      ? "bg-primary text-white"
-                      : "hover:bg-secondary-focus"
+                    ? "bg-primary text-white"
+                    : "hover:bg-secondary-focus"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   mm
@@ -322,8 +322,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   onClick={() => onUnitChange("in")}
                   disabled={isControlDisabled}
                   className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "in"
-                      ? "bg-primary text-white"
-                      : "hover:bg-secondary-focus"
+                    ? "bg-primary text-white"
+                    : "hover:bg-secondary-focus"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   in
