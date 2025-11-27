@@ -63,6 +63,12 @@ const createWindow = () => {
     if (win) win.setFullScreen(!win.isFullScreen());
   });
 
+  // Open external links in the user's default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+
   // --- Menu Template ---
   const menuTemplate: MenuItemConstructorOptions[] = [
     {
@@ -102,58 +108,58 @@ const createWindow = () => {
   Menu.setApplicationMenu(menu);
 
   // --- TCP Communication Handlers ---
-ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
-  return new Promise((resolve, reject) => {
-    if (tcpSocket) {
-      tcpSocket.destroy();
-      tcpSocket = null;
-    }
+  ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
+    return new Promise((resolve, reject) => {
+      if (tcpSocket) {
+        tcpSocket.destroy();
+        tcpSocket = null;
+      }
 
-    tcpSocket = new net.Socket();
+      tcpSocket = new net.Socket();
 
-    const connectionTimeout = setTimeout(() => {
-      mainWindow.webContents.send("tcp-error", {
-        message: "Connection timed out.",
-        code: "CONNECTION_TIMEOUT",
+      const connectionTimeout = setTimeout(() => {
+        mainWindow.webContents.send("tcp-error", {
+          message: "Connection timed out.",
+          code: "CONNECTION_TIMEOUT",
+        });
+        reject(new Error("Connection timed out."));
+        tcpSocket?.destroy();
+        tcpSocket = null;
+      }, 5000);
+
+      tcpSocket.on("connect", () => {
+        clearTimeout(connectionTimeout);
+        console.log(`TCP Connected to ${ip}:${port}`);
+        resolve(true);
       });
-      reject(new Error("Connection timed out."));
-      tcpSocket?.destroy();
-      tcpSocket = null;
-    }, 5000);
 
-    tcpSocket.on("connect", () => {
-      clearTimeout(connectionTimeout);
-      console.log(`TCP Connected to ${ip}:${port}`);
-      resolve(true);
-    });
-
-    tcpSocket.on("data", (data) => {
-      mainWindow.webContents.send("tcp-data", data.toString());
-    });
-
-    tcpSocket.on("error", (err) => {
-      clearTimeout(connectionTimeout);
-      console.error("TCP Socket Error:", err.message);
-      mainWindow.webContents.send("tcp-error", {
-        message: err.message,
-        code: "TCP_SOCKET_ERROR",
+      tcpSocket.on("data", (data) => {
+        mainWindow.webContents.send("tcp-data", data.toString());
       });
-      reject(new Error(err.message));
-      tcpSocket?.destroy();
-      tcpSocket = null;
-    });
 
-    tcpSocket.on("close", () => {
-      clearTimeout(connectionTimeout);
-      console.log("TCP Socket Closed");
-      mainWindow.webContents.send("tcp-disconnect");
-      tcpSocket?.destroy();
-      tcpSocket = null;
-    });
+      tcpSocket.on("error", (err) => {
+        clearTimeout(connectionTimeout);
+        console.error("TCP Socket Error:", err.message);
+        mainWindow.webContents.send("tcp-error", {
+          message: err.message,
+          code: "TCP_SOCKET_ERROR",
+        });
+        reject(new Error(err.message));
+        tcpSocket?.destroy();
+        tcpSocket = null;
+      });
 
-    tcpSocket.connect(port, ip);
+      tcpSocket.on("close", () => {
+        clearTimeout(connectionTimeout);
+        console.log("TCP Socket Closed");
+        mainWindow.webContents.send("tcp-disconnect");
+        tcpSocket?.destroy();
+        tcpSocket = null;
+      });
+
+      tcpSocket.connect(port, ip);
+    });
   });
-});
 
   ipcMain.on("send-tcp", (event, data: string) => {
     if (tcpSocket && !tcpSocket.destroyed) {
@@ -178,7 +184,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
   const handleSelectSerialPort = async (event, portList, webContents, callback) => {
     // Re-register the handler for the next time, as `once` makes it a single-use handler.
     webContents.session.once('select-serial-port', handleSelectSerialPort);
-    
+
     event.preventDefault();
     if (portList && portList.length > 0) {
       try {
@@ -241,7 +247,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
     // Handle individual camera/microphone requests if they come separately
     if (permission === 'camera' || permission === 'microphone') {
 
-        return callback(true);
+      return callback(true);
     }
     // Deny other requests
     callback(false);
@@ -260,7 +266,7 @@ ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
 
   // Set a Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL;    let csp = "";
+    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL; let csp = "";
 
     if (isDevelopment) {
       // Relaxed CSP for development

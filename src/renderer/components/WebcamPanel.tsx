@@ -267,7 +267,7 @@ const WebcamPanel: React.FC = () => {
 
     const handleModeChange = (newMode: 'local' | 'webrtc') => {
         if (webcamMode === newMode) return;
-        
+
         // Clean up previous mode before switching
         if (webcamMode === 'local') {
             stopStream();
@@ -293,7 +293,7 @@ const WebcamPanel: React.FC = () => {
         }
         return (
             <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
                         <div className="text-center text-text-secondary p-4">
@@ -339,45 +339,45 @@ const WebcamPanel: React.FC = () => {
 
             {isWebcamOn && isElectron && (
                 <div className="mb-4">
-                     <div className="flex items-center gap-4 mb-2">
+                    <div className="flex items-center gap-4 mb-2">
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="local" checked={webcamMode === 'local'} onChange={() => handleModeChange('local')} className="form-radio text-primary focus:ring-primary"/>
+                            <input type="radio" name="webcamMode" value="local" checked={webcamMode === 'local'} onChange={() => handleModeChange('local')} className="form-radio text-primary focus:ring-primary" />
                             <span className="text-sm font-medium text-text-secondary">Local Camera</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="webrtc" checked={webcamMode === 'webrtc'} onChange={() => handleModeChange('webrtc')} className="form-radio text-primary focus:ring-primary"/>
+                            <input type="radio" name="webcamMode" value="webrtc" checked={webcamMode === 'webrtc'} onChange={() => handleModeChange('webrtc')} className="form-radio text-primary focus:ring-primary" />
                             <span className="text-sm font-medium text-text-secondary">WebRTC Stream</span>
                         </label>
                     </div>
 
                     {webcamMode === 'webrtc' && (
                         <div className='flex items-center gap-2'>
-                             <input type="text" value={webRTCUrl} onChange={(e) => setWebRTCUrl(e.target.value)} placeholder="e.g., ws://localhost:8080" className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary" disabled={isWebRTCConnected} />
-                            <button onClick={isWebRTCConnected ? disconnectWebRTC : connectWebRTC}  className={`px-3 py-1 ${isWebRTCConnected ? 'bg-accent-red hover:bg-red-700' : 'bg-secondary hover:bg-secondary-focus'} text-white font-semibold rounded-md`}>
+                            <input type="text" value={webRTCUrl} onChange={(e) => setWebRTCUrl(e.target.value)} placeholder="e.g., ws://localhost:8080" className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary" disabled={isWebRTCConnected} />
+                            <button onClick={isWebRTCConnected ? disconnectWebRTC : connectWebRTC} className={`px-3 py-1 ${isWebRTCConnected ? 'bg-accent-red hover:bg-red-700' : 'bg-secondary hover:bg-secondary-focus'} text-white font-semibold rounded-md`}>
                                 {isWebRTCConnected ? 'Disconnect' : 'Connect'}
                             </button>
                         </div>
                     )}
 
                     {(isWebcamOn && videoRef.current?.srcObject && (webcamMode === 'webrtc' || (webcamMode === 'local' && audioInputDevices.length > 0))) &&
-                    <div className="flex items-center gap-2 mt-4">
-                        <button onClick={() => setWebcamSettings({ isMuted: !isMuted })} title={isMuted ? "Unmute" : "Mute"} className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
-                            {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                        </button>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={isMuted ? 0 : volume}
-                            onChange={(e) => {
-                                const newVolume = parseFloat(e.target.value);
-                                setWebcamSettings({ volume: newVolume, isMuted: newVolume === 0 });
-                                if (videoRef.current) videoRef.current.volume = newVolume;
-                            }}
-                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                        />
-                    </div>
+                        <div className="flex items-center gap-2 mt-4">
+                            <button onClick={() => setWebcamSettings({ isMuted: !isMuted })} title={isMuted ? "Unmute" : "Mute"} className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+                                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                            </button>
+                            <input
+                                type="range"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                value={isMuted ? 0 : volume}
+                                onChange={(e) => {
+                                    const newVolume = parseFloat(e.target.value);
+                                    setWebcamSettings({ volume: newVolume, isMuted: newVolume === 0 });
+                                    if (videoRef.current) videoRef.current.volume = newVolume;
+                                }}
+                                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                            />
+                        </div>
                     }
                 </div>
             )}
