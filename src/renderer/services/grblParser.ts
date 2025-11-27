@@ -1,15 +1,15 @@
 import { MachineState } from '@/types';
 
-export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Partial<MachineState> & { status: string, code: number | null } | null {
+export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Partial<MachineState> | null {
     try {
         const content = statusStr.slice(1, -1);
         const parts = content.split('|');
         const statusPart = parts[0];
-        const parsed: Partial<MachineState> & { status: string, code: number | null } = { status: 'Idle', code: null };
+        const parsed: Partial<MachineState> = {};
 
         const rawStatus = statusPart.split(':')[0].toLowerCase();
         let status: MachineState['status'];
-        
+
         if (rawStatus.startsWith('home')) { // Catches 'home', 'homing', 'homing cycle', etc.
             status = 'Home';
         } else if (rawStatus.startsWith('idle')) {
@@ -29,21 +29,26 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
         } else if (rawStatus.startsWith('sleep')) {
             status = 'Sleep';
         } else {
-            // Try to capitalize unknown states as a fallback
-            status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1);
+            // Default to Idle for unknown states
+            status = 'Idle';
         }
 
-        let code = null;
+        let code: number | undefined = undefined;
         if (status === 'Alarm') {
             const alarmMatch = statusPart.match(/Alarm:(\d+)/);
             if (alarmMatch) {
                 code = parseInt(alarmMatch[1], 10);
             }
         }
-        
+
         // Always include status and code to ensure state is fully updated.
         parsed.status = status;
         parsed.code = code;
+
+        // Log significant status changes (not every status report)
+        if (status !== lastStatus.status) {
+            console.log(`[Machine Status] ${lastStatus.status} → ${status}`);
+        }
 
         for (const part of parts) {
             if (part.startsWith('WPos:')) {
@@ -69,14 +74,30 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
                 parsed.wco = wco;
             } else if (part.startsWith('FS:')) {
                 const speeds = part.substring(3).split(',');
-                if (!parsed.spindle) parsed.spindle = { state: 'off', speed: 0 };
+                // Preserve existing spindle state, only update speed
+                const currentSpindleState = lastStatus.spindle?.state || 'off';
+                if (!parsed.spindle) parsed.spindle = { state: currentSpindleState, speed: 0 };
                 if (speeds.length > 1) {
-                     parsed.spindle.speed = parseFloat(speeds[1]);
+                    parsed.spindle.speed = parseFloat(speeds[1]);
+                }
+            } else if (part.startsWith('A:')) {
+                // Accessory State - contains spindle direction (S for CW, C for CCW)
+                // Format: A:SFM where S=Spindle CW, C=Spindle CCW, F=Flood, M=Mist
+                const accessoryState = part.substring(2);
+                if (!parsed.spindle) parsed.spindle = { state: 'off', speed: lastStatus.spindle?.speed || 0 };
+
+                if (accessoryState.includes('S')) {
+                    parsed.spindle.state = 'cw';
+                } else if (accessoryState.includes('C')) {
+                    parsed.spindle.state = 'ccw';
+                } else {
+                    // If neither S nor C, spindle is off
+                    parsed.spindle.state = 'off';
                 }
             } else if (part.startsWith('Ov:')) {
                 const ovParts = part.substring(3).split(',');
                 if (ovParts.length === 3) {
-                    parsed.ov = ovParts.map(p => parseInt(p, 10)) as [number, number, number];
+                    parsed.ov = ovParts.map((p: string) => parseInt(p, 10)) as [number, number, number];
                 }
             }
         }
