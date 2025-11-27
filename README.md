@@ -90,6 +90,14 @@ Then open the URL displayed in your terminal in your browser.
 <img width="1902" height="1012" alt="Screenshot 2025-11-05 073558" src="https://github.com/user-attachments/assets/8708653e-5595-479c-ac6b-0e307e9432de" />
 
 
+---
+
+##  Security
+
+See [SECURITY.md](SECURITY.md) for known security considerations and reporting guidelines.
+
+---
+
 Copyright 2025
 
 No Liability
