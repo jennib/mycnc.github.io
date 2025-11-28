@@ -146,7 +146,16 @@ export class GrblController implements Controller {
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
             }
         } else if (trimmedValue) {
-            if (trimmedValue.startsWith('error:')) {
+            if (trimmedValue.toLowerCase().startsWith('alarm:')) {
+                const alarmCode = parseInt(trimmedValue.split(':')[1], 10);
+                this.lastStatus = {
+                    ...this.lastStatus,
+                    status: 'Alarm',
+                    code: isNaN(alarmCode) ? undefined : alarmCode
+                };
+                this.emitter.emit('state', { type: 'state', data: this.lastStatus });
+                this.emitter.emit('data', { type: 'received', message: trimmedValue });
+            } else if (trimmedValue.startsWith('error:')) {
                 if (this.linePromiseReject) {
                     this.linePromiseReject(new Error(trimmedValue));
                     this.linePromiseResolve = null;
