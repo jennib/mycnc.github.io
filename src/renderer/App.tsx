@@ -492,10 +492,27 @@ const App: React.FC = () => {
       )}
 
       <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-2">
-        <div className="flex items-center gap-4">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-4 flex-1">
           <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Center: E-STOP */}
+        <div className="flex items-center justify-center flex-1">
+          {isConnected && (
+            <button
+              onClick={handleEmergencyStop}
+              className={`flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
+              title="Emergency Stop (Soft Reset) (Hotkey: Esc)"
+            >
+              <OctagonAlert className="w-6 h-6" />
+              <span className="text-lg">E-STOP</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right: Buttons */}
+        <div className="flex items-center gap-2 flex-1 justify-end">
           <button
             onClick={handleToggleFullscreen}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -546,8 +563,6 @@ const App: React.FC = () => {
         isConnected={isConnected}
         machineState={machineState}
         unit={unit}
-        onEmergencyStop={handleEmergencyStop}
-        flashingButton={flashingButton}
       />
 
       {alarmInfo && (
