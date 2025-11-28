@@ -51,10 +51,8 @@
     }
   },
   "dependencies": {
-    "@types/react-joyride": "^2.0.2",
     "@vercel/analytics": "^1.5.0",
     "@xstate/react": "^6.0.0",
-    "react-joyride": "^2.9.3",
     "xstate": "^5.24.0",
     "zustand": "^5.0.8"
   },
