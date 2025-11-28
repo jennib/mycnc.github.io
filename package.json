@@ -1,7 +1,7 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jennib/mycnc.github.io.git"
+    "url": "git+https://github.com/jennib/mycnc.github.io"
   },
   "main": "./out/main/index.cjs",
   "type": "module",
