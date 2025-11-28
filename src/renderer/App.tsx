@@ -372,7 +372,7 @@ const App: React.FC = () => {
     toolLibrary.find((t: Tool) => t.id === selectedToolId) || null;
 
   return (
-    <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
+    <div className="h-screen bg-background font-sans text-text-primary flex flex-col overflow-hidden">
       {!window.electronAPI?.isElectron && <Analytics />}
       <WelcomeModal
         isOpen={isWelcomeModalOpen}
@@ -618,8 +618,8 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0">
-        <div className="min-h-[60vh] lg:min-h-0">
+      <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="h-[40vh] lg:h-full">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -642,88 +642,90 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <Tabs
-          defaultTab="controls"
-          tabs={[
-            {
-              id: "controls",
-              label: "Controls",
-              icon: <Move className="w-4 h-4" />,
-              content: (
-                <div className="h-full overflow-auto">
-                  <JogPanel
-                    isConnected={isConnected}
-                    machineState={machineState}
-                    onJog={handleJog}
-                    onHome={() => handleHome("all")}
-                    onSetZero={handleSetZero}
-                    onSpindleCommand={handleSpindleCommand}
-                    onProbe={handleProbe}
-                    onSendCommand={handleManualCommand}
-                    jogStep={jogStep}
-                    onStepChange={settingsActions.setJogStep}
-                    flashingButton={flashingButton}
-                    onFlash={handleFlash}
-                    unit={unit}
-                    onUnitChange={handleUnitChange}
-                    isJobActive={isJobActive}
-                    isJogging={isJogging}
-                    isMacroRunning={isMacroRunning}
-                    onJogStop={handleJogStop}
-                    jogFeedRate={machineSettings.jogFeedRate}
-                  />
-                </div>
-              ),
-            },
-            {
-              id: "webcam",
-              label: "Webcam",
-              icon: <Camera className="w-4 h-4" />,
-              content: (
-                <div className="h-full overflow-auto p-2">
-                  <WebcamPanel />
-                </div>
-              ),
-            },
-            {
-              id: "macros",
-              label: "Macros",
-              icon: <Zap className="w-4 h-4" />,
-              content: (
-                <div className="h-full overflow-auto p-2">
-                  <MacrosPanel
-                    macros={macros}
-                    onRunMacro={handleRunMacro}
-                    onOpenEditor={uiActions.openMacroEditor}
-                    isEditMode={isMacroEditMode}
-                    onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
-                    disabled={isJobActive}
-                  />
-                </div>
-              ),
-            },
-            {
-              id: "console",
-              label: "Console",
-              icon: <Terminal className="w-4 h-4" />,
-              content: (
-                <div className="h-full">
-                  <Console
-                    logs={logs}
-                    onSendCommand={handleManualCommand}
-                    onClearLogs={logActions.clearLogs}
-                    isConnected={isConnected}
-                    isJobActive={isJobActive}
-                    isMacroRunning={isMacroRunning}
-                    isLightMode={isLightMode}
-                    isVerbose={isVerbose}
-                    onVerboseChange={logActions.setIsVerbose}
-                  />
-                </div>
-              ),
-            },
-          ]}
-        />
+        <div className="h-[50vh] lg:h-full">
+          <Tabs
+            defaultTab="controls"
+            tabs={[
+              {
+                id: "controls",
+                label: "Controls",
+                icon: <Move className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto">
+                    <JogPanel
+                      isConnected={isConnected}
+                      machineState={machineState}
+                      onJog={handleJog}
+                      onHome={() => handleHome("all")}
+                      onSetZero={handleSetZero}
+                      onSpindleCommand={handleSpindleCommand}
+                      onProbe={handleProbe}
+                      onSendCommand={handleManualCommand}
+                      jogStep={jogStep}
+                      onStepChange={settingsActions.setJogStep}
+                      flashingButton={flashingButton}
+                      onFlash={handleFlash}
+                      unit={unit}
+                      onUnitChange={handleUnitChange}
+                      isJobActive={isJobActive}
+                      isJogging={isJogging}
+                      isMacroRunning={isMacroRunning}
+                      onJogStop={handleJogStop}
+                      jogFeedRate={machineSettings.jogFeedRate}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: "webcam",
+                label: "Webcam",
+                icon: <Camera className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto p-2">
+                    <WebcamPanel />
+                  </div>
+                ),
+              },
+              {
+                id: "macros",
+                label: "Macros",
+                icon: <Zap className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto p-2">
+                    <MacrosPanel
+                      macros={macros}
+                      onRunMacro={handleRunMacro}
+                      onOpenEditor={uiActions.openMacroEditor}
+                      isEditMode={isMacroEditMode}
+                      onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
+                      disabled={isJobActive}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: "console",
+                label: "Console",
+                icon: <Terminal className="w-4 h-4" />,
+                content: (
+                  <div className="h-full">
+                    <Console
+                      logs={logs}
+                      onSendCommand={handleManualCommand}
+                      onClearLogs={logActions.clearLogs}
+                      isConnected={isConnected}
+                      isJobActive={isJobActive}
+                      isMacroRunning={isMacroRunning}
+                      isLightMode={isLightMode}
+                      isVerbose={isVerbose}
+                      onVerboseChange={logActions.setIsVerbose}
+                    />
+                  </div>
+                ),
+              },
+            ]}
+          />
+        </div>
       </main>
 
     </div>

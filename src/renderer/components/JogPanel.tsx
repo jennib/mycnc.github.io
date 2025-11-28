@@ -333,7 +333,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           onTouchStart={handleMouseDown}
           onTouchEnd={handleMouseUp}
           disabled={isDisabled}
-          className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
+          className={`flex items-center justify-center p-2 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
             }`}
           title={title}
         >
@@ -343,15 +343,15 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     };
 
     return (
-      <div className="bg-surface rounded-lg shadow-lg flex flex-col p-2 gap-2">
+      <div className="bg-surface rounded-lg shadow-lg flex flex-col p-1 gap-1">
         {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
           {/* Jog Controls */}
-          <div className="bg-background p-2 rounded-md">
-            <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
+          <div className="bg-background p-1 rounded-md">
+            <h4 className="text-xs font-bold text-text-secondary mb-1 text-center">
               Jog Control
             </h4>
-            <div className="grid grid-cols-3 grid-rows-3 gap-2">
+            <div className="grid grid-cols-3 grid-rows-3 gap-1">
               <div className="col-start-1 row-start-1"></div> {/* empty */}
               <JogButton
                 id="jog-y-plus"
@@ -450,13 +450,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="bg-background p-2 rounded-md">
-              <h4 className="text-sm font-bold text-text-secondary mb-2">
+          <div className="flex flex-col gap-1">
+            <div className="bg-background p-1 rounded-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-1">
                 Set Zero
               </h4>
-              <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1 text-sm">
+                <div className="grid grid-cols-3 gap-1">
                   <button
                     onClick={() => onSetZero("all")}
                     disabled={isControlDisabled}
@@ -481,8 +481,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </div>
               </div>
             </div>
-            <div className="bg-background p-2 rounded-md">
-              <h4 className="text-sm font-bold text-text-secondary mb-2">
+            <div className="bg-background p-1 rounded-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-1">
                 Units
               </h4>
               <div className="flex bg-secondary rounded-md p-1">
@@ -508,11 +508,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </button>
               </div>
             </div>
-            <div className="bg-background p-2 rounded-md">
-              <h4 className="text-sm font-bold text-text-secondary mb-2">
+            <div className="bg-background p-1 rounded-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-1">
                 Probe
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-1 text-sm">
                 <button
                   onClick={() => onProbe("X")}
                   disabled={isProbeDisabled}
@@ -543,8 +543,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </button>
               </div>
             </div>
-            <div className="bg-background p-2 rounded-md">
-              <h4 className="text-sm font-bold text-text-secondary mb-2">
+            <div className="bg-background p-1 rounded-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-1">
                 Spindle Control
               </h4>
               <div className="flex items-center gap-2">
@@ -560,7 +560,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 />
                 <span className="text-sm text-text-secondary">RPM</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="grid grid-cols-3 gap-1 mt-1">
                 <button
                   title="Spindle On (CW)"
                   onClick={() => onSpindleCommand("cw", spindleSpeed)}
