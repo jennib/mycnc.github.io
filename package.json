@@ -7,6 +7,10 @@
     "name": "jennib",
     "email": "jenni.b@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jennib/mycnc.github.io.git"
+  },
   "main": "./out/main/index.cjs",
   "type": "module",
   "scripts": {
