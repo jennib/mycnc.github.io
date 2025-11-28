@@ -254,7 +254,7 @@ export interface GCodeVisualizerHandle {
     resetView: () => void;
 }
 
-const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerProps>(({ gcodeLines, currentLine, hoveredLineIndex, machineSettings }, ref) => {
+const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerProps>(({ gcodeLines, currentLine, hoveredLineIndex, machineSettings, unit }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const glRef = useRef<WebGLRenderingContext | null>(null);
     const programInfoRef = useRef<any>(null);
@@ -279,15 +279,17 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         toolpathVertices: Float32Array | null;
         toolpathColors: Float32Array | null;
         toolpathSegmentMetadata: ToolpathSegmentMetadata[] | null;
-        toolModelInitialVertices: Float32Array | null; // Renamed
-        toolModelInitialColors: Float32Array | null;   // Renamed
-        toolCurrentPosition: GCodePoint | null;         // New field
+        toolModelInitialVertices: Float32Array | null;
+        toolModelInitialColors: Float32Array | null;
+        toolCurrentPosition: GCodePoint | null;
         workAreaGridVertices: Float32Array | null;
         workAreaGridColors: Float32Array | null;
         workAreaBoundsVertices: Float32Array | null;
         workAreaBoundsColors: Float32Array | null;
         workAreaAxisVertices: Float32Array | null;
         workAreaAxisColors: Float32Array | null;
+        workAreaPlaneVertices: Float32Array | null; // New
+        workAreaPlaneColors: Float32Array | null;   // New
     } | null>(null);
 
     const fitView = useCallback((bounds: any, newRotation: number[] | null = null) => {
@@ -333,8 +335,9 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         workerRef.current.onmessage = (event) => {
             const {
                 type, parsedGCode, toolpathVertices, toolpathColors, toolpathSegmentMetadata,
-                toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition, // Updated to new fields
-                workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors
+                toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition,
+                workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors,
+                workAreaPlaneVertices, workAreaPlaneColors // New fields
             } = event.data;
             const gl = glRef.current;
             const programInfo = programInfoRef.current;
@@ -343,8 +346,9 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 setParsedGCode(parsedGCode);
                 setWorkerData({
                     toolpathVertices, toolpathColors, toolpathSegmentMetadata,
-                    toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition, // Updated fields
-                    workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors
+                    toolModelInitialVertices, toolModelInitialColors, toolCurrentPosition,
+                    workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors,
+                    workAreaPlaneVertices, workAreaPlaneColors // New fields
                 });
                 fitView(parsedGCode.bounds, [0, Math.PI / 2]);
             } else if (type === 'updatedColors' && gl && buffersRef.current) {
@@ -424,6 +428,17 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaBoundsColors, gl.STATIC_DRAW);
         workAreaBuffers.boundsVertexCount = workerData.workAreaBoundsVertices ? workerData.workAreaBoundsVertices.length / 3 : 0;
 
+        // --- Create Plane Buffers ---
+        if (workerData.workAreaPlaneVertices) {
+            workAreaBuffers.planePosition = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.planePosition);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaPlaneVertices, gl.STATIC_DRAW);
+            workAreaBuffers.planeColor = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.planeColor);
+            gl.bufferData(gl.ARRAY_BUFFER, workerData.workAreaPlaneColors, gl.STATIC_DRAW);
+            workAreaBuffers.planeVertexCount = workerData.workAreaPlaneVertices.length / 3;
+        }
+
         // --- Create Axis Indicator Buffers ---
         workAreaBuffers.axisPosition = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, workAreaBuffers.axisPosition);
@@ -467,6 +482,8 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 gl.deleteBuffer(buffersRef.current.workArea.boundsColor);
                 gl.deleteBuffer(buffersRef.current.workArea.axisPosition);
                 gl.deleteBuffer(buffersRef.current.workArea.axisColor);
+                if (buffersRef.current.workArea.planePosition) gl.deleteBuffer(buffersRef.current.workArea.planePosition);
+                if (buffersRef.current.workArea.planeColor) gl.deleteBuffer(buffersRef.current.workArea.planeColor);
             }
         }
 
@@ -509,6 +526,8 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         };
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         let animationFrameId: number;
 
@@ -637,6 +656,22 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 // the next draws (work area, toolpath) will set their own uniform.
                 gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, viewMatrix);
             }
+
+            // Draw Plane (Transparent) - Draw last for blending
+            if (buffers.workArea && buffers.workArea.planePosition) {
+                const wa = buffers.workArea;
+                gl.depthMask(false); // Disable depth write for transparent objects
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, wa.planePosition);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+                gl.bindBuffer(gl.ARRAY_BUFFER, wa.planeColor);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
+                gl.drawArrays(gl.TRIANGLES, 0, wa.planeVertexCount);
+
+                gl.depthMask(true);
+            }
         };
 
         renderLoop();
@@ -670,7 +705,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                 setCamera(c => {
                     const newRotation = [...c.rotation];
                     newRotation[0] -= dx * 0.01;
-                    newRotation[1] -= dy * 0.01;
+                    newRotation[1] += dy * 0.01;
                     newRotation[1] = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, newRotation[1]));
                     return { ...c, rotation: newRotation };
                 });
@@ -726,8 +761,13 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     }, []);
 
     return (
-        <div className="w-full h-full bg-background rounded cursor-grab active:cursor-grabbing">
+        <div className="w-full h-full bg-background rounded cursor-grab active:cursor-grabbing relative group">
             <canvas ref={canvasRef} className="w-full h-full" />
+
+            {/* Overlay Info */}
+            <div className="absolute bottom-2 left-2 pointer-events-none bg-black/20 p-1 rounded text-[10px] text-white/60 backdrop-blur-[1px] select-none transition-opacity opacity-10 group-hover:opacity-100">
+                <div className="font-mono">Grid: 10 {unit}</div>
+            </div>
         </div>
     );
 });

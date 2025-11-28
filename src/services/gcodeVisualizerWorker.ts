@@ -3,11 +3,12 @@
 import { parseGCode, GCodeSegment, GCodePoint } from '../renderer/services/gcodeParser';
 
 // --- Color Constants (from GCodeVisualizer.tsx) ---
-const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
+const RAPID_COLOR = [0.0, 1.0, 1.0, 1.0]; // Cyan, opaque
 const CUTTING_COLOR = [1.0, 0.84, 0.0, 1.0]; // Bright yellow
-const PLUNGE_COLOR = [1.0, 0.65, 0.0, 1.0]; // Orange
-const EXECUTED_COLOR = [0.2, 0.2, 0.2, 1.0]; // Dark gray
+const PLUNGE_COLOR = [1.0, 0.5, 0.0, 1.0]; // Orange
+const EXECUTED_COLOR = [0.5, 0.5, 0.5, 0.5]; // Mid gray, transparent
 const HIGHLIGHT_COLOR = [1.0, 0.0, 1.0, 1.0]; // Magenta
+const BELOW_ZERO_COLOR = [1.0, 0.2, 0.2, 1.0]; // Red for cutting below Z=0
 
 // --- Global Worker State ---
 let _segments: GCodeSegment[] = [];
@@ -50,6 +51,7 @@ const generateToolpathColors = (
         let color: number[];
         const isHovered = i === hoveredLineIndex;
         const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
+        const isBelowZero = seg.end.z < -0.001 || seg.start.z < -0.001; // Check if segment goes below zero
 
         if (isHovered) {
             color = HIGHLIGHT_COLOR;
@@ -57,6 +59,8 @@ const generateToolpathColors = (
             color = EXECUTED_COLOR;
         } else if (seg.type === 'G0') {
             color = RAPID_COLOR;
+        } else if (isBelowZero) {
+            color = BELOW_ZERO_COLOR;
         } else if (isPlunge) {
             color = PLUNGE_COLOR;
         } else {
@@ -106,37 +110,77 @@ const generateToolpathColors = (
 const createToolModel = (position: GCodePoint) => {
     // Tool geometry is now generated around (0,0,0).
     // The actual position will be applied via a modelViewMatrix translation in the main thread.
-    const toolHeight = 50; // Increased size
-    const toolRadius = 10; // Increased size
-    const holderHeight = 10;
-    const holderRadius = 8;
+    const toolHeight = 40;
+    const toolRadius = 3; // More realistic radius (e.g., 6mm diameter)
+    const holderHeight = 15;
+    const holderRadius = 6;
     const vertices: number[] = [];
+    const colors: number[] = [];
 
-    const addQuad = (p1: number[], p2: number[], p3: number[], p4: number[]) => vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
+    const addQuad = (p1: number[], p2: number[], p3: number[], p4: number[], color: number[]) => {
+        vertices.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4);
+        for (let k = 0; k < 6; k++) colors.push(...color);
+    };
 
-    // Tip at (0,0,0) - base of the tool is at z=0 relative to its local coordinate system
-    vertices.push(0, 0, 0, -toolRadius, 0, toolHeight, toolRadius, 0, toolHeight);
+    const toolColor = [0.8, 0.8, 0.8, 1.0]; // Silver
+    const holderColor = [0.2, 0.2, 0.2, 1.0]; // Dark Grey
 
-    // Body (simplified cylinder) around (0,0,0)
-    const sides = 8;
+    // Body (Cylinder)
+    const sides = 16;
     for (let i = 0; i < sides; i++) {
         const a1 = (i / sides) * 2 * Math.PI;
         const a2 = ((i + 1) / sides) * 2 * Math.PI;
+
         const x1 = Math.cos(a1) * toolRadius;
-        const z1 = Math.sin(a1) * toolRadius; // Y-coordinate is Z in our Z-up system for the circle
+        const z1 = Math.sin(a1) * toolRadius;
         const x2 = Math.cos(a2) * toolRadius;
-        const z2 = Math.sin(a2) * toolRadius; // Y-coordinate is Z in our Z-up system for the circle
+        const z2 = Math.sin(a2) * toolRadius;
+
+        // Tool Shaft
+        addQuad(
+            [x1, z1, 0],
+            [x2, z2, 0],
+            [x2, z2, toolHeight],
+            [x1, z1, toolHeight],
+            toolColor
+        );
+
+        // Tool Tip (Cone-ish) - Optional, for now just flat bottom
+        addQuad(
+            [0, 0, 0],
+            [x1, z1, 0],
+            [x2, z2, 0],
+            [0, 0, 0], // degenerate quad for triangle fan
+            toolColor
+        );
+
+        // Holder
+        const hx1 = Math.cos(a1) * holderRadius;
+        const hz1 = Math.sin(a1) * holderRadius;
+        const hx2 = Math.cos(a2) * holderRadius;
+        const hz2 = Math.sin(a2) * holderRadius;
+
+        addQuad(
+            [hx1, hz1, toolHeight],
+            [hx2, hz2, toolHeight],
+            [hx2, hz2, toolHeight + holderHeight],
+            [hx1, hz1, toolHeight + holderHeight],
+            holderColor
+        );
+
+        // Connector (Tool to Holder)
         addQuad(
             [x1, z1, toolHeight],
             [x2, z2, toolHeight],
-            [x2, z2, toolHeight + holderHeight],
-            [x1, z1, toolHeight + holderHeight]
+            [hx2, hz2, toolHeight],
+            [hx1, hz1, toolHeight],
+            holderColor
         );
     }
 
     return {
         vertices: new Float32Array(vertices),
-        colors: new Float32Array(Array(vertices.length / 3).fill([0.0, 1.0, 0.0, 1.0]).flat()) // Bright Green
+        colors: new Float32Array(colors)
     };
 };
 
@@ -277,6 +321,19 @@ self.onmessage = (event) => {
             0, 0, 0, 0, 0, wz, wx, 0, 0, wx, 0, wz, wx, wy, 0, wx, wy, wz, 0, wy, 0, 0, wy, wz // sides
         );
 
+        // --- Create Zero Plane Buffer ---
+        const planeVertices: number[] = [
+            0, 0, 0,
+            wx, 0, 0,
+            wx, wy, 0,
+            0, 0, 0,
+            wx, wy, 0,
+            0, wy, 0
+        ];
+        const planeColor = [0.2, 0.3, 0.4, 0.2]; // Semi-transparent blue-ish
+        const planeColors: number[] = Array(6).fill(planeColor).flat();
+
+
         // --- Create Axis Indicator Buffers ---
         const axisLength = Math.max(25, Math.hypot(workArea.x, workArea.y) * 0.1);
         const labelSize = axisLength * 0.1; // Half-size of the letter labels
@@ -336,6 +393,8 @@ self.onmessage = (event) => {
             workAreaBoundsColors: new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat()),
             workAreaAxisVertices: new Float32Array(axisVertices),
             workAreaAxisColors: new Float32Array(axisColors),
+            workAreaPlaneVertices: new Float32Array(planeVertices),
+            workAreaPlaneColors: new Float32Array(planeColors),
         }, [
             new Float32Array(toolpathVertices).buffer,
             initialToolpathColors.buffer,
@@ -346,8 +405,10 @@ self.onmessage = (event) => {
             new Float32Array(boundsVertices).buffer,
             new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat()).buffer,
             new Float32Array(axisVertices).buffer,
-            new Float32Array(axisColors).buffer
-        ].filter(Boolean)); // Filter out nulls for toolModel buffers
+            new Float32Array(axisColors).buffer,
+            new Float32Array(planeVertices).buffer,
+            new Float32Array(planeColors).buffer
+        ].filter(Boolean) as Transferable[]); // Filter out nulls for toolModel buffers
     } else if (type === 'updateColors') {
         if (!_segments || _segments.length === 0 || !_toolpathSegmentMetadata || _toolpathSegmentMetadata.length === 0) return;
 
