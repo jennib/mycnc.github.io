@@ -11,7 +11,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "electron-vite build",
     "electron:dev": "cross-env VITE_DEV_SERVER_URL=http://localhost:3000 electron-vite dev -- --enable-logging --trace-warnings",
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
