@@ -15,6 +15,7 @@ import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import ThemeToggle from "./components/ThemeToggle";
 import StatusBar from "./components/StatusBar";
+import Tabs from "./components/Tabs";
 import {
   AlertTriangle,
   OctagonAlert,
@@ -23,6 +24,10 @@ import {
   Maximize,
   Minimize,
   BookOpen,
+  Move,
+  Camera,
+  Zap,
+  Terminal,
 } from "./components/Icons";
 import { getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
@@ -486,11 +491,11 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-4">
+      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-2">
         <div className="flex items-center gap-4">
-          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-12 w-auto" />
+          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <button
             onClick={handleToggleFullscreen}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -597,7 +602,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-grow p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0">
         <div className="min-h-[60vh] lg:min-h-0">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
@@ -621,48 +626,87 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <div className="flex flex-col gap-4 overflow-hidden min-h-0">
-          <JogPanel
-            isConnected={isConnected}
-            machineState={machineState}
-            onJog={handleJog}
-            onHome={() => handleHome("all")}
-            onSetZero={handleSetZero}
-            onSpindleCommand={handleSpindleCommand}
-            onProbe={handleProbe}
-            onSendCommand={handleManualCommand}
-            jogStep={jogStep}
-            onStepChange={settingsActions.setJogStep}
-            flashingButton={flashingButton}
-            onFlash={handleFlash}
-            unit={unit}
-            onUnitChange={handleUnitChange}
-            isJobActive={isJobActive}
-            isJogging={isJogging}
-            isMacroRunning={isMacroRunning}
-            onJogStop={handleJogStop}
-          />
-          <WebcamPanel />
-          <MacrosPanel
-            macros={macros}
-            onRunMacro={handleRunMacro}
-            onOpenEditor={uiActions.openMacroEditor}
-            isEditMode={isMacroEditMode}
-            onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
-            disabled={isJobActive}
-          />
-          <Console
-            logs={logs}
-            onSendCommand={handleManualCommand}
-            onClearLogs={logActions.clearLogs}
-            isConnected={isConnected}
-            isJobActive={isJobActive}
-            isMacroRunning={isMacroRunning}
-            isLightMode={isLightMode}
-            isVerbose={isVerbose}
-            onVerboseChange={logActions.setIsVerbose}
-          />
-        </div>
+        <Tabs
+          defaultTab="controls"
+          tabs={[
+            {
+              id: "controls",
+              label: "Controls",
+              icon: <Move className="w-4 h-4" />,
+              content: (
+                <div className="h-full overflow-auto">
+                  <JogPanel
+                    isConnected={isConnected}
+                    machineState={machineState}
+                    onJog={handleJog}
+                    onHome={() => handleHome("all")}
+                    onSetZero={handleSetZero}
+                    onSpindleCommand={handleSpindleCommand}
+                    onProbe={handleProbe}
+                    onSendCommand={handleManualCommand}
+                    jogStep={jogStep}
+                    onStepChange={settingsActions.setJogStep}
+                    flashingButton={flashingButton}
+                    onFlash={handleFlash}
+                    unit={unit}
+                    onUnitChange={handleUnitChange}
+                    isJobActive={isJobActive}
+                    isJogging={isJogging}
+                    isMacroRunning={isMacroRunning}
+                    onJogStop={handleJogStop}
+                  />
+                </div>
+              ),
+            },
+            {
+              id: "webcam",
+              label: "Webcam",
+              icon: <Camera className="w-4 h-4" />,
+              content: (
+                <div className="h-full overflow-auto p-2">
+                  <WebcamPanel />
+                </div>
+              ),
+            },
+            {
+              id: "macros",
+              label: "Macros",
+              icon: <Zap className="w-4 h-4" />,
+              content: (
+                <div className="h-full overflow-auto p-2">
+                  <MacrosPanel
+                    macros={macros}
+                    onRunMacro={handleRunMacro}
+                    onOpenEditor={uiActions.openMacroEditor}
+                    isEditMode={isMacroEditMode}
+                    onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
+                    disabled={isJobActive}
+                  />
+                </div>
+              ),
+            },
+            {
+              id: "console",
+              label: "Console",
+              icon: <Terminal className="w-4 h-4" />,
+              content: (
+                <div className="h-full">
+                  <Console
+                    logs={logs}
+                    onSendCommand={handleManualCommand}
+                    onClearLogs={logActions.clearLogs}
+                    isConnected={isConnected}
+                    isJobActive={isJobActive}
+                    isMacroRunning={isMacroRunning}
+                    isLightMode={isLightMode}
+                    isVerbose={isVerbose}
+                    onVerboseChange={logActions.setIsVerbose}
+                  />
+                </div>
+              ),
+            },
+          ]}
+        />
       </main>
       <Footer onContactClick={uiActions.openContactModal} />
     </div>

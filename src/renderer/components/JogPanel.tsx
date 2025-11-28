@@ -182,11 +182,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     };
 
     return (
-      <div className="bg-surface rounded-lg shadow-lg flex flex-col p-4 gap-4">
+      <div className="bg-surface rounded-lg shadow-lg flex flex-col p-2 gap-2">
         {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Jog Controls */}
-          <div className="bg-background p-3 rounded-md">
+          <div className="bg-background p-2 rounded-md">
             <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
               Jog Control
             </h4>
@@ -274,7 +274,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               </div>
 
             </div>
-            <div className="mt-3 border-t border-secondary pt-3">
+            <div className="mt-2 border-t border-secondary pt-2">
               <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
                 Homing
               </h4>
@@ -289,8 +289,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-3">
-            <div className="bg-background p-3 rounded-md">
+          <div className="flex flex-col gap-2">
+            <div className="bg-background p-2 rounded-md">
               <h4 className="text-sm font-bold text-text-secondary mb-2">
                 Set Zero
               </h4>
@@ -320,7 +320,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </div>
               </div>
             </div>
-            <div className="bg-background p-3 rounded-md">
+            <div className="bg-background p-2 rounded-md">
               <h4 className="text-sm font-bold text-text-secondary mb-2">
                 Units
               </h4>
@@ -347,7 +347,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </button>
               </div>
             </div>
-            <div className="bg-background p-3 rounded-md">
+            <div className="bg-background p-2 rounded-md">
               <h4 className="text-sm font-bold text-text-secondary mb-2">
                 Probe
               </h4>
@@ -382,7 +382,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </button>
               </div>
             </div>
-            <div className="bg-background p-3 rounded-md">
+            <div className="bg-background p-2 rounded-md">
               <h4 className="text-sm font-bold text-text-secondary mb-2">
                 Spindle Control
               </h4>
