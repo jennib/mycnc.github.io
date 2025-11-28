@@ -137,20 +137,6 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
         };
     }, [videoRef, onPiPChange]);
 
-    if (isInPiP) {
-        return (
-            <div className="relative aspect-video bg-background rounded-md">
-                <button
-                    onClick={onTogglePiP}
-                    title="Dock to Panel"
-                    className="absolute top-2 right-2 flex items-center gap-2 p-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                    <Dock className="w-5 h-5" />
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col gap-4">
             <div className="flex gap-2">
@@ -191,7 +177,25 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
             </div>
 
             <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
+                {/* Video element is always rendered here, even when in PiP */}
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
+
+                {/* Show overlay when in PiP mode */}
+                {isInPiP && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-90 z-20">
+                        <div className="text-center text-text-secondary p-4">
+                            <Dock className="w-12 h-12 mx-auto mb-3 opacity-75" />
+                            <p className="text-sm font-semibold mb-2">Video is in Picture-in-Picture mode</p>
+                            <button
+                                onClick={onTogglePiP}
+                                className="px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            >
+                                Exit Picture-in-Picture
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
                         <div className="text-center text-text-secondary p-4">
