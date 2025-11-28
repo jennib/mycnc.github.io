@@ -32,7 +32,7 @@ import {
 import { getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
-import Footer from "./components/Footer";
+
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
 import UnsupportedBrowser from "./components/UnsupportedBrowser";
@@ -458,6 +458,7 @@ const App: React.FC = () => {
         onResetDialogs={() => { }}
         onExport={() => { }}
         onImport={() => { }}
+        onContactClick={uiActions.openContactModal}
       />
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}
@@ -502,7 +503,7 @@ const App: React.FC = () => {
           {isConnected && (
             <button
               onClick={handleEmergencyStop}
-              className={`flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
+              className={`flex items-center gap-3 px-8 py-2 min-w-[280px] justify-center bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
               title="Emergency Stop (Soft Reset) (Hotkey: Esc)"
             >
               <OctagonAlert className="w-6 h-6" />
@@ -723,7 +724,7 @@ const App: React.FC = () => {
           ]}
         />
       </main>
-      <Footer onContactClick={uiActions.openContactModal} />
+
     </div>
   );
 };
