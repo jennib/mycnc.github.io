@@ -11,6 +11,7 @@ import {
   Probe,
 } from "./Icons";
 import { MachineState } from "../types";
+import { JogManager, JogAxis, JogDirection } from "../services/JogManager";
 
 interface JogPanelProps {
   isConnected: boolean;
@@ -55,6 +56,32 @@ const JogPanel: React.FC<JogPanelProps> = memo(
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     const pressedJogKey = useRef<string | null>(null);
+    const jogManagerRef = useRef<JogManager | null>(null);
+    const pressedKeys = useRef<Set<string>>(new Set());
+
+    // Initialize JogManager
+    useEffect(() => {
+      jogManagerRef.current = new JogManager({
+        onSendJogCommand: (axis, direction, distance, feedRate) => {
+          onJog(axis, direction, distance);
+        },
+        onJogCancel: () => {
+          onJogStop();
+        },
+        onAlarmDetected: () => {
+          console.warn('JogManager: Alarm detected, all jogs cancelled');
+        },
+      });
+
+      return () => {
+        jogManagerRef.current?.destroy();
+      };
+    }, [onJog, onJogStop]);
+
+    // Update machine state in JogManager for alarm monitoring
+    useEffect(() => {
+      jogManagerRef.current?.updateMachineState(machineState);
+    }, [machineState]);
 
     const isControlDisabled =
       !isConnected ||
@@ -104,11 +131,26 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         const hotkey = jogHotkeys[event.key];
         if (hotkey && !isControlDisabled) {
           event.preventDefault();
-          if (pressedJogKey.current !== event.key) {
-            pressedJogKey.current = event.key;
-            onFlash(hotkey.id);
-            onJog(hotkey.axis, hotkey.direction, jogStep);
+
+          // Prevent key repeat - only process first keydown
+          if (pressedKeys.current.has(event.key)) {
+            return;
           }
+          pressedKeys.current.add(event.key);
+
+          // Flash the button
+          onFlash(hotkey.id);
+
+          // Get machine settings for feed rate
+          const feedRate = 1000; // This should come from settings
+
+          // Start jog (JogManager will determine tap vs hold)
+          jogManagerRef.current?.startJog(
+            hotkey.axis as JogAxis,
+            hotkey.direction as JogDirection,
+            jogStep,
+            feedRate
+          );
         }
       };
 
@@ -120,10 +162,22 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           return;
         }
 
-        if (pressedJogKey.current === event.key) {
-          pressedJogKey.current = null;
-          // onJogStop(); // Don't stop on key up for step jogging
-          onFlash(""); // Clear flashing button
+        const hotkey = jogHotkeys[event.key];
+        if (hotkey) {
+          // Remove from pressed keys
+          pressedKeys.current.delete(event.key);
+
+          // Clear flashing button
+          onFlash("");
+
+          // Stop jog (JogManager will determine if it was tap or hold)
+          const feedRate = 1000;
+          jogManagerRef.current?.stopJog(
+            hotkey.axis as JogAxis,
+            hotkey.direction as JogDirection,
+            jogStep,
+            feedRate
+          );
         }
       };
 
@@ -134,7 +188,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
       };
-    }, [isControlDisabled, onJog, onJogStop, onFlash, stepSizes, onStepChange]);
+    }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys]);
 
 
     const JogButton = ({
@@ -162,15 +216,51 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           }`;
       }
 
-      const handleClick = () => {
+      const handleMouseDown = () => {
+        if (isDisabled) return;
         onFlash(id);
-        onJog(axis, direction, jogStep);
+        const feedRate = 1000; // Should come from settings
+        jogManagerRef.current?.startJog(
+          axis as JogAxis,
+          direction as JogDirection,
+          jogStep,
+          feedRate
+        );
+      };
+
+      const handleMouseUp = () => {
+        if (isDisabled) return;
+        onFlash("");
+        const feedRate = 1000;
+        jogManagerRef.current?.stopJog(
+          axis as JogAxis,
+          direction as JogDirection,
+          jogStep,
+          feedRate
+        );
+      };
+
+      const handleMouseLeave = () => {
+        // If mouse leaves button while pressed, stop jogging
+        if (isDisabled) return;
+        onFlash("");
+        const feedRate = 1000;
+        jogManagerRef.current?.stopJog(
+          axis as JogAxis,
+          direction as JogDirection,
+          jogStep,
+          feedRate
+        );
       };
 
       return (
         <button
           id={id}
-          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onTouchStart={handleMouseDown}
+          onTouchEnd={handleMouseUp}
           disabled={isDisabled}
           className={`flex items-center justify-center p-4 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
             }`}
