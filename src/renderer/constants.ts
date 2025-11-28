@@ -100,3 +100,28 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = { // Ensure this ma
     text: { text: 'HELLO', font: 'Sans-serif Stick', height: 10, spacing: 2, startX: 10, startY: 10, alignment: 'left', depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
     thread: { type: 'internal', hand: 'right', diameter: 10, pitch: 1, depth: 10, feed: 200, spindle: 10000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
 };
+
+export const GRBL_REALTIME_COMMANDS = {
+    RESET: '\x18', // Ctrl-X
+    STATUS_REPORT: '?',
+    CYCLE_START: '~',
+    FEED_HOLD: '!',
+    SAFETY_DOOR: '\x84',
+    JOG_CANCEL: '\x85',
+    FEED_OVR_RESET: '\x90',
+    FEED_OVR_COARSE_PLUS: '\x91',
+    FEED_OVR_COARSE_MINUS: '\x92',
+    FEED_OVR_FINE_PLUS: '\x93',
+    FEED_OVR_FINE_MINUS: '\x94',
+    RAPID_OVR_RESET: '\x95',
+    RAPID_OVR_MEDIUM: '\x96',
+    RAPID_OVR_LOW: '\x97',
+    SPINDLE_OVR_RESET: '\x99',
+    SPINDLE_OVR_COARSE_PLUS: '\x9A',
+    SPINDLE_OVR_COARSE_MINUS: '\x9B',
+    SPINDLE_OVR_FINE_PLUS: '\x9C',
+    SPINDLE_OVR_FINE_MINUS: '\x9D',
+    TOGGLE_SPINDLE_STOP: '\x9E',
+    TOGGLE_FLOOD_COOLANT: '\xA0',
+    TOGGLE_MIST_COOLANT: '\xA1',
+} as const;

@@ -3,6 +3,7 @@ import { MachineState } from '@/types';
 import { useConnectionStore } from './connectionStore';
 import { useSettingsStore } from './settingsStore';
 import { useLogStore } from './logStore';
+import { GRBL_REALTIME_COMMANDS } from '@/constants';
 
 // GRBL Alarm codes and messages
 function getAlarmMessage(code: number | string): string {
@@ -164,7 +165,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
 
     handleJogStop: () => {
       const { controller } = useConnectionStore.getState();
-      controller?.sendRealtimeCommand('\x85');
+      controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
     },
 
     handleManualCommand: (command) => {
