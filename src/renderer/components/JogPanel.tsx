@@ -12,6 +12,7 @@ import {
 } from "./Icons";
 import { MachineState } from "../types";
 import { JogManager, JogAxis, JogDirection } from "../services/JogManager";
+import { useGamepad } from "../hooks/useGamepad";
 
 interface JogPanelProps {
   isConnected: boolean;
@@ -61,6 +62,102 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const jogManagerRef = useRef<JogManager | null>(null);
     const pressedKeys = useRef<Set<string>>(new Set());
 
+    const isControlDisabled =
+      !isConnected ||
+      isJobActive ||
+      isJogging ||
+      isMacroRunning ||
+      ["Alarm", "Home", "Jog"].includes(machineState?.status || "");
+    const isProbeDisabled =
+      isControlDisabled || machineState?.spindle?.state !== "off";
+    const isZJogDisabledForStep =
+      (unit === "mm" && jogStep > 10) || (unit === "in" && jogStep > 1);
+
+    const stepSizes =
+      unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
+
+    const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
+      ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
+      ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
+      ArrowLeft: { axis: "X", direction: -1, id: "jog-x-minus" },
+      ArrowRight: { axis: "X", direction: 1, id: "jog-x-plus" },
+      PageUp: { axis: "Z", direction: 1, id: "jog-z-plus" },
+      PageDown: { axis: "Z", direction: -1, id: "jog-z-minus" },
+    };
+
+    // Gamepad Integration
+    const { gamepadState, applyDeadzone } = useGamepad();
+    const activeGamepadJogs = useRef<{ [key: string]: boolean }>({});
+
+    useEffect(() => {
+      // Safety: If gamepad is disconnected or controls disabled, stop all active gamepad jogs
+      if (!gamepadState || !gamepadState.connected || isControlDisabled) {
+        let anyActive = false;
+        Object.keys(activeGamepadJogs.current).forEach(key => {
+          if (activeGamepadJogs.current[key]) {
+            anyActive = true;
+            activeGamepadJogs.current[key] = false;
+          }
+        });
+
+        if (anyActive) {
+          jogManagerRef.current?.cancelAllJogs();
+          onFlash("");
+        }
+        return;
+      }
+
+      const checkAxis = (axisIndex: number, targetAxis: JogAxis, invert: boolean = false) => {
+        const rawValue = gamepadState.axes[axisIndex];
+        // Standard Gamepad Mapping:
+        // Axis 0: Left Stick X
+        // Axis 1: Left Stick Y
+        // Axis 2: Right Stick X
+        // Axis 3: Right Stick Y
+
+        // Some gamepads might have different mappings, but this is standard for Xbox/Generic
+        if (rawValue === undefined) return;
+
+        const value = applyDeadzone(rawValue);
+        const threshold = 0.5;
+
+        // Determine direction
+        let direction: JogDirection | 0 = 0;
+        if (value > threshold) direction = invert ? -1 : 1;
+        else if (value < -threshold) direction = invert ? 1 : -1;
+
+        const key = `axis-${axisIndex}`;
+        const wasActive = activeGamepadJogs.current[key];
+
+        if (direction !== 0) {
+          if (!wasActive) {
+            // Rising edge: Start jogging
+            activeGamepadJogs.current[key] = true;
+            jogManagerRef.current?.startJog(targetAxis, direction, jogStep, jogFeedRate);
+            onFlash(`gamepad-jog`); // Generic flash for gamepad
+          }
+        } else {
+          if (wasActive) {
+            // Falling edge: Stop jogging
+            activeGamepadJogs.current[key] = false;
+            // Args don't matter for stopping continuous jog, but we pass valid ones just in case
+            jogManagerRef.current?.stopJog(targetAxis, 1, jogStep, jogFeedRate);
+            onFlash("");
+          }
+        }
+      };
+
+      // Left Stick X (Axis 0) -> X Axis
+      checkAxis(0, 'X');
+
+      // Left Stick Y (Axis 1) -> Y Axis (Inverted: Up is -1 on gamepad usually)
+      checkAxis(1, 'Y', true);
+
+      // Right Stick Y (Axis 3) -> Z Axis (Inverted)
+      checkAxis(3, 'Z', true);
+
+    }, [gamepadState, isControlDisabled, jogStep, jogFeedRate, applyDeadzone, onFlash]);
+
     // Initialize JogManager
     useEffect(() => {
       jogManagerRef.current = new JogManager({
@@ -85,28 +182,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       jogManagerRef.current?.updateMachineState(machineState);
     }, [machineState]);
 
-    const isControlDisabled =
-      !isConnected ||
-      isJobActive ||
-      isJogging ||
-      isMacroRunning ||
-      ["Alarm", "Home", "Jog"].includes(machineState?.status || "");
-    const isProbeDisabled =
-      isControlDisabled || machineState?.spindle?.state !== "off";
-    const isZJogDisabledForStep =
-      (unit === "mm" && jogStep > 10) || (unit === "in" && jogStep > 1);
 
-    const stepSizes =
-      unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
-
-    const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
-      ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
-      ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
-      ArrowLeft: { axis: "X", direction: -1, id: "jog-x-minus" },
-      ArrowRight: { axis: "X", direction: 1, id: "jog-x-plus" },
-      PageUp: { axis: "Z", direction: 1, id: "jog-z-plus" },
-      PageDown: { axis: "Z", direction: -1, id: "jog-z-minus" },
-    };
 
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
