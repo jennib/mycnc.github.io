@@ -670,6 +670,7 @@ const App: React.FC = () => {
                     isJogging={isJogging}
                     isMacroRunning={isMacroRunning}
                     onJogStop={handleJogStop}
+                    jogFeedRate={machineSettings.jogFeedRate}
                   />
                 </div>
               ),
