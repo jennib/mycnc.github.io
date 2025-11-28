@@ -608,32 +608,58 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         };
 
         const doHelicalBore = (targetDiameter: number, targetDepth: number, startZ: number = 0) => {
-            const pathRadius = (targetDiameter - (selectedTool.diameter === '' ? 0 : selectedTool.diameter)) / 2;
-            if (pathRadius <= 0) return;
+            const toolDia = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
+            const finalPathRadius = (targetDiameter - toolDia) / 2;
+            if (finalPathRadius <= 0) return;
 
             const currentCenterX = numericCenterX + originOffsetX;
             const currentCenterY = numericCenterY + originOffsetY;
+
+            const stepoverVal = parseFloat(String(boreParams.stepover)) || 40; // Default to 40% if not set
+            const stepoverAmount = toolDia * (stepoverVal / 100);
+
+            // Calculate passes
+            const passes = [];
+
+            let r = stepoverAmount;
+            // If the hole is small, we might just do one pass at final radius
+            if (r > finalPathRadius) r = finalPathRadius;
+
+            // Generate passes from center out
+            while (r <= finalPathRadius) {
+                passes.push(r);
+                if (r >= finalPathRadius) break;
+                r += stepoverAmount;
+                if (r > finalPathRadius) r = finalPathRadius;
+            }
+
+            // Ensure we have at least one pass if something went wrong or hole is tiny
+            if (passes.length === 0) passes.push(finalPathRadius);
 
             code.push(`(Boring to Ø${targetDiameter} at Z=${targetDepth})`);
             paths.push({ cx: currentCenterX, cy: currentCenterY, r: targetDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
             updateBounds(currentCenterX, currentCenterY, targetDiameter / 2);
 
             code.push(`G0 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} Z${numericSafeZ.toFixed(3)}`);
-            code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
 
-            let currentDepth = startZ;
-            while (currentDepth > targetDepth) {
-                currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
-                // Ramp in
-                code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
-                // Full circle
-                code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius.toFixed(3)} J0`);
-                // Ramp out
-                code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius / 2} J0`);
+            for (const passRadius of passes) {
+                code.push(`(Pass at radius ${passRadius.toFixed(3)})`);
+                code.push(`G0 Z${(startZ + 1).toFixed(3)}`); // Lift slightly
+                code.push(`G0 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)}`);
+                code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
 
-                if (currentDepth === Math.max(targetDepth, startZ - numericDepthPerPass)) {
-                    paths.push({ cx: currentCenterX, cy: currentCenterY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
+                let currentDepth = startZ;
+                while (currentDepth > targetDepth) {
+                    currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
+                    // Ramp in to the pass radius
+                    code.push(`G2 X${(currentCenterX + passRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${passRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
+                    // Full circle at depth
+                    code.push(`G2 X${(currentCenterX + passRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${-passRadius.toFixed(3)} J0`);
+                    // Ramp out back to center
+                    code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-passRadius / 2} J0`);
                 }
+
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`); // Retract after each radial pass
             }
         };
 

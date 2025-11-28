@@ -43,7 +43,10 @@ const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, t
 
             <hr className='border-secondary' />
 
-            <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+            <div className='grid grid-cols-2 gap-4'>
+                <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+                <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
+            </div>
 
             <hr className='border-secondary' />
 
