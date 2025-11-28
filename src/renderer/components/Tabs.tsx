@@ -16,8 +16,6 @@ interface TabsProps {
 const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab, className = '' }) => {
     const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
 
-    const activeTabContent = tabs.find(tab => tab.id === activeTab)?.content;
-
     return (
         <div className={`flex flex-col h-full ${className}`}>
             {/* Tab Headers */}
@@ -37,9 +35,17 @@ const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab, className = '' }) => {
                 ))}
             </div>
 
-            {/* Tab Content */}
-            <div className="flex-grow overflow-hidden">
-                {activeTabContent}
+            {/* Tab Content - All tabs are always mounted, just hidden with CSS */}
+            <div className="flex-grow overflow-hidden relative">
+                {tabs.map(tab => (
+                    <div
+                        key={tab.id}
+                        className="absolute inset-0"
+                        style={{ display: activeTab === tab.id ? 'block' : 'none' }}
+                    >
+                        {tab.content}
+                    </div>
+                ))}
             </div>
         </div>
     );
