@@ -14,18 +14,7 @@ interface ThreadMillingGeneratorProps {
 
 const ThreadMillingGenerator: React.FC<ThreadMillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        // For numeric inputs, ensure the value is a number or null
-        const numericFields = [
-            'diameter', 'pitch', 'depth',
-            'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
-        ];
-
-        if (numericFields.includes(field)) {
-            const numValue = parseFloat(value);
-            onParamsChange(field, isNaN(numValue) ? null : numValue);
-        } else {
-            onParamsChange(field, value);
-        }
+        onParamsChange(field, value);
     };
 
     return (

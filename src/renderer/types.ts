@@ -122,6 +122,7 @@ export interface BoreParams {
     spindle: number | '';
     safeZ: number | '';
 
+    stepover: number | '';
     toolId: number | null;
 }
 

@@ -18,20 +18,7 @@ const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsC
     }, [params.drillType]);
 
     const handleParamChange = (field: string, value: any) => {
-        // For numeric inputs, ensure the value is a number or null
-        const numericFields = [
-            'singleX', 'singleY', 'rectStartX', 'rectStartY', 'rectCols', 'rectRows',
-            'rectSpacingX', 'rectSpacingY', 'circCenterX', 'circCenterY', 'circRadius',
-            'circHoles', 'circStartAngle', 'depth', 'peck', 'retract',
-            'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
-        ];
-
-        if (numericFields.includes(field)) {
-            const numValue = parseFloat(value);
-            onParamsChange(field, isNaN(numValue) ? null : numValue);
-        } else {
-            onParamsChange(field, value);
-        }
+        onParamsChange(field, value);
     };
 
     const handleTypeChange = (newType: string) => {

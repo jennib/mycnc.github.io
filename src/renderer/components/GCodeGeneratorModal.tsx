@@ -152,7 +152,11 @@ interface GCodeGeneratorModalProps {
 }
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
-    const [activeTab, setActiveTab] = useState('surfacing');
+    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('generatorActiveTab') || 'surfacing');
+
+    useEffect(() => {
+        localStorage.setItem('generatorActiveTab', activeTab);
+    }, [activeTab]);
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState<{ paths: PreviewPath[]; bounds: Bounds }>({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
     const [viewBox, setViewBox] = useState('0 0 100 100');
@@ -203,12 +207,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { depth, peck, retract, feed, spindle, safeZ } = drillParams;
 
-        const numericDepth = Number(depth);
-        const numericPeck = Number(peck);
-        const numericRetract = Number(retract);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericDepth = parseFloat(String(depth));
+        const numericPeck = parseFloat(String(peck));
+        const numericRetract = parseFloat(String(retract));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
@@ -230,19 +234,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const points = [];
         if (drillParams.drillType === 'single') {
-            const numericSingleX = Number(drillParams.singleX);
-            const numericSingleY = Number(drillParams.singleY);
+            const numericSingleX = parseFloat(String(drillParams.singleX));
+            const numericSingleY = parseFloat(String(drillParams.singleY));
             if (isNaN(numericSingleX) || isNaN(numericSingleY)) {
                 return { error: "Please fill all required fields with valid numbers for single drilling.", code: [], paths: [], bounds: {} };
             }
             points.push({ x: numericSingleX + originOffsetX, y: numericSingleY + originOffsetY });
         } else if (drillParams.drillType === 'rect') {
-            const numericRectCols = Number(drillParams.rectCols);
-            const numericRectRows = Number(drillParams.rectRows);
-            const numericRectSpacingX = Number(drillParams.rectSpacingX);
-            const numericRectSpacingY = Number(drillParams.rectSpacingY);
-            const numericRectStartX = Number(drillParams.rectStartX);
-            const numericRectStartY = Number(drillParams.rectStartY);
+            const numericRectCols = parseFloat(String(drillParams.rectCols));
+            const numericRectRows = parseFloat(String(drillParams.rectRows));
+            const numericRectSpacingX = parseFloat(String(drillParams.rectSpacingX));
+            const numericRectSpacingY = parseFloat(String(drillParams.rectSpacingY));
+            const numericRectStartX = parseFloat(String(drillParams.rectStartX));
+            const numericRectStartY = parseFloat(String(drillParams.rectStartY));
 
             if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY, numericRectStartX, numericRectStartY].some(isNaN)) {
                 return { error: "Please fill all required fields with valid numbers for rectangular drilling.", code: [], paths: [], bounds: {} };
@@ -257,11 +261,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 }
             }
         } else { // circ
-            const numericCircHoles = Number(drillParams.circHoles);
-            const numericCircRadius = Number(drillParams.circRadius);
-            const numericCircCenterX = Number(drillParams.circCenterX);
-            const numericCircCenterY = Number(drillParams.circCenterY);
-            const numericCircStartAngle = Number(drillParams.circStartAngle);
+            const numericCircHoles = parseFloat(String(drillParams.circHoles));
+            const numericCircRadius = parseFloat(String(drillParams.circRadius));
+            const numericCircCenterX = parseFloat(String(drillParams.circCenterX));
+            const numericCircCenterY = parseFloat(String(drillParams.circCenterY));
+            const numericCircStartAngle = parseFloat(String(drillParams.circStartAngle));
 
             if ([numericCircHoles, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
                 return { error: "Please fill all required fields with valid numbers for circular drilling.", code: [], paths: [], bounds: {} };
@@ -328,18 +332,18 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ } = profileParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericCornerRadius = Number(cornerRadius);
-        const numericDiameter = Number(diameter);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericNumTabs = Number(numTabs);
-        const numericTabWidth = Number(tabWidth);
-        const numericTabHeight = Number(tabHeight);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericCornerRadius = parseFloat(String(cornerRadius));
+        const numericDiameter = parseFloat(String(diameter));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericNumTabs = parseFloat(String(numTabs));
+        const numericTabWidth = parseFloat(String(tabWidth));
+        const numericTabHeight = parseFloat(String(tabHeight));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -389,13 +393,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { width, length, depth, stepover, feed, spindle, safeZ, direction } = surfaceParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericDepth = Number(depth);
-        const numericStepover = Number(stepover);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericDepth = parseFloat(String(depth));
+        const numericStepover = parseFloat(String(stepover));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericWidth, numericLength, numericDepth, numericStepover, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -463,17 +467,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ } = pocketParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericCornerRadius = Number(cornerRadius); // Not directly used in current pocket code, but good to convert
-        const numericDiameter = Number(diameter);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericStepover = Number(stepover);
-        const numericFeed = Number(feed);
-        const numericPlungeFeed = Number(plungeFeed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericCornerRadius = parseFloat(String(cornerRadius)); // Not directly used in current pocket code, but good to convert
+        const numericDiameter = parseFloat(String(diameter));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericStepover = parseFloat(String(stepover));
+        const numericFeed = parseFloat(String(feed));
+        const numericPlungeFeed = parseFloat(String(plungeFeed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericStepover, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -551,17 +555,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ } = boreParams;
 
-        const numericCenterX = Number(centerX);
-        const numericCenterY = Number(centerY);
-        const numericHoleDiameter = Number(holeDiameter);
-        const numericHoleDepth = Number(holeDepth);
-        const numericCbDiameter = Number(cbDiameter);
-        const numericCbDepth = Number(cbDepth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericFeed = Number(feed);
-        const numericPlungeFeed = Number(plungeFeed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericCenterX = parseFloat(String(centerX));
+        const numericCenterY = parseFloat(String(centerY));
+        const numericHoleDiameter = parseFloat(String(holeDiameter));
+        const numericHoleDepth = parseFloat(String(holeDepth));
+        const numericCbDiameter = parseFloat(String(cbDiameter));
+        const numericCbDepth = parseFloat(String(cbDepth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericFeed = parseFloat(String(feed));
+        const numericPlungeFeed = parseFloat(String(plungeFeed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericCenterX, numericCenterY, numericHoleDiameter, numericHoleDepth, numericDepthPerPass, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (counterboreEnabled && ([numericCbDiameter, numericCbDepth].some(isNaN)))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -623,7 +627,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 // Ramp in
                 code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
                 // Full circle
-                code.push(`G2 I${-pathRadius.toFixed(3)} J0`);
+                code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius.toFixed(3)} J0`);
                 // Ramp out
                 code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius / 2} J0`);
 
@@ -664,21 +668,21 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle } = slotParams;
 
-        const numericSlotWidth = Number(slotWidth);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
-        const numericStartX = Number(startX);
-        const numericStartY = Number(startY);
-        const numericEndX = Number(endX);
-        const numericEndY = Number(endY);
-        const numericCenterX = Number(centerX);
-        const numericCenterY = Number(centerY);
-        const numericRadius = Number(radius);
-        const numericStartAngle = Number(startAngle);
-        const numericEndAngle = Number(endAngle);
+        const numericSlotWidth = parseFloat(String(slotWidth));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
+        const numericStartX = parseFloat(String(startX));
+        const numericStartY = parseFloat(String(startY));
+        const numericEndX = parseFloat(String(endX));
+        const numericEndY = parseFloat(String(endY));
+        const numericCenterX = parseFloat(String(centerX));
+        const numericCenterY = parseFloat(String(centerY));
+        const numericRadius = parseFloat(String(radius));
+        const numericStartAngle = parseFloat(String(startAngle));
+        const numericEndAngle = parseFloat(String(endAngle));
 
         if ([numericSlotWidth, numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (type === 'straight' && [numericStartX, numericStartY, numericEndX, numericEndY].some(isNaN)) || (type === 'arc' && [numericCenterX, numericCenterY, numericRadius, numericStartAngle, numericEndAngle].some(isNaN))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -802,14 +806,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ } = textParams;
 
-        const numericHeight = Number(height);
-        const numericSpacing = Number(spacing);
-        const numericStartX = Number(startX);
-        const numericStartY = Number(startY);
-        const numericDepth = Number(depth);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericHeight = parseFloat(String(height));
+        const numericSpacing = parseFloat(String(spacing));
+        const numericStartX = parseFloat(String(startX));
+        const numericStartY = parseFloat(String(startY));
+        const numericDepth = parseFloat(String(depth));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericHeight, numericSpacing, numericStartX, numericStartY, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || !text) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -924,12 +928,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
         const { type, hand, feed, spindle, safeZ } = threadParams;
-        const numericDiameter = Number(threadParams.diameter);
-        const numericPitch = Number(threadParams.pitch);
-        const numericDepth = Number(threadParams.depth);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericDiameter = parseFloat(String(threadParams.diameter));
+        const numericPitch = parseFloat(String(threadParams.pitch));
+        const numericDepth = parseFloat(String(threadParams.depth));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || [numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(p => p <= 0)) {
             return { error: "Please fill all fields with positive values.", code: [], paths: [], bounds: {} };
@@ -1149,9 +1153,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType'].includes(field);
-        const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
-        if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType'].includes(field);
+        const parsedValue = isNumberField ? (value === '' || value === '-' ? value : parseFloat(value as string)) : value;
+        if (isNumberField && value !== '' && value !== '-' && isNaN(parsedValue as number)) return;
 
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange({
