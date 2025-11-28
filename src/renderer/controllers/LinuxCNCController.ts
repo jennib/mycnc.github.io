@@ -198,7 +198,7 @@ export class LinuxCNCController implements Controller {
         this.emitter.emit('state', { type: 'state', data: this.lastStatus });
     }
 
-    async sendCommand(command: string, timeout = 10000): Promise<string> {
+    async sendCommand(command: string, timeout = 60000): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new command while another is awaiting response."));
@@ -350,11 +350,11 @@ export class LinuxCNCController implements Controller {
         }
     }
 
-    on(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    on(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.on(event, listener);
     }
 
-    off(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    off(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.off(event, listener);
     }
 }
