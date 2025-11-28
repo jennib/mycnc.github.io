@@ -8,7 +8,7 @@
  * - Jog cancellation
  */
 
-import { MachineState } from '../types';
+import { MachineState, MachineSettings } from '../types';
 
 export type JogAxis = 'X' | 'Y' | 'Z';
 export type JogDirection = 1 | -1;
@@ -31,6 +31,9 @@ export class JogManager {
     private continuousJogInterval: number | null = null;
     private machineState: MachineState | null = null;
     private callbacks: JogManagerCallbacks;
+    private machineSettings: MachineSettings | null = null;
+    private isHomed: boolean = false;
+    private bufferedCommands: number = 0;
 
     // Configuration
     private readonly CONTINUOUS_JOG_INTERVAL = 100; // ms between continuous jog commands
@@ -61,6 +64,14 @@ export class JogManager {
         }
     }
 
+    public setMachineSettings(settings: MachineSettings): void {
+        this.machineSettings = settings;
+    }
+
+    public setIsHomed(isHomed: boolean): void {
+        this.isHomed = isHomed;
+    }
+
     /**
      * Start a jog operation (called on key/button press)
      * Will automatically determine if it's continuous (hold) or discrete (tap)
@@ -83,6 +94,21 @@ export class JogManager {
             // Held long enough - start continuous jogging
             this.startContinuousJog(axis, direction, feedRate);
         }, this.HOLD_THRESHOLD);
+    }
+
+    /**
+     * Start analog jogging (variable feed rate, immediate continuous)
+     * Used for gamepad control
+     */
+    public startAnalogJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
+        // Safety check
+        if (this.isAlarmState()) {
+            return;
+        }
+
+        // For analog jog, we skip the tap detection and go straight to continuous
+        // but we update the feed rate if already jogging
+        this.startContinuousJog(axis, direction, feedRate);
     }
 
     /**
@@ -113,8 +139,9 @@ export class JogManager {
      * Start continuous jogging (sends small incremental jogs repeatedly)
      */
     private startContinuousJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
-        // Don't start if already jogging this direction
+        // If already jogging this direction, just update the feed rate
         if (this.continuousJogState?.axis === axis && this.continuousJogState?.direction === direction) {
+            this.continuousJogState.feedRate = feedRate;
             return;
         }
 
@@ -174,10 +201,46 @@ export class JogManager {
      */
     private sendDiscreteJog(axis: JogAxis, direction: JogDirection, distance: number, feedRate: number): void {
         if (this.isAlarmState()) {
+            this.bufferedCommands = 0;
             return;
         }
 
+        if (this.bufferedCommands >= 3) {
+            return;
+        }
+
+        if (!this.checkSoftLimits(axis, direction, distance)) {
+            console.warn('JogManager: Soft limit reached');
+            return;
+        }
+
+        this.bufferedCommands++;
         this.callbacks.onSendJogCommand(axis, direction, distance, feedRate);
+
+        // Estimate duration. Min 100ms.
+        const duration = Math.max((distance / feedRate) * 60 * 1000, 100);
+        window.setTimeout(() => {
+            if (this.bufferedCommands > 0) this.bufferedCommands--;
+        }, duration);
+    }
+
+    private checkSoftLimits(axis: JogAxis, direction: JogDirection, distance: number): boolean {
+        if (!this.isHomed || !this.machineSettings || !this.machineState) return true;
+
+        const axisKey = axis.toLowerCase() as 'x' | 'y' | 'z';
+        const currentPos = this.machineState.mpos[axisKey];
+        const targetPos = currentPos + (direction * distance);
+        const limits = this.machineSettings.workArea;
+
+        if (axis === 'X') {
+            if (targetPos < 0 || targetPos > limits.x) return false;
+        } else if (axis === 'Y') {
+            if (targetPos < 0 || targetPos > limits.y) return false;
+        } else if (axis === 'Z') {
+            // Assuming Z is negative travel (0 is top)
+            if (targetPos < -limits.z || targetPos > 0) return false;
+        }
+        return true;
     }
 
     /**
@@ -185,6 +248,7 @@ export class JogManager {
      */
     public cancelAllJogs(): void {
         this.stopContinuousJog();
+        this.bufferedCommands = 0;
 
         // Clear any pending tap timers
         if (this.tapTimer) {

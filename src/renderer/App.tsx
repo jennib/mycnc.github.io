@@ -564,6 +564,8 @@ const App: React.FC = () => {
                     <JogPanel
                       isConnected={isConnected}
                       machineState={machineState}
+                      machineSettings={machineSettings}
+                      isHomed={isHomedSinceConnect}
                       onJog={handleJog}
                       onHome={() => handleHome("all")}
                       onSetZero={handleSetZero}

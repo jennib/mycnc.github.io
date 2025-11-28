@@ -10,14 +10,16 @@ import {
   PowerOff,
   Probe,
 } from "./Icons";
-import { MachineState } from "../types";
+import { MachineState, MachineSettings } from "../types";
 import { JogManager, JogAxis, JogDirection } from "../services/JogManager";
 import { useGamepad } from "../hooks/useGamepad";
 
 interface JogPanelProps {
   isConnected: boolean;
   machineState: MachineState | null;
-  onJog: (axis: string, direction: number, step: number) => void;
+  machineSettings: MachineSettings | null;
+  isHomed: boolean;
+  onJog: (axis: string, direction: number, step: number, feedRate?: number) => void;
   onJogStop: () => void;
   onHome: (axes: "all" | "x" | "y" | "z" | "xy") => void;
   onSetZero: (axes: "all" | "x" | "y" | "z" | "xy") => void;
@@ -118,6 +120,8 @@ const JogPanel: React.FC<JogPanelProps> = memo(
   ({
     isConnected,
     machineState,
+    machineSettings,
+    isHomed,
     onJog,
     onJogStop,
     onHome,
@@ -185,62 +189,67 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         return;
       }
 
-      const checkAxis = (axisIndex: number, targetAxis: JogAxis, invert: boolean = false) => {
-        const rawValue = gamepadState.axes[axisIndex];
-        // Standard Gamepad Mapping:
-        // Axis 0: Left Stick X
-        // Axis 1: Left Stick Y
-        // Axis 2: Right Stick X
-        // Axis 3: Right Stick Y
+      // Helper to get axis value
+      const getAxisValue = (index: number, invert: boolean = false) => {
+        const raw = gamepadState.axes[index];
+        if (raw === undefined) return 0;
+        const val = applyDeadzone(raw);
+        return invert ? -val : val;
+      };
 
-        // Some gamepads might have different mappings, but this is standard for Xbox/Generic
-        if (rawValue === undefined) return;
+      const xVal = getAxisValue(0);
+      const yVal = getAxisValue(1, true); // Invert Y
+      const zVal = getAxisValue(3, true); // Invert Z
 
-        const value = applyDeadzone(rawValue);
-        const threshold = 0.5;
+      const threshold = 0.1;
 
-        // Determine direction
-        let direction: JogDirection | 0 = 0;
-        if (value > threshold) direction = invert ? -1 : 1;
-        else if (value < -threshold) direction = invert ? 1 : -1;
+      // Find dominant axis
+      let maxMag = 0;
+      let dominantAxis: 'X' | 'Y' | 'Z' | null = null;
 
-        const key = `axis-${axisIndex}`;
+      if (Math.abs(xVal) > maxMag) { maxMag = Math.abs(xVal); dominantAxis = 'X'; }
+      if (Math.abs(yVal) > maxMag) { maxMag = Math.abs(yVal); dominantAxis = 'Y'; }
+      if (Math.abs(zVal) > maxMag) { maxMag = Math.abs(zVal); dominantAxis = 'Z'; }
+
+      if (maxMag < threshold) dominantAxis = null;
+
+      // Update jogs
+      const updateAxis = (axis: 'X' | 'Y' | 'Z', val: number, isDominant: boolean) => {
+        const key = `axis-${axis}`;
         const wasActive = activeGamepadJogs.current[key];
 
-        if (direction !== 0) {
+        if (isDominant && Math.abs(val) > threshold) {
+          const direction = val > 0 ? 1 : -1;
+          const magnitude = Math.abs(val);
+          const variableFeedRate = Math.max(jogFeedRate * magnitude, 10);
+
           if (!wasActive) {
-            // Rising edge: Start jogging
             activeGamepadJogs.current[key] = true;
-            jogManagerRef.current?.startJog(targetAxis, direction, jogStep, jogFeedRate);
-            onFlash(`gamepad-jog`); // Generic flash for gamepad
+            jogManagerRef.current?.startAnalogJog(axis, direction, variableFeedRate);
+            onFlash('gamepad-jog');
+          } else {
+            jogManagerRef.current?.startAnalogJog(axis, direction, variableFeedRate);
           }
         } else {
           if (wasActive) {
-            // Falling edge: Stop jogging
             activeGamepadJogs.current[key] = false;
-            // Args don't matter for stopping continuous jog, but we pass valid ones just in case
-            jogManagerRef.current?.stopJog(targetAxis, 1, jogStep, jogFeedRate);
+            jogManagerRef.current?.stopJog(axis, 1, jogStep, jogFeedRate);
             onFlash("");
           }
         }
       };
 
-      // Left Stick X (Axis 0) -> X Axis
-      checkAxis(0, 'X');
-
-      // Left Stick Y (Axis 1) -> Y Axis (Inverted: Up is -1 on gamepad usually)
-      checkAxis(1, 'Y', true);
-
-      // Right Stick Y (Axis 3) -> Z Axis (Inverted)
-      checkAxis(3, 'Z', true);
+      updateAxis('X', xVal, dominantAxis === 'X');
+      updateAxis('Y', yVal, dominantAxis === 'Y');
+      updateAxis('Z', zVal, dominantAxis === 'Z');
 
     }, [gamepadState, isControlDisabled, jogStep, jogFeedRate, applyDeadzone, onFlash]);
 
     // Initialize JogManager
     useEffect(() => {
       jogManagerRef.current = new JogManager({
-        onSendJogCommand: (axis, direction, distance, feedRate) => {
-          onJog(axis, direction, distance);
+        onSendJogCommand: (axis, direction, step, feedRate) => {
+          onJog(axis, direction * step, step, feedRate);
         },
         onJogCancel: () => {
           onJogStop();
@@ -258,7 +267,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     // Update machine state in JogManager for alarm monitoring
     useEffect(() => {
       jogManagerRef.current?.updateMachineState(machineState);
-    }, [machineState]);
+      if (machineSettings) {
+        jogManagerRef.current?.setMachineSettings(machineSettings);
+      }
+      jogManagerRef.current?.setIsHomed(isHomed);
+    }, [machineState, machineSettings, isHomed]);
 
 
 

@@ -38,7 +38,7 @@ interface MachineStoreState {
     handleSetZero: (axes: 'all' | 'x' | 'y' | 'z' | 'xy') => void;
     handleSpindleCommand: (command: 'cw' | 'ccw' | 'off', speed: number) => void;
     handleProbe: (axes: string) => void;
-    handleJog: (axis: string, direction: number, step: number) => void;
+    handleJog: (axis: string, direction: number, step: number, feedRate?: number) => void;
     handleJogStop: () => void;
     handleRunMacro: (commands: string[]) => Promise<void>;
     handleManualCommand: (command: string) => void;
@@ -150,16 +150,16 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       }
     },
 
-    handleJog: (axis, direction, step) => {
+    handleJog: (axis, direction, step, feedRate) => {
       const { machineSettings } = useSettingsStore.getState();
       const { controller } = useConnectionStore.getState();
 
-      const { jogFeedRate } = machineSettings;
+      const rate = feedRate || machineSettings.jogFeedRate;
       const x = axis === 'X' ? direction * step : 0;
       const y = axis === 'Y' ? direction * step : 0;
       const z = axis === 'Z' ? direction * step : 0;
 
-      controller?.jog(x, y, z, jogFeedRate);
+      controller?.jog(x, y, z, rate);
     },
 
     handleJogStop: () => {
