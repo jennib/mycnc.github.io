@@ -52,8 +52,8 @@ const SpindleStatusIndicator: React.FC<SpindleStatusIndicatorProps> = ({ machine
             <span>Spindle Off</span>
         </div>
     );
-    
-    const icon = spindleState === 'cw' 
+
+    const icon = spindleState === 'cw'
         ? <RotateCw className="w-5 h-5 text-accent-green animate-spin-slow" />
         : <RotateCcw className="w-5 h-5 text-accent-green animate-spin-slow-reverse" />;
 
@@ -78,7 +78,7 @@ interface PositionDisplayProps {
 const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) => (
     <div className="flex items-center gap-3">
         <h4 className="text-sm font-bold text-text-secondary">{title}</h4>
-        <div className="flex gap-3 text-center font-mono bg-background px-2 py-1 rounded-md text-sm">
+        <div className="flex gap-3 text-center font-mono bg-background px-2 py-1 rounded-md text-base">
             <div><span className="font-bold text-red-400">X </span><span className="text-text-primary">{formatCoordinate(pos?.x)}</span></div>
             <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary">{formatCoordinate(pos?.y)}</span></div>
             <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary">{formatCoordinate(pos?.z)}</span></div>
@@ -91,12 +91,10 @@ interface StatusBarProps {
     isConnected: boolean;
     machineState: MachineState | null;
     unit: 'mm' | 'in';
-    onEmergencyStop: () => void;
-    flashingButton: string | null;
 }
 
-const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit, onEmergencyStop, flashingButton }) => (
-    <div className="bg-surface/50 border-b border-t border-secondary shadow-sm p-2 flex justify-between items-center z-10 flex-shrink-0 gap-4">
+const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => (
+    <div className="bg-surface/50 border-b border-t border-secondary shadow-sm p-2 flex justify-center items-center z-10 flex-shrink-0 gap-8">
         <div className="flex items-center gap-6">
             <StatusIndicator isConnected={isConnected} machineState={machineState} />
             <div className="h-6 border-l border-secondary" />
@@ -106,18 +104,6 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
             <PositionDisplay title="WPos" pos={machineState?.wpos} unit={unit} />
             <div className="h-6 border-l border-secondary" />
             <PositionDisplay title="MPos" pos={machineState?.mpos} unit={unit} />
-        </div>
-        <div>
-            {isConnected && (
-                <button
-                    onClick={onEmergencyStop}
-                    className={`flex items-center gap-2 px-3 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
-                    title="Emergency Stop (Soft Reset) (Hotkey: Esc)"
-                >
-                    <OctagonAlert className="w-5 h-5" />
-                    <span className="hidden md:inline">E-STOP</span>
-                </button>
-            )}
         </div>
     </div>
 ));

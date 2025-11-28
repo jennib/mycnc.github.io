@@ -58,9 +58,10 @@ interface SettingsModalProps {
     onResetDialogs: () => void;
     onExport: () => void;
     onImport: (imported: any) => void;
+    onContactClick: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick }) => {
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -241,7 +242,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                     </div>
                 </div>
-                <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
+                <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg flex-shrink-0 border-t border-secondary">
+                    <div className="flex items-center gap-4 text-xs text-text-secondary">
+                        <span>&copy; {new Date().getFullYear()} mycnc.app</span>
+                        <button type="button" onClick={() => {
+                            onCancel(); // Close settings modal first
+                            onContactClick(); // Then open contact modal
+                        }} className="text-primary hover:underline font-semibold">
+                            Contact Us
+                        </button>
+                        <span>•</span>
+                        <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">
+                            GitHub
+                        </a>
+                    </div>
                     <div className="flex items-center gap-4">
                         <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
                         <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">

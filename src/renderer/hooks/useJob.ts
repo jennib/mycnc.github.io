@@ -16,7 +16,7 @@ export function useJob() {
   const [jobStartOptions, setJobStartOptions] = useState({ startLine: 0, isDryRun: false });
   const [preflightWarnings, setPreflightWarnings] = useState<any[]>([]);
 
-  const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop', options?: { startLine?: number }) => {
+  const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }) => {
     const controller = useConnectionStore.getState().controller;
     if (!controller || !isConnected) return;
 
@@ -45,6 +45,7 @@ export function useJob() {
         }
         break;
       case 'stop':
+      case 'gracefulStop':
         if (jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused) {
           controller.stopJob();
           jobActions.setProgress(0);

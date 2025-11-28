@@ -140,7 +140,7 @@ const Console: React.FC<ConsoleProps> = ({
       </div>
       <div
         ref={logContainerRef}
-        className="h-40 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
+        className="h-28 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
         onWheel={() => setIsAutoScroll(false)}
       >
         {logs.map((log, index) => (

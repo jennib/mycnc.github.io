@@ -17,7 +17,7 @@ export class GrblSimulator implements Simulator {
     // Machine State
     private state: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -112,24 +112,23 @@ export class GrblSimulator implements Simulator {
 
         // Handle standard G-code/GRBL commands
         if (upperCmd === '$H') {
+            // GRBL sends 'ok' immediately when it accepts the homing command
+            this.emitData('ok\r\n');
+
+            // Set status to Home and simulate homing sequence
             this.state.status = 'Home';
             setTimeout(() => {
                 this.state.mpos = { x: 0, y: 0, z: 0 };
                 this.updateWPos();
                 this.state.status = 'Idle';
-                this.emitData('ok\r\n');
-            }, 1000);
-            return; // 'ok' sent after completion? Or immediately?
-            // GRBL sends 'ok' when it accepts the command, but state stays Home.
-            // SimulatedSerialService sent 'ok' immediately.
-            this.emitData('ok\r\n');
+            }, 2000); // 2 second homing simulation
             return;
         }
 
         if (upperCmd === '$X') {
             if (this.state.status === 'Alarm') {
                 this.state.status = 'Idle';
-                this.state.code = null;
+                this.state.code = undefined;
                 this.emitData('[MSG:Caution: Unlocked]\r\n');
             }
             this.emitData('ok\r\n');

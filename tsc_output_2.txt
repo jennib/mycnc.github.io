@@ -1,0 +1,54 @@
+﻿src/renderer/components/Console.tsx(152,16): error TS18048: 'log.timestamp' is possibly 'undefined'.
+src/renderer/components/GCodeLine.tsx(84,26): error TS2531: Object is possibly 'null'.
+src/renderer/components/GCodeLine.tsx(85,32): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ G0: { name: string; desc: string; }; G1: { name: string; desc: string; }; G2: { name: string; desc: string; }; G3: { name: string; desc: string; }; G4: { name: string; desc: string; }; G10: { name: string; desc: string; }; ... 23 more ...; M30: { ...; }; }'.
+  No index signature with a parameter of type 'string' was found on type '{ G0: { name: string; desc: string; }; G1: { name: string; desc: string; }; G2: { name: string; desc: string; }; G3: { name: string; desc: string; }; G4: { name: string; desc: string; }; G10: { name: string; desc: string; }; ... 23 more ...; M30: { ...; }; }'.
+src/renderer/components/GCodeLine.tsx(97,32): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ X: string; Y: string; Z: string; F: string; S: string; I: string; J: string; P: string; T: string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ X: string; Y: string; Z: string; F: string; S: string; I: string; J: string; P: string; T: string; }'.
+src/renderer/components/GCodePanel.tsx(181,47): error TS2448: Block-scoped variable 'currentLine' used before its declaration.
+src/renderer/components/GCodePanel.tsx(181,47): error TS2454: Variable 'currentLine' is used before being assigned.
+src/renderer/components/GCodeVisualizer.tsx(378,13): error TS18047: 'workerRef.current' is possibly 'null'.
+src/renderer/components/GCodeVisualizer.tsx(650,9): error TS2741: Property 'toolCurrentPosition' is missing in type '{ camera: { target: number[]; distance: number; rotation: number[]; }; }' but required in type '{ camera: { target: number[]; distance: number; rotation: number[]; }; toolCurrentPosition: GCodePoint | null; }'.
+src/renderer/components/MacroEditorModal.tsx(43,74): error TS18047: 'macro' is possibly 'null'.
+src/renderer/components/MacroEditorModal.tsx(44,22): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/renderer/components/SettingsModal.tsx(120,37): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ workArea: string[]; spindle: string[]; probe: string[]; }'.
+  No index signature with a parameter of type 'string' was found on type '{ workArea: string[]; spindle: string[]; probe: string[]; }'.
+src/renderer/components/SettingsModal.tsx(141,49): error TS18047: 'e.target' is possibly 'null'.
+src/renderer/components/SettingsModal.tsx(150,9): error TS2322: Type 'null' is not assignable to type 'string'.
+src/renderer/components/SettingsModal.tsx(225,56): error TS18047: 'importFileRef.current' is possibly 'null'.
+src/renderer/components/ToolLibraryModal.tsx(32,25): error TS7006: Parameter 'tool' implicitly has an 'any' type.
+src/renderer/components/ToolLibraryModal.tsx(60,27): error TS7006: Parameter 'toolId' implicitly has an 'any' type.
+src/renderer/components/ToolLibraryModal.tsx(111,71): error TS2345: Argument of type '(prev: Omit<Tool, "id"> & { id: number | null; }) => { diameter: string; name: string; id: number | null; }' is not assignable to parameter of type 'SetStateAction<Omit<Tool, "id"> & { id: number | null; }>'.
+  Type '(prev: Omit<Tool, "id"> & { id: number | null; }) => { diameter: string; name: string; id: number | null; }' is not assignable to type '(prevState: Omit<Tool, "id"> & { id: number | null; }) => Omit<Tool, "id"> & { id: number | null; }'.
+    Type '{ diameter: string; name: string; id: number | null; }' is not assignable to type 'Omit<Tool, "id"> & { id: number | null; }'.
+      Type '{ diameter: string; name: string; id: number | null; }' is not assignable to type 'Omit<Tool, "id">'.
+        Types of property 'diameter' are incompatible.
+          Type 'string' is not assignable to type 'number | ""'.
+src/renderer/services/grblParser.ts(8,107): error TS2322: Type 'null' is not assignable to type 'number'.
+src/renderer/services/grblParser.ts(45,9): error TS2322: Type 'string' is not assignable to type '"Idle" | "Run" | "Hold" | "Jog" | "Alarm" | "Door" | "Check" | "Home" | "Sleep"'.
+src/renderer/services/grblParser.ts(46,9): error TS2322: Type 'number | null' is not assignable to type 'number'.
+  Type 'null' is not assignable to type 'number'.
+src/renderer/services/serialService.ts(33,36): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/renderer/services/serialService.ts(35,36): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/renderer/services/simulators/GrblSimulator.ts(20,9): error TS2322: Type 'null' is not assignable to type 'number | undefined'.
+src/renderer/services/simulators/GrblSimulator.ts(132,17): error TS2322: Type 'null' is not assignable to type 'number | undefined'.
+src/renderer/stores/connectionStore.ts(83,45): error TS2554: Expected 1 arguments, but got 2.
+src/services/gcodeAnalysisWorker.ts(4,19): error TS7006: Parameter 'gcodeLine' implicitly has an 'any' type.
+src/services/gcodeAnalysisWorker.ts(4,30): error TS7006: Parameter 'param' implicitly has an 'any' type.
+src/services/gcodeAnalysisWorker.ts(12,23): error TS7006: Parameter 'gcodeLines' implicitly has an 'any' type.
+src/services/gcodeAnalysisWorker.ts(12,35): error TS7006: Parameter 'settings' implicitly has an 'any' type.
+src/services/gcodeAnalysisWorker.ts(13,11): error TS7034: Variable 'warnings' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/services/gcodeAnalysisWorker.ts(16,16): error TS7005: Variable 'warnings' implicitly has an 'any[]' type.
+src/services/gcodeAnalysisWorker.ts(48,24): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/services/gcodeVisualizerWorker.ts(339,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(message: any, targetOrigin: string, transfer?: Transferable[] | undefined): void', gave the following error.
+    Argument of type '(ArrayBufferLike | null)[]' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(message: any, options?: WindowPostMessageOptions | undefined): void', gave the following error.
+    Type '(ArrayBufferLike | null)[]' has no properties in common with type 'WindowPostMessageOptions'.
+src/services/gcodeVisualizerWorker.ts(375,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(message: any, targetOrigin: string, transfer?: Transferable[] | undefined): void', gave the following error.
+    Argument of type 'Transferable[]' is not assignable to parameter of type 'string'.
+  Overload 2 of 2, '(message: any, options?: WindowPostMessageOptions | undefined): void', gave the following error.
+    Type 'Transferable[]' has no properties in common with type 'WindowPostMessageOptions'.

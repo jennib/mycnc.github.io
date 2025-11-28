@@ -178,6 +178,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const startIndex = Math.floor(scrollTop / lineHeight);
   const endIndex = Math.min(gcodeLines.length - 1, startIndex + visibleLines);
 
+  const totalLines = gcodeLines.length;
+  const currentLine = Math.floor((progress / 100) * totalLines);
+
   const visualizerCurrentLine = isJobActive ? currentLine : scrubberLine;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -253,8 +256,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       jobStatus === JobStatus.Stopped ||
       jobStatus === JobStatus.Complete) &&
     !isHoming;
-  const totalLines = gcodeLines.length;
-  const currentLine = Math.floor((progress / 100) * totalLines);
 
   useEffect(() => {
     if (
@@ -321,15 +322,34 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     if (gcodeLines.length > 0) {
       if (view === "visualizer")
         return (
-          <div className="absolute inset-0 overflow-auto">
-            <GCodeVisualizer
-              ref={visualizerRef}
-              gcodeLines={gcodeLines}
-              currentLine={visualizerCurrentLine} // Use visualizerCurrentLine
-              unit={unit}
-              hoveredLineIndex={hoveredLineIndex}
-              machineSettings={machineSettings}
-            />
+          <div className="absolute inset-0 overflow-hidden flex flex-col">
+            <div className="flex-grow relative min-h-0">
+              <GCodeVisualizer
+                ref={visualizerRef}
+                gcodeLines={gcodeLines}
+                currentLine={visualizerCurrentLine} // Use visualizerCurrentLine
+                unit={unit}
+                hoveredLineIndex={hoveredLineIndex}
+                machineSettings={machineSettings}
+              />
+            </div>
+            {/* Scrubber moved here */}
+            {gcodeLines.length > 0 && (
+              <div className="flex-shrink-0 p-2 bg-surface border-t border-secondary flex items-center gap-3">
+                <span className="text-xs font-mono text-text-secondary w-12 text-right">{scrubberLine}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max={gcodeLines.length > 0 ? gcodeLines.length - 1 : 0}
+                  value={scrubberLine}
+                  onChange={(e) => setScrubberLine(parseInt(e.target.value))}
+                  className="flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary"
+                  disabled={isJobActive}
+                  title="Scrub G-code Toolpath"
+                />
+                <span className="text-xs font-mono text-text-secondary w-12">{gcodeLines.length}</span>
+              </div>
+            )}
           </div>
         );
       if (view === "code" && machineSettings) {
@@ -402,9 +422,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         <button
           onClick={() => onJobControl("start", { startLine: 0 })}
           disabled={!isReadyToStart}
-          className="col-span-3 flex items-center justify-center gap-3 p-5 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-xl"
+          className="col-span-3 flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-lg"
         >
-          <Play className="w-8 h-8" />
+          <Play className="w-6 h-6" />
           Start Job
         </button>
       );
@@ -417,9 +437,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             key="pause"
             onClick={() => onJobControl("pause")}
             disabled={isHoming}
-            className="flex items-center justify-center gap-3 p-5 bg-accent-yellow text-white font-bold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 p-3 bg-accent-yellow text-white font-bold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
           >
-            <Pause className="w-8 h-8" />
+            <Pause className="w-6 h-6" />
             Pause
           </button>
           <div className="relative col-span-2">
@@ -427,9 +447,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               key="stop"
               onClick={() => onJobControl("stop")}
               disabled={isHoming}
-              className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
             >
-              <Square className="w-8 h-8" />
+              <Square className="w-6 h-6" />
               Stop Job
             </button>
           </div>
@@ -444,9 +464,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             key="resume"
             onClick={() => onJobControl("resume")}
             disabled={isHoming}
-            className="flex items-center justify-center gap-3 p-5 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
           >
-            <Play className="w-8 h-8" />
+            <Play className="w-6 h-6" />
             Resume
           </button>
           <div className="col-span-2">
@@ -454,9 +474,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               key="stop"
               onClick={() => onJobControl("stop")}
               disabled={isHoming}
-              className="w-full flex items-center justify-center gap-3 p-5 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-xl disabled:bg-secondary disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
             >
-              <Square className="w-8 h-8" />
+              <Square className="w-6 h-6" />
               Stop Job
             </button>
           </div>
@@ -499,27 +519,25 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex justify-between items-center mb-2 pb-4 border-b border-secondary">
+      <div className="flex justify-between items-center mb-1 pb-2 border-b border-secondary flex-shrink-0">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-bold">G-Code</h2>
           <div className="flex items-center bg-background rounded-md p-1">
             <button
               onClick={() => setView("visualizer")}
               title="Visualizer View"
-              className={`p-1 rounded transition-colors ${
-                view === "visualizer"
-                  ? "bg-primary text-white"
-                  : "hover:bg-secondary"
-              }`}
+              className={`p-1 rounded transition-colors ${view === "visualizer"
+                ? "bg-primary text-white"
+                : "hover:bg-secondary"
+                }`}
             >
               <Eye className="w-5 h-5" />
             </button>
             <button
               onClick={() => setView("code")}
               title="Code View"
-              className={`p-1 rounded transition-colors ${
-                view === "code" ? "bg-primary text-white" : "hover:bg-secondary"
-              }`}
+              className={`p-1 rounded transition-colors ${view === "code" ? "bg-primary text-white" : "hover:bg-secondary"
+                }`}
             >
               <Code className="w-5 h-5" />
             </button>
@@ -553,21 +571,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 >
                   <ZoomOut className="w-5 h-8" />
                 </button>
-                <div className="relative w-24 ml-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max={gcodeLines.length > 0 ? gcodeLines.length - 1 : 0}
-                    value={scrubberLine}
-                    onChange={(e) => setScrubberLine(parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                    disabled={isJobActive || gcodeLines.length === 0}
-                    title="Scrub G-code Toolpath"
-                  />
-                  <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-text-secondary">
-                    {scrubberLine}
-                  </span>
-                </div>
+
               </>
             )}
           </div>
@@ -655,7 +659,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           {fileName}
         </p>
       )}
-      <div className="space-y-4 flex-shrink-0 mb-4">
+      <div className="space-y-2 flex-shrink-0 mb-2">
         <div className="grid grid-cols-3 gap-4">{renderJobControls()}</div>
         {!isConnected && gcodeLines.length > 0 && (
           <div className="bg-accent-yellow/20 border border-accent-yellow text-accent-yellow p-4 rounded-md text-center">

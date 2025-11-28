@@ -4,6 +4,25 @@ import { useConnectionStore } from './connectionStore';
 import { useSettingsStore } from './settingsStore';
 import { useLogStore } from './logStore';
 
+// GRBL Alarm codes and messages
+function getAlarmMessage(code: number | string): string {
+  const alarmMessages: Record<number, string> = {
+    1: 'Hard limit triggered. Machine position is likely lost due to sudden and immediate halt. Re-homing is highly recommended.',
+    2: 'G-code motion target exceeds machine travel. Machine position safely retained. Alarm may be unlocked.',
+    3: 'Reset while in motion. Grbl cannot guarantee position. Lost steps are likely. Re-homing is highly recommended.',
+    4: 'Probe fail. The probe is not in the expected initial state before starting probe cycle, where G38.2 and G38.3 is not triggered and G38.4 and G38.5 is triggered.',
+    5: 'Probe fail. Probe did not contact the workpiece within the programmed travel for G38.2 and G38.4.',
+    6: 'Homing fail. Reset during active homing cycle.',
+    7: 'Homing fail. Safety door was opened during active homing cycle.',
+    8: 'Homing fail. Cycle failed to clear limit switch when pulling off. Try increasing pull-off setting or check wiring.',
+    9: 'Homing fail. Could not find limit switch within search distance. Defined as 1.5 * max_travel on search and 5 * pulloff on locate phases.',
+  };
+
+  const codeNum = typeof code === 'string' ? parseInt(code, 10) : code;
+  return alarmMessages[codeNum] || `Alarm code ${code}. Please check GRBL documentation for details.`;
+}
+
+
 interface MachineStoreState {
   machineState: MachineState | null;
   isJogging: boolean;
@@ -19,7 +38,7 @@ interface MachineStoreState {
     handleSetZero: (axes: 'all' | 'x' | 'y' | 'z' | 'xy') => void;
     handleSpindleCommand: (command: 'cw' | 'ccw' | 'off', speed: number) => void;
     handleProbe: (axes: string) => void;
-    handleJog: (axis: string, direction: number, step: number) => void;
+    handleJog: (axis: string, direction: number, step: number, feedRate?: number) => void;
     handleJogStop: () => void;
     handleRunMacro: (commands: string[]) => Promise<void>;
     handleManualCommand: (command: string) => void;
@@ -37,7 +56,23 @@ const initialState = {
 export const useMachineStore = create<MachineStoreState>((set, get) => ({
   ...initialState,
   actions: {
-    setMachineState: (state) => set({ machineState: state }),
+    setMachineState: (state) => {
+      const prevState = get().machineState;
+      set({ machineState: state });
+
+      // Detect alarm state change
+      if (state?.status === 'Alarm' && prevState?.status !== 'Alarm') {
+        // Import useUIStore dynamically to avoid circular dependency
+        const { actions: uiActions } = require('./uiStore').useUIStore.getState();
+        const alarmCode = state.code || 'Unknown';
+        const alarmMessage = getAlarmMessage(alarmCode);
+
+        uiActions.openInfoModal(
+          `⚠️ ALARM ${alarmCode}`,
+          `The machine has entered an alarm state.\n\n${alarmMessage}\n\nYou must send the unlock command ($X) to clear the alarm and resume operation.`
+        );
+      }
+    },
     setIsJogging: (isJogging) => set({ isJogging }),
     setIsHomedSinceConnect: (isHomed) => set({ isHomedSinceConnect: isHomed }),
     setIsMacroRunning: (isRunning) => set({ isMacroRunning: isRunning }),
@@ -115,21 +150,21 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       }
     },
 
-    handleJog: (axis, direction, step) => {
+    handleJog: (axis, direction, step, feedRate) => {
       const { machineSettings } = useSettingsStore.getState();
       const { controller } = useConnectionStore.getState();
-      
-      const { jogFeedRate } = machineSettings;
+
+      const rate = feedRate || machineSettings.jogFeedRate;
       const x = axis === 'X' ? direction * step : 0;
       const y = axis === 'Y' ? direction * step : 0;
       const z = axis === 'Z' ? direction * step : 0;
-      
-      controller?.jog(x, y, z, jogFeedRate);
+
+      controller?.jog(x, y, z, rate);
     },
 
     handleJogStop: () => {
-        const { controller } = useConnectionStore.getState();
-        controller?.sendRealtimeCommand('\x85');
+      const { controller } = useConnectionStore.getState();
+      controller?.sendRealtimeCommand('\x85');
     },
 
     handleManualCommand: (command) => {
@@ -147,7 +182,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
     handleRunMacro: async (commands) => {
       const { actions: connectionActions } = useConnectionStore.getState();
       const { actions: logActions } = useLogStore.getState();
-      
+
       set({ isMacroRunning: true });
       logActions.addLog({ type: 'info', message: `Running macro...` });
       for (const command of commands) {
