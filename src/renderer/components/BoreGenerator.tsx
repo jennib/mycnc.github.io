@@ -1,6 +1,4 @@
-
- 
-   import React from 'react';
+import React from 'react';
 import { Tool, MachineSettings, BoreParams } from '@/types';
 import { ToolSelector, Input, Checkbox, SpindleAndFeedControls, RadioGroup } from './SharedControls';
 
@@ -17,18 +15,7 @@ interface BoreGeneratorProps {
 const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
 
     const handleParamChange = (field: string, value: any) => {
-        // For numeric inputs, ensure the value is a number or null
-        const numericFields = [
-            'centerX', 'centerY', 'holeDiameter', 'holeDepth', 'cbDiameter', 'cbDepth',
-            'depthPerPass', 'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
-        ];
-
-        if (numericFields.includes(field)) {
-            const numValue = parseFloat(value);
-            onParamsChange(field, isNaN(numValue) ? null : numValue);
-        } else {
-            onParamsChange(field, value);
-        }
+        onParamsChange(field, value);
     };
 
     return (
@@ -46,34 +33,28 @@ const BoreGenerator: React.FC<BoreGeneratorProps> = ({ params, onParamsChange, t
             <hr className='border-secondary' />
 
             <Checkbox label="Enable Counterbore" checked={params.counterboreEnabled} onChange={(checked) => handleParamChange('counterboreEnabled', checked)} />
-            
+
             {params.counterboreEnabled && (
-                 <div className='grid grid-cols-2 gap-4 pl-4 mt-2 border-l-2 border-secondary'>
+                <div className='grid grid-cols-2 gap-4 pl-4 mt-2 border-l-2 border-secondary'>
                     <Input label='CB Diameter' value={params.cbDiameter} onChange={e => handleParamChange('cbDiameter', e.target.value)} unit={unit} />
                     <Input label='CB Depth' value={params.cbDepth} onChange={e => handleParamChange('cbDepth', e.target.value)} unit={unit} help="Should be negative" />
                 </div>
             )}
 
             <hr className='border-secondary' />
-            
-            <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+
+            <div className='grid grid-cols-2 gap-4'>
+                <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+                <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
+            </div>
 
             <hr className='border-secondary' />
-            <RadioGroup
-                label='Toolpath Origin'
-                selected={params.toolpathOrigin}
-                onChange={(value) => handleParamChange('toolpathOrigin', value)}
-                options={[
-                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
-                    { value: 'top_center', label: 'Top Center' },
-                ]}
-            />
-            
-            <SpindleAndFeedControls 
-                params={params} 
-                onParamChange={handleParamChange} 
+
+            <SpindleAndFeedControls
+                params={params}
+                onParamChange={handleParamChange}
                 unit={unit}
-                plunge={true} 
+                plunge={true}
             />
         </div>
     );

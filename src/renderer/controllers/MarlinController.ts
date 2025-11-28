@@ -28,7 +28,7 @@ export class MarlinController implements Controller {
 
     private lastStatus: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -75,7 +75,7 @@ export class MarlinController implements Controller {
             // Reset state
             this.lastStatus = {
                 status: 'Idle',
-                code: null,
+                code: undefined,
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
@@ -176,11 +176,13 @@ export class MarlinController implements Controller {
         this.emitter.emit('state', { type: 'state', data: this.lastStatus });
     }
 
-    async sendCommand(command: string, timeout = 10000): Promise<string> {
+    async sendCommand(command: string, timeout = 60000): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new command while another is awaiting 'ok'."));
             }
+
+            this.emitter.emit('data', { type: 'sent', message: command });
 
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
@@ -313,11 +315,11 @@ export class MarlinController implements Controller {
         }
     }
 
-    on(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    on(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.on(event, listener);
     }
 
-    off(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    off(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.off(event, listener);
     }
 }

@@ -24,7 +24,7 @@ export class TinyGController implements Controller {
 
     private lastStatus: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -72,7 +72,7 @@ export class TinyGController implements Controller {
             // Reset state
             this.lastStatus = {
                 status: 'Idle',
-                code: null,
+                code: undefined,
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
@@ -230,6 +230,7 @@ export class TinyGController implements Controller {
     }
 
     async sendCommand(command: string, timeout = 10000): Promise<string> {
+        this.emitter.emit('data', { type: 'sent', message: command });
         // Wrap G-code in JSON
         const response = await this.sendJSONCommand({ gc: command }, timeout);
         return 'ok';

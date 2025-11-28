@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Controller } from '@/controllers/Controller';
 import { ControllerFactory } from '@/controllers/ControllerFactory';
-import { MachineSettings, PortInfo, ConnectionOptions } from '@/types';
+import { MachineSettings, PortInfo, ConnectionOptions, JobStatus } from '@/types';
 
 import { useLogStore } from './logStore';
 import { useMachineStore } from './machineStore';
@@ -37,33 +37,46 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       const { machineSettings } = useSettingsStore.getState();
       const { addLog } = useLogStore.getState().actions;
       const { setMachineState, setIsHomedSinceConnect, reset: resetMachine } = useMachineStore.getState().actions;
-      
+
       try {
         const controller = ControllerFactory.createController(machineSettings.controllerType, machineSettings);
         set({ controller });
 
         controller.on('state', (state: any) => {
-            if (state.type === 'connect') {
-                set({ isConnected: true, isConnecting: false, portInfo: state.data });
-                addLog({ type: 'status', message: `Connected to ${state.data.type === 'tcp' ? `TCP at ${state.data.ip}:${state.data.port}` : 'serial port'}.` });
-                setIsHomedSinceConnect(false);
-            } else if (state.type === 'disconnect') {
-                addLog({ type: 'status', message: 'Disconnected.' });
-                set({ isConnected: false, isConnecting: false, portInfo: null, controller: null });
-                resetMachine();
-                useJobStore.getState().actions.clearFile();
-            } else {
-                setMachineState(state.data);
-                addLog({ type: 'status', message: `[RAW] ${JSON.stringify(state.data)}` });
-            }
+          if (state.type === 'connect') {
+            set({ isConnected: true, isConnecting: false, portInfo: state.data });
+            addLog({ type: 'status', message: `Connected to ${state.data.type === 'tcp' ? `TCP at ${state.data.ip}:${state.data.port}` : 'serial port'}.` });
+            setIsHomedSinceConnect(false);
+          } else if (state.type === 'disconnect') {
+            addLog({ type: 'status', message: 'Disconnected.' });
+            set({ isConnected: false, isConnecting: false, portInfo: null, controller: null });
+            resetMachine();
+            useJobStore.getState().actions.clearFile();
+          } else {
+            setMachineState(state.data);
+            addLog({ type: 'status', message: `[RAW] ${JSON.stringify(state.data)}` });
+          }
         });
 
         controller.on('data', (data: any) => {
-            addLog(data);
+          addLog(data);
         });
 
         controller.on('error', (error: string) => {
-            addLog({ type: 'error', message: error });
+          addLog({ type: 'error', message: error });
+        });
+
+        controller.on('job', (data: any) => {
+          const { setJobStatus } = useJobStore.getState().actions;
+          if (data.status === 'complete') {
+            setJobStatus(JobStatus.Complete);
+            addLog({ type: 'info', message: 'Job completed successfully.' });
+          }
+        });
+
+        controller.on('progress', (data: any) => {
+          const { setProgress } = useJobStore.getState().actions;
+          setProgress(data.percentage);
         });
 
         await controller.connect(options);

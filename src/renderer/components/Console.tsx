@@ -140,8 +140,7 @@ const Console: React.FC<ConsoleProps> = ({
       </div>
       <div
         ref={logContainerRef}
-        className="h-40 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
-        onWheel={() => setIsAutoScroll(false)}
+        className="h-28 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
       >
         {logs.map((log, index) => (
           <div
@@ -149,7 +148,7 @@ const Console: React.FC<ConsoleProps> = ({
             className={`flex items-start ${getLogColor(log.type)}`}
           >
             <span className="w-20 flex-shrink-0 text-gray-500">
-              {log.timestamp.toLocaleTimeString()}
+              {log.timestamp ? log.timestamp.toLocaleTimeString() : ''}
             </span>
             <span className="flex-grow break-all">{log.message}</span>
           </div>
@@ -187,7 +186,7 @@ const Console: React.FC<ConsoleProps> = ({
           </button>
         </form>
       </div>
-    </div>
+    </div >
   );
 };
 

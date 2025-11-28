@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+﻿import React, { useState, useCallback, useRef, useEffect } from "react";
 
 import { JobStatus, Tool, ConnectionOptions } from "./types";
 import SerialConnector from "./components/SerialConnector";
@@ -15,6 +15,7 @@ import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import ThemeToggle from "./components/ThemeToggle";
 import StatusBar from "./components/StatusBar";
+import Tabs from "./components/Tabs";
 import {
   AlertTriangle,
   OctagonAlert,
@@ -23,11 +24,15 @@ import {
   Maximize,
   Minimize,
   BookOpen,
+  Move,
+  Camera,
+  Zap,
+  Terminal,
 } from "./components/Icons";
 import { getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
-import Footer from "./components/Footer";
+
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
 import UnsupportedBrowser from "./components/UnsupportedBrowser";
@@ -114,7 +119,6 @@ const App: React.FC = () => {
   // Connection Store
   const {
     isConnected,
-    isSimulated,
     portInfo,
     actions: connectionActions,
   } = useConnectionStore((state) => state);
@@ -136,7 +140,6 @@ const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const activeJogKeyRef = useRef<string | null>(null);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -157,8 +160,9 @@ const App: React.FC = () => {
 
   // Cleanup timeout on unmount
   useEffect(() => {
-    return () =>
-      flashTimeoutRef.current && clearTimeout(flashTimeoutRef.current);
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -178,9 +182,9 @@ const App: React.FC = () => {
 
   // Define handlers before they are used in the hotkey useEffect
   const handleEmergencyStop = useCallback(() => {
-    const manager = useConnectionStore.getState().serialManager;
-    if (manager) {
-      manager.emergencyStop();
+    const controller = useConnectionStore.getState().controller;
+    if (controller) {
+      controller.emergencyStop();
     }
   }, []);
 
@@ -214,99 +218,6 @@ const App: React.FC = () => {
       setIsFullscreen((prev) => !prev);
     }
   };
-  // Global Hotkey Handling
-  const lastJogStopTimeRef = useRef<number>(0);
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Do not trigger hotkeys if an input field is focused, or if the key is being held down
-      if (
-        event.repeat ||
-        (document.activeElement &&
-          (document.activeElement.tagName === "INPUT" ||
-            document.activeElement.tagName === "TEXTAREA"))
-      ) {
-        return;
-      }
-
-      // If a jog key is already active, don't start a new one.
-      if (activeJogKeyRef.current) {
-        return;
-      }
-
-      // Debounce jog commands
-      if (Date.now() - lastJogStopTimeRef.current < 50) {
-        return;
-      }
-
-      let axis: string | null = null;
-      let direction = 0;
-
-      switch (event.key) {
-        case "ArrowUp":
-          axis = "Y";
-          direction = 1;
-          break;
-        case "ArrowDown":
-          axis = "Y";
-          direction = -1;
-          break;
-        case "ArrowLeft":
-          axis = "X";
-          direction = -1;
-          break;
-        case "ArrowRight":
-          axis = "X";
-          direction = 1;
-          break;
-        case "PageUp":
-          axis = "Z";
-          direction = 1;
-          break;
-        case "PageDown":
-          axis = "Z";
-          direction = -1;
-          break;
-      }
-
-      if (axis && direction !== 0) {
-        event.preventDefault();
-
-        // Set the ref immediately to block subsequent keydown repeats
-        activeJogKeyRef.current = event.key;
-
-        const { jogFeedRate } = machineSettings;
-        // A large distance simulates continuous movement until key-up/cancel.
-        const distance = direction * 99999;
-        const command = `$J=G91 ${axis}${distance} F${jogFeedRate}`;
-
-        connectionActions.sendLine(command).catch((err) => {
-          console.error("Failed to start jog:", err);
-          // If the command fails, unblock jogging.
-          activeJogKeyRef.current = null;
-        });
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === activeJogKeyRef.current) {
-        event.preventDefault();
-        handleJogStop();
-        activeJogKeyRef.current = null;
-        lastJogStopTimeRef.current = Date.now();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      if (activeJogKeyRef.current) {
-        handleJogStop();
-      }
-    };
-  }, [machineSettings, connectionActions, handleJogStop]);
 
   // Separate useEffect for non-jog hotkeys
   useEffect(() => {
@@ -370,7 +281,7 @@ const App: React.FC = () => {
     toolLibrary.find((t: Tool) => t.id === selectedToolId) || null;
 
   return (
-    <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
+    <div className="h-screen bg-background font-sans text-text-primary flex flex-col overflow-hidden">
       {!window.electronAPI?.isElectron && <Analytics />}
       <WelcomeModal
         isOpen={isWelcomeModalOpen}
@@ -456,6 +367,7 @@ const App: React.FC = () => {
         onResetDialogs={() => { }}
         onExport={() => { }}
         onImport={() => { }}
+        onContactClick={uiActions.openContactModal}
       />
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}
@@ -489,11 +401,28 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-4">
-        <div className="flex items-center gap-4">
-          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-12 w-auto" />
+      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-2">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-4 flex-1">
+          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Center: E-STOP */}
+        <div className="flex items-center justify-center flex-1">
+          {isConnected && (
+            <button
+              onClick={handleEmergencyStop}
+              className={`flex items-center gap-3 px-8 py-2 min-w-[280px] justify-center bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
+              title="Emergency Stop (Soft Reset) (Hotkey: Esc)"
+            >
+              <OctagonAlert className="w-6 h-6" />
+              <span className="text-lg">E-STOP</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right: Buttons */}
+        <div className="flex items-center gap-2 flex-1 justify-end">
           <button
             onClick={handleToggleFullscreen}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
@@ -532,7 +461,7 @@ const App: React.FC = () => {
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}
             isApiSupported={isSerialApiSupported}
-            isSimulated={isSimulated}
+            isSimulated={portInfo?.type === 'simulator'}
             useSimulator={useSimulator}
             onSimulatorChange={setUseSimulator}
             isElectron={!!window.electronAPI?.isElectron}
@@ -544,8 +473,6 @@ const App: React.FC = () => {
         isConnected={isConnected}
         machineState={machineState}
         unit={unit}
-        onEmergencyStop={handleEmergencyStop}
-        flashingButton={flashingButton}
       />
 
       {alarmInfo && (
@@ -600,8 +527,8 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-grow p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
-        <div className="min-h-[60vh] lg:min-h-0">
+      <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="h-[40vh] lg:h-full">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -624,50 +551,94 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <div className="flex flex-col gap-4 overflow-hidden min-h-0">
-          <JogPanel
-            isConnected={isConnected}
-            machineState={machineState}
-            onJog={handleJog}
-            onHome={() => handleHome("all")}
-            onSetZero={handleSetZero}
-            onSpindleCommand={handleSpindleCommand}
-            onProbe={handleProbe}
-            onSendCommand={handleManualCommand}
-            jogStep={jogStep}
-            onStepChange={settingsActions.setJogStep}
-            flashingButton={flashingButton}
-            onFlash={handleFlash}
-            unit={unit}
-            onUnitChange={handleUnitChange}
-            isJobActive={isJobActive}
-            isJogging={isJogging}
-            isMacroRunning={isMacroRunning}
-            onJogStop={handleJogStop}
-          />
-          <WebcamPanel />
-          <MacrosPanel
-            macros={macros}
-            onRunMacro={handleRunMacro}
-            onOpenEditor={uiActions.openMacroEditor}
-            isEditMode={isMacroEditMode}
-            onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
-            disabled={isJobActive}
-          />
-          <Console
-            logs={logs}
-            onSendCommand={handleManualCommand}
-            onClearLogs={logActions.clearLogs}
-            isConnected={isConnected}
-            isJobActive={isJobActive}
-            isMacroRunning={isMacroRunning}
-            isLightMode={isLightMode}
-            isVerbose={isVerbose}
-            onVerboseChange={logActions.setIsVerbose}
+        <div className="h-[50vh] lg:h-full">
+          <Tabs
+            defaultTab="controls"
+            tabs={[
+              {
+                id: "controls",
+                label: "Controls",
+                icon: <Move className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto">
+                    <JogPanel
+                      isConnected={isConnected}
+                      machineState={machineState}
+                      machineSettings={machineSettings}
+                      isHomed={isHomedSinceConnect}
+                      onJog={handleJog}
+                      onHome={() => handleHome("all")}
+                      onSetZero={handleSetZero}
+                      onSpindleCommand={handleSpindleCommand}
+                      onProbe={handleProbe}
+                      onSendCommand={handleManualCommand}
+                      jogStep={jogStep}
+                      onStepChange={settingsActions.setJogStep}
+                      flashingButton={flashingButton}
+                      onFlash={handleFlash}
+                      unit={unit}
+                      onUnitChange={handleUnitChange}
+                      isJobActive={isJobActive}
+                      isJogging={isJogging}
+                      isMacroRunning={isMacroRunning}
+                      onJogStop={handleJogStop}
+                      jogFeedRate={machineSettings.jogFeedRate}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: "webcam",
+                label: "Webcam",
+                icon: <Camera className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto p-2">
+                    <WebcamPanel />
+                  </div>
+                ),
+              },
+              {
+                id: "macros",
+                label: "Macros",
+                icon: <Zap className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto p-2">
+                    <MacrosPanel
+                      macros={macros}
+                      onRunMacro={handleRunMacro}
+                      onOpenEditor={uiActions.openMacroEditor}
+                      isEditMode={isMacroEditMode}
+                      onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
+                      disabled={isJobActive}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: "console",
+                label: "Console",
+                icon: <Terminal className="w-4 h-4" />,
+                content: (
+                  <div className="h-full">
+                    <Console
+                      logs={logs}
+                      onSendCommand={handleManualCommand}
+                      onClearLogs={logActions.clearLogs}
+                      isConnected={isConnected}
+                      isJobActive={isJobActive}
+                      isMacroRunning={isMacroRunning}
+                      isLightMode={isLightMode}
+                      isVerbose={isVerbose}
+                      onVerboseChange={logActions.setIsVerbose}
+                    />
+                  </div>
+                ),
+              },
+            ]}
           />
         </div>
       </main>
-      <Footer onContactClick={uiActions.openContactModal} />
+
     </div>
   );
 };

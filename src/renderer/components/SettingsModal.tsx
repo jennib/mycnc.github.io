@@ -58,9 +58,10 @@ interface SettingsModalProps {
     onResetDialogs: () => void;
     onExport: () => void;
     onImport: (imported: any) => void;
+    onContactClick: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick }) => {
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -108,7 +109,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
 
         // Define which fields need to be parsed to numbers
-        const numericFields = {
+        const numericFields: Record<string, string[]> = {
             workArea: ['x', 'y', 'z'],
             spindle: ['min', 'max', 'warmupDelay'],
             probe: ['xOffset', 'yOffset', 'zOffset', 'feedRate']
@@ -116,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
         // Iterate and parse string inputs back to numbers
         for (const category in numericFields) {
-            if (settingsToSave[category]) {
+            if (settingsToSave[category as keyof MachineSettings]) {
                 for (const field of numericFields[category]) {
                     const value = settingsToSave[category][field];
                     // Coerce to number, default to 0 if invalid
@@ -137,6 +138,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
+            if (!e.target?.result) return;
             try {
                 const importedData = JSON.parse(e.target.result as string);
                 onImport(importedData);
@@ -147,7 +149,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             }
         };
         reader.readAsText(file);
-        event.target.value = null; // Reset file input
+        event.target.value = ""; // Reset file input
     };
 
     return (
@@ -185,12 +187,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="grbl">GRBL (Standard 3-axis CNC)</option>
-                                    <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
+                                    {/* <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
                                     <option value="grblhal">grblHAL (Advanced GRBL)</option>
                                     <option value="smoothieware">Smoothieware (32-bit GRBL-like)</option>
                                     <option value="marlin">Marlin (3D Printer/CNC)</option>
                                     <option value="tinyg">TinyG (JSON Protocol)</option>
-                                    <option value="linuxcnc">LinuxCNC (Linux-based)</option>
+                                    <option value="linuxcnc">LinuxCNC (Linux-based)</option> */}
                                 </select>
                             </InputGroup>
                             <InputGroup label="Spindle Warmup Delay (ms)">
@@ -222,7 +224,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             <p className="text-sm">Export/Import all settings, macros, and tools.</p>
                             <div className="flex gap-2">
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
-                                <button onClick={() => importFileRef.current.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
+                                <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
                                     <Upload className="w-4 h-4" />Import
                                 </button>
                                 <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
@@ -241,7 +243,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                     </div>
                 </div>
-                <div className="bg-background px-6 py-4 flex justify-end items-center rounded-b-lg flex-shrink-0">
+                <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg flex-shrink-0 border-t border-secondary">
+                    <div className="flex items-center gap-4 text-xs text-text-secondary">
+                        <span>&copy; {new Date().getFullYear()} mycnc.app</span>
+                        <button type="button" onClick={() => {
+                            onCancel(); // Close settings modal first
+                            onContactClick(); // Then open contact modal
+                        }} className="text-primary hover:underline font-semibold">
+                            Contact Us
+                        </button>
+                        <span>•</span>
+                        <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">
+                            GitHub
+                        </a>
+                    </div>
                     <div className="flex items-center gap-4">
                         <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
                         <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">

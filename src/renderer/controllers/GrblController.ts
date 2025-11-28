@@ -22,7 +22,7 @@ export class GrblController implements Controller {
     linePromiseReject: ((reason?: any) => void) | null = null;
     lastStatus: MachineState = {
         status: 'Idle',
-        code: null,
+        code: undefined,
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
@@ -60,7 +60,7 @@ export class GrblController implements Controller {
             // Reset state for new connection
             this.lastStatus = {
                 status: 'Idle',
-                code: null,
+                code: undefined,
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
@@ -146,7 +146,16 @@ export class GrblController implements Controller {
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
             }
         } else if (trimmedValue) {
-            if (trimmedValue.startsWith('error:')) {
+            if (trimmedValue.toLowerCase().startsWith('alarm:')) {
+                const alarmCode = parseInt(trimmedValue.split(':')[1], 10);
+                this.lastStatus = {
+                    ...this.lastStatus,
+                    status: 'Alarm',
+                    code: isNaN(alarmCode) ? undefined : alarmCode
+                };
+                this.emitter.emit('state', { type: 'state', data: this.lastStatus });
+                this.emitter.emit('data', { type: 'received', message: trimmedValue });
+            } else if (trimmedValue.startsWith('error:')) {
                 if (this.linePromiseReject) {
                     this.linePromiseReject(new Error(trimmedValue));
                     this.linePromiseResolve = null;
@@ -168,11 +177,13 @@ export class GrblController implements Controller {
         }
     }
 
-    async sendCommand(command: string, timeout = 10000): Promise<string> {
+    async sendCommand(command: string, timeout = 60000): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.linePromiseResolve) {
                 return reject(new Error("Cannot send new line while another is awaiting 'ok'."));
             }
+
+            this.emitter.emit('data', { type: 'sent', message: command });
 
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
@@ -290,11 +301,11 @@ export class GrblController implements Controller {
     }
 
 
-    on(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    on(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.on(event, listener);
     }
 
-    off(event: 'data' | 'state' | 'error', listener: (data: any) => void): void {
+    off(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.off(event, listener);
     }
 }
