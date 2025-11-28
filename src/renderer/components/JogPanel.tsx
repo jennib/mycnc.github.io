@@ -32,6 +32,7 @@ interface JogPanelProps {
   isJobActive: boolean;
   isJogging: boolean;
   isMacroRunning: boolean;
+  jogFeedRate: number;
 }
 
 const JogPanel: React.FC<JogPanelProps> = memo(
@@ -53,6 +54,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isJobActive,
     isJogging,
     isMacroRunning,
+    jogFeedRate,
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     const pressedJogKey = useRef<string | null>(null);
@@ -141,15 +143,12 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           // Flash the button
           onFlash(hotkey.id);
 
-          // Get machine settings for feed rate
-          const feedRate = 1000; // This should come from settings
-
           // Start jog (JogManager will determine tap vs hold)
           jogManagerRef.current?.startJog(
             hotkey.axis as JogAxis,
             hotkey.direction as JogDirection,
             jogStep,
-            feedRate
+            jogFeedRate
           );
         }
       };
@@ -171,12 +170,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           onFlash("");
 
           // Stop jog (JogManager will determine if it was tap or hold)
-          const feedRate = 1000;
           jogManagerRef.current?.stopJog(
             hotkey.axis as JogAxis,
             hotkey.direction as JogDirection,
             jogStep,
-            feedRate
+            jogFeedRate
           );
         }
       };
@@ -188,7 +186,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
       };
-    }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys]);
+    }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys, jogFeedRate]);
 
 
     const JogButton = ({
@@ -219,24 +217,22 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       const handleMouseDown = () => {
         if (isDisabled) return;
         onFlash(id);
-        const feedRate = 1000; // Should come from settings
         jogManagerRef.current?.startJog(
           axis as JogAxis,
           direction as JogDirection,
           jogStep,
-          feedRate
+          jogFeedRate
         );
       };
 
       const handleMouseUp = () => {
         if (isDisabled) return;
         onFlash("");
-        const feedRate = 1000;
         jogManagerRef.current?.stopJog(
           axis as JogAxis,
           direction as JogDirection,
           jogStep,
-          feedRate
+          jogFeedRate
         );
       };
 
@@ -244,12 +240,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         // If mouse leaves button while pressed, stop jogging
         if (isDisabled) return;
         onFlash("");
-        const feedRate = 1000;
         jogManagerRef.current?.stopJog(
           axis as JogAxis,
           direction as JogDirection,
           jogStep,
-          feedRate
+          jogFeedRate
         );
       };
 
