@@ -36,6 +36,84 @@ interface JogPanelProps {
   jogFeedRate: number;
 }
 
+interface JogButtonProps {
+  id: string;
+  axis: string;
+  direction: number;
+  icon: React.ReactNode;
+  label: string;
+  hotkey: string;
+  isControlDisabled: boolean;
+  isZJogDisabledForStep: boolean;
+  unit: "mm" | "in";
+  flashingButton: string | null;
+  onFlash: (id: string) => void;
+  onStartJog: (axis: string, direction: number) => void;
+  onStopJog: (axis: string, direction: number) => void;
+}
+
+const JogButton: React.FC<JogButtonProps> = memo(({
+  id,
+  axis,
+  direction,
+  icon,
+  label,
+  hotkey,
+  isControlDisabled,
+  isZJogDisabledForStep,
+  unit,
+  flashingButton,
+  onFlash,
+  onStartJog,
+  onStopJog,
+}) => {
+  const isZButton = axis === "Z";
+  const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
+
+  let title = `${label} (${axis}${direction > 0 ? "+" : "-"
+    }) (Hotkey: ${hotkey})`;
+  if (isZButton && isZJogDisabledForStep) {
+    title = `Z-Jog disabled for step size > ${unit === "mm" ? "10mm" : "1in"
+      }`;
+  }
+
+  const handleMouseDown = () => {
+    if (isDisabled) return;
+    onFlash(id);
+    onStartJog(axis, direction);
+  };
+
+  const handleMouseUp = () => {
+    if (isDisabled) return;
+    onFlash("");
+    onStopJog(axis, direction);
+  };
+
+  const handleMouseLeave = () => {
+    // If mouse leaves button while pressed, stop jogging
+    if (isDisabled) return;
+    onFlash("");
+    onStopJog(axis, direction);
+  };
+
+  return (
+    <button
+      id={id}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleMouseDown}
+      onTouchEnd={handleMouseUp}
+      disabled={isDisabled}
+      className={`flex items-center justify-center p-2 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
+        }`}
+      title={title}
+    >
+      {icon}
+    </button>
+  );
+});
+
 const JogPanel: React.FC<JogPanelProps> = memo(
   ({
     isConnected,
@@ -264,81 +342,21 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       };
     }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys, jogFeedRate]);
 
+    const handleStartJog = (axis: string, direction: number) => {
+      jogManagerRef.current?.startJog(
+        axis as JogAxis,
+        direction as JogDirection,
+        jogStep,
+        jogFeedRate
+      );
+    };
 
-    const JogButton = ({
-      id,
-      axis,
-      direction,
-      icon,
-      label,
-      hotkey,
-    }: {
-      id: string;
-      axis: string;
-      direction: number;
-      icon: React.ReactNode;
-      label: string;
-      hotkey: string;
-    }) => {
-      const isZButton = axis === "Z";
-      const isDisabled = isControlDisabled || (isZButton && isZJogDisabledForStep);
-
-      let title = `${label} (${axis}${direction > 0 ? "+" : "-"
-        }) (Hotkey: ${hotkey})`;
-      if (isZButton && isZJogDisabledForStep) {
-        title = `Z-Jog disabled for step size > ${unit === "mm" ? "10mm" : "1in"
-          }`;
-      }
-
-      const handleMouseDown = () => {
-        if (isDisabled) return;
-        onFlash(id);
-        jogManagerRef.current?.startJog(
-          axis as JogAxis,
-          direction as JogDirection,
-          jogStep,
-          jogFeedRate
-        );
-      };
-
-      const handleMouseUp = () => {
-        if (isDisabled) return;
-        onFlash("");
-        jogManagerRef.current?.stopJog(
-          axis as JogAxis,
-          direction as JogDirection,
-          jogStep,
-          jogFeedRate
-        );
-      };
-
-      const handleMouseLeave = () => {
-        // If mouse leaves button while pressed, stop jogging
-        if (isDisabled) return;
-        onFlash("");
-        jogManagerRef.current?.stopJog(
-          axis as JogAxis,
-          direction as JogDirection,
-          jogStep,
-          jogFeedRate
-        );
-      };
-
-      return (
-        <button
-          id={id}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleMouseDown}
-          onTouchEnd={handleMouseUp}
-          disabled={isDisabled}
-          className={`flex items-center justify-center p-2 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
-            }`}
-          title={title}
-        >
-          {icon}
-        </button>
+    const handleStopJog = (axis: string, direction: number) => {
+      jogManagerRef.current?.stopJog(
+        axis as JogAxis,
+        direction as JogDirection,
+        jogStep,
+        jogFeedRate
       );
     };
 
@@ -360,6 +378,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowUp className="w-6 h-6" />}
                 label="Jog Y+"
                 hotkey="Up Arrow"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
               <JogButton
                 id="jog-z-plus"
@@ -368,6 +393,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowUp className="w-6 h-6" />}
                 label="Jog Z+"
                 hotkey="Page Up"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
               <JogButton
                 id="jog-x-minus"
@@ -376,6 +408,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowLeft className="w-6 h-6" />}
                 label="Jog X-"
                 hotkey="Left Arrow"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
               <div className="col-start-2 row-start-2 flex items-center justify-center">
                 <Pin className="w-8 h-8 text-text-secondary" />
@@ -387,6 +426,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowRight className="w-6 h-6" />}
                 label="Jog X+"
                 hotkey="Right Arrow"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
               <div className="col-start-1 row-start-3"></div> {/* empty */}
               <JogButton
@@ -396,6 +442,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowDown className="w-6 h-6" />}
                 label="Jog Y-"
                 hotkey="Down Arrow"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
               <JogButton
                 id="jog-z-minus"
@@ -404,6 +457,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 icon={<ArrowDown className="w-6 h-6" />}
                 label="Jog Z-"
                 hotkey="Page Down"
+                isControlDisabled={isControlDisabled}
+                isZJogDisabledForStep={isZJogDisabledForStep}
+                unit={unit}
+                flashingButton={flashingButton}
+                onFlash={onFlash}
+                onStartJog={handleStartJog}
+                onStopJog={handleStopJog}
               />
             </div>
             <div className="flex justify-around items-center mt-3">
