@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect, useRef } from "react";
+import React, { useState, memo, useEffect, useRef, useCallback } from "react";
 import {
   ArrowUp,
   ArrowDown,
@@ -149,7 +149,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       isJobActive ||
       isJogging ||
       isMacroRunning ||
-      ["Alarm", "Home", "Jog"].includes(machineState?.status || "");
+      ["Alarm", "Home"].includes(machineState?.status || "");
     const isProbeDisabled =
       isControlDisabled || machineState?.spindle?.state !== "off";
     const isZJogDisabledForStep =
@@ -249,7 +249,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     useEffect(() => {
       jogManagerRef.current = new JogManager({
         onSendJogCommand: (axis, direction, step, feedRate) => {
-          onJog(axis, direction * step, step, feedRate);
+          onJog(axis, direction, step, feedRate);
         },
         onJogCancel: () => {
           onJogStop();
@@ -355,23 +355,23 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       };
     }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys, jogFeedRate]);
 
-    const handleStartJog = (axis: string, direction: number) => {
+    const handleStartJog = useCallback((axis: string, direction: number) => {
       jogManagerRef.current?.startJog(
         axis as JogAxis,
         direction as JogDirection,
         jogStep,
         jogFeedRate
       );
-    };
+    }, [jogStep, jogFeedRate]);
 
-    const handleStopJog = (axis: string, direction: number) => {
+    const handleStopJog = useCallback((axis: string, direction: number) => {
       jogManagerRef.current?.stopJog(
         axis as JogAxis,
         direction as JogDirection,
         jogStep,
         jogFeedRate
       );
-    };
+    }, [jogStep, jogFeedRate]);
 
     return (
       <div className="bg-surface rounded-lg shadow-lg flex flex-col p-1 gap-1">

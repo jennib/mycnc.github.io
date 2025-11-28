@@ -48,7 +48,7 @@ export const Input: React.FC<InputProps> = ({ label, value, valueX, valueY, onCh
             </div>
         ) : (
             <div className="relative">
-                <input type="number" value={value} onChange={onChange} className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input type="text" value={value} onChange={onChange} className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary" />
                 {unit && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-secondary">{unit}</span>}
             </div>
         )}

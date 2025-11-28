@@ -14,18 +14,7 @@ interface PocketGeneratorProps {
 
 const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
     const handleParamChange = (field: string, value: any) => {
-        // For numeric inputs, ensure the value is a number or null
-        const numericFields = [
-            'width', 'length', 'cornerRadius', 'diameter', 'depth', 'depthPerPass',
-            'stepover', 'toolId', 'feed', 'spindle', 'plungeFeed', 'safeZ'
-        ];
-
-        if (numericFields.includes(field)) {
-            const numValue = parseFloat(value);
-            onParamsChange(field, isNaN(numValue) ? null : numValue);
-        } else {
-            onParamsChange(field, value);
-        }
+        onParamsChange(field, value);
     };
 
     return (
@@ -49,20 +38,11 @@ const PocketGenerator: React.FC<PocketGeneratorProps> = ({ params, onParamsChang
             </div>
             <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
             <hr className='border-secondary' />
-            <RadioGroup
-                label='Toolpath Origin'
-                selected={params.toolpathOrigin}
-                onChange={(value) => handleParamChange('toolpathOrigin', value)}
-                options={[
-                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
-                    { value: 'top_center', label: 'Top Center' },
-                ]}
-            />
-            <SpindleAndFeedControls 
-                params={params} 
-                onParamChange={handleParamChange} 
+            <SpindleAndFeedControls
+                params={params}
+                onParamChange={handleParamChange}
                 unit={unit}
-                plunge={true} 
+                plunge={true}
             />
         </div>
     );

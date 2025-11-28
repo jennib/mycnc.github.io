@@ -152,7 +152,11 @@ interface GCodeGeneratorModalProps {
 }
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
-    const [activeTab, setActiveTab] = useState('surfacing');
+    const [activeTab, setActiveTab] = useState(() => localStorage.getItem('generatorActiveTab') || 'surfacing');
+
+    useEffect(() => {
+        localStorage.setItem('generatorActiveTab', activeTab);
+    }, [activeTab]);
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState<{ paths: PreviewPath[]; bounds: Bounds }>({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
     const [viewBox, setViewBox] = useState('0 0 100 100');
@@ -201,26 +205,18 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
-        const { depth, peck, retract, feed, spindle, safeZ, toolpathOrigin } = drillParams;
+        const { depth, peck, retract, feed, spindle, safeZ } = drillParams;
 
-        const numericDepth = Number(depth);
-        const numericPeck = Number(peck);
-        const numericRetract = Number(retract);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericDepth = parseFloat(String(depth));
+        const numericPeck = parseFloat(String(peck));
+        const numericRetract = parseFloat(String(retract));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        }
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0;
 
         const code = [
             `(--- Drilling Operation: ${drillParams.drillType} ---)`,
@@ -238,19 +234,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         const points = [];
         if (drillParams.drillType === 'single') {
-            const numericSingleX = Number(drillParams.singleX);
-            const numericSingleY = Number(drillParams.singleY);
+            const numericSingleX = parseFloat(String(drillParams.singleX));
+            const numericSingleY = parseFloat(String(drillParams.singleY));
             if (isNaN(numericSingleX) || isNaN(numericSingleY)) {
                 return { error: "Please fill all required fields with valid numbers for single drilling.", code: [], paths: [], bounds: {} };
             }
             points.push({ x: numericSingleX + originOffsetX, y: numericSingleY + originOffsetY });
         } else if (drillParams.drillType === 'rect') {
-            const numericRectCols = Number(drillParams.rectCols);
-            const numericRectRows = Number(drillParams.rectRows);
-            const numericRectSpacingX = Number(drillParams.rectSpacingX);
-            const numericRectSpacingY = Number(drillParams.rectSpacingY);
-            const numericRectStartX = Number(drillParams.rectStartX);
-            const numericRectStartY = Number(drillParams.rectStartY);
+            const numericRectCols = parseFloat(String(drillParams.rectCols));
+            const numericRectRows = parseFloat(String(drillParams.rectRows));
+            const numericRectSpacingX = parseFloat(String(drillParams.rectSpacingX));
+            const numericRectSpacingY = parseFloat(String(drillParams.rectSpacingY));
+            const numericRectStartX = parseFloat(String(drillParams.rectStartX));
+            const numericRectStartY = parseFloat(String(drillParams.rectStartY));
 
             if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY, numericRectStartX, numericRectStartY].some(isNaN)) {
                 return { error: "Please fill all required fields with valid numbers for rectangular drilling.", code: [], paths: [], bounds: {} };
@@ -265,11 +261,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 }
             }
         } else { // circ
-            const numericCircHoles = Number(drillParams.circHoles);
-            const numericCircRadius = Number(drillParams.circRadius);
-            const numericCircCenterX = Number(drillParams.circCenterX);
-            const numericCircCenterY = Number(drillParams.circCenterY);
-            const numericCircStartAngle = Number(drillParams.circStartAngle);
+            const numericCircHoles = parseFloat(String(drillParams.circHoles));
+            const numericCircRadius = parseFloat(String(drillParams.circRadius));
+            const numericCircCenterX = parseFloat(String(drillParams.circCenterX));
+            const numericCircCenterY = parseFloat(String(drillParams.circCenterY));
+            const numericCircStartAngle = parseFloat(String(drillParams.circStartAngle));
 
             if ([numericCircHoles, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
                 return { error: "Please fill all required fields with valid numbers for circular drilling.", code: [], paths: [], bounds: {} };
@@ -285,15 +281,41 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             }
         }
 
-        // Use G83 Peck Drilling Cycle
+        // GRBL does not support G83 (Peck Drilling Cycle), so we must expand it manually.
         code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
-        code.push(`G83 Z${numericDepth.toFixed(3)} Q${numericPeck.toFixed(3)} R${numericRetract.toFixed(3)} F${numericFeed.toFixed(3)}`);
+
         points.forEach(p => {
-            code.push(`X${p.x.toFixed(3)} Y${p.y.toFixed(3)}`);
+            code.push(`(Hole at X${p.x.toFixed(3)} Y${p.y.toFixed(3)})`);
+            code.push(`G0 X${p.x.toFixed(3)} Y${p.y.toFixed(3)}`);
+            code.push(`G0 Z${numericRetract.toFixed(3)}`); // Move to R-plane
+
+            let currentZ = 0;
+            const targetZ = numericDepth;
+            const peckStep = numericPeck;
+
+            // If peck is 0 or invalid, do single pass
+            if (peckStep <= 0) {
+                code.push(`G1 Z${targetZ.toFixed(3)} F${numericFeed.toFixed(3)}`);
+                code.push(`G0 Z${numericRetract.toFixed(3)}`);
+            } else {
+                while (currentZ > targetZ) {
+                    currentZ -= peckStep;
+                    if (currentZ < targetZ) currentZ = targetZ;
+
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${numericFeed.toFixed(3)}`);
+                    code.push(`G0 Z${numericRetract.toFixed(3)}`); // Retract to R-plane to clear chips
+
+                    // Rapid back down to just above previous cut if not done
+                    if (currentZ > targetZ) {
+                        code.push(`G0 Z${(currentZ + 0.5).toFixed(3)}`);
+                    }
+                }
+            }
+
             paths.push({ cx: p.x, cy: p.y, r: (selectedTool.diameter === '' ? 0 : selectedTool.diameter) / 2, stroke: 'var(--color-accent-yellow)', fill: 'var(--color-accent-yellow-transparent)' });
             updateBounds(p.x, p.y);
         });
-        code.push('G80'); // Cancel cycle
+
         code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
         code.push('M5');
 
@@ -308,20 +330,20 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
-        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ, toolpathOrigin } = profileParams;
+        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ } = profileParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericCornerRadius = Number(cornerRadius);
-        const numericDiameter = Number(diameter);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericNumTabs = Number(numTabs);
-        const numericTabWidth = Number(tabWidth);
-        const numericTabHeight = Number(tabHeight);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericCornerRadius = parseFloat(String(cornerRadius));
+        const numericDiameter = parseFloat(String(diameter));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericNumTabs = parseFloat(String(numTabs));
+        const numericTabWidth = parseFloat(String(tabWidth));
+        const numericTabHeight = parseFloat(String(tabHeight));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -333,17 +355,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
             `G21 G90`, `M3 S${numericSpindle}`];
@@ -377,31 +391,23 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
-        const { width, length, depth, stepover, feed, spindle, safeZ, direction, toolpathOrigin } = surfaceParams;
+        const { width, length, depth, stepover, feed, spindle, safeZ, direction } = surfaceParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericDepth = Number(depth);
-        const numericStepover = Number(stepover);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericDepth = parseFloat(String(depth));
+        const numericStepover = parseFloat(String(stepover));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericWidth, numericLength, numericDepth, numericStepover, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(--- Surfacing Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -459,19 +465,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
-        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ, toolpathOrigin } = pocketParams;
+        const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ } = pocketParams;
 
-        const numericWidth = Number(width);
-        const numericLength = Number(length);
-        const numericCornerRadius = Number(cornerRadius); // Not directly used in current pocket code, but good to convert
-        const numericDiameter = Number(diameter);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericStepover = Number(stepover);
-        const numericFeed = Number(feed);
-        const numericPlungeFeed = Number(plungeFeed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericCornerRadius = parseFloat(String(cornerRadius)); // Not directly used in current pocket code, but good to convert
+        const numericDiameter = parseFloat(String(diameter));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericStepover = parseFloat(String(stepover));
+        const numericFeed = parseFloat(String(feed));
+        const numericPlungeFeed = parseFloat(String(plungeFeed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericStepover, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -483,17 +489,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(--- Pocket Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ}`
@@ -555,19 +553,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
-        const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ, toolpathOrigin } = boreParams;
+        const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ } = boreParams;
 
-        const numericCenterX = Number(centerX);
-        const numericCenterY = Number(centerY);
-        const numericHoleDiameter = Number(holeDiameter);
-        const numericHoleDepth = Number(holeDepth);
-        const numericCbDiameter = Number(cbDiameter);
-        const numericCbDepth = Number(cbDepth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericFeed = Number(feed);
-        const numericPlungeFeed = Number(plungeFeed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericCenterX = parseFloat(String(centerX));
+        const numericCenterY = parseFloat(String(centerY));
+        const numericHoleDiameter = parseFloat(String(holeDiameter));
+        const numericHoleDepth = parseFloat(String(holeDepth));
+        const numericCbDiameter = parseFloat(String(cbDiameter));
+        const numericCbDepth = parseFloat(String(cbDepth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericFeed = parseFloat(String(feed));
+        const numericPlungeFeed = parseFloat(String(plungeFeed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericCenterX, numericCenterY, numericHoleDiameter, numericHoleDepth, numericDepthPerPass, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (counterboreEnabled && ([numericCbDiameter, numericCbDepth].some(isNaN)))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -593,17 +591,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Depth per Pass cannot be greater than total Counterbore Depth.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(--- Bore Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -618,32 +608,58 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         };
 
         const doHelicalBore = (targetDiameter: number, targetDepth: number, startZ: number = 0) => {
-            const pathRadius = (targetDiameter - (selectedTool.diameter === '' ? 0 : selectedTool.diameter)) / 2;
-            if (pathRadius <= 0) return;
+            const toolDia = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
+            const finalPathRadius = (targetDiameter - toolDia) / 2;
+            if (finalPathRadius <= 0) return;
 
             const currentCenterX = numericCenterX + originOffsetX;
             const currentCenterY = numericCenterY + originOffsetY;
+
+            const stepoverVal = parseFloat(String(boreParams.stepover)) || 40; // Default to 40% if not set
+            const stepoverAmount = toolDia * (stepoverVal / 100);
+
+            // Calculate passes
+            const passes = [];
+
+            let r = stepoverAmount;
+            // If the hole is small, we might just do one pass at final radius
+            if (r > finalPathRadius) r = finalPathRadius;
+
+            // Generate passes from center out
+            while (r <= finalPathRadius) {
+                passes.push(r);
+                if (r >= finalPathRadius) break;
+                r += stepoverAmount;
+                if (r > finalPathRadius) r = finalPathRadius;
+            }
+
+            // Ensure we have at least one pass if something went wrong or hole is tiny
+            if (passes.length === 0) passes.push(finalPathRadius);
 
             code.push(`(Boring to Ø${targetDiameter} at Z=${targetDepth})`);
             paths.push({ cx: currentCenterX, cy: currentCenterY, r: targetDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '0.5%' });
             updateBounds(currentCenterX, currentCenterY, targetDiameter / 2);
 
             code.push(`G0 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} Z${numericSafeZ.toFixed(3)}`);
-            code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
 
-            let currentDepth = startZ;
-            while (currentDepth > targetDepth) {
-                currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
-                // Ramp in
-                code.push(`G2 X${(currentCenterX + pathRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${pathRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
-                // Full circle
-                code.push(`G2 I${-pathRadius.toFixed(3)} J0`);
-                // Ramp out
-                code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-pathRadius / 2} J0`);
+            for (const passRadius of passes) {
+                code.push(`(Pass at radius ${passRadius.toFixed(3)})`);
+                code.push(`G0 Z${(startZ + 1).toFixed(3)}`); // Lift slightly
+                code.push(`G0 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)}`);
+                code.push(`G1 Z${startZ.toFixed(3)} F${numericPlungeFeed}`);
 
-                if (currentDepth === Math.max(targetDepth, startZ - numericDepthPerPass)) {
-                    paths.push({ cx: currentCenterX, cy: currentCenterY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
+                let currentDepth = startZ;
+                while (currentDepth > targetDepth) {
+                    currentDepth = Math.max(targetDepth, currentDepth - numericDepthPerPass);
+                    // Ramp in to the pass radius
+                    code.push(`G2 X${(currentCenterX + passRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${passRadius / 2} J0 Z${currentDepth.toFixed(3)} F${numericFeed}`);
+                    // Full circle at depth
+                    code.push(`G2 X${(currentCenterX + passRadius).toFixed(3)} Y${currentCenterY.toFixed(3)} I${-passRadius.toFixed(3)} J0`);
+                    // Ramp out back to center
+                    code.push(`G2 X${currentCenterX.toFixed(3)} Y${currentCenterY.toFixed(3)} I${-passRadius / 2} J0`);
                 }
+
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`); // Retract after each radial pass
             }
         };
 
@@ -676,23 +692,23 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
-        const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle, toolpathOrigin } = slotParams;
+        const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle } = slotParams;
 
-        const numericSlotWidth = Number(slotWidth);
-        const numericDepth = Number(depth);
-        const numericDepthPerPass = Number(depthPerPass);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
-        const numericStartX = Number(startX);
-        const numericStartY = Number(startY);
-        const numericEndX = Number(endX);
-        const numericEndY = Number(endY);
-        const numericCenterX = Number(centerX);
-        const numericCenterY = Number(centerY);
-        const numericRadius = Number(radius);
-        const numericStartAngle = Number(startAngle);
-        const numericEndAngle = Number(endAngle);
+        const numericSlotWidth = parseFloat(String(slotWidth));
+        const numericDepth = parseFloat(String(depth));
+        const numericDepthPerPass = parseFloat(String(depthPerPass));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
+        const numericStartX = parseFloat(String(startX));
+        const numericStartY = parseFloat(String(startY));
+        const numericEndX = parseFloat(String(endX));
+        const numericEndY = parseFloat(String(endY));
+        const numericCenterX = parseFloat(String(centerX));
+        const numericCenterY = parseFloat(String(centerY));
+        const numericRadius = parseFloat(String(radius));
+        const numericStartAngle = parseFloat(String(startAngle));
+        const numericEndAngle = parseFloat(String(endAngle));
 
         if ([numericSlotWidth, numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (type === 'straight' && [numericStartX, numericStartY, numericEndX, numericEndY].some(isNaN)) || (type === 'arc' && [numericCenterX, numericCenterY, numericRadius, numericStartAngle, numericEndAngle].some(isNaN))) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -705,17 +721,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(--- Slot Operation: ${type} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
@@ -822,16 +830,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
 
-        const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ, toolpathOrigin } = textParams;
+        const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ } = textParams;
 
-        const numericHeight = Number(height);
-        const numericSpacing = Number(spacing);
-        const numericStartX = Number(startX);
-        const numericStartY = Number(startY);
-        const numericDepth = Number(depth);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const numericHeight = parseFloat(String(height));
+        const numericSpacing = parseFloat(String(spacing));
+        const numericStartX = parseFloat(String(startX));
+        const numericStartY = parseFloat(String(startY));
+        const numericDepth = parseFloat(String(depth));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericHeight, numericSpacing, numericStartX, numericStartY, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || !text) {
             return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
@@ -842,17 +850,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [];
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [];
         const paths: PreviewPath[] = [];
         const FONT_BASE_HEIGHT = 7;
         const FONT_BASE_WIDTH = 5;
@@ -953,13 +953,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
-        const { type, hand, feed, spindle, safeZ, toolpathOrigin } = threadParams;
-        const numericDiameter = Number(threadParams.diameter);
-        const numericPitch = Number(threadParams.pitch);
-        const numericDepth = Number(threadParams.depth);
-        const numericFeed = Number(feed);
-        const numericSpindle = Number(spindle);
-        const numericSafeZ = Number(safeZ);
+        const { type, hand, feed, spindle, safeZ } = threadParams;
+        const numericDiameter = parseFloat(String(threadParams.diameter));
+        const numericPitch = parseFloat(String(threadParams.pitch));
+        const numericDepth = parseFloat(String(threadParams.depth));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || [numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(p => p <= 0)) {
             return { error: "Please fill all fields with positive values.", code: [], paths: [], bounds: {} };
@@ -968,17 +968,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Tool diameter must be smaller than thread diameter for internal threads.", code: [], paths: [], bounds: {} };
         }
 
-        let originOffsetX = 0;
-        let originOffsetY = 0;
-
-        if (toolpathOrigin === 'top_center') {
-            originOffsetX = machineSettings.workArea.x / 2;
-            originOffsetY = machineSettings.workArea.y / 2;
-        } else if (toolpathOrigin === 'front_left_top') {
-            // Default to 0,0 offset for front_left_top
-            originOffsetX = 0;
-            originOffsetY = 0;
-        } const code = [
+        // Default to 0,0 offset for front_left_top
+        const originOffsetX = 0;
+        const originOffsetY = 0; const code = [
             `(--- Thread Milling Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             `(Type: ${type}, Hand: ${hand})`,
@@ -1164,7 +1156,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             result = applyArrayPattern(result);
         }
 
-        setGeneratedGCode(result.code ? result.code.join('\n') : '');
+        setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
     }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode]);
 
@@ -1187,9 +1179,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'toolpathOrigin'].includes(field);
-        const parsedValue = isNumberField ? (value === '' ? '' : parseFloat(value as string)) : value;
-        if (isNumberField && value !== '' && isNaN(parsedValue as number)) return;
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType'].includes(field);
+        const parsedValue = isNumberField ? (value === '' || value === '-' ? value : parseFloat(value as string)) : value;
+        if (isNumberField && value !== '' && value !== '-' && isNaN(parsedValue as number)) return;
 
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange({

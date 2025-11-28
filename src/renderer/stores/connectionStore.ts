@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Controller } from '@/controllers/Controller';
 import { ControllerFactory } from '@/controllers/ControllerFactory';
-import { MachineSettings, PortInfo, ConnectionOptions } from '@/types';
+import { MachineSettings, PortInfo, ConnectionOptions, JobStatus } from '@/types';
 
 import { useLogStore } from './logStore';
 import { useMachineStore } from './machineStore';
@@ -64,6 +64,19 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
         controller.on('error', (error: string) => {
           addLog({ type: 'error', message: error });
+        });
+
+        controller.on('job', (data: any) => {
+          const { setJobStatus } = useJobStore.getState().actions;
+          if (data.status === 'complete') {
+            setJobStatus(JobStatus.Complete);
+            addLog({ type: 'info', message: 'Job completed successfully.' });
+          }
+        });
+
+        controller.on('progress', (data: any) => {
+          const { setProgress } = useJobStore.getState().actions;
+          setProgress(data.percentage);
         });
 
         await controller.connect(options);

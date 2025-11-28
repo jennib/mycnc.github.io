@@ -3,6 +3,7 @@ import { MachineState } from '@/types';
 import { useConnectionStore } from './connectionStore';
 import { useSettingsStore } from './settingsStore';
 import { useLogStore } from './logStore';
+import { GRBL_REALTIME_COMMANDS } from '@/constants';
 
 // GRBL Alarm codes and messages
 function getAlarmMessage(code: number | string): string {
@@ -164,7 +165,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
 
     handleJogStop: () => {
       const { controller } = useConnectionStore.getState();
-      controller?.sendRealtimeCommand('\x85');
+      controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
     },
 
     handleManualCommand: (command) => {
@@ -173,8 +174,30 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
     },
 
     handleUnitChange: (newUnit) => {
-      const { actions: settingsActions } = useSettingsStore.getState();
+      const { unit, machineSettings, actions: settingsActions } = useSettingsStore.getState();
       const { actions: connectionActions } = useConnectionStore.getState();
+
+      if (unit === newUnit) return;
+
+      // Reset jog step to a safe default for the new unit
+      // This prevents dangerous jumps (e.g. switching from 50mm to 50in)
+      const defaultStep = newUnit === "mm" ? 1 : 0.1;
+      settingsActions.setJogStep(defaultStep);
+
+      // Convert jog feed rate
+      let newFeedRate = machineSettings.jogFeedRate;
+      if (unit === 'mm' && newUnit === 'in') {
+        newFeedRate = newFeedRate / 25.4;
+      } else if (unit === 'in' && newUnit === 'mm') {
+        newFeedRate = newFeedRate * 25.4;
+      }
+
+      // Update settings with converted feed rate
+      settingsActions.setMachineSettings({
+        ...machineSettings,
+        jogFeedRate: Math.round(newFeedRate * 100) / 100
+      });
+
       settingsActions.setUnit(newUnit);
       connectionActions.sendLine(newUnit === "mm" ? "G21" : "G20");
     },
