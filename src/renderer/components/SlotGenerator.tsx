@@ -61,15 +61,6 @@ const SlotGenerator: React.FC<SlotGeneratorProps> = ({ params, onParamsChange, t
                 <Input label='Depth per Pass' value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
             </div>
             <hr className='border-secondary' />
-            <RadioGroup
-                label='Toolpath Origin'
-                selected={params.toolpathOrigin}
-                onChange={(value) => handleParamChange('toolpathOrigin', value)}
-                options={[
-                    { value: 'front_left_top', label: 'Front-Left-Top Corner' },
-                    { value: 'top_center', label: 'Top Center' },
-                ]}
-            />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );

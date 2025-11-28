@@ -109,7 +109,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
 
         // Define which fields need to be parsed to numbers
-        const numericFields = {
+        const numericFields: Record<string, string[]> = {
             workArea: ['x', 'y', 'z'],
             spindle: ['min', 'max', 'warmupDelay'],
             probe: ['xOffset', 'yOffset', 'zOffset', 'feedRate']
@@ -117,7 +117,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
         // Iterate and parse string inputs back to numbers
         for (const category in numericFields) {
-            if (settingsToSave[category]) {
+            if (settingsToSave[category as keyof MachineSettings]) {
                 for (const field of numericFields[category]) {
                     const value = settingsToSave[category][field];
                     // Coerce to number, default to 0 if invalid
@@ -138,6 +138,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
         const reader = new FileReader();
         reader.onload = (e: ProgressEvent<FileReader>) => {
+            if (!e.target?.result) return;
             try {
                 const importedData = JSON.parse(e.target.result as string);
                 onImport(importedData);
@@ -148,7 +149,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             }
         };
         reader.readAsText(file);
-        event.target.value = null; // Reset file input
+        event.target.value = ""; // Reset file input
     };
 
     return (
@@ -186,12 +187,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="grbl">GRBL (Standard 3-axis CNC)</option>
-                                    <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
+                                    {/* <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
                                     <option value="grblhal">grblHAL (Advanced GRBL)</option>
                                     <option value="smoothieware">Smoothieware (32-bit GRBL-like)</option>
                                     <option value="marlin">Marlin (3D Printer/CNC)</option>
                                     <option value="tinyg">TinyG (JSON Protocol)</option>
-                                    <option value="linuxcnc">LinuxCNC (Linux-based)</option>
+                                    <option value="linuxcnc">LinuxCNC (Linux-based)</option> */}
                                 </select>
                             </InputGroup>
                             <InputGroup label="Spindle Warmup Delay (ms)">
@@ -223,7 +224,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             <p className="text-sm">Export/Import all settings, macros, and tools.</p>
                             <div className="flex gap-2">
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
-                                <button onClick={() => importFileRef.current.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
+                                <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
                                     <Upload className="w-4 h-4" />Import
                                 </button>
                                 <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">

@@ -91,14 +91,14 @@ export const DEFAULT_SETTINGS: MachineSettings = {
 };
 
 export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = { // Ensure this matches the new interfaces
-    surfacing: { width: 100, length: 100, depth: -1, stepover: 40, feed: 800, spindle: 8000, safeZ: 5, startX: 0, startY: 0, toolId: null, direction: 'horizontal', toolpathOrigin: 'front_left_top' }, // Example values
-    drilling: { drillType: 'single', depth: -5, peck: 2, retract: 2, feed: 150, spindle: 8000, safeZ: 5, singleX: 10, singleY: 10, rectCols: 4, rectRows: 3, rectSpacingX: 25, rectSpacingY: 20, rectStartX: 10, rectStartY: 10, circCenterX: 50, circCenterY: 50, circRadius: 40, circHoles: 6, circStartAngle: 0, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    bore: { centerX: 50, centerY: 50, holeDiameter: 20, holeDepth: -15, counterboreEnabled: true, cbDiameter: 30, cbDepth: -5, depthPerPass: 2, feed: 400, plungeFeed: 150, spindle: 8000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    pocket: { shape: 'rect', width: 80, length: 50, cornerRadius: 5, diameter: 60, depth: -10, depthPerPass: 2, stepover: 40, feed: 500, plungeFeed: 150, spindle: 8000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    profile: { shape: 'rect', width: 80, length: 50, cornerRadius: 10, diameter: 60, depth: -12, depthPerPass: 3, cutSide: 'outside', tabsEnabled: true, numTabs: 4, tabWidth: 6, tabHeight: 2, feed: 600, spindle: 9000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    slot: { type: 'straight', slotWidth: 6, depth: -5, depthPerPass: 2, feed: 400, spindle: 8000, safeZ: 5, startX: 10, startY: 10, endX: 90, endY: 20, centerX: 50, centerY: 50, radius: 40, startAngle: 45, endAngle: 135, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    text: { text: 'HELLO', font: 'Sans-serif Stick', height: 10, spacing: 2, startX: 10, startY: 10, alignment: 'left', depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
-    thread: { type: 'internal', hand: 'right', diameter: 10, pitch: 1, depth: 10, feed: 200, spindle: 10000, safeZ: 5, toolId: null, toolpathOrigin: 'front_left_top' }, // Example values
+    surfacing: { width: 100, length: 100, depth: -1, stepover: 40, feed: 800, spindle: 8000, safeZ: 5, startX: 0, startY: 0, toolId: null, direction: 'horizontal' }, // Example values
+    drilling: { drillType: 'single', depth: -5, peck: 2, retract: 2, feed: 150, spindle: 8000, safeZ: 5, singleX: 10, singleY: 10, rectCols: 4, rectRows: 3, rectSpacingX: 25, rectSpacingY: 20, rectStartX: 10, rectStartY: 10, circCenterX: 50, circCenterY: 50, circRadius: 40, circHoles: 6, circStartAngle: 0, toolId: null }, // Example values
+    bore: { centerX: 50, centerY: 50, holeDiameter: 20, holeDepth: -15, counterboreEnabled: true, cbDiameter: 30, cbDepth: -5, depthPerPass: 2, feed: 400, plungeFeed: 150, spindle: 8000, safeZ: 5, toolId: null }, // Example values
+    pocket: { shape: 'rect', width: 80, length: 50, cornerRadius: 5, diameter: 60, depth: -10, depthPerPass: 2, stepover: 40, feed: 500, plungeFeed: 150, spindle: 8000, safeZ: 5, toolId: null }, // Example values
+    profile: { shape: 'rect', width: 80, length: 50, cornerRadius: 10, diameter: 60, depth: -12, depthPerPass: 3, cutSide: 'outside', tabsEnabled: true, numTabs: 4, tabWidth: 6, tabHeight: 2, feed: 600, spindle: 9000, safeZ: 5, toolId: null }, // Example values
+    slot: { type: 'straight', slotWidth: 6, depth: -5, depthPerPass: 2, feed: 400, spindle: 8000, safeZ: 5, startX: 10, startY: 10, endX: 90, endY: 20, centerX: 50, centerY: 50, radius: 40, startAngle: 45, endAngle: 135, toolId: null }, // Example values
+    text: { text: 'HELLO', font: 'Sans-serif Stick', height: 10, spacing: 2, startX: 10, startY: 10, alignment: 'left', depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null }, // Example values
+    thread: { type: 'internal', hand: 'right', diameter: 10, pitch: 1, depth: 10, feed: 200, spindle: 10000, safeZ: 5, toolId: null }, // Example values
 };
 
 export const GRBL_REALTIME_COMMANDS = {
