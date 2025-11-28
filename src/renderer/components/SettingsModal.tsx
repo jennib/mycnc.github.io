@@ -245,7 +245,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg flex-shrink-0 border-t border-secondary">
                     <div className="flex items-center gap-4 text-xs text-text-secondary">
                         <span>&copy; {new Date().getFullYear()} mycnc.app</span>
-                        <button type="button" onClick={onContactClick} className="text-primary hover:underline font-semibold">
+                        <button type="button" onClick={() => {
+                            onCancel(); // Close settings modal first
+                            onContactClick(); // Then open contact modal
+                        }} className="text-primary hover:underline font-semibold">
                             Contact Us
                         </button>
                         <span>•</span>
