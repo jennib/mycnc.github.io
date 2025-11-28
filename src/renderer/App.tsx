@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+﻿import React, { useState, useCallback, useRef, useEffect } from "react";
 
 import { JobStatus, Tool, ConnectionOptions } from "./types";
 import SerialConnector from "./components/SerialConnector";
@@ -140,7 +140,6 @@ const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const activeJogKeyRef = useRef<string | null>(null);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -219,96 +218,6 @@ const App: React.FC = () => {
       setIsFullscreen((prev) => !prev);
     }
   };
-  // Global Hotkey Handling
-  const lastJogStopTimeRef = useRef<number>(0);
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Do not trigger hotkeys if an input field is focused, or if the key is being held down
-      if (
-        event.repeat ||
-        (document.activeElement &&
-          (document.activeElement.tagName === "INPUT" ||
-            document.activeElement.tagName === "TEXTAREA"))
-      ) {
-        return;
-      }
-
-      // If a jog key is already active, don't start a new one.
-      if (activeJogKeyRef.current) {
-        return;
-      }
-
-      // Debounce jog commands
-      if (Date.now() - lastJogStopTimeRef.current < 50) {
-        return;
-      }
-
-      let axis: string | null = null;
-      let direction = 0;
-
-      switch (event.key) {
-        case "ArrowUp":
-          axis = "Y";
-          direction = 1;
-          break;
-        case "ArrowDown":
-          axis = "Y";
-          direction = -1;
-          break;
-        case "ArrowLeft":
-          axis = "X";
-          direction = -1;
-          break;
-        case "ArrowRight":
-          axis = "X";
-          direction = 1;
-          break;
-        case "PageUp":
-          axis = "Z";
-          direction = 1;
-          break;
-        case "PageDown":
-          axis = "Z";
-          direction = -1;
-          break;
-      }
-
-      if (axis && direction !== 0) {
-        event.preventDefault();
-
-        // Set the ref immediately to block subsequent keydown repeats
-        activeJogKeyRef.current = event.key;
-
-        handleJog(axis, direction, jogStep);
-      }
-    };
-
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === activeJogKeyRef.current) {
-        event.preventDefault();
-        // handleJogStop(); // Don't stop on key up for step jogging
-        activeJogKeyRef.current = null;
-        lastJogStopTimeRef.current = Date.now();
-      };
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      if (activeJogKeyRef.current) {
-        handleJogStop();
-      }
-    };
-  }, [
-    machineSettings,
-    connectionActions,
-    handleJogStop,
-    handleJog,
-    jogStep
-  ]);
 
   // Separate useEffect for non-jog hotkeys
   useEffect(() => {

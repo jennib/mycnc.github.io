@@ -197,35 +197,22 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         if (rawValue === undefined) return;
 
         const value = applyDeadzone(rawValue);
-        const threshold = 0.1; // Lower threshold for fine control start
+        const threshold = 0.5;
 
-        // Determine direction and magnitude
+        // Determine direction
         let direction: JogDirection | 0 = 0;
-        let magnitude = 0;
-
-        if (Math.abs(value) > threshold) {
-          magnitude = (Math.abs(value) - threshold) / (1 - threshold); // Normalize 0-1
-          direction = value > 0 ? (invert ? -1 : 1) : (invert ? 1 : -1);
-        }
+        if (value > threshold) direction = invert ? -1 : 1;
+        else if (value < -threshold) direction = invert ? 1 : -1;
 
         const key = `axis-${axisIndex}`;
         const wasActive = activeGamepadJogs.current[key];
 
         if (direction !== 0) {
-          // Calculate variable feed rate
-          // Range: Very fine (10mm/min) to Medium (500mm/min or user setting)
-          // Use exponential curve for better fine control: feed = min + (max - min) * magnitude^2
-          const minFeed = 10;
-          const maxFeed = jogFeedRate; // Use the setting as the max
-          const targetFeed = Math.round(minFeed + (maxFeed - minFeed) * Math.pow(magnitude, 2));
-
-          activeGamepadJogs.current[key] = true;
-
-          // Always call startJog to update speed if already jogging
-          jogManagerRef.current?.startJog(targetAxis, direction, jogStep, targetFeed);
-
           if (!wasActive) {
-            onFlash(`gamepad-jog`); // Flash on start
+            // Rising edge: Start jogging
+            activeGamepadJogs.current[key] = true;
+            jogManagerRef.current?.startJog(targetAxis, direction, jogStep, jogFeedRate);
+            onFlash(`gamepad-jog`); // Generic flash for gamepad
           }
         } else {
           if (wasActive) {

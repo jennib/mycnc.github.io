@@ -113,9 +113,8 @@ export class JogManager {
      * Start continuous jogging (sends small incremental jogs repeatedly)
      */
     private startContinuousJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
-        // If already jogging this direction, just update the feed rate
+        // Don't start if already jogging this direction
         if (this.continuousJogState?.axis === axis && this.continuousJogState?.direction === direction) {
-            this.continuousJogState.feedRate = feedRate;
             return;
         }
 
