@@ -74,6 +74,24 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                 if (ctx) {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 }
+
+                // Auto-scale to fit machine work area with 20% margin
+                if (settings?.workArea) {
+                    const margin = 0.2;
+                    const maxW = settings.workArea.x * (1 - margin);
+                    const maxL = settings.workArea.y * (1 - margin);
+
+                    let newWidth = maxW;
+                    let newLength = newWidth / aspect;
+
+                    if (newLength > maxL) {
+                        newLength = maxL;
+                        newWidth = newLength * aspect;
+                    }
+
+                    onParamsChange('width', newWidth.toFixed(3));
+                    onParamsChange('length', newLength.toFixed(3));
+                }
             };
             img.src = params.imageDataUrl;
         }
