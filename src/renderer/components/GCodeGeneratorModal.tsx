@@ -1312,7 +1312,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Use the ref to call the latest handleGenerate without creating an infinite loop
             handleGenerateRef.current();
         }
-    }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
+    }, [isOpen, generatorSettings, toolLibrary, arraySettings, activeTab]);
 
     // When the selected tool from outside changes (e.g. from auto-selection),
     // update the active tab's settings
