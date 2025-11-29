@@ -1,5 +1,4 @@
 
-
 export interface GCodePoint {
     x: number;
     y: number;
@@ -106,7 +105,7 @@ export const parseGCode = (gcodeLines: string[]): ParsedGCode => {
     });
 
     if (segments.length === 0) {
-      return { segments, bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10, minZ: -2, maxZ: 2 }};
+        return { segments, bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10, minZ: -2, maxZ: 2 } };
     }
 
     return { segments, bounds };

@@ -1,6 +1,7 @@
 
 
-interface MachineState {
+
+export interface GCodeAnalysisState {
     spindle: 'M3' | 'M4' | 'M5';
     speed: number | null;
     coolant: 'M7' | 'M8' | 'M9';
@@ -20,8 +21,8 @@ const getParam = (gcode: string, regex: RegExp): number | null => {
     return match ? parseFloat(match[1]) : null;
 };
 
-export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number): MachineState => {
-    const state: MachineState = {
+export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number): GCodeAnalysisState => {
+    const state: GCodeAnalysisState = {
         spindle: 'M5', // Default to spindle off
         speed: null,
         coolant: 'M9', // Default to coolant off
