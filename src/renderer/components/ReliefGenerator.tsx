@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Tool, MachineSettings, ReliefParams } from '@/types';
 import { ToolSelector, Input, Checkbox, SpindleAndFeedControls } from './SharedControls';
 import { Slider } from './Slider';
+import ReliefPreview3D from './ReliefPreview3D';
 
 interface ReliefGeneratorProps {
     params: ReliefParams;
@@ -18,6 +19,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const aspectRatioRef = useRef<number | null>(null);
+    const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
     const handleParamChange = (field: string, value: any) => {
         if (field === 'width' && params.keepAspectRatio && aspectRatioRef.current) {
@@ -235,9 +237,42 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                     )}
                 </div>
             </div>
-            {/* Preview Canvas */}
-            <div className="border border-secondary rounded-md p-2 bg-black/20 flex justify-center">
-                <canvas ref={canvasRef} className="max-w-full h-auto border border-secondary/50" />
+            {/* Preview */}
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <label className="text-sm font-semibold text-text-secondary">Preview:</label>
+                    <div className="flex bg-secondary rounded-md p-1">
+                        <button
+                            onClick={() => setViewMode('2d')}
+                            className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${viewMode === '2d' ? 'bg-primary text-white' : 'hover:bg-secondary-focus'
+                                }`}
+                        >
+                            2D Image
+                        </button>
+                        <button
+                            onClick={() => setViewMode('3d')}
+                            className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${viewMode === '3d' ? 'bg-primary text-white' : 'hover:bg-secondary-focus'
+                                }`}
+                        >
+                            3D Relief
+                        </button>
+                    </div>
+                </div>
+
+                {viewMode === '2d' ? (
+                    <div className="border border-secondary rounded-md p-2 bg-black/20 flex justify-center">
+                        <canvas ref={canvasRef} className="max-w-full h-auto border border-secondary/50" />
+                    </div>
+                ) : (
+                    <ReliefPreview3D
+                        imageDataUrl={params.imageDataUrl || ''}
+                        width={parseFloat(params.width) || 100}
+                        height={parseFloat(params.length) || 100}
+                        maxDepth={parseFloat(params.maxDepth) || -10}
+                        gamma={params.gamma}
+                        contrast={params.contrast}
+                    />
+                )}
             </div>
         </div>
     );
