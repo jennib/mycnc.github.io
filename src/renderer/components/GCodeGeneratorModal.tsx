@@ -1162,8 +1162,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return { error: "Please enable at least one pass for the selected operation.", code: [], paths: [], bounds: {} };
         }
 
-        console.log('Generating Relief:', { numericWidth, numericLength, numericMaxDepth, numericZSafe, operation });
-
         // Load Image
         const img = new Image();
         img.src = reliefParams.imageDataUrl;
@@ -1190,19 +1188,21 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         canvas.height = Math.floor(h);
         const ctx = canvas.getContext('2d');
         if (!ctx) return { error: "Canvas context error.", code: [], paths: [], bounds: {} };
-        ctx.drawImage(img, 0, 0, w, h);
-        const imgData = ctx.getImageData(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imgData.data;
+        const pixelWidth = imgData.width;
+        const pixelHeight = imgData.height;
 
         const getZAt = (xPct: number, yPct: number) => {
             const clampedXPct = Math.max(0, Math.min(1, xPct));
             const clampedYPct = Math.max(0, Math.min(1, yPct));
-            const px = Math.min(w - 1, Math.floor(clampedXPct * (w - 1)));
-            const py = Math.min(h - 1, Math.floor(clampedYPct * (h - 1)));
-            const idx = (py * w + px) * 4;
+            const px = Math.min(pixelWidth - 1, Math.floor(clampedXPct * (pixelWidth - 1)));
+            const py = Math.min(pixelHeight - 1, Math.floor(clampedYPct * (pixelHeight - 1)));
+            const idx = (py * pixelWidth + px) * 4;
             const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
             if (isNaN(brightness)) {
-                console.warn('getZAt: NaN brightness', { xPct, yPct, px, py, idx });
+                // This should effectively be impossible now with correct stride and clamping
                 return 0;
             }
             const normalized = brightness / 255;
@@ -1219,8 +1219,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const toolIndex = toolLibrary.findIndex(t => t.id === roughingToolId);
             if (toolIndex === -1) return { error: "Please select a roughing tool.", code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
-            const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
-            if (toolDia <= 0) return { error: "Roughing tool diameter must be positive.", code: [], paths: [], bounds: {} };
+            const toolDia = parseFloat(String(tool.diameter || 0));
+            if (isNaN(toolDia) || toolDia <= 0) return { error: "Roughing tool diameter must be a valid positive number.", code: [], paths: [], bounds: {} };
 
             const stepdown = parseFloat(String(roughingStepdown));
             const stepover = parseFloat(String(roughingStepover));
@@ -1267,6 +1267,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         // If model is higher than current layer + stock, we must cut at model height + stock (or retract)
                         // If model is lower, we cut at current layer
                         let cutZ = Math.max(currentZ, modelZ + stock);
+
+                        if (isNaN(cutZ)) {
+                            console.error('NaN cutZ detected', { currentZ, modelZ, stock, xPct, yPct, x, y });
+                            return { error: "Calculation error: NaN detected.", code: [], paths: [], bounds: {} };
+                        }
 
                         // Optimization: Don't emit every point, only changes
                         // For now, simple linear moves

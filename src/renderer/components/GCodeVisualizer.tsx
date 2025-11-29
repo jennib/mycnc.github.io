@@ -343,12 +343,6 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             const programInfo = programInfoRef.current;
 
             if (type === 'processedGCode') {
-                console.log('Visualizer: processedGCode received', {
-                    bounds: parsedGCode.bounds,
-                    toolpathVerticesLength: toolpathVertices.length,
-                    toolpathColorsLength: toolpathColors.length,
-                    metadataLength: toolpathSegmentMetadata.length
-                });
                 setParsedGCode(parsedGCode);
                 setWorkerData({
                     toolpathVertices, toolpathColors, toolpathSegmentMetadata,
