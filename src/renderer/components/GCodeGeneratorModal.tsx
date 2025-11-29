@@ -1151,8 +1151,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericMaxDepth = parseFloat(String(maxDepth));
         const numericZSafe = parseFloat(String(zSafe));
 
-        if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN)) {
-            return { error: "Please fill all dimensions with valid numbers.", code: [], paths: [], bounds: {} };
+        if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN) || numericWidth <= 0 || numericLength <= 0) {
+            return { error: "Please fill all dimensions with valid positive numbers.", code: [], paths: [], bounds: {} };
         }
 
         const doRoughing = (operation === 'both' || operation === 'roughing') && roughingEnabled;
@@ -1161,6 +1161,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (!doRoughing && !doFinishing) {
             return { error: "Please enable at least one pass for the selected operation.", code: [], paths: [], bounds: {} };
         }
+
+        console.log('Generating Relief:', { numericWidth, numericLength, numericMaxDepth, numericZSafe, operation });
 
         // Load Image
         const img = new Image();
@@ -1199,6 +1201,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const py = Math.min(h - 1, Math.floor(clampedYPct * (h - 1)));
             const idx = (py * w + px) * 4;
             const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+            if (isNaN(brightness)) {
+                console.warn('getZAt: NaN brightness', { xPct, yPct, px, py, idx });
+                return 0;
+            }
             const normalized = brightness / 255;
             // Invert: Dark(0) = High(0), Light(1) = Low(MaxDepth) -> z = normalized * MaxDepth
             // Normal: White(1) = High(0), Black(0) = Low(MaxDepth) -> z = (1 - normalized) * MaxDepth
@@ -1214,6 +1220,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             if (toolIndex === -1) return { error: "Please select a roughing tool.", code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
             const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
+            if (toolDia <= 0) return { error: "Roughing tool diameter must be positive.", code: [], paths: [], bounds: {} };
+
             const stepdown = parseFloat(String(roughingStepdown));
             const stepover = parseFloat(String(roughingStepover));
             const stock = parseFloat(String(roughingStockToLeave));
@@ -1264,6 +1272,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         // For now, simple linear moves
                         if (i === 0) code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${cutZ.toFixed(3)} F${feed}`);
                         else code.push(`G1 X${x.toFixed(3)} Z${cutZ.toFixed(3)}`);
+
+                        // Preview path (sampled)
+                        if (i % 5 === 0) {
+                            const prevX = (direction === 1) ? ((i - 5) / numSteps) * numericWidth : numericWidth - ((i - 5) / numSteps) * numericWidth;
+                            paths.push({ d: `M ${prevX} ${y} L ${x} ${y}`, stroke: 'var(--color-primary)', strokeWidth: '0.5%' });
+                        }
                     }
 
                     code.push(`G0 Z${numericZSafe}`);

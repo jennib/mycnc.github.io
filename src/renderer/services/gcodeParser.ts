@@ -1,5 +1,4 @@
 
-
 export interface GCodePoint {
     x: number;
     y: number;
@@ -106,7 +105,12 @@ export const parseGCode = (gcodeLines: string[]): ParsedGCode => {
     });
 
     if (segments.length === 0) {
-      return { segments, bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10, minZ: -2, maxZ: 2 }};
+        return { segments, bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10, minZ: -2, maxZ: 2 } };
+    }
+
+    // Check for NaNs in bounds
+    if (isNaN(bounds.minX) || isNaN(bounds.maxX) || isNaN(bounds.minY) || isNaN(bounds.maxY) || isNaN(bounds.minZ) || isNaN(bounds.maxZ)) {
+        console.error("GCodeParser: NaN bounds detected!", bounds);
     }
 
     return { segments, bounds };
