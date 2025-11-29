@@ -16,8 +16,34 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    const aspectRatioRef = useRef<number | null>(null);
+
     const handleParamChange = (field: string, value: any) => {
-        onParamsChange(field, value);
+        if (field === 'width' && params.keepAspectRatio && aspectRatioRef.current) {
+            const newWidth = parseFloat(value);
+            if (!isNaN(newWidth)) {
+                onParamsChange('width', value);
+                onParamsChange('length', (newWidth / aspectRatioRef.current).toFixed(3));
+            } else {
+                onParamsChange(field, value);
+            }
+        } else if (field === 'length' && params.keepAspectRatio && aspectRatioRef.current) {
+            const newLength = parseFloat(value);
+            if (!isNaN(newLength)) {
+                onParamsChange('length', value);
+                onParamsChange('width', (newLength * aspectRatioRef.current).toFixed(3));
+            } else {
+                onParamsChange(field, value);
+            }
+        } else if (field === 'keepAspectRatio') {
+            onParamsChange('keepAspectRatio', value);
+            if (value && aspectRatioRef.current && !isNaN(Number(params.width))) {
+                // Sync length to width when enabled
+                onParamsChange('length', (Number(params.width) / aspectRatioRef.current).toFixed(3));
+            }
+        } else {
+            onParamsChange(field, value);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +68,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
             img.onload = () => {
                 // Maintain aspect ratio in preview
                 const aspect = img.width / img.height;
+                aspectRatioRef.current = aspect;
                 canvas.width = 300;
                 canvas.height = 300 / aspect;
                 if (ctx) {
@@ -101,6 +128,9 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
             <div className="border-b border-secondary pb-4">
                 <h3 className="font-bold text-lg mb-2 text-text-primary">3. Dimensions</h3>
                 <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                        <Checkbox label="Keep Aspect Ratio" checked={params.keepAspectRatio} onChange={(v) => handleParamChange('keepAspectRatio', v)} />
+                    </div>
                     <Input label="Width (X)" value={params.width} onChange={(e) => handleParamChange('width', e.target.value)} unit={unit} />
                     <Input label="Length (Y)" value={params.length} onChange={(e) => handleParamChange('length', e.target.value)} unit={unit} />
                     <Input label="Max Depth (Z)" value={params.maxDepth} onChange={(e) => handleParamChange('maxDepth', e.target.value)} unit={unit} help="Negative value" />

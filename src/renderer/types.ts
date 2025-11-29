@@ -243,6 +243,7 @@ export interface ReliefParams {
 
     // Operation Mode
     operation: 'both' | 'roughing' | 'finishing';
+    keepAspectRatio: boolean;
 }
 
 export interface GeneratorSettings {

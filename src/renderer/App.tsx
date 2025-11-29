@@ -29,7 +29,6 @@ import {
   Zap,
   Terminal,
 } from "./components/Icons";
-import { getMachineStateAtLine } from "./services/gcodeAnalyzer.js";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 

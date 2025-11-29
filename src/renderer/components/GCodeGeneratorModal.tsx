@@ -149,7 +149,7 @@ interface GCodeGeneratorModalProps {
     selectedToolId: number | null;
     onToolSelect: (id: number | null) => void;
     generatorSettings: GeneratorSettings;
-    onSettingsChange: (settings: GeneratorSettings) => void;
+    onSettingsChange: (settings: GeneratorSettings | ((prev: GeneratorSettings) => GeneratorSettings)) => void;
 }
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
@@ -1520,16 +1520,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio'].includes(field);
         const parsedValue = isNumberField ? (value === '' || value === '-' ? value : parseFloat(value as string)) : value;
         if (isNumberField && value !== '' && value !== '-' && isNaN(parsedValue as number)) return;
 
         const tabKey = activeTab as keyof GeneratorSettings;
-        onSettingsChange({
-            ...generatorSettings,
-            [tabKey]: { ...generatorSettings[tabKey], [field]: parsedValue }
-        });
-    }, [activeTab, generatorSettings, onSettingsChange]);
+        onSettingsChange((prevSettings) => ({
+            ...prevSettings,
+            [tabKey]: { ...prevSettings[tabKey], [field]: parsedValue }
+        }));
+    }, [activeTab, onSettingsChange]);
 
     const handleToolChange = useCallback((toolId: number | null) => {
         // First, update the global selected tool ID in the App state
@@ -1539,11 +1539,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Then, persist this change into the generator settings for the active tab
         const tabKey = activeTab as keyof GeneratorSettings;
-        onSettingsChange({
-            ...generatorSettings,
-            [tabKey]: { ...generatorSettings[tabKey], toolId: toolId }
-        });
-    }, [activeTab, generatorSettings, onSettingsChange, onToolSelect]);
+        onSettingsChange((prevSettings) => ({
+            ...prevSettings,
+            [tabKey]: { ...prevSettings[tabKey], toolId: toolId }
+        }));
+    }, [activeTab, onSettingsChange, onToolSelect]);
 
     const currentParams = useMemo(() => {
         return generatorSettings[activeTab as keyof GeneratorSettings];
