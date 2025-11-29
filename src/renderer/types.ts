@@ -213,6 +213,35 @@ export interface ThreadMillingParams {
     toolId: number | null;
 }
 
+export interface ReliefParams {
+    // Image
+    imageDataUrl: string | null;
+    invert: boolean; // If true, dark is high, light is low. Default (false): white is high, black is low.
+
+    // Dimensions
+    width: number | string;
+    length: number | string;
+    maxDepth: number | string; // Maximum depth of the relief (Z range)
+    zSafe: number | string;
+
+    // Roughing
+    roughingEnabled: boolean;
+    roughingToolId: number | null;
+    roughingStepdown: number | string;
+    roughingStepover: number | string; // % of tool diameter
+    roughingStockToLeave: number | string;
+    roughingFeed: number | string;
+    roughingSpindle: number | string;
+
+    // Finishing
+    finishingEnabled: boolean;
+    finishingToolId: number | null;
+    finishingStepover: number | string; // % of tool diameter
+    finishingAngle: number | string; // Raster angle (0 = X, 90 = Y)
+    finishingFeed: number | string;
+    finishingSpindle: number | string;
+}
+
 export interface GeneratorSettings {
     surfacing: SurfacingParams;
     drilling: DrillingParams;
@@ -222,6 +251,7 @@ export interface GeneratorSettings {
     slot: SlotParams;
     text: TextParams;
     thread: ThreadMillingParams;
+    relief: ReliefParams;
 }
 
 export interface TimeEstimate {

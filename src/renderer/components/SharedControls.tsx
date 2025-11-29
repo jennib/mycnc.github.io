@@ -80,11 +80,12 @@ interface ToolSelectorProps {
     colSpan?: string;
     unit: 'mm' | 'in';
     toolLibrary: Tool[];
+    label?: string;
 }
 
-export const ToolSelector: React.FC<ToolSelectorProps> = ({ selectedId, onChange, colSpan = 'col-span-full', unit, toolLibrary }) => (
+export const ToolSelector: React.FC<ToolSelectorProps> = ({ selectedId, onChange, colSpan = 'col-span-full', unit, toolLibrary, label = 'Tool' }) => (
     <div className={colSpan}>
-        <label className="block text-sm font-medium text-text-secondary mb-1">Tool</label>
+        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <select
             value={selectedId || ''}
             onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS, CharacterStroke, CharacterOutline } from '@/services/cncFonts.js';
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams } from '@/types';
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams } from '@/types';
 import SlotGenerator from './SlotGenerator';
 import SurfacingGenerator from './SurfacingGenerator';
 import DrillingGenerator from './DrillingGenerator';
@@ -11,6 +11,7 @@ import ProfileGenerator from './ProfileGenerator';
 import PocketGenerator from './PocketGenerator';
 import ThreadMillingGenerator from './ThreadMillingGenerator';
 import TextGenerator from './TextGenerator';
+import ReliefGenerator from './ReliefGenerator';
 
 interface TabProps {
     label: string;
@@ -1139,6 +1140,216 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return { code, paths, bounds, error: null };
     };
 
+    const generateReliefCode = async (machineSettings: MachineSettings) => {
+        const reliefParams = generatorSettings.relief;
+        if (!reliefParams.imageDataUrl) return { error: "Please upload an image.", code: [], paths: [], bounds: {} };
+
+        const { width, length, maxDepth, zSafe, invert, roughingEnabled, roughingToolId, roughingStepdown, roughingStepover, roughingStockToLeave, roughingFeed, roughingSpindle, finishingEnabled, finishingToolId, finishingStepover, finishingAngle, finishingFeed, finishingSpindle } = reliefParams;
+
+        const numericWidth = parseFloat(String(width));
+        const numericLength = parseFloat(String(length));
+        const numericMaxDepth = parseFloat(String(maxDepth));
+        const numericZSafe = parseFloat(String(zSafe));
+
+        if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN)) {
+            return { error: "Please fill all dimensions with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+
+        // Load Image
+        const img = new Image();
+        img.src = reliefParams.imageDataUrl;
+        try {
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = () => reject(new Error("Failed to load image"));
+            });
+        } catch (e) {
+            return { error: "Failed to load image.", code: [], paths: [], bounds: {} };
+        }
+
+        const canvas = document.createElement('canvas');
+        // Limit resolution for performance if needed, but for now use full res or max 500px
+        const MAX_RES = 500;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX_RES || h > MAX_RES) {
+            const ratio = w / h;
+            if (w > h) { w = MAX_RES; h = MAX_RES / ratio; }
+            else { h = MAX_RES; w = MAX_RES * ratio; }
+        }
+        canvas.width = Math.floor(w);
+        canvas.height = Math.floor(h);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return { error: "Canvas context error.", code: [], paths: [], bounds: {} };
+        ctx.drawImage(img, 0, 0, w, h);
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const pixels = imgData.data;
+
+        const getZAt = (xPct: number, yPct: number) => {
+            const px = Math.floor(xPct * (w - 1));
+            const py = Math.floor(yPct * (h - 1));
+            const idx = (py * w + px) * 4;
+            const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+            const normalized = brightness / 255;
+            // Invert: Dark(0) = High(0), Light(1) = Low(MaxDepth) -> z = normalized * MaxDepth
+            // Normal: White(1) = High(0), Black(0) = Low(MaxDepth) -> z = (1 - normalized) * MaxDepth
+            return invert ? (normalized * numericMaxDepth) : ((1 - normalized) * numericMaxDepth);
+        };
+
+        const code: string[] = [`(--- Relief Carving ---)`, `G21 G90`];
+        const paths: PreviewPath[] = [];
+
+        // --- Roughing ---
+        if (roughingEnabled) {
+            const toolIndex = toolLibrary.findIndex(t => t.id === roughingToolId);
+            if (toolIndex === -1) return { error: "Please select a roughing tool.", code: [], paths: [], bounds: {} };
+            const tool = toolLibrary[toolIndex];
+            const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
+            const stepdown = parseFloat(String(roughingStepdown));
+            const stepover = parseFloat(String(roughingStepover));
+            const stock = parseFloat(String(roughingStockToLeave));
+            const feed = parseFloat(String(roughingFeed));
+            const spindle = parseFloat(String(roughingSpindle));
+
+            if ([stepdown, stepover, stock, feed, spindle].some(isNaN)) return { error: "Invalid roughing parameters.", code: [], paths: [], bounds: {} };
+
+            code.push(`(--- Roughing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
+
+            const stepoverDist = toolDia * (stepover / 100);
+            let currentZ = 0;
+
+            // Z-Level Roughing Loop
+            while (currentZ > numericMaxDepth + stock) {
+                currentZ -= stepdown;
+                if (currentZ < numericMaxDepth + stock) currentZ = numericMaxDepth + stock;
+
+                code.push(`(Roughing Level Z=${currentZ.toFixed(3)})`);
+
+                // Raster X
+                let y = 0;
+                let direction = 1;
+                while (y <= numericLength) {
+                    const yPct = 1 - (y / numericLength); // Image Y is inverted relative to Machine Y usually (Top vs Bottom)
+                    // Actually, let's map Image (0,0) Top-Left to Machine (0, Length) Top-Left.
+                    // So Machine Y = Length corresponds to Image Y = 0.
+                    // Machine Y = 0 corresponds to Image Y = Height.
+
+                    const startX = (direction === 1) ? 0 : numericWidth;
+                    const endX = (direction === 1) ? numericWidth : 0;
+
+                    code.push(`G0 X${startX.toFixed(3)} Y${y.toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${feed}`); // Plunge to layer depth (simplified)
+
+                    // Scan line
+                    const numSteps = Math.ceil(numericWidth / (toolDia / 2)); // Resolution of check
+                    for (let i = 0; i <= numSteps; i++) {
+                        const x = (direction === 1) ? (i / numSteps) * numericWidth : numericWidth - (i / numSteps) * numericWidth;
+                        const xPct = x / numericWidth;
+                        const modelZ = getZAt(xPct, yPct);
+
+                        // If model is higher than current layer + stock, we must cut at model height + stock (or retract)
+                        // If model is lower, we cut at current layer
+                        let cutZ = Math.max(currentZ, modelZ + stock);
+
+                        // Optimization: Don't emit every point, only changes
+                        // For now, simple linear moves
+                        if (i === 0) code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${cutZ.toFixed(3)} F${feed}`);
+                        else code.push(`G1 X${x.toFixed(3)} Z${cutZ.toFixed(3)}`);
+                    }
+
+                    code.push(`G0 Z${numericZSafe}`);
+                    y += stepoverDist;
+                    direction *= -1;
+                }
+            }
+        }
+
+        // --- Finishing ---
+        if (finishingEnabled) {
+            const toolIndex = toolLibrary.findIndex(t => t.id === finishingToolId);
+            if (toolIndex === -1) return { error: "Please select a finishing tool.", code: [], paths: [], bounds: {} };
+            const tool = toolLibrary[toolIndex];
+            const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
+            const stepover = parseFloat(String(finishingStepover));
+            const angle = parseFloat(String(finishingAngle));
+            const feed = parseFloat(String(finishingFeed));
+            const spindle = parseFloat(String(finishingSpindle));
+
+            if ([stepover, angle, feed, spindle].some(isNaN)) return { error: "Invalid finishing parameters.", code: [], paths: [], bounds: {} };
+
+            code.push(`(--- Finishing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
+
+            const stepoverDist = toolDia * (stepover / 100);
+
+            // Simple Raster X (ignoring angle for MVP, or implementing simple 0/90)
+            // Implementing arbitrary angle is complex for raster. Let's stick to X (0) or Y (90).
+            const isYScan = Math.abs(angle - 90) < 45;
+
+            if (!isYScan) {
+                // Scan X, Step Y
+                let y = 0;
+                let direction = 1;
+                while (y <= numericLength) {
+                    const yPct = 1 - (y / numericLength);
+                    const startX = (direction === 1) ? 0 : numericWidth;
+
+                    code.push(`G0 X${startX.toFixed(3)} Y${y.toFixed(3)}`);
+                    // Plunge to first point Z
+                    const startZ = getZAt((direction === 1 ? 0 : 1), yPct);
+                    code.push(`G1 Z${startZ.toFixed(3)} F${feed}`);
+
+                    const numSteps = Math.ceil(numericWidth / (toolDia / 4)); // Higher res for finish
+                    for (let i = 1; i <= numSteps; i++) {
+                        const x = (direction === 1) ? (i / numSteps) * numericWidth : numericWidth - (i / numSteps) * numericWidth;
+                        const xPct = x / numericWidth;
+                        const z = getZAt(xPct, yPct);
+                        code.push(`G1 X${x.toFixed(3)} Z${z.toFixed(3)}`);
+
+                        // Preview path (sampled)
+                        if (i % 5 === 0) {
+                            const prevX = (direction === 1) ? ((i - 5) / numSteps) * numericWidth : numericWidth - ((i - 5) / numSteps) * numericWidth;
+                            paths.push({ d: `M ${prevX} ${y} L ${x} ${y}`, stroke: 'var(--color-accent-yellow)', strokeWidth: '0.5%' });
+                        }
+                    }
+                    y += stepoverDist;
+                    direction *= -1;
+                }
+            } else {
+                // Scan Y, Step X
+                let x = 0;
+                let direction = 1;
+                while (x <= numericWidth) {
+                    const xPct = x / numericWidth;
+                    const startY = (direction === 1) ? 0 : numericLength;
+
+                    code.push(`G0 X${x.toFixed(3)} Y${startY.toFixed(3)}`);
+                    const startZ = getZAt(xPct, (direction === 1 ? 1 : 0)); // y=0 is bottom (pct=1), y=Len is top (pct=0)
+                    code.push(`G1 Z${startZ.toFixed(3)} F${feed}`);
+
+                    const numSteps = Math.ceil(numericLength / (toolDia / 4));
+                    for (let i = 1; i <= numSteps; i++) {
+                        const y = (direction === 1) ? (i / numSteps) * numericLength : numericLength - (i / numSteps) * numericLength;
+                        const yPct = 1 - (y / numericLength);
+                        const z = getZAt(xPct, yPct);
+                        code.push(`G1 Y${y.toFixed(3)} Z${z.toFixed(3)}`);
+
+                        if (i % 5 === 0) {
+                            const prevY = (direction === 1) ? ((i - 5) / numSteps) * numericLength : numericLength - ((i - 5) / numSteps) * numericLength;
+                            paths.push({ d: `M ${x} ${prevY} L ${x} ${y}`, stroke: 'var(--color-accent-yellow)', strokeWidth: '0.5%' });
+                        }
+                    }
+                    x += stepoverDist;
+                    direction *= -1;
+                }
+            }
+        }
+
+        code.push(`G0 Z${numericZSafe}`, `M5`, `G0 X0 Y0`);
+
+        const bounds = { minX: 0, maxX: numericWidth, minY: 0, maxY: numericLength };
+        return { code, paths, bounds, error: null };
+    };
+
     const applyArrayPattern = useCallback((singleOpResult: { code: string[]; paths: PreviewPath[]; bounds: Bounds }) => {
         const { code: singleCode, paths: singlePaths, bounds: singleBounds } = singleOpResult;
         const { pattern, rectCols, rectRows, rectSpacingX, rectSpacingY, circCopies, circRadius, circCenterX, circCenterY, circStartAngle } = arraySettings;
@@ -1232,9 +1443,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return { code: finalCode, paths: finalPaths, bounds: finalBounds, error: null };
     }, [arraySettings]);
 
-    const handleGenerate = useCallback(() => {
+    const handleGenerate = useCallback(async () => {
         setGenerationError(null);
         let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
+
         if (activeTab === 'surfacing') result = generateSurfacingCode(settings);
         else if (activeTab === 'drilling') result = generateDrillingCode(settings);
         else if (activeTab === 'bore') result = generateBoreCode(settings);
@@ -1243,6 +1455,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         else if (activeTab === 'slot') result = generateSlotCode(settings);
         else if (activeTab === 'text') result = generateTextCode(settings);
         else if (activeTab === 'thread') result = generateThreadMillingCode(settings);
+        else if (activeTab === 'relief') result = await generateReliefCode(settings);
 
         if (result.error) {
             setGenerationError(result.error);
@@ -1251,14 +1464,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return;
         }
 
-        const showArray = !['surfacing', 'drilling'].includes(activeTab);
+        const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab); // Disable array for relief too
         if (showArray && arraySettings.isEnabled && result.code.length > 0) {
             result = applyArrayPattern(result);
         }
 
         setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
-    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode]);
+    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, generateReliefCode]);
 
     const handleGenerateRef = React.useRef(handleGenerate);
     useEffect(() => {
@@ -1294,6 +1507,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         // First, update the global selected tool ID in the App state
         onToolSelect(toolId);
 
+        if (activeTab === 'relief') return;
+
         // Then, persist this change into the generator settings for the active tab
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange({
@@ -1317,16 +1532,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     // When the selected tool from outside changes (e.g. from auto-selection),
     // update the active tab's settings
     useEffect(() => {
-        if (selectedToolId !== null && currentParams?.toolId !== selectedToolId) {
+        if (activeTab === 'relief') return;
+        if (selectedToolId !== null && (currentParams as any)?.toolId !== selectedToolId) {
             handleToolChange(selectedToolId);
         }
     }, [selectedToolId, activeTab, currentParams, handleToolChange]);
 
 
-    const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || currentParams.toolId === null;
+    const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null);
 
     const renderPreviewContent = () => {
-        if (!currentParams || currentParams.toolId === null) {
+        if (!currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null)) {
             return (
                 <div className="aspect-square w-full bg-secondary rounded flex items-center justify-center p-4 text-center text-text-secondary" >
                     Please select a tool to generate a preview.
@@ -1367,6 +1583,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
                             <Tab label="Slot" isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
                             <Tab label="Thread Milling" isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
+                            <Tab label="Relief" isActive={activeTab === 'relief'} onClick={() => setActiveTab('relief')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Text & Engraving</div>
                             <Tab label="Text" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                         </div>
@@ -1452,6 +1669,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'thread' && (
                                 <ThreadMillingGenerator
                                     params={generatorSettings.thread as ThreadMillingParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'relief' && (
+                                <ReliefGenerator
+                                    params={generatorSettings.relief as ReliefParams}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
