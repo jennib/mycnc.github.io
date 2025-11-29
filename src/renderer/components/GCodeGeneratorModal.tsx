@@ -329,6 +329,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const selectedTool = toolLibrary[toolIndex];
         if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
+        const toolRadius = toolDiameter / 2;
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, cutSide, tabsEnabled, numTabs, tabWidth, tabHeight, feed, spindle, safeZ } = profileParams;
 
@@ -338,9 +339,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericDiameter = parseFloat(String(diameter));
         const numericDepth = parseFloat(String(depth));
         const numericDepthPerPass = parseFloat(String(depthPerPass));
-        const numericNumTabs = parseFloat(String(numTabs));
-        const numericTabWidth = parseFloat(String(tabWidth));
-        const numericTabHeight = parseFloat(String(tabHeight));
         const numericFeed = parseFloat(String(feed));
         const numericSpindle = parseFloat(String(spindle));
         const numericSafeZ = parseFloat(String(safeZ));
@@ -357,28 +355,130 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
+            `(--- Profile Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
-            // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
-            `G21 G90`, `M3 S${numericSpindle}`];
+            `G21 G90`, `M3 S${numericSpindle}`
+        ];
         const paths: PreviewPath[] = [];
-        const toolRadius = toolDiameter / 2;
+
         let offset = 0;
         if (cutSide === 'outside') offset = toolRadius;
         if (cutSide === 'inside') offset = -toolRadius;
 
-        code.push(`G0 Z${numericSafeZ}`, `M5`);
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+
+        let currentDepth = 0;
+        while (currentDepth > numericDepth) {
+            currentDepth = Math.max(numericDepth, currentDepth - numericDepthPerPass);
+            code.push(`(--- Pass at Z=${currentDepth.toFixed(3)} ---)`);
+
+            if (shape === 'rect') {
+                // Rectangle Logic
+                let effCornerRadius = numericCornerRadius;
+                if (cutSide === 'outside') effCornerRadius += toolRadius;
+                if (cutSide === 'inside') effCornerRadius -= toolRadius;
+                if (effCornerRadius < 0) effCornerRadius = 0;
+
+                // Coordinates of the tool center path
+                const minX = -offset;
+                const maxX = numericWidth + offset;
+                const minY = -offset;
+                const maxY = numericLength + offset;
+
+                // Start point: Bottom-Left, just after the corner
+                const startX = minX + effCornerRadius;
+                const startY = minY;
+
+                code.push(`G0 X${(startX + originOffsetX).toFixed(3)} Y${(startY + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`); // Plunge
+
+                // Bottom Edge
+                code.push(`G1 X${(maxX - effCornerRadius + originOffsetX).toFixed(3)} Y${(minY + originOffsetY).toFixed(3)} F${numericFeed}`);
+
+                // Bottom-Right Corner
+                if (effCornerRadius > 0) {
+                    code.push(`G3 X${(maxX + originOffsetX).toFixed(3)} Y${(minY + effCornerRadius + originOffsetY).toFixed(3)} I0 J${effCornerRadius.toFixed(3)}`);
+                }
+
+                // Right Edge
+                code.push(`G1 X${(maxX + originOffsetX).toFixed(3)} Y${(maxY - effCornerRadius + originOffsetY).toFixed(3)}`);
+
+                // Top-Right Corner
+                if (effCornerRadius > 0) {
+                    code.push(`G3 X${(maxX - effCornerRadius + originOffsetX).toFixed(3)} Y${(maxY + originOffsetY).toFixed(3)} I${(-effCornerRadius).toFixed(3)} J0`);
+                }
+
+                // Top Edge
+                code.push(`G1 X${(minX + effCornerRadius + originOffsetX).toFixed(3)} Y${(maxY + originOffsetY).toFixed(3)}`);
+
+                // Top-Left Corner
+                if (effCornerRadius > 0) {
+                    code.push(`G3 X${(minX + originOffsetX).toFixed(3)} Y${(maxY - effCornerRadius + originOffsetY).toFixed(3)} I0 J${(-effCornerRadius).toFixed(3)}`);
+                }
+
+                // Left Edge
+                code.push(`G1 X${(minX + originOffsetX).toFixed(3)} Y${(minY + effCornerRadius + originOffsetY).toFixed(3)}`);
+
+                // Bottom-Left Corner
+                if (effCornerRadius > 0) {
+                    code.push(`G3 X${(startX + originOffsetX).toFixed(3)} Y${(startY + originOffsetY).toFixed(3)} I${effCornerRadius.toFixed(3)} J0`);
+                }
+
+                // Add to paths (simplified for preview)
+                let d = `M ${(startX + originOffsetX)} ${(startY + originOffsetY)}`;
+                d += ` L ${(maxX - effCornerRadius + originOffsetX)} ${(minY + originOffsetY)}`;
+                if (effCornerRadius > 0) d += ` A ${effCornerRadius} ${effCornerRadius} 0 0 1 ${(maxX + originOffsetX)} ${(minY + effCornerRadius + originOffsetY)}`;
+                d += ` L ${(maxX + originOffsetX)} ${(maxY - effCornerRadius + originOffsetY)}`;
+                if (effCornerRadius > 0) d += ` A ${effCornerRadius} ${effCornerRadius} 0 0 1 ${(maxX - effCornerRadius + originOffsetX)} ${(maxY + originOffsetY)}`;
+                d += ` L ${(minX + effCornerRadius + originOffsetX)} ${(maxY + originOffsetY)}`;
+                if (effCornerRadius > 0) d += ` A ${effCornerRadius} ${effCornerRadius} 0 0 1 ${(minX + originOffsetX)} ${(maxY - effCornerRadius + originOffsetY)}`;
+                d += ` L ${(minX + originOffsetX)} ${(minY + effCornerRadius + originOffsetY)}`;
+                if (effCornerRadius > 0) d += ` A ${effCornerRadius} ${effCornerRadius} 0 0 1 ${(startX + originOffsetX)} ${(startY + originOffsetY)}`;
+
+                paths.push({ d, stroke: 'var(--color-accent-yellow)' });
+
+            } else {
+                // Circle Logic
+                const centerX = numericDiameter / 2;
+                const centerY = numericDiameter / 2;
+                const pathRadius = (numericDiameter / 2) + offset;
+
+                if (pathRadius <= 0) {
+                    continue;
+                }
+
+                // Start at right side
+                const startX = centerX + pathRadius;
+                const startY = centerY;
+
+                code.push(`G0 X${(startX + originOffsetX).toFixed(3)} Y${(startY + originOffsetY).toFixed(3)}`);
+                code.push(`G1 Z${currentDepth.toFixed(3)} F${numericFeed / 2}`); // Plunge
+
+                // Full circle CCW
+                code.push(`G3 X${(startX + originOffsetX).toFixed(3)} Y${(startY + originOffsetY).toFixed(3)} I${(-pathRadius).toFixed(3)} J0 F${numericFeed}`);
+
+                paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: pathRadius, stroke: 'var(--color-accent-yellow)' });
+            }
+        }
+
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        code.push(`M5`);
+        code.push(`G0 X0 Y0`);
+
         const bounds = shape === 'rect' ? {
             minX: -offset + originOffsetX,
             minY: -offset + originOffsetY,
             maxX: numericWidth + offset + originOffsetX,
             maxY: numericLength + offset + originOffsetY
         } : {
-            minX: -(numericDiameter / 2 + offset) + originOffsetX,
-            minY: -(numericDiameter / 2 + offset) + originOffsetY,
-            maxX: (numericDiameter / 2 + offset) + originOffsetX,
-            maxY: (numericDiameter / 2 + offset) + originOffsetY
+            minX: -(numericDiameter / 2 + offset) + originOffsetX + (numericDiameter / 2),
+            minY: -(numericDiameter / 2 + offset) + originOffsetY + (numericDiameter / 2),
+            maxX: (numericDiameter / 2 + offset) + originOffsetX + (numericDiameter / 2),
+            maxY: (numericDiameter / 2 + offset) + originOffsetY + (numericDiameter / 2)
         };
+
         return { code, paths, bounds, error: null };
     };
 
@@ -1212,7 +1312,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             // Use the ref to call the latest handleGenerate without creating an infinite loop
             handleGenerateRef.current();
         }
-    }, [isOpen, generatorSettings, toolLibrary, arraySettings]);
+    }, [isOpen, generatorSettings, toolLibrary, arraySettings, activeTab]);
 
     // When the selected tool from outside changes (e.g. from auto-selection),
     // update the active tab's settings

@@ -40,7 +40,7 @@ export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number):
 
     linesToAnalyze.forEach(line => {
         const upperLine = line.toUpperCase().trim();
-        
+
         // Spindle State (M3, M4, M5)
         if (upperLine.includes('M3') || upperLine.includes('M4')) {
             state.spindle = upperLine.includes('M3') ? 'M3' : 'M4';
@@ -90,7 +90,7 @@ export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number):
 };
 
 // Create a new Web Worker instance
-const analysisWorker = new Worker(new URL('../../services/gcodeAnalysisWorker', import.meta.url), { type: 'module' });
+const analysisWorker = new Worker(new URL('../../services/gcodeAnalysisWorker.ts', import.meta.url), { type: 'module' });
 
 export const analyzeGCodeWithWorker = (gcodeLines: string[], settings: any): Promise<any> => {
     return new Promise((resolve, reject) => {

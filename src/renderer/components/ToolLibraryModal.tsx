@@ -18,7 +18,7 @@ const newToolInitialState: Omit<Tool, 'id'> & { id: number | null, diameter: num
 const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, onSave, library }) => {
     const [localLibrary, setLocalLibrary] = useState<Tool[]>([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id'> & { id: number | null }>(newToolInitialState);
+    const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id' | 'diameter'> & { id: number | null, diameter: number | string }>(newToolInitialState);
 
     useEffect(() => {
         if (isOpen) {
@@ -29,7 +29,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
 
     if (!isOpen) return null;
 
-    const handleEdit = (tool) => {
+    const handleEdit = (tool: Tool) => {
         setCurrentTool(tool);
         setIsEditing(true);
     };
@@ -57,7 +57,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
         handleCancelEdit();
     };
 
-    const handleDelete = (toolId) => {
+    const handleDelete = (toolId: number) => {
         if (window.confirm('Are you sure you want to delete this tool?')) {
             setLocalLibrary(lib => lib.filter(t => t.id !== toolId));
         }

@@ -1,7 +1,7 @@
 name: Build/release
 
 on:
-push:
+  push:
     tags:
       - 'v*'
 
@@ -18,20 +18,19 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
-      - name: Install Node.js, NPM and Yarn
-        uses: actions/setup-node@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
         with:
           # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.github_token }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-          # If the commit is tagged with a version (e.g. "v1.0.0"),
-          # release the app after building
-          release: ${{ startsWith(github.ref, 'refs/tags/v') }}no
+          # Since we only trigger this workflow on tags (see "on:" above),
+          # we can just set this to true.
+          release: true

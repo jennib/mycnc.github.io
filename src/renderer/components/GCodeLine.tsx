@@ -51,15 +51,15 @@ const PARAMETER_DEFINITIONS = {
 };
 
 interface GCodeLineProps {
-  line: string;
-  lineNumber: number;
-  isExecuted: boolean;
-  isCurrent: boolean;
-  isHovered: boolean;
-  onRunFromHere: (lineNumber: number) => void;
-  isActionable: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+    line: string;
+    lineNumber: number;
+    isExecuted: boolean;
+    isCurrent: boolean;
+    isHovered: boolean;
+    onRunFromHere: (lineNumber: number) => void;
+    isActionable: boolean;
+    onMouseEnter: () => void;
+    onMouseLeave: () => void;
 }
 
 
@@ -68,7 +68,7 @@ const GCodeLine: React.FC<GCodeLineProps> = ({ line, lineNumber, isExecuted, isC
     let lastIndex = 0;
     // Regex to find G/M codes, parameters with values, and comments
     const tokenRegex = /([GgMm]\d+(?:\.\d+)?)|([XxYyZzIiJjFfSsPpTt]\s*[-+]?\d+(?:\.\d+)?)|(;.*)|(\(.*\))/g;
-    
+
     let match;
     while ((match = tokenRegex.exec(line)) !== null) {
         // Add text before the match
@@ -81,8 +81,9 @@ const GCodeLine: React.FC<GCodeLineProps> = ({ line, lineNumber, isExecuted, isC
         let el: React.ReactNode = null;
 
         if (match[1]) { // G/M Code
-            const code = upperToken.match(/[GgMm]\d+/)[0];
-            const definition = GCODE_DEFINITIONS[code];
+            const codeMatch = upperToken.match(/[GgMm]\d+/);
+            const code = codeMatch ? codeMatch[0] : upperToken;
+            const definition = GCODE_DEFINITIONS[code as keyof typeof GCODE_DEFINITIONS];
             if (definition) {
                 el = (
                     <Tooltip title={`${code}: ${definition.name}`} content={definition.desc} key={lastIndex}>
@@ -94,7 +95,7 @@ const GCodeLine: React.FC<GCodeLineProps> = ({ line, lineNumber, isExecuted, isC
             }
         } else if (match[2]) { // Parameter
             const param = upperToken[0];
-            const definition = PARAMETER_DEFINITIONS[param];
+            const definition = PARAMETER_DEFINITIONS[param as keyof typeof PARAMETER_DEFINITIONS];
             if (definition) {
                 el = (
                     <Tooltip content={definition} key={lastIndex}>
@@ -118,13 +119,13 @@ const GCodeLine: React.FC<GCodeLineProps> = ({ line, lineNumber, isExecuted, isC
     if (lastIndex < line.length) {
         parts.push(line.substring(lastIndex));
     }
-    
+
     const lineClasses = `flex group rounded-sm transition-colors duration-100 
-        ${isCurrent ? 'bg-primary/30' : 
-           isHovered ? 'bg-white/10' :
-           isExecuted ? 'bg-primary/10' : ''
+        ${isCurrent ? 'bg-primary/30' :
+            isHovered ? 'bg-white/10' :
+                isExecuted ? 'bg-primary/10' : ''
         }`;
-    
+
     const lineNumberClasses = `w-12 text-right pr-2 select-none flex-shrink-0 flex items-center justify-end ${isCurrent ? 'text-accent-red font-bold' : 'text-text-secondary'}`;
 
     return (
@@ -141,9 +142,9 @@ const GCodeLine: React.FC<GCodeLineProps> = ({ line, lineNumber, isExecuted, isC
                 {lineNumber}
             </div>
             <code className="whitespace-pre">
-              {parts.map((part, i) => (
-                <React.Fragment key={i}>{part}</React.Fragment>
-              ))}
+                {parts.map((part, i) => (
+                    <React.Fragment key={i}>{part}</React.Fragment>
+                ))}
             </code>
         </div>
     );

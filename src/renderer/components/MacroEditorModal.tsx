@@ -26,7 +26,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
     if (!isOpen) {
         return null;
     }
-    
+
     const handleSave = () => {
         if (name.trim() === '') {
             return; // Basic validation
@@ -40,6 +40,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
     };
 
     const handleDelete = (): void => {
+        if (!macro || index === null) return;
         if (window.confirm(`Are you sure you want to delete the macro "${macro.name}"?`)) {
             onDelete(index);
             onCancel(); // Close modal on delete
