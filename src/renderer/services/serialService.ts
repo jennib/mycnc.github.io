@@ -30,8 +30,11 @@ export class SerialService {
         }
 
         if (options.type === 'usb') {
-            return this.connectUSB(options.baudRate);
+            return this.connectUSB(options.baudRate || 115200);
         } else if (options.type === 'tcp') {
+            if (!options.ip || !options.port) {
+                throw new Error("IP and Port are required for TCP connection.");
+            }
             return this.connectTCP(options.ip, options.port);
         } else if (options.type === 'simulator') {
             // The controller is responsible for creating the simulator and passing it to connectSimulator

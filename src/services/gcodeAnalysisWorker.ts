@@ -1,16 +1,23 @@
 // src/services/gcodeAnalysisWorker.ts
-import { parseGCode } from '../renderer/services/gcodeParser.ts'; // Adjust path as needed
+import { parseGCode } from '../renderer/services/gcodeParser';
+import { MachineSettings } from '../renderer/types';
 
-const getParam = (gcodeLine, param) => {
+const getParam = (gcodeLine: string, param: string): number | null => {
     // Pre-compile regex for efficiency if this were called many times with different params,
     // but for the fixed params in analyzeGCode, a single regex per param is fine.
-    const regex = new RegExp(`${param}\s*([-+]?[0-9]*\.?[0-9]*)`, 'i');
+    // Note: We use \\s to ensure the regex sees \s (whitespace) and \\. for literal dot.
+    const regex = new RegExp(`${param}\\s*([-+]?[0-9]*\\.?[0-9]*)`, 'i');
     const match = gcodeLine.match(regex);
     return match ? parseFloat(match[1]) : null;
 };
 
-const analyzeGCode = (gcodeLines, settings) => {
-    const warnings = [];
+interface AnalysisWarning {
+    type: 'error' | 'warning';
+    message: string;
+}
+
+const analyzeGCode = (gcodeLines: string[], settings: MachineSettings): AnalysisWarning[] => {
+    const warnings: AnalysisWarning[] = [];
     // Don't analyze if there are no lines
     if (!gcodeLines || gcodeLines.length === 0) {
         return warnings;
@@ -24,28 +31,28 @@ const analyzeGCode = (gcodeLines, settings) => {
     if (bounds.maxX > settings.workArea.x) {
         warnings.push({ type: 'error', message: `Toolpath exceeds machine X+ travel (${bounds.maxX.toFixed(2)}mm > ${settings.workArea.x}mm).` });
     }
-     if (bounds.minX < 0) {
+    if (bounds.minX < 0) {
         warnings.push({ type: 'warning', message: `Toolpath contains negative X coordinates (${bounds.minX.toFixed(2)}mm). Ensure WCS is set correctly.` });
     }
     if (bounds.maxY > settings.workArea.y) {
         warnings.push({ type: 'error', message: `Toolpath exceeds machine Y+ travel (${bounds.maxY.toFixed(2)}mm > ${settings.workArea.y}mm).` });
     }
-     if (bounds.minY < 0) {
+    if (bounds.minY < 0) {
         warnings.push({ type: 'warning', message: `Toolpath contains negative Y coordinates (${bounds.minY.toFixed(2)}mm). Ensure WCS is set correctly.` });
     }
     if (bounds.maxZ > settings.workArea.z) {
         warnings.push({ type: 'warning', message: `Toolpath exceeds machine Z+ travel (${bounds.maxZ.toFixed(2)}mm > ${settings.workArea.z}mm).` });
     }
-     if (bounds.minZ < 0) {
+    if (bounds.minZ < 0) {
         warnings.push({ type: 'warning', message: `Toolpath plunges below Z0 (${bounds.minZ.toFixed(2)}mm). This is normal for cutting, but confirm your Z-zero is on the stock top.` });
     }
-    
+
     // 2. Spindle Speed Check
     let maxSpindle = 0;
     let minSpindle = Infinity;
     let spindleFound = false;
 
-    gcodeLines.forEach(line => {
+    gcodeLines.forEach((line: string) => {
         const upperLine = line.toUpperCase();
         if (upperLine.includes('M3') || upperLine.includes('M4')) {
             const s = getParam(upperLine, 'S');
@@ -70,8 +77,8 @@ const analyzeGCode = (gcodeLines, settings) => {
     return warnings;
 };
 
-self.onmessage = (event) => {
-    const { gcodeLines, settings } = event.data;
+self.onmessage = (event: MessageEvent) => {
+    const { gcodeLines, settings } = event.data as { gcodeLines: string[], settings: MachineSettings };
     const warnings = analyzeGCode(gcodeLines, settings);
     self.postMessage(warnings);
 };
