@@ -100,6 +100,24 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
         }
     }, [params.imageDataUrl]);
 
+    // Redraw canvas when switching back to 2D view
+    useEffect(() => {
+        if (viewMode === '2d' && params.imageDataUrl && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                const aspect = img.width / img.height;
+                canvas.width = 300;
+                canvas.height = 300 / aspect;
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                }
+            };
+            img.src = params.imageDataUrl;
+        }
+    }, [viewMode, params.imageDataUrl]);
+
     return (
         <div className='space-y-4'>
             {/* Image Upload & Settings */}
