@@ -18,22 +18,6 @@ let _previousToolpathColors: Float32Array | null = null;
 let _gcodeLines: string[] = []; // Store raw lines for potential future use (though not currently used for coloring)
 let _machineSettings: any = {};
 
-export interface BoundingBox {
-    minX: number; maxX: number;
-    minY: number; maxY: number;
-    minZ: number; maxZ: number;
-}
-
-export interface ToolpathSegmentMetadata {
-    startVertexIndex: number; // Index in the toolpathVertices array where this segment starts (position values, so 3 per vertex)
-    vertexCount: number; // Number of vertices in this segment
-    boundingBox: BoundingBox;
-    gcodeSegmentIndex: number; // The index of the original GCodeSegment
-}
-
-interface ColorUpdate {
-    offset: number; // Byte offset in the Float32Array
-    data: Float32Array; // The new color data for this section
 }
 
 // Helper function to generate toolpath colors and identify changes
