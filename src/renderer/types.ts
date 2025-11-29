@@ -240,6 +240,9 @@ export interface ReliefParams {
     finishingAngle: number | string; // Raster angle (0 = X, 90 = Y)
     finishingFeed: number | string;
     finishingSpindle: number | string;
+
+    // Operation Mode
+    operation: 'both' | 'roughing' | 'finishing';
 }
 
 export interface GeneratorSettings {

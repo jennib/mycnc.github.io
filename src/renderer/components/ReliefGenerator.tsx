@@ -80,9 +80,26 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                 </div>
             </div>
 
+            {/* Operation Mode */}
+            <div className="border-b border-secondary pb-4">
+                <h3 className="font-bold text-lg mb-2 text-text-primary">2. Operation</h3>
+                <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-text-secondary">Generate:</label>
+                    <select
+                        value={params.operation || 'both'}
+                        onChange={(e) => handleParamChange('operation', e.target.value)}
+                        className="bg-background border border-secondary rounded p-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                    >
+                        <option value="both">Both Roughing & Finishing</option>
+                        <option value="roughing">Roughing Only</option>
+                        <option value="finishing">Finishing Only</option>
+                    </select>
+                </div>
+            </div>
+
             {/* Dimensions */}
             <div className="border-b border-secondary pb-4">
-                <h3 className="font-bold text-lg mb-2 text-text-primary">2. Dimensions</h3>
+                <h3 className="font-bold text-lg mb-2 text-text-primary">3. Dimensions</h3>
                 <div className="grid grid-cols-2 gap-4">
                     <Input label="Width (X)" value={params.width} onChange={(e) => handleParamChange('width', e.target.value)} unit={unit} />
                     <Input label="Length (Y)" value={params.length} onChange={(e) => handleParamChange('length', e.target.value)} unit={unit} />
@@ -94,7 +111,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
             {/* Roughing Pass */}
             <div className="border-b border-secondary pb-4">
                 <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-lg text-text-primary">3. Roughing Pass</h3>
+                    <h3 className="font-bold text-lg text-text-primary">4. Roughing Pass</h3>
                     <Checkbox label="Enable" checked={params.roughingEnabled} onChange={(v) => handleParamChange('roughingEnabled', v)} />
                 </div>
 
@@ -123,7 +140,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
             {/* Finishing Pass */}
             <div>
                 <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-lg text-text-primary">4. Finishing Pass</h3>
+                    <h3 className="font-bold text-lg text-text-primary">5. Finishing Pass</h3>
                     <Checkbox label="Enable" checked={params.finishingEnabled} onChange={(v) => handleParamChange('finishingEnabled', v)} />
                 </div>
 

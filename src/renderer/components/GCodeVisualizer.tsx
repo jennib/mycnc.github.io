@@ -379,6 +379,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         }
 
         const handler = setTimeout(() => {
+            console.log('Visualizer: Sending G-code to worker', gcodeLines.length);
             workerRef.current?.postMessage({
                 type: 'processGCode',
                 gcodeLines,

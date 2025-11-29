@@ -1144,7 +1144,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const reliefParams = generatorSettings.relief;
         if (!reliefParams.imageDataUrl) return { error: "Please upload an image.", code: [], paths: [], bounds: {} };
 
-        const { width, length, maxDepth, zSafe, invert, roughingEnabled, roughingToolId, roughingStepdown, roughingStepover, roughingStockToLeave, roughingFeed, roughingSpindle, finishingEnabled, finishingToolId, finishingStepover, finishingAngle, finishingFeed, finishingSpindle } = reliefParams;
+        const { width, length, maxDepth, zSafe, invert, roughingEnabled, roughingToolId, roughingStepdown, roughingStepover, roughingStockToLeave, roughingFeed, roughingSpindle, finishingEnabled, finishingToolId, finishingStepover, finishingAngle, finishingFeed, finishingSpindle, operation } = reliefParams;
 
         const numericWidth = parseFloat(String(width));
         const numericLength = parseFloat(String(length));
@@ -1153,6 +1153,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN)) {
             return { error: "Please fill all dimensions with valid numbers.", code: [], paths: [], bounds: {} };
+        }
+
+        const doRoughing = (operation === 'both' || operation === 'roughing') && roughingEnabled;
+        const doFinishing = (operation === 'both' || operation === 'finishing') && finishingEnabled;
+
+        if (!doRoughing && !doFinishing) {
+            return { error: "Please enable at least one pass for the selected operation.", code: [], paths: [], bounds: {} };
         }
 
         // Load Image
@@ -1186,8 +1193,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const pixels = imgData.data;
 
         const getZAt = (xPct: number, yPct: number) => {
-            const px = Math.floor(xPct * (w - 1));
-            const py = Math.floor(yPct * (h - 1));
+            const clampedXPct = Math.max(0, Math.min(1, xPct));
+            const clampedYPct = Math.max(0, Math.min(1, yPct));
+            const px = Math.min(w - 1, Math.floor(clampedXPct * (w - 1)));
+            const py = Math.min(h - 1, Math.floor(clampedYPct * (h - 1)));
             const idx = (py * w + px) * 4;
             const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
             const normalized = brightness / 255;
@@ -1196,11 +1205,11 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             return invert ? (normalized * numericMaxDepth) : ((1 - normalized) * numericMaxDepth);
         };
 
-        const code: string[] = [`(--- Relief Carving ---)`, `G21 G90`];
+        const code: string[] = [`(--- Relief Carving ---)`, `(Operation: ${operation})`, `G21 G90`];
         const paths: PreviewPath[] = [];
 
         // --- Roughing ---
-        if (roughingEnabled) {
+        if (doRoughing) {
             const toolIndex = toolLibrary.findIndex(t => t.id === roughingToolId);
             if (toolIndex === -1) return { error: "Please select a roughing tool.", code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
@@ -1265,7 +1274,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
 
         // --- Finishing ---
-        if (finishingEnabled) {
+        if (doFinishing) {
             const toolIndex = toolLibrary.findIndex(t => t.id === finishingToolId);
             if (toolIndex === -1) return { error: "Please select a finishing tool.", code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
@@ -1346,7 +1355,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         code.push(`G0 Z${numericZSafe}`, `M5`, `G0 X0 Y0`);
 
-        const bounds = { minX: 0, maxX: numericWidth, minY: 0, maxY: numericLength };
+        const bounds = { minX: 0, maxX: numericWidth, minY: 0, maxY: numericLength, minZ: numericMaxDepth, maxZ: numericZSafe };
         return { code, paths, bounds, error: null };
     };
 
@@ -1492,7 +1501,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     };
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation'].includes(field);
         const parsedValue = isNumberField ? (value === '' || value === '-' ? value : parseFloat(value as string)) : value;
         if (isNumberField && value !== '' && value !== '-' && isNaN(parsedValue as number)) return;
 
