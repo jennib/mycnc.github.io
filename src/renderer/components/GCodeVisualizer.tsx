@@ -99,32 +99,6 @@ const mat4 = {
         out[14] = a[14] + a[2] * x + a[6] * y + a[10] * z;
         return out;
     },
-    rotate: (out: Float32Array, a: Float32Array, rad: number, axis: number[]) => {
-        let x = axis[0], y = axis[1], z = axis[2], len = Math.hypot(x, y, z);
-        if (len < 1e-6) return null;
-        len = 1 / len; x *= len; y *= len; z *= len;
-        let s = Math.sin(rad), c = Math.cos(rad), t = 1 - c;
-        let a00 = a[0], a01 = a[1], a02 = a[2];
-        let a10 = a[4], a11 = a[5], a12 = a[6];
-        let a20 = a[8], a21 = a[9], a22 = a[10];
-        let b00 = x * x * t + c, b01 = y * x * t + z * s, b02 = z * x * t - y * s;
-        let b10 = x * y * t - z * s, b11 = y * y * t + c, b12 = z * y * t + x * s;
-        let b20 = x * z * t + y * s, b21 = y * z * t - x * s, b22 = z * z * t + c;
-        out[0] = a00 * b00 + a10 * b01 + a20 * b02;
-        out[1] = a01 * b00 + a11 * b01 + a21 * b02;
-        out[2] = a02 * b00 + a12 * b01 + a22 * b02;
-        out[4] = a00 * b10 + a10 * b11 + a20 * b12;
-        out[5] = a01 * b10 + a11 * b11 + a21 * b12;
-        out[6] = a02 * b10 + a12 * b11 + a22 * b12;
-        out[8] = a00 * b20 + a10 * b21 + a20 * b22;
-        out[9] = a01 * b20 + a11 * b21 + a21 * b22;
-        out[10] = a02 * b20 + a12 * b21 + a22 * b22;
-        if (a !== out) {
-            out[3] = a[3]; out[7] = a[7]; out[11] = a[11];
-            out[12] = a[12]; out[13] = a[13]; out[14] = a[14]; out[15] = a[15];
-        }
-        return out;
-    },
     perspective: (out: Float32Array, fovy: number, aspect: number, near: number, far: number) => {
         const f = 1.0 / Math.tan(fovy / 2);
         out[0] = f / aspect; out[1] = 0; out[2] = 0; out[3] = 0;

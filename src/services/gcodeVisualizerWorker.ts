@@ -2,6 +2,28 @@
 
 import { parseGCode, GCodeSegment, GCodePoint } from '../renderer/services/gcodeParser';
 
+// --- Type Definitions ---
+export interface BoundingBox {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+}
+
+export interface ToolpathSegmentMetadata {
+    startVertexIndex: number;
+    vertexCount: number;
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number;
+}
+
+interface ColorUpdate {
+    offset: number;
+    data: Float32Array;
+}
+
 // --- Color Constants (from GCodeVisualizer.tsx) ---
 const RAPID_COLOR = [0.0, 1.0, 1.0, 1.0]; // Cyan, opaque
 const CUTTING_COLOR = [1.0, 0.84, 0.0, 1.0]; // Bright yellow
@@ -18,7 +40,6 @@ let _previousToolpathColors: Float32Array | null = null;
 let _gcodeLines: string[] = []; // Store raw lines for potential future use (though not currently used for coloring)
 let _machineSettings: any = {};
 
-}
 
 // Helper function to generate toolpath colors and identify changes
 const generateToolpathColors = (
@@ -49,42 +70,46 @@ const generateToolpathColors = (
             color = PLUNGE_COLOR;
         } else {
             color = CUTTING_COLOR;
-        }
 
-        // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
-        const metadata = toolpathSegmentMetadata[i];
-        if (!metadata) { // This should not happen if segments and metadata arrays are in sync
-            console.warn(`No metadata found for segment ${i}`);
-            return;
-        }
-
-        const segmentColorData: number[] = [];
-        for (let j = 0; j < metadata.vertexCount; j++) {
-            segmentColorData.push(...color);
-        }
-
-        const segmentColorFloat32 = new Float32Array(segmentColorData);
-
-        // Check if color has changed compared to previousColors
-        const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
-        let changed = false;
-        if (previousColors) {
-            for (let k = 0; k < segmentColorFloat32.length; k++) {
-                if (previousColors[offset + k] !== segmentColorFloat32[k]) {
-                    changed = true;
-                    break;
-                }
+            // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
+            const metadata = toolpathSegmentMetadata[i];
+            if (!metadata) { // This should not happen if segments and metadata arrays are in sync
+                console.warn(`No metadata found for segment ${i}`);
+                return;
             }
-        } else {
-            // If there are no previous colors, it's always a change
-            changed = true;
-        }
 
-        if (changed) {
-            updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
-        }
+            const segmentColorData: number[] = [];
+            for (let j = 0; j < metadata.vertexCount; j++) {
+                segmentColorData.push(...color);
+            }
 
-        newColorsArray.push(...segmentColorData);
+            const segmentColorFloat32 = new Float32Array(segmentColorData);
+
+            // Check if color has changed compared to previousColors
+            const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
+            let changed = false;
+            if (previousColors) {
+                // We only need to check the first vertex's color because the whole segment has the same color
+                // But to be safe and simple, let's just check if the buffer content is different.
+                // Actually, checking every float might be slow.
+                // Optimization: Just check the first 4 floats (first vertex)
+                if (previousColors[offset] !== segmentColorFloat32[0] ||
+                    previousColors[offset + 1] !== segmentColorFloat32[1] ||
+                    previousColors[offset + 2] !== segmentColorFloat32[2] ||
+                    previousColors[offset + 3] !== segmentColorFloat32[3]) {
+                    changed = true;
+                }
+            } else {
+                // If there are no previous colors, it's always a change (initial load)
+                changed = true;
+            }
+
+            if (changed) {
+                updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
+            }
+
+            newColorsArray.push(...segmentColorData);
+        }
     });
 
     return { newColors: new Float32Array(newColorsArray), updates };
@@ -298,6 +323,7 @@ self.onmessage = (event) => {
             gridVertices.push(0, i, 0, workArea.x, i, 0);
         }
 
+
         const wx = workArea.x, wy = workArea.y, wz = workArea.z;
         boundsVertices.push(
             0, 0, 0, wx, 0, 0, wx, 0, 0, wx, wy, 0, wx, wy, 0, 0, wy, 0, 0, wy, 0, 0, 0, 0, // bottom
@@ -392,7 +418,7 @@ self.onmessage = (event) => {
             new Float32Array(axisColors).buffer,
             new Float32Array(planeVertices).buffer,
             new Float32Array(planeColors).buffer
-        ].filter(Boolean) as Transferable[]); // Filter out nulls for toolModel buffers
+        ].filter(Boolean) as any); // Filter out nulls for toolModel buffers
     } else if (type === 'updateColors') {
         if (!_segments || _segments.length === 0 || !_toolpathSegmentMetadata || _toolpathSegmentMetadata.length === 0) return;
 
@@ -408,15 +434,15 @@ self.onmessage = (event) => {
         let toolCurrentPosition: GCodePoint | null = null;
         if (currentLine > 0 && currentLine <= _segments.length) {
             toolCurrentPosition = _segments[currentLine - 1].end;
+
+            const transferableObjects: Transferable[] = [];
+            updates.forEach(update => transferableObjects.push(update.data.buffer));
+
+            self.postMessage({
+                type: 'updatedColors',
+                toolpathColorUpdates: updates,
+                toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
+            }, transferableObjects);
         }
-
-        const transferableObjects: Transferable[] = [];
-        updates.forEach(update => transferableObjects.push(update.data.buffer));
-
-        self.postMessage({
-            type: 'updatedColors',
-            toolpathColorUpdates: updates,
-            toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
-        }, transferableObjects);
     }
-}
+};
