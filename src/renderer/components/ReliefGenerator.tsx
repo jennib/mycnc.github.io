@@ -122,6 +122,29 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                         </div>
                     )}
                     <Checkbox label="Invert Z (Dark = High)" checked={params.invert} onChange={(v) => handleParamChange('invert', v)} />
+
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                        <Input
+                            label="Gamma"
+                            value={params.gamma}
+                            onChange={(e) => handleParamChange('gamma', e.target.value)}
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            max="3.0"
+                            help="1.0 = Neutral. <1 Darker, >1 Lighter"
+                        />
+                        <Input
+                            label="Contrast"
+                            value={params.contrast}
+                            onChange={(e) => handleParamChange('contrast', e.target.value)}
+                            type="number"
+                            step="0.1"
+                            min="0.5"
+                            max="2.0"
+                            help="1.0 = Neutral. Higher = More Pop"
+                        />
+                    </div>
                 </div>
             </div>
 

@@ -1205,7 +1205,21 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 // This should effectively be impossible now with correct stride and clamping
                 return 0;
             }
-            const normalized = brightness / 255;
+            let normalized = brightness / 255;
+
+            // Apply Contrast: (val - 0.5) * contrast + 0.5
+            // We clamp to 0-1 to avoid out of bounds
+            if (reliefParams.contrast !== 1.0) {
+                normalized = (normalized - 0.5) * reliefParams.contrast + 0.5;
+                normalized = Math.max(0, Math.min(1, normalized));
+            }
+
+            // Apply Gamma: val ^ gamma
+            if (reliefParams.gamma !== 1.0) {
+                normalized = Math.pow(normalized, reliefParams.gamma);
+                normalized = Math.max(0, Math.min(1, normalized));
+            }
+
             // Invert: Dark(0) = High(0), Light(1) = Low(MaxDepth) -> z = normalized * MaxDepth
             // Normal: White(1) = High(0), Black(0) = Low(MaxDepth) -> z = (1 - normalized) * MaxDepth
             return invert ? (normalized * numericMaxDepth) : ((1 - normalized) * numericMaxDepth);
