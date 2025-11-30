@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tool, MachineSettings, DrillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
@@ -13,6 +14,7 @@ interface DrillingGeneratorProps {
 }
 
 const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, selectedToolId, onToolSelect }) => {
+    const { t } = useTranslation();
     useEffect(() => {
         console.log('DrillingGenerator params.drillType changed:', params.drillType);
     }, [params.drillType]);
@@ -34,9 +36,9 @@ const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsC
                 selected={params.drillType}
                 onChange={handleTypeChange}
                 options={[
-                    { value: 'single', label: 'Single Hole' },
-                    { value: 'rect', label: 'Rectangular Pattern' },
-                    { value: 'circ', label: 'Circular Pattern' },
+                    { value: 'single', label: t('generators.drilling.singleHole') },
+                    { value: 'rect', label: t('generators.drilling.rectPattern') },
+                    { value: 'circ', label: t('generators.drilling.circPattern') },
                 ]}
             />
 
@@ -44,38 +46,38 @@ const DrillingGenerator: React.FC<DrillingGeneratorProps> = ({ params, onParamsC
 
             {params.drillType === 'single' && (
                 <div className='grid grid-cols-2 gap-4'>
-                    <Input label='X Coordinate' value={params.singleX} onChange={e => handleParamChange('singleX', e.target.value)} unit={unit} />
-                    <Input label='Y Coordinate' value={params.singleY} onChange={e => handleParamChange('singleY', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.xCoord')} value={params.singleX} onChange={e => handleParamChange('singleX', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.yCoord')} value={params.singleY} onChange={e => handleParamChange('singleY', e.target.value)} unit={unit} />
                 </div>
             )}
 
             {params.drillType === 'rect' && (
                 <div className='grid grid-cols-2 gap-4'>
-                    <Input label='Start X' value={params.rectStartX} onChange={e => handleParamChange('rectStartX', e.target.value)} unit={unit} />
-                    <Input label='Start Y' value={params.rectStartY} onChange={e => handleParamChange('rectStartY', e.target.value)} unit={unit} />
-                    <Input label='Columns' value={params.rectCols} onChange={e => handleParamChange('rectCols', e.target.value)} />
-                    <Input label='Rows' value={params.rectRows} onChange={e => handleParamChange('rectRows', e.target.value)} />
-                    <Input label='Spacing (X)' value={params.rectSpacingX} onChange={e => handleParamChange('rectSpacingX', e.target.value)} unit={unit} />
-                    <Input label='Spacing (Y)' value={params.rectSpacingY} onChange={e => handleParamChange('rectSpacingY', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.startX')} value={params.rectStartX} onChange={e => handleParamChange('rectStartX', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.startY')} value={params.rectStartY} onChange={e => handleParamChange('rectStartY', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.columns')} value={params.rectCols} onChange={e => handleParamChange('rectCols', e.target.value)} />
+                    <Input label={t('generators.drilling.rows')} value={params.rectRows} onChange={e => handleParamChange('rectRows', e.target.value)} />
+                    <Input label={t('generators.drilling.spacingX')} value={params.rectSpacingX} onChange={e => handleParamChange('rectSpacingX', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.spacingY')} value={params.rectSpacingY} onChange={e => handleParamChange('rectSpacingY', e.target.value)} unit={unit} />
                 </div>
             )}
 
             {params.drillType === 'circ' && (
                 <div className='grid grid-cols-2 gap-4'>
-                    <Input label='Center X' value={params.circCenterX} onChange={e => handleParamChange('circCenterX', e.target.value)} unit={unit} />
-                    <Input label='Center Y' value={params.circCenterY} onChange={e => handleParamChange('circCenterY', e.target.value)} unit={unit} />
-                    <Input label='Radius' value={params.circRadius} onChange={e => handleParamChange('circRadius', e.target.value)} unit={unit} />
-                    <Input label='Number of Holes' value={params.circHoles} onChange={e => handleParamChange('circHoles', e.target.value)} />
-                    <Input label='Start Angle' value={params.circStartAngle} onChange={e => handleParamChange('circStartAngle', e.target.value)} unit='°' />
+                    <Input label={t('generators.drilling.centerX')} value={params.circCenterX} onChange={e => handleParamChange('circCenterX', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.centerY')} value={params.circCenterY} onChange={e => handleParamChange('circCenterY', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.radius')} value={params.circRadius} onChange={e => handleParamChange('circRadius', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drilling.numHoles')} value={params.circHoles} onChange={e => handleParamChange('circHoles', e.target.value)} />
+                    <Input label={t('generators.drilling.startAngle')} value={params.circStartAngle} onChange={e => handleParamChange('circStartAngle', e.target.value)} unit='°' />
                 </div>
             )}
 
             <hr className='border-secondary' />
 
             <div className='grid grid-cols-2 gap-4'>
-                <Input label='Final Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help='Should be negative' />
-                <Input label='Peck Depth' value={params.peck} onChange={e => handleParamChange('peck', e.target.value)} unit={unit} help='Incremental depth per peck' />
-                <Input label='Retract Height' value={params.retract} onChange={e => handleParamChange('retract', e.target.value)} unit={unit} help='Height to retract to between pecks' />
+                <Input label={t('generators.drilling.finalDepth')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help={t('generators.drilling.shouldBeNegative')} />
+                <Input label={t('generators.drilling.peckDepth')} value={params.peck} onChange={e => handleParamChange('peck', e.target.value)} unit={unit} help={t('generators.drilling.peckHelp')} />
+                <Input label={t('generators.drilling.retractHeight')} value={params.retract} onChange={e => handleParamChange('retract', e.target.value)} unit={unit} help={t('generators.drilling.retractHelp')} />
             </div>
 
             <SpindleAndFeedControls params={params} onParamChange={(field, value) => handleParamChange(field, value)} unit={unit} />

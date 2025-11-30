@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Trash2, X } from './Icons';
 import { Macro } from '@/types';
 
@@ -12,6 +13,7 @@ interface MacroEditorModalProps {
 }
 
 const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, onSave, onDelete, macro, index }) => {
+    const { t } = useTranslation();
     const isEditing = macro != null && index != null;
     const [name, setName] = useState('');
     const [commands, setCommands] = useState('');
@@ -41,7 +43,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
 
     const handleDelete = (): void => {
         if (!macro || index === null) return;
-        if (window.confirm(`Are you sure you want to delete the macro "${macro.name}"?`)) {
+        if (window.confirm(t('macro.deleteConfirm', { name: macro.name }))) {
             onDelete(index);
             onCancel(); // Close modal on delete
         }
@@ -59,7 +61,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-text-primary">{isEditing ? 'Edit Macro' : 'Add New Macro'}</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{isEditing ? t('macro.editTitle') : t('macro.addTitle')}</h2>
                     <button
                         onClick={onCancel}
                         className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary"
@@ -69,28 +71,28 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                 </div>
                 <div className="p-6 space-y-4">
                     <div>
-                        <label htmlFor="macro-name" className="block text-sm font-medium text-text-secondary mb-1">Macro Name</label>
+                        <label htmlFor="macro-name" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.name')}</label>
                         <input
                             id="macro-name"
                             type="text"
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            placeholder="e.g., Probe Z-Axis"
+                            placeholder={t('macro.namePlaceholder')}
                             className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                         />
                     </div>
                     <div>
-                        <label htmlFor="macro-commands" className="block text-sm font-medium text-text-secondary mb-1">G-Code Commands</label>
+                        <label htmlFor="macro-commands" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.commands')}</label>
                         <textarea
                             id="macro-commands"
                             value={commands}
                             onChange={e => setCommands(e.target.value)}
                             rows={8}
-                            placeholder={'G21\nG90\nG0 Z10\n...'}
+                            placeholder={t('macro.commandsPlaceholder')}
                             className="w-full bg-background border border-secondary rounded-md py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                             spellCheck="false"
                         />
-                        <p className="text-xs text-text-secondary mt-1">Enter one G-code command per line.</p>
+                        <p className="text-xs text-text-secondary mt-1">{t('macro.help')}</p>
                     </div>
                 </div>
                 <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg">
@@ -100,7 +102,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                             className="flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background"
                         >
                             <Trash2 className="w-5 h-5" />
-                            Delete
+                            {t('macro.delete')}
                         </button>
                     ) : <div />}
                     <div className="flex items-center gap-4">
@@ -108,7 +110,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                             onClick={onCancel}
                             className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             onClick={handleSave}
@@ -116,7 +118,7 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                             className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             <Save className="w-5 h-5" />
-                            Save
+                            {t('common.save')}
                         </button>
                     </div>
                 </div>

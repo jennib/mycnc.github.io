@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Power, PowerOff } from './Icons';
 import { PortInfo, ConnectionOptions } from '@/types'; // Import PortInfo and ConnectionOptions
 
@@ -25,6 +26,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     onSimulatorChange,
     isElectron,
 }) => {
+    const { t } = useTranslation();
     const [tcpIp, setTcpIp] = useState('10.0.0.162');
     const [tcpPort, setTcpPort] = useState(8889); // Default GRBL port
     const [connectionType, setConnectionType] = useState<'usb' | 'tcp'>('usb');
@@ -38,15 +40,15 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     };
 
     const displayPortName = () => {
-        if (!portInfo) return 'Not Connected';
+        if (!portInfo) return t('connection.notConnected');
         if (portInfo.type === 'usb') {
             return portInfo.manufacturer
                 ? `${portInfo.manufacturer} (${portInfo.portName})`
                 : portInfo.portName;
         } else if (portInfo.type === 'tcp') {
-            return `TCP: ${portInfo.portName}`;
+            return `${t('connection.tcp')}: ${portInfo.portName}`;
         }
-        return 'Unknown Port';
+        return t('connection.unknownPort');
     };
 
     return (
@@ -61,7 +63,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                     className="h-4 w-4 rounded border-secondary text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                 />
                 <label htmlFor="simulator-checkbox" className={`text-sm ${isConnected ? 'text-text-secondary' : ''}`}>
-                    Use Simulator
+                    {t('connection.useSimulator')}
                 </label>
             </div>
 
@@ -78,7 +80,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         className="h-4 w-4 text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                     />
                     <label htmlFor="usb-connection" className={`text-sm ${isConnected ? 'text-text-secondary' : ''}`}>
-                        USB
+                        {t('connection.usb')}
                     </label>
                     <input
                         type="radio"
@@ -91,7 +93,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         className="h-4 w-4 text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                     />
                     <label htmlFor="tcp-connection" className={`text-sm ${isConnected ? 'text-text-secondary' : ''}`}>
-                        TCP
+                        {t('connection.tcp')}
                     </label>
                 </div>
             )}
@@ -100,7 +102,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                 <div className="flex items-center gap-2">
                     <input
                         type="text"
-                        placeholder="IP Address"
+                        placeholder={t('connection.ip')}
                         value={tcpIp}
                         onChange={(e) => setTcpIp(e.target.value)}
                         className="w-32 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
@@ -108,7 +110,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                     />
                     <input
                         type="number"
-                        placeholder="Port"
+                        placeholder={t('connection.port')}
                         value={tcpPort}
                         onChange={(e) => setTcpPort(parseInt(e.target.value))}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
@@ -120,12 +122,12 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
             {isConnected ? (
                 <button onClick={onDisconnect} className="flex items-center gap-2 px-4 py-2 bg-accent-yellow text-black font-semibold rounded-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-background transition-colors">
                     <PowerOff className="w-5 h-5" />
-                    Disconnect
+                    {t('connection.disconnect')}
                 </button>
             ) : (
                 <button onClick={handleConnect} disabled={(!isApiSupported && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort))} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed">
                     <Power className="w-5 h-5" />
-                    Connect
+                    {t('connection.connect')}
                 </button>
             )}
         </div>

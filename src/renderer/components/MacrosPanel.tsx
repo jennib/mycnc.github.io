@@ -1,5 +1,5 @@
-
 import React, { useState, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Zap, Pencil, CheckCircle, PlusCircle, ChevronDown, ChevronUp } from './Icons';
 
 interface Macro {
@@ -17,6 +17,7 @@ interface MacrosPanelProps {
 }
 
 const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEditor, isEditMode, onToggleEditMode, disabled }) => {
+    const { t } = useTranslation();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
@@ -42,7 +43,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
             >
                 <div className="flex items-center gap-2 text-lg font-bold">
                     <Zap className="w-5 h-5 text-primary" />
-                    Macros
+                    {t('macros.title')}
                 </div>
                 <div className="flex items-center gap-4">
                     <button
@@ -58,11 +59,11 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                     >
                         {isEditMode ? (
                             <Fragment>
-                                <CheckCircle className="w-4 h-4 text-accent-green" /> Done
+                                <CheckCircle className="w-4 h-4 text-accent-green" /> {t('common.done')}
                             </Fragment>
                         ) : (
                             <Fragment>
-                                <Pencil className="w-4 h-4" /> Edit
+                                <Pencil className="w-4 h-4" /> {t('common.edit')}
                             </Fragment>
                         )}
                     </button>
@@ -79,7 +80,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleButtonClick(e, index)}
                                 disabled={disabled && !isEditMode}
                                 className="relative p-3 bg-secondary rounded-md text-sm font-semibold hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed text-left"
-                                title={isEditMode ? `Edit "${macro.name}"` : macro.commands.join('; ')}
+                                title={isEditMode ? t('macros.editTooltip', { name: macro.name }) : macro.commands.join('; ')}
                             >
                                 {macro.name}
                                 {isEditMode && (
@@ -95,7 +96,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                                 className="p-3 border-2 border-dashed border-secondary rounded-md text-sm font-semibold text-text-secondary hover:border-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface flex flex-col items-center justify-center gap-1"
                             >
                                 <PlusCircle className="w-6 h-6" />
-                                Add Macro
+                                {t('macros.add')}
                             </button>
                         )}
                     </div>

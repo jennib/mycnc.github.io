@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from './Icons';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS, CharacterStroke, CharacterOutline } from '@/services/cncFonts.js';
@@ -153,7 +154,9 @@ interface GCodeGeneratorModalProps {
 }
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState(() => localStorage.getItem('generatorActiveTab') || 'surfacing');
+    const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab);
 
     useEffect(() => {
         localStorage.setItem('generatorActiveTab', activeTab);
@@ -202,9 +205,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateDrillingCode = (machineSettings: MachineSettings) => {
         const drillParams = generatorSettings.drilling;
         const toolIndex = toolLibrary.findIndex(t => t.id === drillParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
 
         const { depth, peck, retract, feed, spindle, safeZ } = drillParams;
 
@@ -238,7 +241,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const numericSingleX = parseFloat(String(drillParams.singleX));
             const numericSingleY = parseFloat(String(drillParams.singleY));
             if (isNaN(numericSingleX) || isNaN(numericSingleY)) {
-                return { error: "Please fill all required fields with valid numbers for single drilling.", code: [], paths: [], bounds: {} };
+                return { error: t('generators.errors.fillRequiredSingle'), code: [], paths: [], bounds: {} };
             }
             points.push({ x: numericSingleX + originOffsetX, y: numericSingleY + originOffsetY });
         } else if (drillParams.drillType === 'rect') {
@@ -250,7 +253,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const numericRectStartY = parseFloat(String(drillParams.rectStartY));
 
             if ([numericRectCols, numericRectRows, numericRectSpacingX, numericRectSpacingY, numericRectStartX, numericRectStartY].some(isNaN)) {
-                return { error: "Please fill all required fields with valid numbers for rectangular drilling.", code: [], paths: [], bounds: {} };
+                return { error: t('generators.errors.fillRequiredRect'), code: [], paths: [], bounds: {} };
             }
 
             for (let row = 0; row < numericRectRows; row++) {
@@ -269,7 +272,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const numericCircStartAngle = parseFloat(String(drillParams.circStartAngle));
 
             if ([numericCircHoles, numericCircRadius, numericCircCenterX, numericCircCenterY, numericCircStartAngle].some(isNaN)) {
-                return { error: "Please fill all required fields with valid numbers for circular drilling.", code: [], paths: [], bounds: {} };
+                return { error: t('generators.errors.fillRequiredCirc'), code: [], paths: [], bounds: {} };
             }
 
             const angleStep = numericCircHoles > 0 ? 360 / numericCircHoles : 0;
@@ -326,9 +329,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateProfileCode = (machineSettings: MachineSettings) => {
         const profileParams = generatorSettings.profile;
         const toolIndex = toolLibrary.findIndex(t => t.id === profileParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
         const toolRadius = toolDiameter / 2;
 
@@ -345,13 +348,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass <= 0) {
-            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthPositive'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass > Math.abs(numericDepth)) {
-            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthTooLarge'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -488,9 +491,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateSurfacingCode = (machineSettings: MachineSettings) => {
         const surfaceParams = generatorSettings.surfacing;
         const toolIndex = toolLibrary.findIndex(t => t.id === surfaceParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
 
         const { width, length, depth, stepover, feed, spindle, safeZ, direction } = surfaceParams;
 
@@ -503,7 +506,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericWidth, numericLength, numericDepth, numericStepover, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -562,9 +565,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generatePocketCode = (machineSettings: MachineSettings) => {
         const pocketParams = generatorSettings.pocket;
         const toolIndex = toolLibrary.findIndex(t => t.id === pocketParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ } = pocketParams;
 
@@ -581,13 +584,13 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDepth, numericDepthPerPass, numericStepover, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (shape === 'rect' && ([numericWidth, numericLength].some(isNaN))) || (shape === 'circ' && isNaN(numericDiameter))) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass <= 0) {
-            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthPositive'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass > Math.abs(numericDepth)) {
-            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthTooLarge'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -650,9 +653,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateBoreCode = (machineSettings: MachineSettings) => {
         const boreParams = generatorSettings.bore;
         const toolIndex = toolLibrary.findIndex(t => t.id === boreParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
 
         const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ } = boreParams;
 
@@ -669,27 +672,27 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericCenterX, numericCenterY, numericHoleDiameter, numericHoleDepth, numericDepthPerPass, numericFeed, numericPlungeFeed, numericSpindle, numericSafeZ].some(isNaN) || (counterboreEnabled && ([numericCbDiameter, numericCbDepth].some(isNaN)))) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
 
         if (numericHoleDiameter <= (selectedTool.diameter === '' ? 0 : selectedTool.diameter)) {
-            return { error: "Tool must be smaller than hole diameter.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.toolTooLargeHole'), code: [], paths: [], bounds: {} };
         }
         if (counterboreEnabled && numericCbDiameter <= (selectedTool.diameter === '' ? 0 : selectedTool.diameter)) {
-            return { error: "Tool must be smaller than counterbore diameter.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.toolTooLargeCb'), code: [], paths: [], bounds: {} };
         }
         if (counterboreEnabled && numericCbDiameter <= numericHoleDiameter) {
-            return { error: "Counterbore must be larger than hole diameter.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.cbTooSmall'), code: [], paths: [], bounds: {} };
         }
 
         if (numericDepthPerPass <= 0) {
-            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthPositive'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass > Math.abs(numericHoleDepth)) {
-            return { error: "Depth per Pass cannot be greater than total Hole Depth.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthTooLargeHole'), code: [], paths: [], bounds: {} };
         }
         if (counterboreEnabled && numericDepthPerPass > Math.abs(numericCbDepth)) {
-            return { error: "Depth per Pass cannot be greater than total Counterbore Depth.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthTooLargeCb'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -788,9 +791,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateSlotCode = (machineSettings: MachineSettings) => {
         const slotParams = generatorSettings.slot;
         const toolIndex = toolLibrary.findIndex(t => t.id === slotParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
         const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle } = slotParams;
@@ -812,14 +815,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericEndAngle = parseFloat(String(endAngle));
 
         if ([numericSlotWidth, numericDepth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || (type === 'straight' && [numericStartX, numericStartY, numericEndX, numericEndY].some(isNaN)) || (type === 'arc' && [numericCenterX, numericCenterY, numericRadius, numericStartAngle, numericEndAngle].some(isNaN))) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
 
         if (numericDepthPerPass <= 0) {
-            return { error: "Depth per Pass must be a positive number.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthPositive'), code: [], paths: [], bounds: {} };
         }
         if (numericDepthPerPass > Math.abs(numericDepth)) {
-            return { error: "Depth per Pass cannot be greater than total Depth.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.depthTooLarge'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -927,9 +930,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateTextCode = (machineSettings: MachineSettings) => {
         const textParams = generatorSettings.text;
         const toolIndex = toolLibrary.findIndex(t => t.id === textParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
 
         const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ } = textParams;
 
@@ -943,12 +946,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericHeight, numericSpacing, numericStartX, numericStartY, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || !text) {
-            return { error: "Please fill all required fields with valid numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
 
         const fontData = FONTS[font as keyof typeof FONTS];
         if (!fontData) {
-            return { error: `Font "${font}" not found.`, code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.invalidFont'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -1049,9 +1052,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateThreadMillingCode = (machineSettings: MachineSettings) => {
         const threadParams = generatorSettings.thread;
         const toolIndex = toolLibrary.findIndex(t => t.id === threadParams.toolId);
-        if (toolIndex === -1) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
-        if (!selectedTool) return { error: "Please select a tool.", code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
         const { type, hand, feed, spindle, safeZ } = threadParams;
@@ -1063,10 +1066,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericSafeZ = parseFloat(String(safeZ));
 
         if ([numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || [numericDiameter, numericPitch, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(p => p <= 0)) {
-            return { error: "Please fill all fields with positive values.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
         if (toolDiameter >= numericDiameter && type === 'internal') {
-            return { error: "Tool diameter must be smaller than thread diameter for internal threads.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.threadDiameterTooSmall'), code: [], paths: [], bounds: {} };
         }
 
         // Default to 0,0 offset for front_left_top
@@ -1098,7 +1101,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             helicalDirection = (hand === 'right') ? 'G2' : 'G3'; // CW for RH external climb
         }
 
-        if (pathRadius <= 0) return { error: "Invalid tool/thread diameter combination.", code: [], paths: [], bounds: {} };
+        if (pathRadius <= 0) return { error: t('generators.errors.pitchTooLarge'), code: [], paths: [], bounds: {} };
 
         // Preview paths
         paths.push({ cx: centerX + originOffsetX, cy: centerY + originOffsetY, r: numericDiameter / 2, stroke: 'var(--color-text-secondary)', strokeDasharray: '4 2', strokeWidth: '2%', fill: 'none' });
@@ -1142,7 +1145,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
     const generateReliefCode = async (machineSettings: MachineSettings) => {
         const reliefParams = generatorSettings.relief;
-        if (!reliefParams.imageDataUrl) return { error: "Please upload an image.", code: [], paths: [], bounds: {} };
+        if (!reliefParams.imageDataUrl) return { error: t('generators.errors.noImage'), code: [], paths: [], bounds: {} };
 
         const { width, length, maxDepth, zSafe, invert, roughingEnabled, roughingToolId, roughingStepdown, roughingStepover, roughingStockToLeave, roughingFeed, roughingSpindle, finishingEnabled, finishingToolId, finishingStepover, finishingAngle, finishingFeed, finishingSpindle, operation } = reliefParams;
 
@@ -1152,14 +1155,14 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const numericZSafe = parseFloat(String(zSafe));
 
         if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN) || numericWidth <= 0 || numericLength <= 0) {
-            return { error: "Please fill all dimensions with valid positive numbers.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
         }
 
         const doRoughing = (operation === 'both' || operation === 'roughing') && roughingEnabled;
         const doFinishing = (operation === 'both' || operation === 'finishing') && finishingEnabled;
 
         if (!doRoughing && !doFinishing) {
-            return { error: "Please enable at least one pass for the selected operation.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.enablePass'), code: [], paths: [], bounds: {} };
         }
 
         // Load Image
@@ -1171,7 +1174,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 img.onerror = () => reject(new Error("Failed to load image"));
             });
         } catch (e) {
-            return { error: "Failed to load image.", code: [], paths: [], bounds: {} };
+            return { error: t('generators.errors.loadImage'), code: [], paths: [], bounds: {} };
         }
 
         const canvas = document.createElement('canvas');
@@ -1187,7 +1190,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         canvas.width = Math.floor(w);
         canvas.height = Math.floor(h);
         const ctx = canvas.getContext('2d');
-        if (!ctx) return { error: "Canvas context error.", code: [], paths: [], bounds: {} };
+        if (!ctx) return { error: t('generators.errors.canvasError'), code: [], paths: [], bounds: {} };
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imgData.data;
@@ -1231,10 +1234,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         // --- Roughing ---
         if (doRoughing) {
             const toolIndex = toolLibrary.findIndex(t => t.id === roughingToolId);
-            if (toolIndex === -1) return { error: "Please select a roughing tool.", code: [], paths: [], bounds: {} };
+            if (toolIndex === -1) return { error: t('generators.errors.roughingTool'), code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
             const toolDia = parseFloat(String(tool.diameter || 0));
-            if (isNaN(toolDia) || toolDia <= 0) return { error: "Roughing tool diameter must be a valid positive number.", code: [], paths: [], bounds: {} };
+            if (isNaN(toolDia) || toolDia <= 0) return { error: t('generators.errors.roughingParams'), code: [], paths: [], bounds: {} };
 
             const stepdown = parseFloat(String(roughingStepdown));
             const stepover = parseFloat(String(roughingStepover));
@@ -1242,7 +1245,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const feed = parseFloat(String(roughingFeed));
             const spindle = parseFloat(String(roughingSpindle));
 
-            if ([stepdown, stepover, stock, feed, spindle].some(isNaN)) return { error: "Invalid roughing parameters.", code: [], paths: [], bounds: {} };
+            if ([stepdown, stepover, stock, feed, spindle].some(isNaN)) return { error: t('generators.errors.roughingParams'), code: [], paths: [], bounds: {} };
 
             code.push(`(--- Roughing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
 
@@ -1284,7 +1287,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
                         if (isNaN(cutZ)) {
                             console.error('NaN cutZ detected', { currentZ, modelZ, stock, xPct, yPct, x, y });
-                            return { error: "Calculation error: NaN detected.", code: [], paths: [], bounds: {} };
+                            return { error: t('generators.errors.calcError'), code: [], paths: [], bounds: {} };
                         }
 
                         // Optimization: Don't emit every point, only changes
@@ -1309,7 +1312,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         // --- Finishing ---
         if (doFinishing) {
             const toolIndex = toolLibrary.findIndex(t => t.id === finishingToolId);
-            if (toolIndex === -1) return { error: "Please select a finishing tool.", code: [], paths: [], bounds: {} };
+            if (toolIndex === -1) return { error: t('generators.errors.finishingTool'), code: [], paths: [], bounds: {} };
             const tool = toolLibrary[toolIndex];
             const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
             const stepover = parseFloat(String(finishingStepover));
@@ -1317,7 +1320,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             const feed = parseFloat(String(finishingFeed));
             const spindle = parseFloat(String(finishingSpindle));
 
-            if ([stepover, angle, feed, spindle].some(isNaN)) return { error: "Invalid finishing parameters.", code: [], paths: [], bounds: {} };
+            if ([stepover, angle, feed, spindle].some(isNaN)) return { error: t('generators.errors.finishingParams'), code: [], paths: [], bounds: {} };
 
             code.push(`(--- Finishing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
 
@@ -1609,7 +1612,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="bg-surface rounded-lg shadow-2xl w-full max-w-4xl border border-secondary transform transition-all max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-text-primary">G-Code Generator</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{t('generators.common.title')}</h2>
                     <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary">
                         <X className="w-6 h-6" />
                     </button>
@@ -1617,7 +1620,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 <div className="p-6 flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto">
                     <div className="space-y-4">
                         <div className="flex border-b border-secondary flex-wrap">
-                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider">Milling</div>
+                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider">{t('generators.common.milling')}</div>
                             <Tab label="Surfacing" isActive={activeTab === 'surfacing'} onClick={() => setActiveTab('surfacing')} />
                             <Tab label="Drilling" isActive={activeTab === 'drilling'} onClick={() => setActiveTab('drilling')} />
                             <Tab label="Bore" isActive={activeTab === 'bore'} onClick={() => setActiveTab('bore')} />
@@ -1626,7 +1629,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label="Slot" isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
                             <Tab label="Thread Milling" isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
                             <Tab label="Relief" isActive={activeTab === 'relief'} onClick={() => setActiveTab('relief')} />
-                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Text & Engraving</div>
+                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">{t('generators.common.textEngraving')}</div>
                             <Tab label="Text" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                         </div>
                         <div className="py-4">
@@ -1731,29 +1734,34 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                 />
                             )}
                         </div>
+                        {showArray && (
+                            <div className="mt-4 border-t border-secondary pt-4">
+                                <ArrayControls settings={arraySettings} onChange={setArraySettings} unit={unit} />
+                            </div>
+                        )}
                     </div>
                     <div className="bg-background p-4 rounded-md flex flex-col gap-4">
                         <div className="flex justify-between items-center border-b border-secondary pb-2 mb-2">
                             <div className="flex items-center gap-2">
-                                <h3 className="font-bold">2D Preview</h3>
+                                <h3 className="font-bold">{t('generators.relief.previewTitle')}</h3>
                                 <button
                                     onClick={handleGenerate}
                                     title="Regenerate G-Code and Preview"
                                     className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
                                 >
                                     <Zap className="w-4 h-4" />
-                                    Generate
+                                    {t('generators.common.generate')}
                                 </button>
                             </div>
 
                             <div className="flex items-center gap-1">
-                                <button onClick={() => handleZoom(1.5)} title="Zoom Out" className="p-1.5 rounded-md hover:bg-secondary">
+                                <button onClick={() => handleZoom(1.5)} title={t('gcode.view.zoomOut')} className="p-1.5 rounded-md hover:bg-secondary">
                                     <ZoomOut className="w-5 h-5 text-text-secondary" />
                                 </button>
-                                <button onClick={() => handleZoom(1 / 1.5)} title="Zoom In" className="p-1.5 rounded-md hover:bg-secondary">
+                                <button onClick={() => handleZoom(1 / 1.5)} title={t('gcode.view.zoomIn')} className="p-1.5 rounded-md hover:bg-secondary">
                                     <ZoomIn className="w-5 h-5 text-text-secondary" />
                                 </button>
-                                <button onClick={fitView} title="Fit to View" className="p-1.5 rounded-md hover:bg-secondary">
+                                <button onClick={fitView} title={t('gcode.view.fit')} className="p-1.5 rounded-md hover:bg-secondary">
                                     <Maximize className="w-5 h-5 text-text-secondary" />
                                 </button>
                             </div>
@@ -1769,7 +1777,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 </div>
                 <div className="bg-background px-6 py-4 flex justify-end gap-4 rounded-b-lg">
                     <button onClick={onClose} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                     <button
                         onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)}
@@ -1778,7 +1786,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Save className="w-5 h-5" />
-                        Load into Sender
+                        {t('generators.relief.loadSender')}
                     </button>
                 </div>
             </div>

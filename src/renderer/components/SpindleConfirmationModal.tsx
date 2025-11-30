@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Zap, ZapOff } from './Icons';
 
 interface SpindleConfirmationModalProps {
@@ -9,16 +10,21 @@ interface SpindleConfirmationModalProps {
     message?: string;
 }
 
-const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({ 
-    isOpen, 
-    onClose, 
+const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
+    isOpen,
+    onClose,
     onConfirm,
-    title = "Confirm Spindle State",
-    message = "Do you want to turn the spindle on before proceeding?"
+    title,
+    message
 }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) {
         return null;
     }
+
+    const displayTitle = title || t('spindleConfirm.title');
+    const displayMessage = message || t('spindleConfirm.message');
 
     return (
         <div
@@ -32,7 +38,7 @@ const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{displayTitle}</h2>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary"
@@ -42,7 +48,7 @@ const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
                     </button>
                 </div>
                 <div className="p-6">
-                    <p className="text-text-primary text-lg">{message}</p>
+                    <p className="text-text-primary text-lg">{displayMessage}</p>
                 </div>
                 <div className="bg-background px-6 py-4 flex justify-end items-center gap-4 rounded-b-lg">
                     <button
@@ -50,7 +56,7 @@ const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
                         onClick={onClose}
                         className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus"
                     >
-                        Cancel
+                        {t('common.cancel')}
                     </button>
                     <button
                         type="button"
@@ -58,7 +64,7 @@ const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
                         className="px-6 py-2 bg-accent-yellow text-black font-bold rounded-md hover:bg-yellow-500 flex items-center gap-2"
                     >
                         <ZapOff className="w-5 h-5" />
-                        Continue without Spindle
+                        {t('spindleConfirm.continueNoSpindle')}
                     </button>
                     <button
                         type="button"
@@ -66,7 +72,7 @@ const SpindleConfirmationModal: React.FC<SpindleConfirmationModalProps> = ({
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2"
                     >
                         <Zap className="w-5 h-5" />
-                        Start Spindle
+                        {t('spindleConfirm.startSpindle')}
                     </button>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tool, MachineSettings, ReliefParams } from '@/types';
 import { ToolSelector, Input, Checkbox, SpindleAndFeedControls } from './SharedControls';
 import { Slider } from './Slider';
@@ -15,6 +16,7 @@ interface ReliefGeneratorProps {
 }
 
 const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, selectedToolId, onToolSelect }) => {
+    const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -122,7 +124,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
         <div className='space-y-4'>
             {/* Image Upload & Settings */}
             <div className="border-b border-secondary pb-4">
-                <h3 className="font-bold text-lg mb-2 text-text-primary">1. Source Image</h3>
+                <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.sourceImage')}</h3>
                 <div className="flex flex-col gap-2">
                     <input
                         type="file"
@@ -141,56 +143,56 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                         <div className="mt-2">
                             {/* Operation Mode */}
                             <div className="border-b border-secondary pb-4">
-                                <h3 className="font-bold text-lg mb-2 text-text-primary">2. Operation</h3>
+                                <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.operation')}</h3>
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-semibold text-text-secondary">Generate:</label>
+                                    <label className="text-sm font-semibold text-text-secondary">{t('generators.relief.generate')}</label>
                                     <select
                                         value={params.operation || 'both'}
                                         onChange={(e) => handleParamChange('operation', e.target.value)}
                                         className="bg-background border border-secondary rounded p-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
                                     >
-                                        <option value="both">Both Roughing & Finishing</option>
-                                        <option value="roughing">Roughing Only</option>
-                                        <option value="finishing">Finishing Only</option>
+                                        <option value="both">{t('generators.relief.both')}</option>
+                                        <option value="roughing">{t('generators.relief.roughingOnly')}</option>
+                                        <option value="finishing">{t('generators.relief.finishingOnly')}</option>
                                     </select>
                                 </div>
                             </div>
 
                             {/* Dimensions */}
                             <div className="border-b border-secondary pb-4">
-                                <h3 className="font-bold text-lg mb-2 text-text-primary">3. Dimensions</h3>
+                                <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.dimensions')}</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="col-span-2">
-                                        <Checkbox label="Keep Aspect Ratio" checked={params.keepAspectRatio} onChange={(v) => handleParamChange('keepAspectRatio', v)} />
+                                        <Checkbox label={t('generators.relief.keepAspectRatio')} checked={params.keepAspectRatio} onChange={(v) => handleParamChange('keepAspectRatio', v)} />
                                     </div>
-                                    <Input label="Width (X)" value={params.width} onChange={(e) => handleParamChange('width', e.target.value)} unit={unit} />
-                                    <Input label="Length (Y)" value={params.length} onChange={(e) => handleParamChange('length', e.target.value)} unit={unit} />
-                                    <Input label="Max Depth (Z)" value={params.maxDepth} onChange={(e) => handleParamChange('maxDepth', e.target.value)} unit={unit} help="Negative value" />
-                                    <Input label="Safe Z" value={params.zSafe} onChange={(e) => handleParamChange('zSafe', e.target.value)} unit={unit} />
+                                    <Input label={t('generators.relief.width')} value={params.width} onChange={(e) => handleParamChange('width', e.target.value)} unit={unit} />
+                                    <Input label={t('generators.relief.length')} value={params.length} onChange={(e) => handleParamChange('length', e.target.value)} unit={unit} />
+                                    <Input label={t('generators.relief.maxDepth')} value={params.maxDepth} onChange={(e) => handleParamChange('maxDepth', e.target.value)} unit={unit} help={t('generators.relief.maxDepthHelp')} />
+                                    <Input label={t('generators.common.safeZ')} value={params.zSafe} onChange={(e) => handleParamChange('zSafe', e.target.value)} unit={unit} />
                                 </div>
                             </div>
 
                             {/* Tone Mapping (Gamma/Contrast) */}
                             <div className="border-b border-secondary pb-4">
-                                <h3 className="font-bold text-lg mb-2 text-text-primary">Tone Mapping</h3>
+                                <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.toneMapping')}</h3>
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <Slider
-                                        label="Gamma"
+                                        label={t('generators.relief.gamma')}
                                         value={params.gamma}
                                         onChange={(v) => handleParamChange('gamma', v)}
                                         min={0.1}
                                         max={3.0}
                                         step={0.1}
-                                        help="1.0 = Neutral. <1 Darker, >1 Lighter"
+                                        help={t('generators.relief.gammaHelp')}
                                     />
                                     <Slider
-                                        label="Contrast"
+                                        label={t('generators.relief.contrast')}
                                         value={params.contrast}
                                         onChange={(v) => handleParamChange('contrast', v)}
                                         min={0.5}
                                         max={2.0}
                                         step={0.1}
-                                        help="1.0 = Neutral. Higher = More Pop"
+                                        help={t('generators.relief.contrastHelp')}
                                     />
                                 </div>
                             </div>
@@ -198,8 +200,8 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                             {/* Roughing Pass */}
                             <div className="border-b border-secondary pb-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-bold text-lg text-text-primary">4. Roughing Pass</h3>
-                                    <Checkbox label="Enable" checked={params.roughingEnabled} onChange={(v) => handleParamChange('roughingEnabled', v)} />
+                                    <h3 className="font-bold text-lg text-text-primary">{t('generators.relief.roughingPass')}</h3>
+                                    <Checkbox label={t('generators.relief.enable')} checked={params.roughingEnabled} onChange={(v) => handleParamChange('roughingEnabled', v)} />
                                 </div>
 
                                 {params.roughingEnabled && (
@@ -209,16 +211,16 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                             onChange={(id) => handleParamChange('roughingToolId', id)}
                                             unit={unit}
                                             toolLibrary={toolLibrary}
-                                            label="Roughing Tool"
+                                            label={t('generators.relief.roughingTool')}
                                         />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input label="Stepdown" value={params.roughingStepdown} onChange={(e) => handleParamChange('roughingStepdown', e.target.value)} unit={unit} />
-                                            <Input label="Stepover %" value={params.roughingStepover} onChange={(e) => handleParamChange('roughingStepover', e.target.value)} unit="%" />
-                                            <Input label="Stock to Leave" value={params.roughingStockToLeave} onChange={(e) => handleParamChange('roughingStockToLeave', e.target.value)} unit={unit} />
+                                            <Input label={t('generators.relief.stepdown')} value={params.roughingStepdown} onChange={(e) => handleParamChange('roughingStepdown', e.target.value)} unit={unit} />
+                                            <Input label={t('generators.relief.stepover')} value={params.roughingStepover} onChange={(e) => handleParamChange('roughingStepover', e.target.value)} unit="%" />
+                                            <Input label={t('generators.relief.stockToLeave')} value={params.roughingStockToLeave} onChange={(e) => handleParamChange('roughingStockToLeave', e.target.value)} unit={unit} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input label="Feed Rate" value={params.roughingFeed} onChange={(e) => handleParamChange('roughingFeed', e.target.value)} unit={`${unit}/min`} />
-                                            <Input label="Spindle Speed" value={params.roughingSpindle} onChange={(e) => handleParamChange('roughingSpindle', e.target.value)} unit="RPM" />
+                                            <Input label={t('generators.common.feedRate')} value={params.roughingFeed} onChange={(e) => handleParamChange('roughingFeed', e.target.value)} unit={`${unit}/min`} />
+                                            <Input label={t('generators.common.spindleSpeed')} value={params.roughingSpindle} onChange={(e) => handleParamChange('roughingSpindle', e.target.value)} unit="RPM" />
                                         </div>
                                     </div>
                                 )}
@@ -227,8 +229,8 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                             {/* Finishing Pass */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-bold text-lg text-text-primary">5. Finishing Pass</h3>
-                                    <Checkbox label="Enable" checked={params.finishingEnabled} onChange={(v) => handleParamChange('finishingEnabled', v)} />
+                                    <h3 className="font-bold text-lg text-text-primary">{t('generators.relief.finishingPass')}</h3>
+                                    <Checkbox label={t('generators.relief.enable')} checked={params.finishingEnabled} onChange={(v) => handleParamChange('finishingEnabled', v)} />
                                 </div>
 
                                 {params.finishingEnabled && (
@@ -238,15 +240,15 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                             onChange={(id) => handleParamChange('finishingToolId', id)}
                                             unit={unit}
                                             toolLibrary={toolLibrary}
-                                            label="Finishing Tool"
+                                            label={t('generators.relief.finishingTool')}
                                         />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input label="Stepover %" value={params.finishingStepover} onChange={(e) => handleParamChange('finishingStepover', e.target.value)} unit="%" />
-                                            <Input label="Raster Angle" value={params.finishingAngle} onChange={(e) => handleParamChange('finishingAngle', e.target.value)} unit="deg" help="0 = X-axis, 90 = Y-axis" />
+                                            <Input label={t('generators.relief.stepover')} value={params.finishingStepover} onChange={(e) => handleParamChange('finishingStepover', e.target.value)} unit="%" />
+                                            <Input label={t('generators.relief.rasterAngle')} value={params.finishingAngle} onChange={(e) => handleParamChange('finishingAngle', e.target.value)} unit="deg" help={t('generators.relief.rasterAngleHelp')} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input label="Feed Rate" value={params.finishingFeed} onChange={(e) => handleParamChange('finishingFeed', e.target.value)} unit={`${unit}/min`} />
-                                            <Input label="Spindle Speed" value={params.finishingSpindle} onChange={(e) => handleParamChange('finishingSpindle', e.target.value)} unit="RPM" />
+                                            <Input label={t('generators.common.feedRate')} value={params.finishingFeed} onChange={(e) => handleParamChange('finishingFeed', e.target.value)} unit={`${unit}/min`} />
+                                            <Input label={t('generators.common.spindleSpeed')} value={params.finishingSpindle} onChange={(e) => handleParamChange('finishingSpindle', e.target.value)} unit="RPM" />
                                         </div>
                                     </div>
                                 )}
@@ -258,21 +260,21 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
             {/* Preview */}
             <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                    <label className="text-sm font-semibold text-text-secondary">Preview:</label>
+                    <label className="text-sm font-semibold text-text-secondary">{t('generators.relief.preview')}</label>
                     <div className="flex bg-secondary rounded-md p-1">
                         <button
                             onClick={() => setViewMode('2d')}
                             className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${viewMode === '2d' ? 'bg-primary text-white' : 'hover:bg-secondary-focus'
                                 }`}
                         >
-                            2D Image
+                            {t('generators.relief.image2d')}
                         </button>
                         <button
                             onClick={() => setViewMode('3d')}
                             className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors ${viewMode === '3d' ? 'bg-primary text-white' : 'hover:bg-secondary-focus'
                                 }`}
                         >
-                            3D Relief
+                            {t('generators.relief.relief3d')}
                         </button>
                     </div>
                 </div>
@@ -284,9 +286,9 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                 ) : (
                     <ReliefPreview3D
                         imageDataUrl={params.imageDataUrl || ''}
-                        width={parseFloat(params.width) || 100}
-                        height={parseFloat(params.length) || 100}
-                        maxDepth={parseFloat(params.maxDepth) || -10}
+                        width={parseFloat(String(params.width)) || 100}
+                        height={parseFloat(String(params.length)) || 100}
+                        maxDepth={parseFloat(String(params.maxDepth)) || -10}
                         gamma={params.gamma}
                         contrast={params.contrast}
                     />

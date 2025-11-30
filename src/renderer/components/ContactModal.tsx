@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Send } from './Icons';
 
 interface ContactModalProps {
@@ -7,6 +8,7 @@ interface ContactModalProps {
 }
 
 const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
@@ -19,18 +21,18 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!name || !email || !message) {
-            setError('All fields are required.');
+            setError(t('contact.errors.required'));
             return;
         }
         if (!/\S+@\S+\.\S+/.test(email)) {
-            setError('Please enter a valid email address.');
+            setError(t('contact.errors.email'));
             return;
         }
         setError('');
 
         const subject = encodeURIComponent("Contact from mycnc.app");
         const body = encodeURIComponent(
-`Name: ${name}
+            `Name: ${name}
 Email: ${email}
 
 Message:
@@ -53,7 +55,7 @@ ${message}`
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-text-primary">Contact Us</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{t('contact.title')}</h2>
                     <button
                         onClick={onClose}
                         className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary"
@@ -71,7 +73,7 @@ ${message}`
                         )}
                         <div>
                             <label htmlFor="contact-name" className="block text-sm font-medium text-text-secondary mb-1">
-                                Your Name
+                                {t('contact.name')}
                             </label>
                             <input
                                 id="contact-name"
@@ -84,7 +86,7 @@ ${message}`
                         </div>
                         <div>
                             <label htmlFor="contact-email" className="block text-sm font-medium text-text-secondary mb-1">
-                                Your Email
+                                {t('contact.email')}
                             </label>
                             <input
                                 id="contact-email"
@@ -97,7 +99,7 @@ ${message}`
                         </div>
                         <div>
                             <label htmlFor="contact-message" className="block text-sm font-medium text-text-secondary mb-1">
-                                Message
+                                {t('contact.message')}
                             </label>
                             <textarea
                                 id="contact-message"
@@ -109,7 +111,7 @@ ${message}`
                             />
                         </div>
                         <p className="text-xs text-text-secondary">
-                            This will open your default email client to send the message.
+                            {t('contact.clientInfo')}
                         </p>
                     </div>
                     <div className="bg-background px-6 py-4 flex justify-end items-center gap-4 rounded-b-lg">
@@ -118,14 +120,14 @@ ${message}`
                             onClick={onClose}
                             className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
                             className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2"
                         >
                             <Send className="w-5 h-5" />
-                            Send Message
+                            {t('contact.send')}
                         </button>
                     </div>
                 </form>

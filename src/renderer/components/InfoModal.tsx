@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Info } from './Icons';
 
 interface InfoModalProps {
@@ -8,12 +9,14 @@ interface InfoModalProps {
     message: string;
 }
 
-const InfoModal: React.FC<InfoModalProps> = ({ 
-    isOpen, 
-    onClose, 
+const InfoModal: React.FC<InfoModalProps> = ({
+    isOpen,
+    onClose,
     title,
     message
 }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) {
         return null;
     }
@@ -51,7 +54,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
                         onClick={onClose}
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2"
                     >
-                        OK
+                        {t('common.ok')}
                     </button>
                 </div>
             </div>

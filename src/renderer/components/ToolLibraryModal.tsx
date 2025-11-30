@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, X, Plus, Trash2, Pencil } from './Icons';
 import { Tool } from '@/types';
 
@@ -16,6 +17,7 @@ const newToolInitialState: Omit<Tool, 'id'> & { id: number | null, diameter: num
 };
 
 const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, onSave, library }) => {
+    const { t } = useTranslation();
     const [localLibrary, setLocalLibrary] = useState<Tool[]>([]);
     const [isEditing, setIsEditing] = useState(false);
     const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id' | 'diameter'> & { id: number | null, diameter: number | string }>(newToolInitialState);
@@ -58,7 +60,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
     };
 
     const handleDelete = (toolId: number) => {
-        if (window.confirm('Are you sure you want to delete this tool?')) {
+        if (window.confirm(t('toolLibrary.deleteConfirm'))) {
             setLocalLibrary(lib => lib.filter(t => t.id !== toolId));
         }
     };
@@ -77,7 +79,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                 className="bg-surface rounded-lg shadow-2xl w-full max-w-md border border-secondary transform transition-all max-h-[80vh] flex flex-col"
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-text-primary">Tool Library</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{t('toolLibrary.title')}</h2>
                     <button onClick={onCancel} className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary"><X className="w-6 h-6" /></button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto">
@@ -86,14 +88,14 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                             onClick={handleAddNew}
                             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
                         >
-                            <Plus className="w-5 h-5" />Add New Tool
+                            <Plus className="w-5 h-5" />{t('toolLibrary.addNew')}
                         </button>
                     ) : (
                         <div className="bg-background p-4 rounded-md border border-primary">
-                            <h3 className="font-bold mb-2">{currentTool.id ? 'Edit Tool' : 'Add Tool'}</h3>
+                            <h3 className="font-bold mb-2">{currentTool.id ? t('toolLibrary.edit') : t('toolLibrary.add')}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">Tool Name</label>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">{t('toolLibrary.name')}</label>
                                     <input
                                         type="text"
                                         placeholder='e.g., 1/4" 2-Flute Endmill'
@@ -103,7 +105,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-text-secondary mb-1">Diameter (mm)</label>
+                                    <label className="block text-sm font-medium text-text-secondary mb-1">{t('toolLibrary.diameter')}</label>
                                     <input
                                         type="number"
                                         placeholder="e.g., 6.35"
@@ -114,8 +116,8 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                 </div>
                             </div>
                             <div className="flex gap-2 mt-4 justify-end">
-                                <button onClick={handleCancelEdit} className="px-3 py-1 bg-secondary text-white rounded-md hover:bg-secondary-focus">Cancel</button>
-                                <button onClick={handleSaveTool} className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary-focus">Save</button>
+                                <button onClick={handleCancelEdit} className="px-3 py-1 bg-secondary text-white rounded-md hover:bg-secondary-focus">{t('toolLibrary.cancel')}</button>
+                                <button onClick={handleSaveTool} className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary-focus">{t('toolLibrary.save')}</button>
                             </div>
                         </div>
                     )}
@@ -134,7 +136,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                 </div>
                             ))
                         ) : (
-                            <p className="text-center text-text-secondary py-4">Your tool library is empty.</p>
+                            <p className="text-center text-text-secondary py-4">{t('toolLibrary.empty')}</p>
                         )}
                     </div>
                 </div>
@@ -144,7 +146,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                         disabled={isEditing}
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2 disabled:bg-secondary disabled:cursor-not-allowed"
                     >
-                        <Save className="w-5 h-5" />Save & Close
+                        <Save className="w-5 h-5" />{t('toolLibrary.saveClose')}
                     </button>
                 </div>
             </div>

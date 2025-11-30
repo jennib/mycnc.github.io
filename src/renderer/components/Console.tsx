@@ -164,7 +164,7 @@ const Console: React.FC<ConsoleProps> = ({
           </button>
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            title={isFullscreen ? "Minimize Console" : "Fullscreen Console"}
+            title={isFullscreen ? t('console.minimize') : t('console.fullscreen')}
             className="p-1 rounded-md hover:bg-secondary"
           >
             {isFullscreen ? (
@@ -217,7 +217,7 @@ const Console: React.FC<ConsoleProps> = ({
             type="submit"
             disabled={isDisabled || !command.trim()}
             className="px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed"
-            title="Send Command"
+            title={t('console.sendCommand')}
           >
             <Send className="w-5 h-5" />
           </button>

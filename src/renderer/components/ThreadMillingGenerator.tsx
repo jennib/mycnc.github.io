@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tool, MachineSettings, ThreadMillingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
@@ -13,6 +14,7 @@ interface ThreadMillingGeneratorProps {
 }
 
 const ThreadMillingGenerator: React.FC<ThreadMillingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
+    const { t } = useTranslation();
     const handleParamChange = (field: string, value: any) => {
         onParamsChange(field, value);
     };
@@ -21,14 +23,14 @@ const ThreadMillingGenerator: React.FC<ThreadMillingGeneratorProps> = ({ params,
         <div className='space-y-4'>
             <ToolSelector selectedId={params.toolId} onChange={(id) => handleParamChange('toolId', id)} unit={unit} toolLibrary={toolLibrary} />
             <hr className='border-secondary' />
-            <RadioGroup label='Type' options={[{ value: 'internal', label: 'Internal' }, { value: 'external', label: 'External' }]} selected={params.type} onChange={val => handleParamChange('type', val)} />
-            <RadioGroup label='Hand' options={[{ value: 'right', label: 'Right-Hand' }, { value: 'left', label: 'Left-Hand' }]} selected={params.hand} onChange={val => handleParamChange('hand', val)} />
+            <RadioGroup label={t('generators.thread.type')} options={[{ value: 'internal', label: t('generators.thread.internal') }, { value: 'external', label: t('generators.thread.external') }]} selected={params.type} onChange={val => handleParamChange('type', val)} />
+            <RadioGroup label={t('generators.thread.hand')} options={[{ value: 'right', label: t('generators.thread.rightHand') }, { value: 'left', label: t('generators.thread.leftHand') }]} selected={params.hand} onChange={val => handleParamChange('hand', val)} />
             <hr className='border-secondary' />
             <div className='grid grid-cols-2 gap-4'>
-                <Input label='Thread Diameter' value={params.diameter} onChange={e => handleParamChange('diameter', e.target.value)} unit={unit} help='Major diameter' />
-                <Input label='Pitch' value={params.pitch} onChange={e => handleParamChange('pitch', e.target.value)} unit={unit} help='Distance between threads' />
+                <Input label={t('generators.thread.diameter')} value={params.diameter} onChange={e => handleParamChange('diameter', e.target.value)} unit={unit} help={t('generators.thread.majorDiameter')} />
+                <Input label={t('generators.thread.pitch')} value={params.pitch} onChange={e => handleParamChange('pitch', e.target.value)} unit={unit} help={t('generators.thread.pitchHelp')} />
             </div>
-            <Input label='Thread Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help='Length of thread' />
+            <Input label={t('generators.thread.depth')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help={t('generators.thread.depthHelp')} />
             <hr className='border-secondary' />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>

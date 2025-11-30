@@ -63,7 +63,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick }) => {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -163,25 +163,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all max-h-[90vh] flex flex-col"
             >
                 <div className="p-6 border-b border-secondary flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-text-primary">Machine Settings</h2>
+                    <h2 className="text-2xl font-bold text-text-primary">{t('settings.title')}</h2>
                     <button onClick={onCancel} className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary"><X className="w-6 h-6" /></button>
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4 bg-background p-4 rounded-md">
-                            <InputGroup label="Work Area Dimensions (mm)">
+                            <InputGroup label={t('settings.workArea')}>
                                 <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
                                 <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
                                 <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
                             </InputGroup>
-                            <InputGroup label="Jog Feed Rate (mm/min)">
+                            <InputGroup label={t('settings.jogFeedRate')}>
                                 <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
                             </InputGroup>
-                            <InputGroup label="Spindle Speed Range (RPM)">
+                            <InputGroup label={t('settings.spindleSpeed')}>
                                 <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
                                 <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
                             </InputGroup>
-                            <InputGroup label="Controller Type">
+                            <InputGroup label={t('settings.controllerType')}>
                                 <select
                                     id="controller-type"
                                     value={localSettings.controllerType}
@@ -197,10 +197,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <option value="linuxcnc">LinuxCNC (Linux-based)</option> */}
                                 </select>
                             </InputGroup>
-                            <InputGroup label="Spindle Warmup Delay (ms)">
+                            <InputGroup label={t('settings.spindleWarmup')}>
                                 <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
                             </InputGroup>
-                            <InputGroup label="Probe (mm)">
+                            <InputGroup label={t('settings.probe')}>
                                 <div className="flex items-center gap-2">
                                     <span className="w-4 text-center text-text-secondary font-semibold">X</span>
                                     <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
@@ -210,36 +210,36 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
                                 </div>
                             </InputGroup>
-                            <InputGroup label="Probe Feed Rate">
+                            <InputGroup label={t('settings.probeFeedRate')}>
                                 <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
                             </InputGroup>
                         </div>
                         <div className="space-y-4 bg-background p-4 rounded-md">
-                            <h3 className="text-sm font-bold text-text-secondary mb-2">Custom G-Code Scripts</h3>
-                            <ScriptInput label="Startup Script (on connect)" value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
-                            <ScriptInput label="Shutdown Script (on disconnect)" value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
+                            <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.customScripts')}</h3>
+                            <ScriptInput label={t('settings.startupScript')} value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
+                            <ScriptInput label={t('settings.shutdownScript')} value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
                     <div className="bg-background p-4 rounded-md">
-                        <h3 className="text-sm font-bold text-text-secondary mb-2">Configuration</h3>
+                        <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.configuration')}</h3>
                         <div className="flex items-center justify-between">
-                            <p className="text-sm">Export/Import all settings, macros, and tools.</p>
+                            <p className="text-sm">{t('settings.configDescription')}</p>
                             <div className="flex gap-2">
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
                                 <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
-                                    <Upload className="w-4 h-4" />Import
+                                    <Upload className="w-4 h-4" />{t('settings.import')}
                                 </button>
                                 <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus">
-                                    <Download className="w-4 h-4" />Export
+                                    <Download className="w-4 h-4" />{t('settings.export')}
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="bg-background p-4 rounded-md">
-                    <h3 className="text-sm font-bold text-text-secondary mb-2">Interface Settings</h3>
+                    <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.interface')}</h3>
                     <div className="space-y-4">
-                        <InputGroup label="Language">
+                        <InputGroup label={t('common.language')}>
                             <select
                                 value={i18n.language}
                                 onChange={(e) => i18n.changeLanguage(e.target.value)}
@@ -252,11 +252,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     </div>
                 </div>
                 <div className="bg-background p-4 rounded-md">
-                    <h3 className="text-sm font-bold text-text-secondary mb-2">Dialog Settings</h3>
+                    <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.dialogs')}</h3>
                     <div className="flex items-center justify-between">
-                        <p className="text-sm">Reset "Don't show again" dialogs.</p>
+                        <p className="text-sm">{t('settings.resetDialogsDesc')}</p>
                         <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
-                            Reset Dialogs
+                            {t('settings.resetDialogs')}
                         </button>
                     </div>
                 </div>
@@ -268,7 +268,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         onCancel(); // Close settings modal first
                         onContactClick(); // Then open contact modal
                     }} className="text-primary hover:underline font-semibold">
-                        Contact Us
+                        {t('settings.contact')}
                     </button>
                     <span>•</span>
                     <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">
@@ -276,9 +276,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     </a>
                 </div>
                 <div className="flex items-center gap-4">
-                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">Cancel</button>
+                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">{t('common.cancel')}</button>
                     <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
-                        <Save className="w-5 h-5" />Save Settings
+                        <Save className="w-5 h-5" />{t('settings.save')}
                     </button>
                 </div>
             </div>

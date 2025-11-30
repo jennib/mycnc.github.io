@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PowerOff, RotateCw, RotateCcw, OctagonAlert } from './Icons';
 import { MachineState } from '@/types';
 
@@ -8,6 +9,7 @@ interface StatusIndicatorProps {
 }
 
 const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, machineState }) => {
+    const { t } = useTranslation();
     const isAlarm = machineState?.status === 'Alarm';
 
     const getStatusIndicatorClass = () => {
@@ -17,12 +19,12 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ isConnected, machineS
     };
 
     const statusText = isConnected
-        ? (isAlarm ? `Alarm: ${machineState?.code}` : (machineState?.status === 'Home' ? 'Homing' : machineState?.status || 'Connected'))
-        : 'Disconnected';
+        ? (isAlarm ? `${t('status.alarm')} ${machineState?.code}` : (machineState?.status === 'Home' ? t('status.homing') : machineState?.status || t('status.connected')))
+        : t('status.disconnected');
 
     return (
         <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-text-secondary">Status:</span>
+            <span className="font-semibold text-sm text-text-secondary">{t('status.label')}</span>
             <span className={`px-3 py-1 text-sm rounded-full font-bold ${getStatusIndicatorClass()}`}>{statusText}</span>
         </div>
     );
@@ -34,11 +36,12 @@ interface SpindleStatusIndicatorProps {
 }
 
 const SpindleStatusIndicator: React.FC<SpindleStatusIndicatorProps> = ({ machineState, isConnected }) => {
+    const { t } = useTranslation();
     if (!isConnected) {
         return (
             <div className="flex items-center gap-2 text-sm text-text-secondary">
                 <PowerOff className="w-5 h-5" />
-                <span>Spindle Off</span>
+                <span>{t('status.spindleOff')}</span>
             </div>
         );
     }
@@ -49,7 +52,7 @@ const SpindleStatusIndicator: React.FC<SpindleStatusIndicatorProps> = ({ machine
     if (spindleState === 'off' || spindleSpeed === 0) return (
         <div className="flex items-center gap-2 text-sm text-text-secondary">
             <PowerOff className="w-5 h-5" />
-            <span>Spindle Off</span>
+            <span>{t('status.spindleOff')}</span>
         </div>
     );
 
@@ -62,7 +65,7 @@ const SpindleStatusIndicator: React.FC<SpindleStatusIndicatorProps> = ({ machine
             {icon}
             <div className="flex flex-col leading-tight">
                 <span className="font-bold">{`${spindleSpeed.toLocaleString()} RPM`}</span>
-                <span className="text-xs text-text-secondary">{spindleState === 'cw' ? 'Clockwise' : 'Counter-CW'}</span>
+                <span className="text-xs text-text-secondary">{spindleState === 'cw' ? t('status.clockwise') : t('status.counterCw')}</span>
             </div>
         </div>
     );
@@ -75,17 +78,20 @@ interface PositionDisplayProps {
     pos: { x: number; y: number; z: number } | null | undefined;
     unit: 'mm' | 'in';
 }
-const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) => (
-    <div className="flex items-center gap-3">
-        <h4 className="text-sm font-bold text-text-secondary">{title}</h4>
-        <div className="flex gap-3 text-center font-mono bg-background px-2 py-1 rounded-md text-base">
-            <div><span className="font-bold text-red-400">X </span><span className="text-text-primary">{formatCoordinate(pos?.x)}</span></div>
-            <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary">{formatCoordinate(pos?.y)}</span></div>
-            <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary">{formatCoordinate(pos?.z)}</span></div>
-            <span className="text-xs text-text-secondary ml-1 self-center">{unit}</span>
+const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="flex items-center gap-3">
+            <h4 className="text-sm font-bold text-text-secondary">{t(title === 'WPos' ? 'status.wpos' : 'status.mpos')}</h4>
+            <div className="flex gap-3 text-center font-mono bg-background px-2 py-1 rounded-md text-base">
+                <div><span className="font-bold text-red-400">X </span><span className="text-text-primary">{formatCoordinate(pos?.x)}</span></div>
+                <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary">{formatCoordinate(pos?.y)}</span></div>
+                <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary">{formatCoordinate(pos?.z)}</span></div>
+                <span className="text-xs text-text-secondary ml-1 self-center">{unit}</span>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 interface StatusBarProps {
     isConnected: boolean;

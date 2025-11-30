@@ -1,7 +1,10 @@
 import React from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { AlertTriangle } from './Icons';
 
 const UnsupportedBrowser: React.FC = () => {
+    const { t } = useTranslation();
+
     return (
         <div className="bg-background text-text-primary min-h-screen flex flex-col items-center justify-center p-8 text-center">
             <div className="max-w-2xl">
@@ -29,14 +32,14 @@ const UnsupportedBrowser: React.FC = () => {
                 <div className="bg-accent-yellow/20 border-l-4 border-accent-yellow text-accent-yellow p-4 m-4 flex items-start" role="alert">
                     <AlertTriangle className="h-8 w-8 mr-4 flex-shrink-0" />
                     <div className="text-left">
-                        <h2 className="text-lg font-bold mb-2">Browser Not Supported or Mobile Device Detected</h2>
-                        <p className="mb-2">This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.</p>
-                        <p className="mb-2">Mobile browsers do not support this feature.</p>
-                        <p>Please access this page from a compatible desktop browser.</p>
+                        <h2 className="text-lg font-bold mb-2">{t('unsupported.title')}</h2>
+                        <p className="mb-2">{t('unsupported.message1')}</p>
+                        <p className="mb-2">{t('unsupported.message2')}</p>
+                        <p>{t('unsupported.message3')}</p>
                         <div className="mt-4">
-                            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">Check Web Serial API compatibility</a>
+                            <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">{t('unsupported.checkCompat')}</a>
                             <span className="mx-2">|</span>
-                            <a href="https://caniuse.com/serial" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">View on CanIUse.com</a>
+                            <a href="https://caniuse.com/serial" target="_blank" rel="noopener noreferrer" className="text-primary font-semibold hover:underline">{t('unsupported.viewCanIUse')}</a>
                         </div>
                     </div>
                 </div>

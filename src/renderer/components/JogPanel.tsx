@@ -1,4 +1,5 @@
 import React, { useState, memo, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ArrowUp,
   ArrowDown,
@@ -141,6 +142,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     jogFeedRate,
     jobStatus,
   }) => {
+    const { t } = useTranslation();
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     const pressedJogKey = useRef<string | null>(null);
     const jogManagerRef = useRef<JogManager | null>(null);
@@ -387,7 +389,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           {/* Jog Controls */}
           <div className="bg-background p-1 rounded-md">
             <h4 className="text-xs font-bold text-text-secondary mb-1 text-center">
-              Jog Control
+              {t('jog.title')}
             </h4>
             <div className="grid grid-cols-3 grid-rows-3 gap-1">
               <div className="col-start-1 row-start-1"></div> {/* empty */}
@@ -396,7 +398,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="Y"
                 direction={1}
                 icon={<ArrowUp className="w-6 h-6" />}
-                label="Jog Y+"
+                label={t('jog.yPlus')}
                 hotkey="Up Arrow"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -411,7 +413,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="Z"
                 direction={1}
                 icon={<ArrowUp className="w-6 h-6" />}
-                label="Jog Z+"
+                label={t('jog.zPlus')}
                 hotkey="Page Up"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -426,7 +428,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="X"
                 direction={-1}
                 icon={<ArrowLeft className="w-6 h-6" />}
-                label="Jog X-"
+                label={t('jog.xMinus')}
                 hotkey="Left Arrow"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -444,7 +446,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="X"
                 direction={1}
                 icon={<ArrowRight className="w-6 h-6" />}
-                label="Jog X+"
+                label={t('jog.xPlus')}
                 hotkey="Right Arrow"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -460,7 +462,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="Y"
                 direction={-1}
                 icon={<ArrowDown className="w-6 h-6" />}
-                label="Jog Y-"
+                label={t('jog.yMinus')}
                 hotkey="Down Arrow"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -475,7 +477,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 axis="Z"
                 direction={-1}
                 icon={<ArrowDown className="w-6 h-6" />}
-                label="Jog Z-"
+                label={t('jog.zMinus')}
                 hotkey="Page Down"
                 isControlDisabled={isControlDisabled}
                 isZJogDisabledForStep={isZJogDisabledForStep}
@@ -488,7 +490,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
             <div className="flex justify-around items-center mt-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-text-secondary">Step:</span>
+                <span className="text-sm text-text-secondary">{t('jog.step')}</span>
                 <div className="flex gap-1">
                   {stepSizes.map((step, index) => (
                     <button
@@ -503,7 +505,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                           ? "ring-2 ring-white ring-inset"
                           : ""
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      title={`Step size: ${step} (Hotkey: ${index + 1})`}
+                      title={`${t('jog.stepSize')} ${step} (Hotkey: ${index + 1})`}
                     >
                       <span className="absolute -top-1 -right-1 text-[8px] opacity-50">
                         {index + 1}
@@ -517,7 +519,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
             <div className="mt-2 border-t border-secondary pt-2">
               <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
-                Homing
+                {t('jog.homing.title')}
               </h4>
               <div className="grid grid-cols-1 gap-2 text-sm">
                 <button
@@ -525,7 +527,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   disabled={isControlDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold"
                 >
-                  Home All ($H)
+                  {t('jog.homing.all')}
                 </button>
               </div>
             </div>
@@ -533,7 +535,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           <div className="flex flex-col gap-1">
             <div className="bg-background p-1 rounded-md">
               <h4 className="text-xs font-bold text-text-secondary mb-1">
-                Set Zero
+                {t('jog.zero.title')}
               </h4>
               <div className="space-y-1 text-sm">
                 <div className="grid grid-cols-3 gap-1">
@@ -542,28 +544,28 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                     disabled={isControlDisabled}
                     className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50"
                   >
-                    Zero All
+                    {t('jog.zero.all')}
                   </button>
                   <button
                     onClick={() => onSetZero("xy")}
                     disabled={isControlDisabled}
                     className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50"
                   >
-                    Zero XY
+                    {t('jog.zero.xy')}
                   </button>
                   <button
                     onClick={() => onSetZero("z")}
                     disabled={isControlDisabled}
                     className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50"
                   >
-                    Zero Z
+                    {t('jog.zero.z')}
                   </button>
                 </div>
               </div>
             </div>
             <div className="bg-background p-1 rounded-md">
               <h4 className="text-xs font-bold text-text-secondary mb-1">
-                Units
+                {t('jog.units.title')}
               </h4>
               <div className="flex bg-secondary rounded-md p-1">
                 <button
@@ -590,7 +592,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
             <div className="bg-background p-1 rounded-md">
               <h4 className="text-xs font-bold text-text-secondary mb-1">
-                Probe
+                {t('jog.probe.title')}
               </h4>
               <div className="grid grid-cols-2 gap-1 text-sm">
                 <button
@@ -598,34 +600,34 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   disabled={isProbeDisabled}
                   className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50"
                 >
-                  Probe X
+                  {t('jog.probe.x')}
                 </button>
                 <button
                   onClick={() => onProbe("Y")}
                   disabled={isProbeDisabled}
                   className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50"
                 >
-                  Probe Y
+                  {t('jog.probe.y')}
                 </button>
                 <button
                   onClick={() => onProbe("Z")}
                   disabled={isProbeDisabled}
                   className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center gap-1"
                 >
-                  <Probe className="w-4 h-4" /> Probe Z
+                  <Probe className="w-4 h-4" /> {t('jog.probe.z')}
                 </button>
                 <button
                   onClick={() => onProbe("XY")}
                   disabled={isProbeDisabled}
                   className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50"
                 >
-                  Probe XY
+                  {t('jog.probe.xy')}
                 </button>
               </div>
             </div>
             <div className="bg-background p-1 rounded-md">
               <h4 className="text-xs font-bold text-text-secondary mb-1">
-                Spindle Control
+                {t('jog.spindle.title')}
               </h4>
               <div className="flex items-center gap-2">
                 <input
@@ -638,11 +640,11 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   className="w-full bg-secondary border border-secondary rounded-md py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50"
                   aria-label="Spindle Speed in RPM"
                 />
-                <span className="text-sm text-text-secondary">RPM</span>
+                <span className="text-sm text-text-secondary">{t('jog.spindle.rpm')}</span>
               </div>
               <div className="grid grid-cols-3 gap-1 mt-1">
                 <button
-                  title="Spindle On (CW)"
+                  title={t('jog.spindle.cw')}
                   onClick={() => onSpindleCommand("cw", spindleSpeed)}
                   disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
@@ -650,7 +652,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <RotateCw className="w-5 h-5" />
                 </button>
                 <button
-                  title="Spindle On (CCW)"
+                  title={t('jog.spindle.ccw')}
                   onClick={() => onSpindleCommand("ccw", spindleSpeed)}
                   disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
@@ -658,7 +660,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <RotateCcw className="w-5 h-5" />
                 </button>
                 <button
-                  title="Spindle Off"
+                  title={t('jog.spindle.off')}
                   onClick={() => onSpindleCommand("off", 0)}
                   disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"

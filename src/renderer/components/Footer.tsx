@@ -4,16 +4,19 @@ interface FooterProps {
     onContactClick: () => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 const Footer: React.FC<FooterProps> = ({ onContactClick }) => {
+    const { t } = useTranslation();
     const currentYear = new Date().getFullYear();
     return (
         <footer className="bg-surface text-text-secondary text-xs text-center p-1 mt-auto border-t border-secondary flex-shrink-0">
             <p>
                 &copy; {currentYear} mycnc.app - A Web-Based G-Code Sender.
                 <button onClick={onContactClick} className="ml-2 text-primary hover:underline font-semibold">
-                    Contact Us
+                    {t('footer.contact')}
                 </button>
-                &nbsp;&nbsp;- Source Code <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">here</a>.
+                &nbsp;&nbsp;- {t('footer.source')} <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">{t('footer.here')}</a>.
             </p>
         </footer>
     );

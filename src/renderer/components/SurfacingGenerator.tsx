@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tool, MachineSettings, SurfacingParams } from '@/types';
 import { ToolSelector, Input, RadioGroup, SpindleAndFeedControls } from './SharedControls';
 
@@ -13,6 +14,7 @@ interface SurfacingGeneratorProps {
 }
 
 const SurfacingGenerator: React.FC<SurfacingGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings }) => {
+    const { t } = useTranslation();
     const handleParamChange = (field: string, value: any) => {
         onParamsChange(field, value);
     };
@@ -22,13 +24,13 @@ const SurfacingGenerator: React.FC<SurfacingGeneratorProps> = ({ params, onParam
             <ToolSelector selectedId={params.toolId} onChange={(id) => handleParamChange('toolId', id)} unit={unit} toolLibrary={toolLibrary} />
             <hr className='border-secondary' />
             <div className='grid grid-cols-2 gap-4'>
-                <Input label='Width (X)' value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
-                <Input label='Length (Y)' value={params.length} onChange={e => handleParamChange('length', e.target.value)} unit={unit} />
+                <Input label={t('generators.surfacing.width')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
+                <Input label={t('generators.surfacing.length')} value={params.length} onChange={e => handleParamChange('length', e.target.value)} unit={unit} />
             </div>
-            <RadioGroup label='Milling Direction' options={[{ value: 'horizontal', label: 'Horizontal (X)' }, { value: 'vertical', label: 'Vertical (Y)' }]} selected={params.direction} onChange={val => handleParamChange('direction', val)} />
+            <RadioGroup label={t('generators.surfacing.direction')} options={[{ value: 'horizontal', label: t('generators.surfacing.horizontal') }, { value: 'vertical', label: t('generators.surfacing.vertical') }]} selected={params.direction} onChange={val => handleParamChange('direction', val)} />
             <hr className='border-secondary' />
-            <Input label='Final Depth' value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help='Should be negative' />
-            <Input label='Stepover' value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
+            <Input label={t('generators.surfacing.finalDepth')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} help={t('generators.surfacing.shouldBeNegative')} />
+            <Input label={t('generators.surfacing.stepover')} value={params.stepover} onChange={e => handleParamChange('stepover', e.target.value)} unit='%' />
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />
         </div>
     );

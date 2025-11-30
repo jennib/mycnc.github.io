@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, DragEvent, memo } from "react";
+import { useTranslation } from "react-i18next";
 
 import { JobStatus, MachineState, Tool, MachineSettings } from "../types";
 import {
@@ -48,6 +49,7 @@ const OverrideControl: React.FC<OverrideControlProps> = ({
   max,
   className = "",
 }) => {
+  const { t } = useTranslation();
   const [sliderValue, setSliderValue] = useState(value);
   const [isDragging, setIsDragging] = useState(false);
   const [ignoreUpdates, setIgnoreUpdates] = useState(false);
@@ -135,9 +137,9 @@ const OverrideControl: React.FC<OverrideControlProps> = ({
             lastSentValue.current = 100;
           }}
           className="text-[10px] text-text-secondary hover:text-primary transition-colors"
-          title="Reset to 100%"
+          title={t('gcode.controls.resetTitle')}
         >
-          Reset
+          {t('gcode.controls.reset')}
         </button>
       </div>
 
@@ -226,6 +228,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   onOpenGenerator,
   isSimulated,
 }) => {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visualizerRef = useRef<GCodeVisualizerHandle>(null);
   const codeContainerRef = useRef<HTMLDivElement>(null);
@@ -478,8 +481,8 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     return (
       <div className="flex flex-col items-center justify-center h-full text-text-secondary">
         <FileText className="w-16 h-16 mb-4" />
-        <p>No G-code file loaded.</p>
-        <p>Click "Load File" or drag and drop here to begin.</p>
+        <p>{t('gcode.status.noFile')}</p>
+        <p>{t('gcode.status.loadInstruction')}</p>
       </div>
     );
   };
@@ -555,27 +558,27 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     return null;
   };
 
-  const { totalSeconds, cumulativeSeconds } = timeEstimate || {
+  const { totalSeconds, cumulativeSeconds: cumulativeSecondsEstimate } = timeEstimate || {
     totalSeconds: 0,
     cumulativeSeconds: [],
   };
   let displayTime = totalSeconds;
-  let timeLabel = "Est. Time";
-  let timeTitle = "Estimated Job Time";
+  let timeLabel = t('gcode.status.estTime');
+  let timeTitle = t('gcode.status.estJobTime');
 
-  if (isJobActive && totalSeconds > 0 && cumulativeSeconds) {
+  if (isJobActive && totalSeconds > 0 && cumulativeSecondsEstimate) {
     const feedMultiplier = (machineState?.ov?.[0] ?? 100) / 100;
-    timeLabel = "Time Rem.";
-    timeTitle = "Estimated Time Remaining";
+    timeLabel = t('gcode.status.timeRem');
+    timeTitle = t('gcode.status.estTimeRem');
     if (feedMultiplier > 0) {
       const timeElapsedAt100 =
-        currentLine > 0 && cumulativeSeconds[currentLine - 1]
-          ? cumulativeSeconds[currentLine - 1]
+        currentLine > 0 && cumulativeSecondsEstimate[currentLine - 1]
+          ? cumulativeSecondsEstimate[currentLine - 1]
           : 0;
       const timeRemainingAt100 = totalSeconds - timeElapsedAt100;
       displayTime = timeRemainingAt100 / feedMultiplier;
     } else {
-      displayTime = Infinity;
+      displayTime = Infinity; // If feedMultiplier is 0, time remaining is infinite
     }
   }
 
@@ -589,11 +592,11 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     >
       <div className="flex justify-between items-center mb-1 pb-2 border-b border-secondary flex-shrink-0">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-bold">G-Code</h2>
+          <h2 className="text-lg font-bold">{t('gcode.title')}</h2>
           <div className="flex items-center bg-background rounded-md p-1">
             <button
               onClick={() => setView("visualizer")}
-              title="Visualizer View"
+              title={t('gcode.view.visualizer')}
               className={`p-1 rounded transition-colors ${view === "visualizer"
                 ? "bg-primary text-white"
                 : "hover:bg-secondary"
@@ -603,7 +606,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             </button>
             <button
               onClick={() => setView("code")}
-              title="Code View"
+              title={t('gcode.view.code')}
               className={`p-1 rounded transition-colors ${view === "code" ? "bg-primary text-white" : "hover:bg-secondary"
                 }`}
             >
@@ -613,33 +616,32 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               <>
                 <button
                   onClick={() => visualizerRef.current?.resetView()}
-                  title="Reset to Top-Down View"
+                  title={t('gcode.view.reset')}
                   className="p-1 rounded transition-colors hover:bg-secondary"
                 >
                   <Crosshair className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => visualizerRef.current?.fitView()}
-                  title="Fit to View"
+                  title={t('gcode.view.fit')}
                   className="p-1 rounded transition-colors hover:bg-secondary"
                 >
                   <Maximize className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => visualizerRef.current?.zoomIn()}
-                  title="Zoom In"
+                  title={t('gcode.view.zoomIn')}
                   className="p-1 rounded transition-colors hover:bg-secondary"
                 >
                   <ZoomIn className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => visualizerRef.current?.zoomOut()}
-                  title="Zoom Out"
+                  title={t('gcode.view.zoomOut')}
                   className="p-1 rounded transition-colors hover:bg-secondary"
                 >
                   <ZoomOut className="w-5 h-8" />
                 </button>
-
               </>
             )}
           </div>
@@ -650,36 +652,36 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 <button
                   onClick={handleSave}
                   className="flex items-center gap-2 px-3 py-1 bg-accent-green text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
-                  title="Save Changes to Local Copy"
+                  title={t('gcode.actions.saveLocalTitle')}
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Save
+                  {t('gcode.actions.saveLocal')}
                 </button>
                 <button
                   onClick={handleSaveToDisk}
                   className="flex items-center gap-2 px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
-                  title="Save to Disk"
+                  title={t('gcode.actions.saveDisk')}
                 >
                   <Save className="w-4 h-4" />
-                  Save to Disk
+                  {t('gcode.actions.saveDisk')}
                 </button>
                 <button
                   onClick={handleCancel}
                   className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
-                  title="Cancel"
+                  title={t('common.cancel')}
                 >
                   <X className="w-4 h-4" />
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
-                title="Edit G-Code"
+                title={t('gcode.actions.editTitle')}
               >
                 <Pencil className="w-4 h-4" />
-                Edit
+                {t('gcode.actions.edit')}
               </button>
             ))}
         </div>
@@ -688,10 +690,10 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={onOpenGenerator}
             disabled={isJobActive}
             className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Generate G-Code"
+            title={t('gcode.actions.generateTitle')}
           >
             <Zap className="w-5 h-5" />
-            Generate
+            {t('gcode.actions.generate')}
           </button>
           <input
             type="file"
@@ -706,13 +708,13 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             className="flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="w-5 h-5" />
-            Load File
+            {t('gcode.actions.load')}
           </button>
           <button
             onClick={onClearFile}
             disabled={isJobActive || gcodeLines.length === 0}
             className="p-2 bg-secondary text-text-primary font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Clear G-Code &amp; Preview"
+            title={t('gcode.actions.clear')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -723,7 +725,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           className="text-sm text-text-secondary truncate mb-2"
           title={fileName}
         >
-          <strong>File: </strong>
+          <strong>{t('gcode.status.file')} </strong>
           {fileName}
         </p>
       )}
@@ -731,10 +733,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         <div className="grid grid-cols-3 gap-4">{renderJobControls()}</div>
         {!isConnected && gcodeLines.length > 0 && (
           <div className="bg-accent-yellow/20 border border-accent-yellow text-accent-yellow p-4 rounded-md text-center">
-            <p className="font-bold">Not Connected</p>
+            <p className="font-bold">{t('gcode.status.notConnected')}</p>
             <p className="text-sm">
-              Please connect to your machine or the simulator using the button
-              in the top right corner.
+              {t('gcode.status.connectMessage')}
             </p>
           </div>
         )}
@@ -746,7 +747,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         </div>
         <div className="flex justify-between items-center text-sm font-medium">
           <p>
-            Status: <span className="font-bold capitalize">{jobStatus}</span>
+            {t('gcode.status.label')} <span className="font-bold capitalize">{jobStatus}</span>
             {isJobActive && totalLines > 0 && (
               <span className="ml-2 font-mono text-text-secondary bg-background px-2 py-0.5 rounded-md">{`${currentLine} / ${totalLines}`}</span>
             )}
@@ -774,7 +775,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           <div className="absolute inset-0 bg-primary/70 border-4 border-dashed border-primary-focus rounded-lg flex flex-col items-center justify-center pointer-events-none">
             <Upload className="w-24 h-24 text-white" />
             <p className="text-2xl font-bold text-white mt-4">
-              Drop G-code file here
+              {t('gcode.status.drop')}
             </p>
           </div>
         )}
@@ -782,14 +783,14 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       {isJobActive && (
         <div className="mt-4 flex-shrink-0 grid grid-cols-2 gap-2">
           <OverrideControl
-            label="Feed Rate"
+            label={t('gcode.controls.feedRate')}
             value={machineState?.ov?.[0] ?? 100}
             onOverride={onFeedOverride}
             min={10}
             max={300}
           />
           <OverrideControl
-            label="Spindle"
+            label={t('gcode.controls.spindle')}
             value={machineState?.ov?.[2] ?? 100}
             onOverride={onSpindleOverride}
             min={20}
