@@ -196,23 +196,18 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (window.electronAPI?.on) {
-      const unsubscribe = window.electronAPI.on(
-        "is-fullscreen",
-        (value: boolean) => setIsFullscreen(value)
-      );
+    if (window.electronAPI?.onFullscreenChange) {
+      const unsubscribe = window.electronAPI.onFullscreenChange((value: boolean) => setIsFullscreen(value));
       // Request initial state
-      window.electronAPI.send("get-fullscreen-state");
+      window.electronAPI.getFullscreenState();
       return () => unsubscribe();
     }
   }, []);
 
   const handleToggleFullscreen = () => {
-    // Check if the electronAPI and its send method exist before calling it
-    if (window.electronAPI && typeof window.electronAPI.send === "function") {
-      window.electronAPI.send("toggle-fullscreen");
+    if (window.electronAPI) {
+      window.electronAPI.toggleFullscreen();
     } else {
-      console.error("Fullscreen API is not available.");
       // Fallback for non-electron environment
       setIsFullscreen((prev) => !prev);
     }

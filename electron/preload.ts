@@ -4,7 +4,6 @@ console.log("Preload script loaded and executing!");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   isElectron: true,
-  send: (channel: string, data?: any) => ipcRenderer.send(channel, data),
   connectTCP: (ip: string, port: number) =>
     ipcRenderer.invoke("connect-tcp", ip, port),
   sendTCP: (data: string) => ipcRenderer.send("send-tcp", data),
@@ -15,4 +14,15 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.on("tcp-error", (_event, error) => callback(error)),
   onTCPDisconnect: (callback: () => void) =>
     ipcRenderer.on("tcp-disconnect", callback),
+
+  // Specific methods instead of generic send
+  toggleFullscreen: () => ipcRenderer.send("toggle-fullscreen"),
+  getFullscreenState: () => ipcRenderer.send("get-fullscreen-state"),
+  onFullscreenChange: (callback: (isFullScreen: boolean) => void) => {
+    const subscription = (_event: any, value: boolean) => callback(value);
+    ipcRenderer.on("is-fullscreen", subscription);
+    return () => {
+      ipcRenderer.removeListener("is-fullscreen", subscription);
+    };
+  },
 });
