@@ -1,0 +1,19 @@
+{
+    "common": {
+        "settings": "Configuración",
+        "close": "Cerrar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "language": "Idioma"
+    },
+    "console": {
+        "title": "Consola",
+        "echo": "Eco",
+        "verbose": "Detallado",
+        "autoscroll": "Desplazamiento Auto",
+        "clear": "Borrar Registros",
+        "send": "Enviar",
+        "placeholder": "Ingrese comando G-code...",
+        "locked": "Consola bloqueada durante operación"
+    }
+}

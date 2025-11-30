@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, X, Upload, Download } from './Icons';
 import { MachineSettings, GeneratorSettings } from '@/types';
 
@@ -62,6 +63,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick }) => {
+    const { i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const importFileRef = useRef<HTMLInputElement>(null);
@@ -235,11 +237,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     </div>
                     <div className="bg-background p-4 rounded-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2">Interface Settings</h3>
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm">Reset "Don't show again" dialogs.</p>
-                            <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
-                                Reset Dialogs
-                            </button>
+                        <div className="space-y-4">
+                            <InputGroup label="Language">
+                                <select
+                                    value={i18n.language}
+                                    onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                    className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="en">English</option>
+                                    <option value="es">Español</option>
+                                </select>
+                            </InputGroup>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm">Reset "Don't show again" dialogs.</p>
+                                <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
+                                    Reset Dialogs
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
+import { useTranslation } from "react-i18next";
 import { ConsoleLog } from "../types";
 import { Send, Trash2, Maximize, Minimize } from "./Icons";
 
@@ -29,6 +30,7 @@ const Console: React.FC<ConsoleProps> = ({
   isLogEnabled,
   onLogEnabledChange,
 }) => {
+  const { t } = useTranslation();
   const [command, setCommand] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -123,16 +125,16 @@ const Console: React.FC<ConsoleProps> = ({
   return (
     <div className={containerClasses}>
       <div className="flex justify-between items-center pb-2 border-b border-secondary flex-shrink-0">
-        <h3 className="text-lg font-bold">Console</h3>
+        <h3 className="text-lg font-bold">{t('console.title')}</h3>
         <div className="flex items-center gap-2">
-          <label className="flex items-center text-sm cursor-pointer" title="Enable/Disable logging to console">
+          <label className="flex items-center text-sm cursor-pointer" title={t('console.echo')}>
             <input
               type="checkbox"
               checked={isLogEnabled}
               onChange={(e) => onLogEnabledChange(e.target.checked)}
               className="mr-1"
             />
-            Echo
+            {t('console.echo')}
           </label>
           <label className="flex items-center text-sm cursor-pointer">
             <input
@@ -141,7 +143,7 @@ const Console: React.FC<ConsoleProps> = ({
               onChange={(e) => onVerboseChange(e.target.checked)}
               className="mr-1"
             />
-            Verbose
+            {t('console.verbose')}
           </label>
           <label className="flex items-center text-sm cursor-pointer">
             <input
@@ -149,13 +151,13 @@ const Console: React.FC<ConsoleProps> = ({
               checked={isAutoScroll}
               onChange={(e) => setIsAutoScroll(e.target.checked)}
               className="mr-1"
-              title="Toggle Autoscroll"
+              title={t('console.autoscroll')}
             />
-            Autoscroll
+            {t('console.autoscroll')}
           </label>
           <button
             onClick={onClearLogs}
-            title="Clear Console Logs"
+            title={t('console.clear')}
             className="p-1 rounded-md hover:bg-secondary"
           >
             <Trash2 className="w-4 h-4 text-text-secondary" />
@@ -205,8 +207,8 @@ const Console: React.FC<ConsoleProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={
               isDisabled
-                ? "Console locked during operation"
-                : "Enter G-code command..."
+                ? t('console.locked')
+                : t('console.placeholder')
             }
             className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary"
             disabled={isDisabled}

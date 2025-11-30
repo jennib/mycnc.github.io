@@ -1,0 +1,19 @@
+{
+    "common": {
+        "settings": "Settings",
+        "close": "Close",
+        "save": "Save",
+        "cancel": "Cancel",
+        "language": "Language"
+    },
+    "console": {
+        "title": "Console",
+        "echo": "Echo",
+        "verbose": "Verbose",
+        "autoscroll": "Autoscroll",
+        "clear": "Clear Logs",
+        "send": "Send",
+        "placeholder": "Enter G-code command...",
+        "locked": "Console locked during operation"
+    }
+}
