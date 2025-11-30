@@ -402,32 +402,19 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 machineSettings={machineSettings}
               />
             </div>
-            {/* Scrubber / Progress Bar */}
-            {gcodeLines.length > 0 && (
+            {/* Scrubber (Hidden during job) */}
+            {gcodeLines.length > 0 && !isJobActive && (
               <div className="flex-shrink-0 p-2 bg-surface border-t border-secondary flex items-center gap-3">
-                <span className="text-xs font-mono text-text-secondary w-12 text-right">
-                  {isJobActive ? currentLine : scrubberLine}
-                </span>
-
-                {isJobActive ? (
-                  <div className="flex-grow h-2 bg-gray-200 rounded-lg dark:bg-gray-700 overflow-hidden relative">
-                    <div
-                      className="absolute top-0 left-0 h-full bg-primary transition-all duration-300 ease-linear"
-                      style={{ width: `${(currentLine / (gcodeLines.length - 1)) * 100}%` }}
-                    />
-                  </div>
-                ) : (
-                  <input
-                    type="range"
-                    min="0"
-                    max={gcodeLines.length > 0 ? gcodeLines.length - 1 : 0}
-                    value={scrubberLine}
-                    onChange={(e) => setScrubberLine(parseInt(e.target.value))}
-                    className="flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary"
-                    title="Scrub G-code Toolpath"
-                  />
-                )}
-
+                <span className="text-xs font-mono text-text-secondary w-12 text-right">{scrubberLine}</span>
+                <input
+                  type="range"
+                  min="0"
+                  max={gcodeLines.length > 0 ? gcodeLines.length - 1 : 0}
+                  value={scrubberLine}
+                  onChange={(e) => setScrubberLine(parseInt(e.target.value))}
+                  className="flex-grow h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-primary"
+                  title="Scrub G-code Toolpath"
+                />
                 <span className="text-xs font-mono text-text-secondary w-12">{gcodeLines.length}</span>
               </div>
             )}
