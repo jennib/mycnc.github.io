@@ -161,7 +161,7 @@ export class GrblController implements Controller {
                     this.linePromiseResolve = null;
                     this.linePromiseReject = null;
                 } else {
-                    this.emitter.emit('error', `GRBL Error: ${trimmedValue}`);
+                    this.emitter.emit('error', 'GRBL Error: ' + trimmedValue);
                 }
             }
             else {
@@ -188,7 +188,7 @@ export class GrblController implements Controller {
             const timeoutId = setTimeout(() => {
                 this.linePromiseResolve = null;
                 this.linePromiseReject = null;
-                reject(new Error(`Command timed out after ${timeout / 1000}s: ${command}`));
+                reject(new Error('Command timed out after ' + (timeout / 1000) + 's: ' + command));
             }, timeout);
 
             this.linePromiseResolve = () => {
@@ -216,7 +216,7 @@ export class GrblController implements Controller {
     }
 
     jog(x: number, y: number, z: number, feedRate: number): void {
-        const command = `$J=G91 X${x} Y${y} Z${z} F${feedRate}`;
+        const command = '$J=G91 X' + x + ' Y' + y + ' Z' + z + ' F' + feedRate;
         this.sendCommand(command);
     }
 
@@ -265,8 +265,13 @@ export class GrblController implements Controller {
                     linesSent: i + 1,
                     totalLines: lines.length
                 });
+
+                // Yield to the event loop every 20 lines to prevent UI freezing
+                if (i % 20 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
             } catch (error) {
-                this.emitter.emit('error', `Job error at line ${i + 1}: ${error}`);
+                this.emitter.emit('error', 'Job error at line ' + (i + 1) + ': ' + error);
                 this.stopJob();
                 break;
             }
@@ -274,18 +279,74 @@ export class GrblController implements Controller {
 
         this.isJobRunning = false;
         this.jobAbortController = null;
+
+        // Reset overrides on job completion
+        this.sendRealtimeCommand('\x90'); // Reset Feed Override
+        this.sendRealtimeCommand('\x99'); // Reset Spindle Override
+
         this.emitter.emit('job', { status: 'complete' });
+    }
+
+    // Spindle state tracking for smart resume
+    private pausedSpindleState: { state: string; speed: number } | null = null;
+
+    async refreshStatus(): Promise<MachineState> {
+        return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                this.off('state', listener);
+                reject(new Error("Timeout waiting for status update"));
+            }, 2000);
+
+            const listener = (event: { type: string, data: MachineState }) => {
+                if (event.type === 'state') {
+                    clearTimeout(timeout);
+                    this.off('state', listener);
+                    resolve(event.data);
+                }
+            };
+
+            this.on('state', listener);
+            this.requestStatusUpdate();
+        });
     }
 
     async pause() {
         if (this.isJobRunning && !this.isPaused) {
             this.isPaused = true;
+            // Save current spindle state before pausing
+            this.pausedSpindleState = {
+                state: this.lastStatus.spindle.state,
+                speed: this.lastStatus.spindle.speed
+            };
             this.sendRealtimeCommand('!'); // Feed Hold
         }
     }
 
     async resume() {
         if (this.isJobRunning && this.isPaused) {
+            try {
+                // Ensure we have the latest status before making decisions
+                await this.refreshStatus();
+            } catch (e) {
+                console.warn("Failed to refresh status before resume:", e);
+            }
+
+            // Smart Resume: Restore spindle if it was on before pause but is now off
+            if (this.pausedSpindleState &&
+                (this.pausedSpindleState.state === 'cw' || this.pausedSpindleState.state === 'ccw') &&
+                this.lastStatus.spindle.state === 'off') {
+
+                const { state, speed } = this.pausedSpindleState;
+                const command = (state === 'cw' ? 'M3' : 'M4') + ' S' + speed;
+
+                console.log('Smart Resume: Restoring spindle (' + command + ') and warming up...');
+                await this.sendCommand(command);
+
+                // Warm-up delay using G4 (Dwell)
+                await this.sendCommand('G4 P4');
+            }
+
+            this.pausedSpindleState = null;
             this.isPaused = false;
             this.sendRealtimeCommand('~'); // Cycle Start
         }
@@ -299,7 +360,6 @@ export class GrblController implements Controller {
             this.sendRealtimeCommand('\x18'); // Soft Reset
         }
     }
-
 
     on(event: 'data' | 'state' | 'error' | 'progress' | 'job', listener: (data: any) => void): void {
         this.emitter.on(event, listener);

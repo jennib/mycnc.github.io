@@ -78,23 +78,27 @@ export class GrblSimulator implements Simulator {
     private emitStatus() {
         const s = this.state;
         // Format: <Idle|MPos:0.000,0.000,0.000|Bf:15,128|FS:0,0|WCO:0.000,0.000,0.000>
-        // Note: GrblController expects specific format.
-        // From SimulatedSerialService:
-        // <Idle|MPos:0.000,0.000,0.000|WPos:0.000,0.000,0.000|FS:0,0|WCO:0.000,0.000,0.000>
 
         const mpos = `MPos:${s.mpos.x.toFixed(3)},${s.mpos.y.toFixed(3)},${s.mpos.z.toFixed(3)}`;
         const wpos = `WPos:${s.wpos.x.toFixed(3)},${s.wpos.y.toFixed(3)},${s.wpos.z.toFixed(3)}`;
-        const fs = `FS:${s.spindle.state === 'off' ? 0 : s.spindle.speed},${s.spindle.speed}`; // Spindle speed, feed rate (using spindle speed for both for now?)
-        // Actually FS is Feed, Spindle. 
-        // SimulatedSerialService used: FS:${...},${...} which seems to be Spindle, Spindle?
-        // Let's check SimulatedSerialService again.
-        // FS:${newPosition.spindle.state === 'off' ? 0 : newPosition.spindle.speed},${newPosition.spindle.speed}
-        // It seems it was putting spindle speed in both slots?
-        // Standard GRBL is FS:Feed,Spindle.
+
+        // FS:Feed,Spindle
+        // Apply overrides to reported values
+        const currentSpindleSpeed = s.spindle.speed * (s.ov[2] / 100);
+        const fs = `FS:0,${Math.round(currentSpindleSpeed)}`;
 
         const wco = `WCO:${s.wco.x.toFixed(3)},${s.wco.y.toFixed(3)},${s.wco.z.toFixed(3)}`;
+        const ov = `Ov:${s.ov[0]},${s.ov[1]},${s.ov[2]}`;
 
-        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}>`;
+        // Accessory State (A)
+        let accessoryState = '';
+        if (s.spindle.state === 'cw') accessoryState += 'S';
+        if (s.spindle.state === 'ccw') accessoryState += 'C';
+        // Add Flood/Mist if we tracked them (F/M)
+
+        const a = accessoryState ? `|A:${accessoryState}` : '';
+
+        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}|${ov}${a}>`;
         this.emitData(statusString + '\r\n');
     }
 
@@ -160,17 +164,33 @@ export class GrblSimulator implements Simulator {
             const y = getParam(upperCmd, 'Y');
             const z = getParam(upperCmd, 'Z');
 
-            if (this.positioningMode === 'incremental') {
-                if (x !== null) this.state.mpos.x += x;
-                if (y !== null) this.state.mpos.y += y;
-                if (z !== null) this.state.mpos.z += z;
-            } else {
-                if (x !== null) this.state.mpos.x = x + this.state.wco.x;
-                if (y !== null) this.state.mpos.y = y + this.state.wco.y;
-                if (z !== null) this.state.mpos.z = z + this.state.wco.z;
-            }
-            this.updateWPos();
-            this.emitData('ok\r\n');
+            // Set status to Run during movement
+            this.state.status = 'Run';
+
+            // Simulate movement time (e.g., 10ms)
+            setTimeout(() => {
+                if (this.positioningMode === 'incremental') {
+                    if (x !== null) this.state.mpos.x += x;
+                    if (y !== null) this.state.mpos.y += y;
+                    if (z !== null) this.state.mpos.z += z;
+                } else {
+                    if (x !== null) this.state.mpos.x = x + this.state.wco.x;
+                    if (y !== null) this.state.mpos.y = y + this.state.wco.y;
+                    if (z !== null) this.state.mpos.z = z + this.state.wco.z;
+                }
+                this.updateWPos();
+
+                // Return to Idle after move (unless another move comes in immediately? 
+                // Real GRBL stays in Run if buffer has moves. 
+                // But here we process one by one with a delay. 
+                // Ideally we should check if more commands are pending, but for this simple simulator, 
+                // setting back to Idle might cause flickering 'Run' -> 'Idle' -> 'Run'.
+                // However, the user complained it *doesn't* show running.
+                // So setting it to Run is the first step.
+                this.state.status = 'Idle';
+
+                this.emitData('ok\r\n');
+            }, 10);
             return;
         }
 
@@ -222,6 +242,15 @@ export class GrblSimulator implements Simulator {
             return;
         }
 
+        if (upperCmd.startsWith('G4')) {
+            const p = getParam(upperCmd, 'P') || 0;
+            // P is usually seconds in GRBL
+            setTimeout(() => {
+                this.emitData('ok\r\n');
+            }, p * 1000);
+            return;
+        }
+
         // Default response for unknown or unhandled commands
         this.emitData('ok\r\n');
     }
@@ -249,15 +278,26 @@ export class GrblSimulator implements Simulator {
                 break;
             case '\x18': // Soft reset (Ctrl-X)
                 this.state.status = 'Idle';
-                this.state.mpos = { x: 0, y: 0, z: 0 }; // Reset position? No, soft reset doesn't lose position usually, but it stops motion.
+                // Soft reset retains position but kills alarm and stops motion.
+                // It should also reset overrides to default.
+                this.state.ov = [100, 100, 100];
                 this.state.spindle.state = 'off';
                 this.state.spindle.speed = 0;
                 this.emitData("\r\nGrbl 1.1h ['$' for help]\r\n");
                 break;
             // Feed overrides
             case '\x90': this.state.ov[0] = 100; break;
-            case '\x91': this.state.ov[0] = Math.min(this.state.ov[0] + 10, 200); break;
+            case '\x91': this.state.ov[0] = Math.min(this.state.ov[0] + 10, 300); break;
             case '\x92': this.state.ov[0] = Math.max(this.state.ov[0] - 10, 10); break;
+            case '\x93': this.state.ov[0] = Math.min(this.state.ov[0] + 1, 300); break;
+            case '\x94': this.state.ov[0] = Math.max(this.state.ov[0] - 1, 10); break;
+
+            // Spindle overrides
+            case '\x99': this.state.ov[2] = 100; break;
+            case '\x9A': this.state.ov[2] = Math.min(this.state.ov[2] + 10, 200); break;
+            case '\x9B': this.state.ov[2] = Math.max(this.state.ov[2] - 10, 10); break;
+            case '\x9C': this.state.ov[2] = Math.min(this.state.ov[2] + 1, 200); break;
+            case '\x9D': this.state.ov[2] = Math.max(this.state.ov[2] - 1, 10); break;
         }
     }
 

@@ -208,6 +208,11 @@ self.onmessage = (event) => {
         _toolpathSegmentMetadata = []; // Clear and re-populate global metadata
 
         _segments.forEach((seg, i) => {
+            // Report progress every 2000 segments
+            if (i % 2000 === 0) {
+                self.postMessage({ type: 'progress', value: Math.round((i / _segments.length) * 100) });
+            }
+
             const startVertexIndex = toolpathVertices.length / 3;
             let currentSegmentMinX = Infinity, currentSegmentMaxX = -Infinity;
             let currentSegmentMinY = Infinity, currentSegmentMaxY = -Infinity;

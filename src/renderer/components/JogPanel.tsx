@@ -10,7 +10,7 @@ import {
   PowerOff,
   Probe,
 } from "./Icons";
-import { MachineState, MachineSettings } from "../types";
+import { MachineState, MachineSettings, JobStatus } from "../types";
 import { JogManager, JogAxis, JogDirection } from "../services/JogManager";
 import { useGamepad } from "../hooks/useGamepad";
 
@@ -36,6 +36,7 @@ interface JogPanelProps {
   isJogging: boolean;
   isMacroRunning: boolean;
   jogFeedRate: number;
+  jobStatus?: string; // Add jobStatus prop
 }
 
 interface JogButtonProps {
@@ -138,6 +139,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     isJogging,
     isMacroRunning,
     jogFeedRate,
+    jobStatus,
   }) => {
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     const pressedJogKey = useRef<string | null>(null);
@@ -149,9 +151,14 @@ const JogPanel: React.FC<JogPanelProps> = memo(
       isJobActive ||
       isJogging ||
       isMacroRunning ||
-      ["Alarm", "Home"].includes(machineState?.status || "");
+      machineState?.status === "Alarm";
+
     const isProbeDisabled =
-      isControlDisabled || machineState?.spindle?.state !== "off";
+      isControlDisabled || machineState?.status !== "Idle";
+
+    // Allow spindle control if paused, otherwise follow general disabled state
+    const isSpindleDisabled = (!isConnected || (isJobActive && jobStatus !== JobStatus.Paused) || isJogging || isMacroRunning || machineState?.status === "Alarm");
+
     const isZJogDisabledForStep =
       (unit === "mm" && jogStep > 10) || (unit === "in" && jogStep > 1);
 
@@ -627,7 +634,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setSpindleSpeed(parseInt(e.target.value, 10))
                   }
-                  disabled={isControlDisabled}
+                  disabled={isSpindleDisabled}
                   className="w-full bg-secondary border border-secondary rounded-md py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50"
                   aria-label="Spindle Speed in RPM"
                 />
@@ -637,7 +644,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   title="Spindle On (CW)"
                   onClick={() => onSpindleCommand("cw", spindleSpeed)}
-                  disabled={isControlDisabled}
+                  disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
                 >
                   <RotateCw className="w-5 h-5" />
@@ -645,7 +652,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   title="Spindle On (CCW)"
                   onClick={() => onSpindleCommand("ccw", spindleSpeed)}
-                  disabled={isControlDisabled}
+                  disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
                 >
                   <RotateCcw className="w-5 h-5" />
@@ -653,7 +660,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   title="Spindle Off"
                   onClick={() => onSpindleCommand("off", 0)}
-                  disabled={isControlDisabled}
+                  disabled={isSpindleDisabled}
                   className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
                 >
                   <PowerOff className="w-5 h-5" />

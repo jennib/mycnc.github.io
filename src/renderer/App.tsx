@@ -270,6 +270,21 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSpindleOverride = (
+    command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
+  ) => {
+    const commandMap = {
+      reset: "\x99",
+      inc10: "\x9A",
+      dec10: "\x9B",
+      inc1: "\x9C",
+      dec1: "\x9D",
+    };
+    if (commandMap[command]) {
+      connectionActions.sendRealtimeCommand(commandMap[command]);
+    }
+  };
+
   const alarmInfo =
     machineState?.status === "Alarm"
       ? GRBL_ALARM_CODES[machineState!.code!] || GRBL_ALARM_CODES.default
@@ -541,6 +556,7 @@ const App: React.FC = () => {
             onClearFile={jobActions.clearFile}
             machineState={machineState}
             onFeedOverride={handleFeedOverride}
+            onSpindleOverride={handleSpindleOverride}
             timeEstimate={timeEstimate}
             machineSettings={machineSettings}
             toolLibrary={toolLibrary}
@@ -582,6 +598,7 @@ const App: React.FC = () => {
                       isMacroRunning={isMacroRunning}
                       onJogStop={handleJogStop}
                       jogFeedRate={machineSettings.jogFeedRate}
+                      jobStatus={jobStatus}
                     />
                   </div>
                 ),

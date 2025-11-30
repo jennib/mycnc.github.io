@@ -50,6 +50,7 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
             console.log(`[Machine Status] ${lastStatus.status} → ${status}`);
         }
 
+        let accessoryFound = false;
         for (const part of parts) {
             if (part.startsWith('WPos:')) {
                 const coords = part.substring(5).split(',');
@@ -83,6 +84,7 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
             } else if (part.startsWith('A:')) {
                 // Accessory State - contains spindle direction (S for CW, C for CCW)
                 // Format: A:SFM where S=Spindle CW, C=Spindle CCW, F=Flood, M=Mist
+                accessoryFound = true;
                 const accessoryState = part.substring(2);
                 if (!parsed.spindle) parsed.spindle = { state: 'off', speed: lastStatus.spindle?.speed || 0 };
 
@@ -99,6 +101,18 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
                 if (ovParts.length === 3) {
                     parsed.ov = ovParts.map((p: string) => parseInt(p, 10)) as [number, number, number];
                 }
+            }
+        }
+
+        // If A: field is missing, it implies no accessories are active (Spindle Off)
+        if (!accessoryFound) {
+            if (!parsed.spindle) {
+                parsed.spindle = {
+                    state: 'off',
+                    speed: lastStatus.spindle?.speed ?? 0
+                };
+            } else {
+                parsed.spindle.state = 'off';
             }
         }
 

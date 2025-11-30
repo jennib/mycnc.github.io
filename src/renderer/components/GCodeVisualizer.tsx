@@ -248,6 +248,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     });
     const mouseState = useRef({ isDown: false, lastPos: { x: 0, y: 0 }, button: 0 });
     const workerRef = useRef<Worker | null>(null);
+    const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
 
     const [workerData, setWorkerData] = useState<{
         toolpathVertices: Float32Array | null;
@@ -316,7 +317,10 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             const gl = glRef.current;
             const programInfo = programInfoRef.current;
 
-            if (type === 'processedGCode') {
+            if (type === 'progress') {
+                setLoadingProgress(event.data.value);
+            } else if (type === 'processedGCode') {
+                setLoadingProgress(null);
                 setParsedGCode(parsedGCode);
                 setWorkerData({
                     toolpathVertices, toolpathColors, toolpathSegmentMetadata,
@@ -349,11 +353,13 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         if (!workerRef.current || gcodeLines.length === 0) {
             setWorkerData(null); // Clear old data if no gcode or worker not ready
             setParsedGCode(null);
+            setLoadingProgress(null);
             return;
         }
 
         const handler = setTimeout(() => {
             console.log('Visualizer: Sending G-code to worker', gcodeLines.length);
+            setLoadingProgress(0);
             workerRef.current?.postMessage({
                 type: 'processGCode',
                 gcodeLines,
@@ -730,6 +736,15 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             <div className="absolute bottom-2 left-2 pointer-events-none bg-black/20 p-1 rounded text-[10px] text-white/60 backdrop-blur-[1px] select-none transition-opacity opacity-10 group-hover:opacity-100">
                 <div className="font-mono">Grid: 10 {unit}</div>
             </div>
+
+            {/* Loading Overlay */}
+            {loadingProgress !== null && (
+                <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center z-50 backdrop-blur-sm">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div className="text-lg font-bold text-primary">Processing G-Code...</div>
+                    <div className="text-sm text-text-secondary font-mono mt-2">{loadingProgress}%</div>
+                </div>
+            )}
         </div>
     );
 });
