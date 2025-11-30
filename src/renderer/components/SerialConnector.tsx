@@ -62,7 +62,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                     disabled={isConnected}
                     className="h-4 w-4 rounded border-secondary text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                 />
-                <label htmlFor="simulator-checkbox" className={`text-sm ${isConnected ? 'text-text-secondary' : ''}`}>
+                <label htmlFor="simulator-checkbox" className={`text-sm whitespace-nowrap ${isConnected ? 'text-text-secondary' : ''}`}>
                     {t('connection.useSimulator')}
                 </label>
             </div>
@@ -120,12 +120,12 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
             )}
 
             {isConnected ? (
-                <button onClick={onDisconnect} className="flex items-center gap-2 px-4 py-2 bg-accent-yellow text-black font-semibold rounded-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-background transition-colors">
+                <button onClick={onDisconnect} className="flex items-center gap-2 px-4 py-2 bg-accent-yellow text-black font-semibold rounded-md hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 focus:ring-offset-background transition-colors whitespace-nowrap">
                     <PowerOff className="w-5 h-5" />
                     {t('connection.disconnect')}
                 </button>
             ) : (
-                <button onClick={handleConnect} disabled={(!isApiSupported && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort))} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed">
+                <button onClick={handleConnect} disabled={(!isApiSupported && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort))} className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed whitespace-nowrap">
                     <Power className="w-5 h-5" />
                     {t('connection.connect')}
                 </button>
