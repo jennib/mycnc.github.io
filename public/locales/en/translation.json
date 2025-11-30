@@ -4,13 +4,26 @@
         "clear": "Clear Logs",
         "send": "Send",
         "placeholder": "Enter G-code command...",
+        "ok": "OK",
+        "edit": "Edit",
+        "done": "Done",
         "locked": "Console locked during operation",
         "minimize": "Minimize Console",
         "fullscreen": "Fullscreen Console",
-        "sendCommand": "Send Command",
-        "ok": "OK",
-        "edit": "Edit",
-        "done": "Done"
+        "sendCommand": "Send Command"
+    },
+    "console": {
+        "title": "Console",
+        "echo": "Echo",
+        "verbose": "Verbose",
+        "autoscroll": "Autoscroll",
+        "clear": "Clear Logs",
+        "send": "Send",
+        "placeholder": "Enter G-code command...",
+        "locked": "Console locked during operation",
+        "minimize": "Minimize Console",
+        "fullscreen": "Fullscreen Console",
+        "sendCommand": "Send Command"
     },
     "welcome": {
         "title": "Welcome to mycnc.app!",
@@ -408,11 +421,6 @@
             "delete": "Delete",
             "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
         },
-        "macros": {
-            "title": "Macros",
-            "add": "Add Macro",
-            "editTooltip": "Edit \"{{name}}\""
-        },
         "shared": {
             "tool": "Tool",
             "selectTool": "Select a tool...",
@@ -461,5 +469,10 @@
         "message3": "Please access this page from a compatible desktop browser.",
         "checkCompat": "Check Web Serial API compatibility",
         "viewCanIUse": "View on CanIUse.com"
+    },
+    "macros": {
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
     }
 }

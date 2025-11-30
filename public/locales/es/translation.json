@@ -4,18 +4,26 @@
         "clear": "Borrar Registros",
         "send": "Enviar",
         "placeholder": "Ingrese comando G-code...",
-        "locked": "Consola bloqueada durante operación",
-        "minimize": "Minimizar Consola",
-        "fullscreen": "Consola Pantalla Completa",
-        "sendCommand": "Enviar Comando",
         "ok": "OK",
         "edit": "Editar",
         "done": "Hecho",
-        "settings": "Configuración",
-        "close": "Cerrar",
-        "save": "Guardar",
-        "cancel": "Cancelar",
-        "language": "Idioma"
+        "locked": "Consola bloqueada durante operación",
+        "minimize": "Minimizar Consola",
+        "fullscreen": "Consola Pantalla Completa",
+        "sendCommand": "Enviar Comando"
+    },
+    "console": {
+        "title": "Consola",
+        "echo": "Eco",
+        "verbose": "Detallado",
+        "autoscroll": "Desplazamiento Auto",
+        "clear": "Borrar Registros",
+        "send": "Enviar",
+        "placeholder": "Ingrese comando G-code...",
+        "locked": "Consola bloqueada durante operación",
+        "minimize": "Minimizar Consola",
+        "fullscreen": "Consola Pantalla Completa",
+        "sendCommand": "Enviar Comando"
     },
     "welcome": {
         "title": "¡Bienvenido a mycnc.app!",
@@ -316,7 +324,7 @@
             "height": "Altura",
             "spacing": "Espaciado de Caracteres",
             "startX": "Inicio X",
-            "startY": "Inicio Y",
+            "startY": "Start Y",
             "alignment": "Alineación",
             "left": "Izquierda",
             "center": "Centro",
@@ -413,11 +421,6 @@
             "delete": "Eliminar",
             "deleteConfirm": "¿Está seguro de que desea eliminar la macro \"{{name}}\"?"
         },
-        "macros": {
-            "title": "Macros",
-            "add": "Agregar Macro",
-            "editTooltip": "Editar \"{{name}}\""
-        },
         "shared": {
             "tool": "Herramienta",
             "selectTool": "Seleccione una herramienta...",
@@ -466,5 +469,10 @@
         "message3": "Por favor acceda a esta página desde un navegador de escritorio compatible.",
         "checkCompat": "Verificar compatibilidad de API Web Serial",
         "viewCanIUse": "Ver en CanIUse.com"
+    },
+    "macros": {
+        "title": "Macros",
+        "add": "Agregar Macro",
+        "editTooltip": "Editar \"{{name}}\""
     }
 }
