@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Settings, BookOpen, Zap } from './Icons';
 
 interface WelcomeModalProps {
@@ -34,6 +35,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
     isMachineSetupComplete,
     isToolLibrarySetupComplete
 }) => {
+    const { t, i18n } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
@@ -41,7 +44,17 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
             <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all" onClick={e => e.stopPropagation()}>
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">Welcome to mycnc.app!</h2>
-                    <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
+                    <div className="flex items-center gap-4">
+                        <select
+                            value={i18n.language}
+                            onChange={(e) => i18n.changeLanguage(e.target.value)}
+                            className="bg-background border border-secondary rounded-md py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                        </select>
+                        <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
+                    </div>
                 </div>
                 <div className="p-6 space-y-4">
                     <p className="text-base text-text-primary">
