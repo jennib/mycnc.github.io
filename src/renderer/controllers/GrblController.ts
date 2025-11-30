@@ -324,6 +324,14 @@ export class GrblController implements Controller {
 
     async resume() {
         if (this.isJobRunning && this.isPaused) {
+            // Wait for any pending commands to complete (e.g. manual spindle control)
+            // This prevents "Cannot send new line while another is awaiting 'ok'"
+            let retries = 0;
+            while (this.linePromiseResolve && retries < 50) { // Wait up to 5 seconds
+                await new Promise(resolve => setTimeout(resolve, 100));
+                retries++;
+            }
+
             try {
                 // Ensure we have the latest status before making decisions
                 await this.refreshStatus();
