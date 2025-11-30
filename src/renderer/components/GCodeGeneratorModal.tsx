@@ -1621,16 +1621,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     <div className="space-y-4">
                         <div className="flex border-b border-secondary flex-wrap">
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider">{t('generators.common.milling')}</div>
-                            <Tab label="Surfacing" isActive={activeTab === 'surfacing'} onClick={() => setActiveTab('surfacing')} />
-                            <Tab label="Drilling" isActive={activeTab === 'drilling'} onClick={() => setActiveTab('drilling')} />
-                            <Tab label="Bore" isActive={activeTab === 'bore'} onClick={() => setActiveTab('bore')} />
-                            <Tab label="Pocket" isActive={activeTab === 'pocket'} onClick={() => setActiveTab('pocket')} />
-                            <Tab label="Profile" isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
-                            <Tab label="Slot" isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
-                            <Tab label="Thread Milling" isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
-                            <Tab label="Relief" isActive={activeTab === 'relief'} onClick={() => setActiveTab('relief')} />
+                            <Tab label={t('generators.tabs.surfacing')} isActive={activeTab === 'surfacing'} onClick={() => setActiveTab('surfacing')} />
+                            <Tab label={t('generators.tabs.drilling')} isActive={activeTab === 'drilling'} onClick={() => setActiveTab('drilling')} />
+                            <Tab label={t('generators.tabs.bore')} isActive={activeTab === 'bore'} onClick={() => setActiveTab('bore')} />
+                            <Tab label={t('generators.tabs.pocket')} isActive={activeTab === 'pocket'} onClick={() => setActiveTab('pocket')} />
+                            <Tab label={t('generators.tabs.profile')} isActive={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
+                            <Tab label={t('generators.tabs.slot')} isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
+                            <Tab label={t('generators.tabs.thread')} isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
+                            <Tab label={t('generators.tabs.relief')} isActive={activeTab === 'relief'} onClick={() => setActiveTab('relief')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">{t('generators.common.textEngraving')}</div>
-                            <Tab label="Text" isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+                            <Tab label={t('generators.tabs.text')} isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && (

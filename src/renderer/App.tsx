@@ -1,4 +1,5 @@
 ﻿import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 
 import { JobStatus, Tool, ConnectionOptions } from "./types";
 import SerialConnector from "./components/SerialConnector";
@@ -47,6 +48,7 @@ import { useJob } from "./hooks/useJob";
 import { useLogStore } from "./stores/logStore";
 
 const App: React.FC = () => {
+  const { t } = useTranslation();
   const machineState = useMachineStore((state) => state.machineState);
   const isJogging = useMachineStore((state) => state.isJogging);
   const isHomedSinceConnect = useMachineStore(
@@ -568,7 +570,7 @@ const App: React.FC = () => {
             tabs={[
               {
                 id: "controls",
-                label: "Controls",
+                label: t('jog.title'),
                 icon: <Move className="w-4 h-4" />,
                 content: (
                   <div className="h-full overflow-auto">
@@ -601,7 +603,7 @@ const App: React.FC = () => {
               },
               {
                 id: "webcam",
-                label: "Webcam",
+                label: t('webcam.title'),
                 icon: <Camera className="w-4 h-4" />,
                 content: (
                   <div className="h-full overflow-auto p-2">
@@ -611,7 +613,7 @@ const App: React.FC = () => {
               },
               {
                 id: "macros",
-                label: "Macros",
+                label: t('macros.title'),
                 icon: <Zap className="w-4 h-4" />,
                 content: (
                   <div className="h-full overflow-auto p-2">
@@ -628,7 +630,7 @@ const App: React.FC = () => {
               },
               {
                 id: "console",
-                label: "Console",
+                label: t('console.title'),
                 icon: <Terminal className="w-4 h-4" />,
                 content: (
                   <div className="h-full">
