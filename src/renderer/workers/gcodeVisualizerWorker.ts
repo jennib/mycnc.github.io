@@ -1,6 +1,6 @@
 // src/services/gcodeVisualizerWorker.ts
 
-import { parseGCode, GCodeSegment, GCodePoint } from '../renderer/services/gcodeParser';
+import { parseGCode, GCodeSegment, GCodePoint } from '../services/gcodeParser';
 
 // --- Type Definitions ---
 export interface BoundingBox {

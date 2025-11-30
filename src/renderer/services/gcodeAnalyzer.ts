@@ -91,7 +91,7 @@ export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number):
 };
 
 // Create a new Web Worker instance
-const analysisWorker = new Worker(new URL('../../services/gcodeAnalysisWorker.ts', import.meta.url), { type: 'module' });
+const analysisWorker = new Worker(new URL('../workers/gcodeAnalysisWorker.ts', import.meta.url), { type: 'module' });
 
 export const analyzeGCodeWithWorker = (gcodeLines: string[], settings: any): Promise<any> => {
     return new Promise((resolve, reject) => {

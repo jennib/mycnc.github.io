@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
 import { MachineSettings } from '@/types';
-import { ToolpathSegmentMetadata, BoundingBox } from '../../services/gcodeVisualizerWorker';
+import { ToolpathSegmentMetadata, BoundingBox } from '../workers/gcodeVisualizerWorker';
 import { GCodePoint } from '../services/gcodeParser';
 
 // --- Color Constants ---
@@ -305,7 +305,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     }));
 
     useEffect(() => {
-        workerRef.current = new Worker(new URL('../../services/gcodeVisualizerWorker.ts', import.meta.url), { type: 'module' });
+        workerRef.current = new Worker(new URL('../workers/gcodeVisualizerWorker.ts', import.meta.url), { type: 'module' });
 
         workerRef.current.onmessage = (event) => {
             const {

@@ -1,6 +1,5 @@
-// src/services/gcodeAnalysisWorker.ts
-import { parseGCode } from '../renderer/services/gcodeParser';
-import { MachineSettings } from '../renderer/types';
+import { parseGCode } from '../services/gcodeParser';
+import { MachineSettings } from '../types';
 
 const getParam = (gcodeLine: string, param: string): number | null => {
     // Pre-compile regex for efficiency if this were called many times with different params,
