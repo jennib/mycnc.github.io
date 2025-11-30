@@ -2,6 +2,28 @@
 
 import { parseGCode, GCodeSegment, GCodePoint } from '../renderer/services/gcodeParser';
 
+// --- Type Definitions ---
+export interface BoundingBox {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+}
+
+export interface ToolpathSegmentMetadata {
+    startVertexIndex: number;
+    vertexCount: number;
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number;
+}
+
+interface ColorUpdate {
+    offset: number;
+    data: Float32Array;
+}
+
 // --- Color Constants (from GCodeVisualizer.tsx) ---
 const RAPID_COLOR = [0.0, 1.0, 1.0, 1.0]; // Cyan, opaque
 const CUTTING_COLOR = [1.0, 0.84, 0.0, 1.0]; // Bright yellow
@@ -18,23 +40,6 @@ let _previousToolpathColors: Float32Array | null = null;
 let _gcodeLines: string[] = []; // Store raw lines for potential future use (though not currently used for coloring)
 let _machineSettings: any = {};
 
-export interface BoundingBox {
-    minX: number; maxX: number;
-    minY: number; maxY: number;
-    minZ: number; maxZ: number;
-}
-
-export interface ToolpathSegmentMetadata {
-    startVertexIndex: number; // Index in the toolpathVertices array where this segment starts (position values, so 3 per vertex)
-    vertexCount: number; // Number of vertices in this segment
-    boundingBox: BoundingBox;
-    gcodeSegmentIndex: number; // The index of the original GCodeSegment
-}
-
-interface ColorUpdate {
-    offset: number; // Byte offset in the Float32Array
-    data: Float32Array; // The new color data for this section
-}
 
 // Helper function to generate toolpath colors and identify changes
 const generateToolpathColors = (
@@ -49,13 +54,13 @@ const generateToolpathColors = (
 
     segments.forEach((seg, i) => {
         let color: number[];
-        const isHovered = i === hoveredLineIndex;
+        const isHovered = seg.line === hoveredLineIndex;
         const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
         const isBelowZero = seg.end.z < -0.001 || seg.start.z < -0.001; // Check if segment goes below zero
 
         if (isHovered) {
             color = HIGHLIGHT_COLOR;
-        } else if (i < currentLine) {
+        } else if (seg.line < currentLine) {
             color = EXECUTED_COLOR;
         } else if (seg.type === 'G0') {
             color = RAPID_COLOR;
@@ -85,14 +90,18 @@ const generateToolpathColors = (
         const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
         let changed = false;
         if (previousColors) {
-            for (let k = 0; k < segmentColorFloat32.length; k++) {
-                if (previousColors[offset + k] !== segmentColorFloat32[k]) {
-                    changed = true;
-                    break;
-                }
+            // We only need to check the first vertex's color because the whole segment has the same color
+            // But to be safe and simple, let's just check if the buffer content is different.
+            // Actually, checking every float might be slow.
+            // Optimization: Just check the first 4 floats (first vertex)
+            if (previousColors[offset] !== segmentColorFloat32[0] ||
+                previousColors[offset + 1] !== segmentColorFloat32[1] ||
+                previousColors[offset + 2] !== segmentColorFloat32[2] ||
+                previousColors[offset + 3] !== segmentColorFloat32[3]) {
+                changed = true;
             }
         } else {
-            // If there are no previous colors, it's always a change
+            // If there are no previous colors, it's always a change (initial load)
             changed = true;
         }
 
@@ -284,7 +293,7 @@ self.onmessage = (event) => {
             hoveredLineIndex,
             null // Pass null for initial calculation, as there are no previous colors
         );
-        _previousToolpathColors = initialToolpathColors; // Store the newly generated colors
+        _previousToolpathColors = new Float32Array(initialToolpathColors); // Store a copy of the generated colors
 
         let toolModelInitialVertices: Float32Array | null = null;
         let toolModelInitialColors: Float32Array | null = null;
@@ -313,6 +322,7 @@ self.onmessage = (event) => {
         for (let i = 0; i <= workArea.y; i += gridSpacing) {
             gridVertices.push(0, i, 0, workArea.x, i, 0);
         }
+
 
         const wx = workArea.x, wy = workArea.y, wz = workArea.z;
         boundsVertices.push(
@@ -408,7 +418,7 @@ self.onmessage = (event) => {
             new Float32Array(axisColors).buffer,
             new Float32Array(planeVertices).buffer,
             new Float32Array(planeColors).buffer
-        ].filter(Boolean) as Transferable[]); // Filter out nulls for toolModel buffers
+        ].filter(Boolean) as any); // Filter out nulls for toolModel buffers
     } else if (type === 'updateColors') {
         if (!_segments || _segments.length === 0 || !_toolpathSegmentMetadata || _toolpathSegmentMetadata.length === 0) return;
 
@@ -424,15 +434,15 @@ self.onmessage = (event) => {
         let toolCurrentPosition: GCodePoint | null = null;
         if (currentLine > 0 && currentLine <= _segments.length) {
             toolCurrentPosition = _segments[currentLine - 1].end;
+
+            const transferableObjects: Transferable[] = [];
+            updates.forEach(update => transferableObjects.push(update.data.buffer));
+
+            self.postMessage({
+                type: 'updatedColors',
+                toolpathColorUpdates: updates,
+                toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
+            }, transferableObjects);
         }
-
-        const transferableObjects: Transferable[] = [];
-        updates.forEach(update => transferableObjects.push(update.data.buffer));
-
-        self.postMessage({
-            type: 'updatedColors',
-            toolpathColorUpdates: updates,
-            toolCurrentPosition: toolCurrentPosition, // Send only the current tool position
-        }, transferableObjects);
     }
-}
+};
