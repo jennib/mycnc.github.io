@@ -83,9 +83,9 @@ export class GrblSimulator implements Simulator {
         const wpos = `WPos:${s.wpos.x.toFixed(3)},${s.wpos.y.toFixed(3)},${s.wpos.z.toFixed(3)}`;
 
         // FS:Feed,Spindle
-        // We don't track feed rate in state yet, so default to 0 or maybe we should?
-        // For now, let's just use 0 for feed.
-        const fs = `FS:0,${s.spindle.speed}`;
+        // Apply overrides to reported values
+        const currentSpindleSpeed = s.spindle.speed * (s.ov[2] / 100);
+        const fs = `FS:0,${Math.round(currentSpindleSpeed)}`;
 
         const wco = `WCO:${s.wco.x.toFixed(3)},${s.wco.y.toFixed(3)},${s.wco.z.toFixed(3)}`;
         const ov = `Ov:${s.ov[0]},${s.ov[1]},${s.ov[2]}`;
