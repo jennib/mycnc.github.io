@@ -235,51 +235,51 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </div>
                         </div>
                     </div>
-                </div>
-                <div className="bg-background p-4 rounded-md">
-                    <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.interface')}</h3>
-                    <div className="space-y-4">
-                        <InputGroup label={t('common.language')}>
-                            <select
-                                value={i18n.language}
-                                onChange={(e) => i18n.changeLanguage(e.target.value)}
-                                className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                            >
-                                <option value="en">English</option>
-                                <option value="es">Español</option>
-                            </select>
-                        </InputGroup>
+                    <div className="bg-background p-4 rounded-md">
+                        <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.interface')}</h3>
+                        <div className="space-y-4">
+                            <InputGroup label={t('common.language')}>
+                                <select
+                                    value={i18n.language}
+                                    onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                    className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                >
+                                    <option value="en">English</option>
+                                    <option value="es">Español</option>
+                                </select>
+                            </InputGroup>
+                        </div>
+                    </div>
+                    <div className="bg-background p-4 rounded-md">
+                        <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.dialogs')}</h3>
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm">{t('settings.resetDialogsDesc')}</p>
+                            <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
+                                {t('settings.resetDialogs')}
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div className="bg-background p-4 rounded-md">
-                    <h3 className="text-sm font-bold text-text-secondary mb-2">{t('settings.dialogs')}</h3>
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm">{t('settings.resetDialogsDesc')}</p>
-                        <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary">
-                            {t('settings.resetDialogs')}
+                <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg flex-shrink-0 border-t border-secondary">
+                    <div className="flex items-center gap-4 text-xs text-text-secondary">
+                        <span>&copy; {new Date().getFullYear()} mycnc.app</span>
+                        <button type="button" onClick={() => {
+                            onCancel(); // Close settings modal first
+                            onContactClick(); // Then open contact modal
+                        }} className="text-primary hover:underline font-semibold">
+                            {t('settings.contact')}
+                        </button>
+                        <span>•</span>
+                        <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">
+                            GitHub
+                        </a>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">{t('common.cancel')}</button>
+                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
+                            <Save className="w-5 h-5" />{t('settings.save')}
                         </button>
                     </div>
-                </div>
-            </div>
-            <div className="bg-background px-6 py-4 flex justify-between items-center rounded-b-lg flex-shrink-0 border-t border-secondary">
-                <div className="flex items-center gap-4 text-xs text-text-secondary">
-                    <span>&copy; {new Date().getFullYear()} mycnc.app</span>
-                    <button type="button" onClick={() => {
-                        onCancel(); // Close settings modal first
-                        onContactClick(); // Then open contact modal
-                    }} className="text-primary hover:underline font-semibold">
-                        {t('settings.contact')}
-                    </button>
-                    <span>•</span>
-                    <a href="https://github.com/jennib/mycnc.github.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">
-                        GitHub
-                    </a>
-                </div>
-                <div className="flex items-center gap-4">
-                    <button onClick={onCancel} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">{t('common.cancel')}</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2">
-                        <Save className="w-5 h-5" />{t('settings.save')}
-                    </button>
                 </div>
             </div>
         </div>
