@@ -126,6 +126,7 @@ const App: React.FC = () => {
   const {
     logs,
     isVerbose,
+    isLogEnabled,
     actions: logActions,
   } = useLogStore((state) => state);
 
@@ -641,6 +642,8 @@ const App: React.FC = () => {
                       isLightMode={isLightMode}
                       isVerbose={isVerbose}
                       onVerboseChange={logActions.setIsVerbose}
+                      isLogEnabled={isLogEnabled}
+                      onLogEnabledChange={logActions.setIsLogEnabled}
                     />
                   </div>
                 ),

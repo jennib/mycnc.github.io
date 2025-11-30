@@ -12,6 +12,8 @@ interface ConsoleProps {
   isLightMode: boolean;
   isVerbose: boolean;
   onVerboseChange: (isVerbose: boolean) => void;
+  isLogEnabled: boolean;
+  onLogEnabledChange: (isEnabled: boolean) => void;
 }
 
 const Console: React.FC<ConsoleProps> = ({
@@ -24,6 +26,8 @@ const Console: React.FC<ConsoleProps> = ({
   isLightMode,
   isVerbose,
   onVerboseChange,
+  isLogEnabled,
+  onLogEnabledChange,
 }) => {
   const [command, setCommand] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -38,6 +42,28 @@ const Console: React.FC<ConsoleProps> = ({
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [logs, isAutoScroll]);
+
+  // Scroll to bottom when the console becomes visible (e.g., switching tabs)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && isAutoScroll && logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+          }
+        });
+      },
+      { threshold: 0.1 } // Trigger when at least 10% is visible
+    );
+
+    if (logContainerRef.current) {
+      observer.observe(logContainerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isAutoScroll]);
 
   const handleSendCommand = () => {
     if (command.trim() === "") return;
@@ -99,6 +125,15 @@ const Console: React.FC<ConsoleProps> = ({
       <div className="flex justify-between items-center pb-2 border-b border-secondary flex-shrink-0">
         <h3 className="text-lg font-bold">Console</h3>
         <div className="flex items-center gap-2">
+          <label className="flex items-center text-sm cursor-pointer" title="Enable/Disable logging to console">
+            <input
+              type="checkbox"
+              checked={isLogEnabled}
+              onChange={(e) => onLogEnabledChange(e.target.checked)}
+              className="mr-1"
+            />
+            Echo
+          </label>
           <label className="flex items-center text-sm cursor-pointer">
             <input
               type="checkbox"
@@ -140,7 +175,7 @@ const Console: React.FC<ConsoleProps> = ({
       </div>
       <div
         ref={logContainerRef}
-        className="h-28 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
+        className="flex-grow min-h-0 bg-background rounded p-2 my-2 overflow-y-auto font-mono text-sm"
       >
         {logs.map((log, index) => (
           <div
