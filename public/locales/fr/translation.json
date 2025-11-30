@@ -1,0 +1,265 @@
+{
+    "common": {
+        "autoscroll": "Défilement automatique",
+        "clear": "Effacer le journal",
+        "send": "Envoyer",
+        "placeholder": "Entrez une commande G-code...",
+        "ok": "OK",
+        "edit": "Éditer",
+        "done": "Terminé",
+        "cancel": "Annuler",
+        "language": "Langue",
+        "locked": "Console verrouillée pendant l'opération",
+        "minimize": "Réduire la console",
+        "fullscreen": "Console plein écran",
+        "sendCommand": "Envoyer la commande"
+    },
+    "console": {
+        "title": "Console",
+        "echo": "Écho",
+        "verbose": "Détaillé",
+        "autoscroll": "Défilement automatique",
+        "clear": "Effacer le journal",
+        "send": "Envoyer",
+        "placeholder": "Entrez une commande G-code...",
+        "locked": "Console verrouillée pendant l'opération",
+        "minimize": "Réduire la console",
+        "fullscreen": "Console plein écran",
+        "sendCommand": "Envoyer la commande"
+    },
+    "welcome": {
+        "title": "Bienvenue sur mycnc.app !",
+        "description": "<b>mycnc.app</b> est un expéditeur G-code basé sur le Web qui s'exécute dans votre navigateur pour contrôler votre machine CNC. Joggez, envoyez des fichiers et surveillez les travaux en temps réel via une connexion USB. Il comprend un visualiseur de trajectoire d'outil 3D, un simulateur de machine et des générateurs de G-code pour des opérations simples.",
+        "instructions": "Pour commencer, complétez les deux étapes suivantes. Cela configurera l'application pour votre machine spécifique.",
+        "machineSetup": {
+            "title": "Configuration de la machine",
+            "description": "Définissez la zone de travail et la vitesse de broche de votre machine.",
+            "action": "Ouvrir les paramètres"
+        },
+        "toolLibrary": {
+            "title": "Bibliothèque d'outils",
+            "description": "Ajoutez au moins un outil à la bibliothèque.",
+            "action": "Ouvrir la bibliothèque d'outils"
+        },
+        "getStarted": "Commencer",
+        "trySimulator": "Essayer le simulateur",
+        "orTry": "Ou, si vous voulez juste essayer le logiciel :",
+        "complete": "Terminé"
+    },
+    "settings": {
+        "title": "Paramètres de la machine",
+        "workArea": "Dimensions de la zone de travail (mm)",
+        "jogFeedRate": "Vitesse d'avance de déplacement (mm/min)",
+        "spindleSpeed": "Plage de vitesse de broche (RPM)",
+        "controllerType": "Type de contrôleur",
+        "spindleWarmup": "Délai de préchauffage de la broche (ms)",
+        "probe": "Palpeur (mm)",
+        "probeFeedRate": "Vitesse d'avance du palpeur",
+        "customScripts": "Scripts G-code personnalisés",
+        "startupScript": "Script de démarrage (à la connexion)",
+        "shutdownScript": "Script d'arrêt (à la déconnexion)",
+        "configuration": "Configuration",
+        "configDescription": "Exporter/Importer tous les paramètres, macros et outils.",
+        "import": "Importer",
+        "export": "Exporter",
+        "interface": "Paramètres d'interface",
+        "dialogs": "Paramètres des dialogues",
+        "resetDialogsDesc": "Réinitialiser les dialogues \"Ne plus afficher\".",
+        "resetDialogs": "Réinitialiser les dialogues",
+        "contact": "Nous contacter",
+        "save": "Enregistrer les paramètres"
+    },
+    "jog": {
+        "title": "Contrôles de déplacement",
+        "yPlus": "Déplacer Y+",
+        "yMinus": "Déplacer Y-",
+        "xPlus": "Déplacer X+",
+        "xMinus": "Déplacer X-",
+        "zPlus": "Déplacer Z+",
+        "zMinus": "Déplacer Z-",
+        "step": "Pas :",
+        "stepSize": "Taille du pas :",
+        "homing": {
+            "title": "Retour à l'origine",
+            "all": "Tout à l'origine ($H)"
+        },
+        "zero": {
+            "title": "Définir le zéro",
+            "all": "Tout à zéro",
+            "xy": "XY à zéro",
+            "z": "Z à zéro"
+        },
+        "units": {
+            "title": "Unités"
+        },
+        "probe": {
+            "title": "Palpeur",
+            "x": "Palper X",
+            "y": "Palper Y",
+            "z": "Palper Z",
+            "xy": "Palper XY"
+        },
+        "spindle": {
+            "title": "Contrôle de la broche",
+            "rpm": "RPM",
+            "cw": "Broche activée (sens horaire)",
+            "ccw": "Broche activée (sens antihoraire)",
+            "off": "Broche désactivée"
+        }
+    },
+    "gcode": {
+        "title": "G-code",
+        "view": {
+            "visualizer": "Vue visualiseur",
+            "code": "Vue code",
+            "reset": "Réinitialiser en vue de dessus",
+            "fit": "Adapter la vue",
+            "zoomIn": "Zoom avant",
+            "zoomOut": "Zoom arrière"
+        },
+        "actions": {
+            "saveLocal": "Enregistrer",
+            "saveLocalTitle": "Enregistrer les modifications dans la copie locale",
+            "saveDisk": "Enregistrer sur le disque",
+            "edit": "Éditer",
+            "editTitle": "Éditer le G-code",
+            "generate": "Générer",
+            "generateTitle": "Générer du G-code",
+            "load": "Charger un fichier",
+            "clear": "Effacer le G-code et l'aperçu",
+            "scrub": "Parcourir la trajectoire d'outil G-code"
+        },
+        "status": {
+            "file": "Fichier :",
+            "notConnected": "Non connecté",
+            "connectMessage": "Veuillez vous connecter à votre machine ou simulateur en utilisant le bouton en haut à droite.",
+            "label": "État :",
+            "estTime": "Temps estimé",
+            "timeRem": "Temps restant",
+            "estJobTime": "Temps de travail estimé",
+            "estTimeRem": "Temps restant estimé",
+            "noFile": "Aucun fichier G-code chargé.",
+            "loadInstruction": "Cliquez sur \"Charger un fichier\" ou déposez ici pour commencer.",
+            "drop": "Déposez le fichier G-code ici"
+        },
+        "controls": {
+            "start": "Démarrer le travail",
+            "pause": "Pause",
+            "stop": "Arrêter le travail",
+            "resume": "Reprendre",
+            "feedRate": "Vitesse d'avance",
+            "spindle": "Broche",
+            "reset": "Réinitialiser",
+            "resetTitle": "Réinitialiser à 100%"
+        }
+    },
+    "footer": {
+        "contact": "Nous contacter",
+        "source": "Code source",
+        "here": "ici"
+    },
+    "status": {
+        "label": "État :",
+        "alarm": "Alarme :",
+        "homing": "Retour à l'origine",
+        "connected": "Connecté",
+        "disconnected": "Déconnecté",
+        "spindleOff": "Broche désactivée",
+        "clockwise": "Sens horaire",
+        "counterCw": "Sens antihoraire",
+        "wpos": "Coord. de travail",
+        "mpos": "Coord. machine"
+    },
+    "connection": {
+        "notConnected": "Non connecté",
+        "unknownPort": "Port inconnu",
+        "useSimulator": "Utiliser le simulateur",
+        "usb": "USB",
+        "tcp": "TCP",
+        "ip": "Adresse IP",
+        "port": "Port",
+        "disconnect": "Déconnecter",
+        "connect": "Connecter"
+    },
+    "toolLibrary": {
+        "title": "Bibliothèque d'outils",
+        "addNew": "Ajouter un nouvel outil",
+        "edit": "Éditer l'outil",
+        "add": "Ajouter un outil",
+        "name": "Nom de l'outil",
+        "diameter": "Diamètre (mm)",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "saveClose": "Enregistrer et fermer",
+        "empty": "Votre bibliothèque d'outils est vide.",
+        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cet outil ?"
+    },
+    "webcam": {
+        "title": "Webcam",
+        "pip": "Image dans l'image",
+        "disable": "Désactiver",
+        "enable": "Activer",
+        "local": "Caméra locale",
+        "webrtc": "Flux WebRTC",
+        "mute": "Muet",
+        "unmute": "Réactiver le son"
+    },
+    "contact": {
+        "title": "Nous contacter",
+        "description": "Si vous avez des questions, des commentaires ou besoin d'assistance, veuillez nous contacter.",
+        "email": "E-mail",
+        "send": "Envoyer le message",
+        "cancel": "Annuler",
+        "success": "Message envoyé avec succès !",
+        "error": "Échec de l'envoi du message."
+    },
+    "info": {
+        "title": "Information",
+        "content": "Ceci est une boîte de dialogue d'information."
+    },
+    "generators": {
+        "tabs": {
+            "surfacing": "Surfaçage",
+            "drilling": "Perçage",
+            "bore": "Alésage",
+            "pocket": "Poche",
+            "profile": "Profil",
+            "slot": "Rainure",
+            "text": "Texte",
+            "thread": "Filetage",
+            "relief": "Relief"
+        },
+        "common": {
+            "title": "Générateur de G-code",
+            "milling": "Fraisage",
+            "textEngraving": "Gravure de texte",
+            "generate": "Générer du G-code",
+            "direction": "Direction de fraisage",
+            "horizontal": "Horizontal (X)",
+            "vertical": "Vertical (Y)",
+            "finalDepth": "Profondeur finale",
+            "shouldBeNegative": "Doit être négatif",
+            "stepover": "Pas latéral",
+            "safeZ": "Hauteur de sécurité",
+            "feedRate": "Vitesse d'avance",
+            "spindleSpeed": "Vitesse de broche",
+            "safeZHelp": "Hauteur de déplacement rapide au-dessus du matériau"
+        },
+        "shared": {
+            "tool": "Outil",
+            "selectTool": "Sélectionner un outil...",
+            "noTools": "Aucun outil dans la bibliothèque",
+            "addTools": "Ajoutez des outils dans la bibliothèque d'outils pour activer la génération.",
+            "feedRate": "Vitesse d'avance",
+            "spindleSpeed": "Vitesse de broche",
+            "plungeRate": "Vitesse de plongée",
+            "safeZ": "Hauteur de sécurité",
+            "safeZHelp": "Hauteur de déplacement rapide au-dessus du matériau"
+        }
+    },
+    "macros": {
+        "title": "Macros",
+        "add": "Ajouter une macro",
+        "editTooltip": "Éditer \"{{name}}\""
+    }
+}
