@@ -29,32 +29,38 @@ import {
 import GCodeVisualizer, { GCodeVisualizerHandle } from "./GCodeVisualizer";
 import GCodeLine from "./GCodeLine";
 
-interface FeedrateOverrideControlProps {
-  onFeedOverride: (
+interface OverrideControlProps {
+  label: string;
+  value: number;
+  onOverride: (
     command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
   ) => void;
-  currentFeedrate: number;
+  min: number;
+  max: number;
   className?: string;
 }
 
-const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
-  onFeedOverride,
-  currentFeedrate,
+const OverrideControl: React.FC<OverrideControlProps> = ({
+  label,
+  value,
+  onOverride,
+  min,
+  max,
   className = "",
 }) => {
-  const [sliderValue, setSliderValue] = useState(currentFeedrate);
+  const [sliderValue, setSliderValue] = useState(value);
   const [isDragging, setIsDragging] = useState(false);
   const [ignoreUpdates, setIgnoreUpdates] = useState(false);
-  const lastSentValue = useRef(currentFeedrate);
+  const lastSentValue = useRef(value);
   const ignoreTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync slider with machine state when not dragging and not ignoring updates
   useEffect(() => {
     if (!isDragging && !ignoreUpdates) {
-      setSliderValue(currentFeedrate);
-      lastSentValue.current = currentFeedrate;
+      setSliderValue(value);
+      lastSentValue.current = value;
     }
-  }, [currentFeedrate, isDragging, ignoreUpdates]);
+  }, [value, isDragging, ignoreUpdates]);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value, 10);
@@ -82,7 +88,7 @@ const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
 
     // If resetting to 100, use the reset command for precision
     if (targetValue === 100) {
-      onFeedOverride("reset");
+      onOverride("reset");
       lastSentValue.current = 100;
       return;
     }
@@ -92,21 +98,21 @@ const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
     const sendCommands = () => {
       // Calculate 10% steps
       while (diff >= 10) {
-        onFeedOverride("inc10");
+        onOverride("inc10");
         diff -= 10;
       }
       while (diff <= -10) {
-        onFeedOverride("dec10");
+        onOverride("dec10");
         diff += 10;
       }
 
       // Calculate 1% steps
       while (diff >= 1) {
-        onFeedOverride("inc1");
+        onOverride("inc1");
         diff -= 1;
       }
       while (diff <= -1) {
-        onFeedOverride("dec1");
+        onOverride("dec1");
         diff += 1;
       }
     };
@@ -119,12 +125,12 @@ const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
     <div className={`bg-background px-3 py-2 rounded-md ${className}`}>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-text-secondary">Feed Rate</span>
+          <span className="text-xs font-bold text-text-secondary">{label}</span>
           <span className="text-sm font-mono font-bold text-primary">{sliderValue}%</span>
         </div>
         <button
           onClick={() => {
-            onFeedOverride("reset");
+            onOverride("reset");
             setSliderValue(100);
             lastSentValue.current = 100;
           }}
@@ -138,8 +144,8 @@ const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
       <div className="relative w-full h-4 flex items-center">
         <input
           type="range"
-          min="10"
-          max="300"
+          min={min}
+          max={max}
           step="1"
           value={sliderValue}
           onChange={handleSliderChange}
@@ -170,6 +176,9 @@ interface GCodePanelProps {
   onClearFile?: () => void;
   machineState: MachineState | null;
   onFeedOverride: (
+    command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
+  ) => void;
+  onSpindleOverride: (
     command: "reset" | "inc10" | "dec10" | "inc1" | "dec1"
   ) => void;
   timeEstimate: { totalSeconds: number; cumulativeSeconds: number[] };
@@ -208,6 +217,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   onClearFile,
   machineState,
   onFeedOverride,
+  onSpindleOverride,
   timeEstimate,
   machineSettings,
   toolLibrary,
@@ -771,11 +781,22 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         )}
       </div>
       {isJobActive && (
-        <FeedrateOverrideControl
-          onFeedOverride={onFeedOverride}
-          currentFeedrate={machineState?.ov?.[0] ?? 100}
-          className="mt-4 flex-shrink-0"
-        />
+        <div className="mt-4 flex-shrink-0 grid grid-cols-2 gap-2">
+          <OverrideControl
+            label="Feed Rate"
+            value={machineState?.ov?.[0] ?? 100}
+            onOverride={onFeedOverride}
+            min={10}
+            max={300}
+          />
+          <OverrideControl
+            label="Spindle"
+            value={machineState?.ov?.[2] ?? 100}
+            onOverride={onSpindleOverride}
+            min={20}
+            max={200}
+          />
+        </div>
       )}
     </div>
   );

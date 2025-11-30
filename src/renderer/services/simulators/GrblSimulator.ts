@@ -264,6 +264,13 @@ export class GrblSimulator implements Simulator {
             case '\x92': this.state.ov[0] = Math.max(this.state.ov[0] - 10, 10); break;
             case '\x93': this.state.ov[0] = Math.min(this.state.ov[0] + 1, 300); break;
             case '\x94': this.state.ov[0] = Math.max(this.state.ov[0] - 1, 10); break;
+
+            // Spindle overrides
+            case '\x99': this.state.ov[2] = 100; break;
+            case '\x9A': this.state.ov[2] = Math.min(this.state.ov[2] + 10, 200); break;
+            case '\x9B': this.state.ov[2] = Math.max(this.state.ov[2] - 10, 10); break;
+            case '\x9C': this.state.ov[2] = Math.min(this.state.ov[2] + 1, 200); break;
+            case '\x9D': this.state.ov[2] = Math.max(this.state.ov[2] - 1, 10); break;
         }
     }
 
