@@ -85,6 +85,36 @@ const createWindow = () => {
       ]
     },
     {
+      label: "Tools",
+      submenu: [
+        {
+          label: "Reset All",
+          click: async () => {
+            const { response } = await dialog.showMessageBox(mainWindow, {
+              type: "warning",
+              buttons: ["Cancel", "Reset All"],
+              defaultId: 0,
+              title: "Reset All Settings",
+              message: "Are you sure you want to reset all settings?",
+              detail: "This will clear all saved data, including connection history, macros, and preferences. The application will reload. This action cannot be undone.",
+            });
+
+            if (response === 1) {
+              // Clear localStorage
+              await mainWindow.webContents.executeJavaScript("localStorage.clear();");
+
+              // Clear session cache and storage
+              await session.defaultSession.clearCache();
+              await session.defaultSession.clearStorageData();
+
+              // Reload
+              mainWindow.reload();
+            }
+          },
+        },
+      ],
+    },
+    {
       role: "help",
       submenu: [
         {
