@@ -20,7 +20,8 @@
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
-    "test": "vitest"
+    "test": "vitest",
+    "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
   },
   "build": {
     "appId": "com.mycnc.app",
