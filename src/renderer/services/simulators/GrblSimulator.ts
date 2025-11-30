@@ -93,8 +93,9 @@ export class GrblSimulator implements Simulator {
         // Standard GRBL is FS:Feed,Spindle.
 
         const wco = `WCO:${s.wco.x.toFixed(3)},${s.wco.y.toFixed(3)},${s.wco.z.toFixed(3)}`;
+        const ov = `Ov:${s.ov[0]},${s.ov[1]},${s.ov[2]}`;
 
-        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}>`;
+        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}|${ov}>`;
         this.emitData(statusString + '\r\n');
     }
 
@@ -259,8 +260,10 @@ export class GrblSimulator implements Simulator {
                 break;
             // Feed overrides
             case '\x90': this.state.ov[0] = 100; break;
-            case '\x91': this.state.ov[0] = Math.min(this.state.ov[0] + 10, 200); break;
+            case '\x91': this.state.ov[0] = Math.min(this.state.ov[0] + 10, 300); break;
             case '\x92': this.state.ov[0] = Math.max(this.state.ov[0] - 10, 10); break;
+            case '\x93': this.state.ov[0] = Math.min(this.state.ov[0] + 1, 300); break;
+            case '\x94': this.state.ov[0] = Math.max(this.state.ov[0] - 1, 10); break;
         }
     }
 

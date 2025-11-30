@@ -42,55 +42,113 @@ const FeedrateOverrideControl: React.FC<FeedrateOverrideControlProps> = ({
   currentFeedrate,
   className = "",
 }) => {
+  const [sliderValue, setSliderValue] = useState(currentFeedrate);
+  const [isDragging, setIsDragging] = useState(false);
+  const [ignoreUpdates, setIgnoreUpdates] = useState(false);
+  const lastSentValue = useRef(currentFeedrate);
+  const ignoreTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync slider with machine state when not dragging and not ignoring updates
+  useEffect(() => {
+    if (!isDragging && !ignoreUpdates) {
+      setSliderValue(currentFeedrate);
+      lastSentValue.current = currentFeedrate;
+    }
+  }, [currentFeedrate, isDragging, ignoreUpdates]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value, 10);
+    setSliderValue(newValue);
+  };
+
+  const handleSliderCommit = () => {
+    setIsDragging(false);
+    setIgnoreUpdates(true);
+
+    // Clear any existing timeout
+    if (ignoreTimeoutRef.current) {
+      clearTimeout(ignoreTimeoutRef.current);
+    }
+
+    // Re-enable updates after a delay to allow round-trip
+    ignoreTimeoutRef.current = setTimeout(() => {
+      setIgnoreUpdates(false);
+    }, 1500);
+
+    let targetValue = sliderValue;
+    let diff = targetValue - lastSentValue.current;
+
+    if (diff === 0) return;
+
+    // If resetting to 100, use the reset command for precision
+    if (targetValue === 100) {
+      onFeedOverride("reset");
+      lastSentValue.current = 100;
+      return;
+    }
+
+    // Send commands to bridge the gap
+
+    const sendCommands = () => {
+      // Calculate 10% steps
+      while (diff >= 10) {
+        onFeedOverride("inc10");
+        diff -= 10;
+      }
+      while (diff <= -10) {
+        onFeedOverride("dec10");
+        diff += 10;
+      }
+
+      // Calculate 1% steps
+      while (diff >= 1) {
+        onFeedOverride("inc1");
+        diff -= 1;
+      }
+      while (diff <= -1) {
+        onFeedOverride("dec1");
+        diff += 1;
+      }
+    };
+
+    sendCommands();
+    lastSentValue.current = targetValue;
+  };
+
   return (
-    <div className={`bg-background p-3 rounded-md ${className}`}>
-      <h4 className="text-sm font-bold text-text-secondary mb-2 text-center">
-        Feed Rate Override
-      </h4>
-      <div className="flex items-center justify-center gap-4 mb-3">
-        <Percent className="w-8 h-8 text-primary" />
-        <span className="text-4xl font-mono font-bold">{currentFeedrate}</span>
+    <div className={`bg-background px-3 py-2 rounded-md ${className}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-text-secondary">Feed Rate</span>
+          <span className="text-sm font-mono font-bold text-primary">{sliderValue}%</span>
+        </div>
+        <button
+          onClick={() => {
+            onFeedOverride("reset");
+            setSliderValue(100);
+            lastSentValue.current = 100;
+          }}
+          className="text-[10px] text-text-secondary hover:text-primary transition-colors"
+          title="Reset to 100%"
+        >
+          Reset
+        </button>
       </div>
-      <div className="grid grid-cols-5 gap-2 text-sm">
-        <button
-          title="Decrease Feed Rate by 10%"
-          onClick={() => onFeedOverride("dec10")}
-          className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"
-        >
-          <Minus className="w-4 h-4 mr-1" />
-          10%
-        </button>
-        <button
-          title="Decrease Feed Rate by 1%"
-          onClick={() => onFeedOverride("dec1")}
-          className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"
-        >
-          <Minus className="w-4 h-4 mr-1" />
-          1%
-        </button>
-        <button
-          title="Reset Feed Rate to 100%"
-          onClick={() => onFeedOverride("reset")}
-          className="p-2 bg-primary rounded hover:bg-primary-focus flex items-center justify-center"
-        >
-          <RefreshCw className="w-5 h-5" />
-        </button>
-        <button
-          title="Increase Feed Rate by 1%"
-          onClick={() => onFeedOverride("inc1")}
-          className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          1%
-        </button>
-        <button
-          title="Increase Feed Rate by 10%"
-          onClick={() => onFeedOverride("inc10")}
-          className="p-2 bg-secondary rounded hover:bg-secondary-focus flex items-center justify-center font-bold"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          10%
-        </button>
+
+      <div className="relative w-full h-4 flex items-center">
+        <input
+          type="range"
+          min="10"
+          max="300"
+          step="1"
+          value={sliderValue}
+          onChange={handleSliderChange}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={handleSliderCommit}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={handleSliderCommit}
+          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+        />
       </div>
     </div>
   );
@@ -122,6 +180,7 @@ interface GCodePanelProps {
   onOpenGenerator: () => void;
   isSimulated: boolean;
 }
+
 const formatTime = (totalSeconds: number): string => {
   if (totalSeconds === Infinity) return "∞";
   if (totalSeconds < 1) return "...";
