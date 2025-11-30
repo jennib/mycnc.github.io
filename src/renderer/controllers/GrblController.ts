@@ -279,6 +279,11 @@ export class GrblController implements Controller {
 
         this.isJobRunning = false;
         this.jobAbortController = null;
+
+        // Reset overrides on job completion
+        this.sendRealtimeCommand('\x90'); // Reset Feed Override
+        this.sendRealtimeCommand('\x99'); // Reset Spindle Override
+
         this.emitter.emit('job', { status: 'complete' });
     }
 

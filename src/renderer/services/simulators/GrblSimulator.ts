@@ -269,7 +269,9 @@ export class GrblSimulator implements Simulator {
                 break;
             case '\x18': // Soft reset (Ctrl-X)
                 this.state.status = 'Idle';
-                this.state.mpos = { x: 0, y: 0, z: 0 }; // Reset position? No, soft reset doesn't lose position usually, but it stops motion.
+                // Soft reset retains position but kills alarm and stops motion.
+                // It should also reset overrides to default.
+                this.state.ov = [100, 100, 100];
                 this.state.spindle.state = 'off';
                 this.state.spindle.speed = 0;
                 this.emitData("\r\nGrbl 1.1h ['$' for help]\r\n");
