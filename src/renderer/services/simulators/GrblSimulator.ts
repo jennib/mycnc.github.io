@@ -160,17 +160,20 @@ export class GrblSimulator implements Simulator {
             const y = getParam(upperCmd, 'Y');
             const z = getParam(upperCmd, 'Z');
 
-            if (this.positioningMode === 'incremental') {
-                if (x !== null) this.state.mpos.x += x;
-                if (y !== null) this.state.mpos.y += y;
-                if (z !== null) this.state.mpos.z += z;
-            } else {
-                if (x !== null) this.state.mpos.x = x + this.state.wco.x;
-                if (y !== null) this.state.mpos.y = y + this.state.wco.y;
-                if (z !== null) this.state.mpos.z = z + this.state.wco.z;
-            }
-            this.updateWPos();
-            this.emitData('ok\r\n');
+            // Simulate movement time (e.g., 10ms)
+            setTimeout(() => {
+                if (this.positioningMode === 'incremental') {
+                    if (x !== null) this.state.mpos.x += x;
+                    if (y !== null) this.state.mpos.y += y;
+                    if (z !== null) this.state.mpos.z += z;
+                } else {
+                    if (x !== null) this.state.mpos.x = x + this.state.wco.x;
+                    if (y !== null) this.state.mpos.y = y + this.state.wco.y;
+                    if (z !== null) this.state.mpos.z = z + this.state.wco.z;
+                }
+                this.updateWPos();
+                this.emitData('ok\r\n');
+            }, 10);
             return;
         }
 

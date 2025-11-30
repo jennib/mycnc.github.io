@@ -265,6 +265,11 @@ export class GrblController implements Controller {
                     linesSent: i + 1,
                     totalLines: lines.length
                 });
+
+                // Yield to the event loop every 20 lines to prevent UI freezing
+                if (i % 20 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
             } catch (error) {
                 this.emitter.emit('error', `Job error at line ${i + 1}: ${error}`);
                 this.stopJob();
