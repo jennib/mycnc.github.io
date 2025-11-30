@@ -1,7 +1,7 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
@@ -22,38 +22,6 @@
     "dist": "electron-vite build && electron-builder",
     "test": "vitest",
     "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
-  },
-  "build": {
-    "appId": "com.mycnc.app",
-    "productName": "myCNC",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "out/**/*",
-      "package.json",
-      "build/mycnc.icns"
-    ],
-    "mac": {
-      "category": "public.app-category.Utilities",
-      "icon": "build/mycnc.icns",
-      "extendInfo": {
-        "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
-        "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
-      }
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "build/mycnc.ico"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Utility",
-      "icon": "build/icons"
-    }
   },
   "dependencies": {
     "@types/three": "^0.181.0",
