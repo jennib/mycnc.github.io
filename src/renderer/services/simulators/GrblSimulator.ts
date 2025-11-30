@@ -242,6 +242,15 @@ export class GrblSimulator implements Simulator {
             return;
         }
 
+        if (upperCmd.startsWith('G4')) {
+            const p = getParam(upperCmd, 'P') || 0;
+            // P is usually seconds in GRBL
+            setTimeout(() => {
+                this.emitData('ok\r\n');
+            }, p * 1000);
+            return;
+        }
+
         // Default response for unknown or unhandled commands
         this.emitData('ok\r\n');
     }

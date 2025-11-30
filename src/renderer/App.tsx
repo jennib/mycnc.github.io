@@ -598,6 +598,7 @@ const App: React.FC = () => {
                       isMacroRunning={isMacroRunning}
                       onJogStop={handleJogStop}
                       jogFeedRate={machineSettings.jogFeedRate}
+                      jobStatus={jobStatus}
                     />
                   </div>
                 ),
