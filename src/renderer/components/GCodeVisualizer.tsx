@@ -582,25 +582,12 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
             }
 
             if (buffers.position && buffers.toolpathSegmentMetadata && buffers.toolpathSegmentMetadata.length > 0) {
+                gl.lineWidth(3.0);
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
 
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-                gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);
-
-                // --- Frustum Culling for Toolpath Segments ---
-                buffers.toolpathSegmentMetadata.forEach((segment: ToolpathSegmentMetadata) => {
-                    if (intersectAABBFrustum(frustum, segment.boundingBox)) {
-                        gl.drawArrays(gl.LINES, segment.startVertexIndex * 3 * 2, segment.vertexCount); // Each segment is 2 points (start and end) * 3 components
-                    }
-                });
-            } else if (buffers.position && buffers.vertexCount > 0) { // Fallback if no metadata (shouldn't happen with new worker)
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-                gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, 3, gl.FLOAT, false, 0, 0);
-                gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-
                 gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
                 gl.vertexAttribPointer(programInfo.attribLocations.vertexColor, 4, gl.FLOAT, false, 0, 0);
                 gl.enableVertexAttribArray(programInfo.attribLocations.vertexColor);

@@ -54,13 +54,13 @@ const generateToolpathColors = (
 
     segments.forEach((seg, i) => {
         let color: number[];
-        const isHovered = i === hoveredLineIndex;
+        const isHovered = seg.line === hoveredLineIndex;
         const isPlunge = Math.abs(seg.start.x - seg.end.x) < 1e-6 && Math.abs(seg.start.y - seg.end.y) < 1e-6 && seg.end.z < seg.start.z;
         const isBelowZero = seg.end.z < -0.001 || seg.start.z < -0.001; // Check if segment goes below zero
 
         if (isHovered) {
             color = HIGHLIGHT_COLOR;
-        } else if (i < currentLine) {
+        } else if (seg.line < currentLine) {
             color = EXECUTED_COLOR;
         } else if (seg.type === 'G0') {
             color = RAPID_COLOR;
@@ -70,46 +70,46 @@ const generateToolpathColors = (
             color = PLUNGE_COLOR;
         } else {
             color = CUTTING_COLOR;
+        }
 
-            // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
-            const metadata = toolpathSegmentMetadata[i];
-            if (!metadata) { // This should not happen if segments and metadata arrays are in sync
-                console.warn(`No metadata found for segment ${i}`);
-                return;
-            }
+        // Each segment contributes `vertexCount` vertices, and each vertex has 4 color components
+        const metadata = toolpathSegmentMetadata[i];
+        if (!metadata) { // This should not happen if segments and metadata arrays are in sync
+            console.warn(`No metadata found for segment ${i}`);
+            return;
+        }
 
-            const segmentColorData: number[] = [];
-            for (let j = 0; j < metadata.vertexCount; j++) {
-                segmentColorData.push(...color);
-            }
+        const segmentColorData: number[] = [];
+        for (let j = 0; j < metadata.vertexCount; j++) {
+            segmentColorData.push(...color);
+        }
 
-            const segmentColorFloat32 = new Float32Array(segmentColorData);
+        const segmentColorFloat32 = new Float32Array(segmentColorData);
 
-            // Check if color has changed compared to previousColors
-            const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
-            let changed = false;
-            if (previousColors) {
-                // We only need to check the first vertex's color because the whole segment has the same color
-                // But to be safe and simple, let's just check if the buffer content is different.
-                // Actually, checking every float might be slow.
-                // Optimization: Just check the first 4 floats (first vertex)
-                if (previousColors[offset] !== segmentColorFloat32[0] ||
-                    previousColors[offset + 1] !== segmentColorFloat32[1] ||
-                    previousColors[offset + 2] !== segmentColorFloat32[2] ||
-                    previousColors[offset + 3] !== segmentColorFloat32[3]) {
-                    changed = true;
-                }
-            } else {
-                // If there are no previous colors, it's always a change (initial load)
+        // Check if color has changed compared to previousColors
+        const offset = metadata.startVertexIndex * 4; // 4 color components per vertex
+        let changed = false;
+        if (previousColors) {
+            // We only need to check the first vertex's color because the whole segment has the same color
+            // But to be safe and simple, let's just check if the buffer content is different.
+            // Actually, checking every float might be slow.
+            // Optimization: Just check the first 4 floats (first vertex)
+            if (previousColors[offset] !== segmentColorFloat32[0] ||
+                previousColors[offset + 1] !== segmentColorFloat32[1] ||
+                previousColors[offset + 2] !== segmentColorFloat32[2] ||
+                previousColors[offset + 3] !== segmentColorFloat32[3]) {
                 changed = true;
             }
-
-            if (changed) {
-                updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
-            }
-
-            newColorsArray.push(...segmentColorData);
+        } else {
+            // If there are no previous colors, it's always a change (initial load)
+            changed = true;
         }
+
+        if (changed) {
+            updates.push({ offset: offset * Float32Array.BYTES_PER_ELEMENT, data: segmentColorFloat32 });
+        }
+
+        newColorsArray.push(...segmentColorData);
     });
 
     return { newColors: new Float32Array(newColorsArray), updates };
@@ -293,7 +293,7 @@ self.onmessage = (event) => {
             hoveredLineIndex,
             null // Pass null for initial calculation, as there are no previous colors
         );
-        _previousToolpathColors = initialToolpathColors; // Store the newly generated colors
+        _previousToolpathColors = new Float32Array(initialToolpathColors); // Store a copy of the generated colors
 
         let toolModelInitialVertices: Float32Array | null = null;
         let toolModelInitialColors: Float32Array | null = null;
