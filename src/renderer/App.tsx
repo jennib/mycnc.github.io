@@ -403,7 +403,7 @@ const App: React.FC = () => {
       <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-2">
         {/* Left: Logo */}
         <div className="flex items-center gap-4 flex-1">
-          <img src="/mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
+          <img src="./mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
         </div>
 
         {/* Center: E-STOP */}
