@@ -10,7 +10,9 @@
         "locked": "Consola bloqueada durante operación",
         "minimize": "Minimizar Consola",
         "fullscreen": "Consola Pantalla Completa",
-        "sendCommand": "Enviar Comando"
+        "sendCommand": "Enviar Comando",
+        "cancel": "Cancelar",
+        "language": "Idioma"
     },
     "console": {
         "title": "Consola",

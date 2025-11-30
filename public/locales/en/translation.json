@@ -10,7 +10,9 @@
         "locked": "Console locked during operation",
         "minimize": "Minimize Console",
         "fullscreen": "Fullscreen Console",
-        "sendCommand": "Send Command"
+        "sendCommand": "Send Command",
+        "cancel": "Cancel",
+        "language": "Language"
     },
     "console": {
         "title": "Console",
