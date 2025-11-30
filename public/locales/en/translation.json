@@ -235,7 +235,15 @@
             "vertical": "Vertical (Y)",
             "finalDepth": "Final Depth",
             "shouldBeNegative": "Should be negative",
-            "stepover": "Stepover"
+            "stepover": "Stepover",
+            "title": "G-Code Generators",
+            "milling": "Milling",
+            "textEngraving": "Text Engraving",
+            "generate": "Generate G-Code",
+            "safeZ": "Safe Z",
+            "feedRate": "Feed Rate",
+            "spindleSpeed": "Spindle Speed",
+            "safeZHelp": "Rapid height above stock"
         },
         "bore": {
             "centerX": "Center X",

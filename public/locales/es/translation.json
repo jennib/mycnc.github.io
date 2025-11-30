@@ -235,7 +235,15 @@
             "vertical": "Vertical (Y)",
             "finalDepth": "Profundidad Final",
             "shouldBeNegative": "Debe ser negativo",
-            "stepover": "Paso Lateral"
+            "stepover": "Paso Lateral",
+            "title": "Generadores de Código G",
+            "milling": "Fresado",
+            "textEngraving": "Grabado de Texto",
+            "generate": "Generar Código G",
+            "safeZ": "Z Seguro",
+            "feedRate": "Velocidad de Avance",
+            "spindleSpeed": "Velocidad del Husillo",
+            "safeZHelp": "Altura rápida sobre el material"
         },
         "bore": {
             "centerX": "Centro X",
