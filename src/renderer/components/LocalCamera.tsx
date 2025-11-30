@@ -41,7 +41,7 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
     }, [videoRef]);
 
     const getDevices = useCallback(async () => {
-        if (!isElectron) return;
+        // if (!isElectron) return; // Allow in browser
         setIsLoading(true);
         setError(null);
         try {
@@ -74,7 +74,7 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
     }, [isElectron, selectedDeviceId, selectedAudioDeviceId, setWebcamSettings]);
 
     const startStream = useCallback(async () => {
-        if (!selectedDeviceId || !isElectron) return;
+        if (!selectedDeviceId) return; // Removed !isElectron check
         stopStream();
 
         try {

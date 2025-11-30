@@ -17,7 +17,7 @@ interface MacrosPanelProps {
 }
 
 const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEditor, isEditMode, onToggleEditMode, disabled }) => {
-    const [isCollapsed, setIsCollapsed] = useState(true);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
         // Prevent event bubbling up to the main button when clicking the small edit icon
