@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,43 +16,64 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center; /* Center content horizontally */
+            align-items: center;
+            /* Center content horizontally */
             height: 100vh;
             box-sizing: border-box;
         }
+
         img {
             width: 210px;
             height: 50px;
             margin-bottom: 15px;
         }
+
         h1 {
             font-size: 1.5em;
             margin: 0 0 10px;
         }
+
         p {
             margin: 4px 0;
         }
+
         .description {
             margin-top: 15px;
             max-width: 380px;
         }
+
         a {
             color: #007bff;
             text-decoration: none;
         }
     </style>
 </head>
+
 <body>
-    <img src="mycnclogo.png" alt="myCNC Logo"> 
+    <img src="mycnclogo.png" alt="myCNC Logo">
     <h1>myCNC.app</h1>
-    <p>Version 1.0.5</p>
-    <p>Copyright © 2025 Jennifer Beidas</p>
+    <p id="version">Version ...</p>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const version = params.get('version');
+        if (version) {
+            document.getElementById('version').textContent = 'Version ' + version;
+        }
+    </script>
+    <p>Copyright © 2025 Tutti Studios</p>
     <p class="description">
-        myCNC is a free, open-source G-code sender, toolpath generatr, G-cod editor and simulator for CNC machining enthusiasts.
+        myCNC is a free, open-source G-code sender, toolpath generator, G-code editor and simulator for CNC machining
+        enthusiasts.
     </p>
-    <p><a href="https://github.com/jennib/mycnc.github.io">View on GitHub</a></p>
-    <p><a href="https://mycnc.app">Use the online version at mycnc.app</a></p>
+    <p><a href="https://github.com/jennib/mycnc.github.io" target="_blank">View on GitHub</a></p>
+    <p><a href="https://mycnc.app" target="_blank">Use the online version at mycnc.app</a></p>
     <p>&nbsp;</p>
-    <p><script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="jennibm" data-description="Support me on Buy me a coffee!" data-message="Your support means a lot.  Thank you." data-color="#FF813F" data-position="Right" data-x_margin="18" data-y_margin="18"></script></p>
+    <p>
+        <script data-name="BMC-Widget" data-cfasync="false"
+            src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="jennibm"
+            data-description="Support me on Buy me a coffee!" data-message="Your support means a lot.  Thank you."
+            data-color="#FF813F" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
+    </p>
 </body>
+
 </html>

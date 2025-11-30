@@ -26,12 +26,13 @@ const createAboutWindow = () => {
   // Remove the menu from the about window
   aboutWindow.setMenu(null);
 
+  const version = app.getVersion();
   if (process.env.VITE_DEV_SERVER_URL) {
-    const aboutUrl = new URL("about.html", process.env.VITE_DEV_SERVER_URL)
-      .href;
-    aboutWindow.loadURL(aboutUrl);
+    const aboutUrl = new URL("about.html", process.env.VITE_DEV_SERVER_URL);
+    aboutUrl.searchParams.set("version", version);
+    aboutWindow.loadURL(aboutUrl.href);
   } else {
-    aboutWindow.loadFile(path.join(__dirname, "../renderer/about.html"));
+    aboutWindow.loadFile(path.join(__dirname, "../renderer/about.html"), { query: { version } });
   }
 
   aboutWindow.once("ready-to-show", () => {
