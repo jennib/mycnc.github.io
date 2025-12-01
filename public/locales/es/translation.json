@@ -133,7 +133,23 @@
             "generateTitle": "Abrir generadores de código G",
             "load": "Cargar Archivo",
             "clear": "Borrar Código G y Vista Previa",
-            "scrub": "Recorrer Trayectoria G-code"
+            "scrub": "Recorrer Trayectoria G-code",
+            "undo": "Deshacer",
+            "undoTitle": "Deshacer (Ctrl+Z)",
+            "redo": "Rehacer",
+            "redoTitle": "Rehacer (Ctrl+Y)"
+        },
+        "editor": {
+            "title": "Editor de G-code",
+            "advancedEdit": "Editor Avanzado",
+            "quickEdit": "Edición Rápida",
+            "format": "Formatear Código",
+            "validate": "Validar",
+            "saveToApp": "Guardar en la Aplicación",
+            "saveToDisk": "Guardar en Disco",
+            "errors": "errores",
+            "warnings": "advertencias",
+            "noIssues": "No se encontraron problemas"
         },
         "status": {
             "file": "Archivo:",

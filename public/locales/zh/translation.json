@@ -133,7 +133,23 @@
             "generateTitle": "打开 G 代码生成器",
             "load": "加载文件",
             "clear": "清除 G 代码和预览",
-            "scrub": "擦洗 G 代码刀具路径"
+            "scrub": "擦洗 G 代码刀具路径",
+            "undo": "撤销",
+            "undoTitle": "撤销 (Ctrl+Z)",
+            "redo": "重做",
+            "redoTitle": "重做 (Ctrl+Y)"
+        },
+        "editor": {
+            "title": "G代码编辑器",
+            "advancedEdit": "高级编辑器",
+            "quickEdit": "快速编辑",
+            "format": "格式化代码",
+            "validate": "验证",
+            "saveToApp": "保存到应用",
+            "saveToDisk": "保存到磁盘",
+            "errors": "错误",
+            "warnings": "警告",
+            "noIssues": "未发现问题"
         },
         "status": {
             "file": "文件：",

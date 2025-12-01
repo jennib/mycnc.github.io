@@ -133,7 +133,23 @@
             "generateTitle": "Open G-Code Generators",
             "load": "Load File",
             "clear": "Clear G-Code & Preview",
-            "scrub": "Scrub G-code Toolpath"
+            "scrub": "Scrub G-code Toolpath",
+            "undo": "Undo",
+            "undoTitle": "Undo (Ctrl+Z)",
+            "redo": "Redo",
+            "redoTitle": "Redo (Ctrl+Y)"
+        },
+        "editor": {
+            "title": "G-code Editor",
+            "advancedEdit": "Advanced Editor",
+            "quickEdit": "Quick Edit",
+            "format": "Format Code",
+            "validate": "Validate",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "status": {
             "file": "File:",

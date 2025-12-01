@@ -133,7 +133,23 @@
             "generateTitle": "Ouvrir les générateurs de G-code",
             "load": "Charger un fichier",
             "clear": "Effacer le G-code et l'aperçu",
-            "scrub": "Parcourir la trajectoire d'outil G-code"
+            "scrub": "Parcourir la trajectoire d'outil G-code",
+            "undo": "Annuler",
+            "undoTitle": "Annuler (Ctrl+Z)",
+            "redo": "Rétablir",
+            "redoTitle": "Rétablir (Ctrl+Y)"
+        },
+        "editor": {
+            "title": "Éditeur G-code",
+            "advancedEdit": "Éditeur Avancé",
+            "quickEdit": "Édition Rapide",
+            "format": "Formater le Code",
+            "validate": "Valider",
+            "saveToApp": "Enregistrer dans l'App",
+            "saveToDisk": "Enregistrer sur le Disque",
+            "errors": "erreurs",
+            "warnings": "avertissements",
+            "noIssues": "Aucun problème trouvé"
         },
         "status": {
             "file": "Fichier :",

@@ -26,9 +26,13 @@ import {
   Crosshair,
   Zap,
   AlertTriangle,
+  Undo,
+  Redo,
 } from "./Icons";
 import GCodeVisualizer, { GCodeVisualizerHandle } from "./GCodeVisualizer";
 import GCodeLine from "./GCodeLine";
+import { useUndoRedo } from "../hooks/useUndoRedo";
+import GCodeEditorModal from "./GCodeEditorModal";
 
 interface OverrideControlProps {
   label: string;
@@ -232,13 +236,26 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const visualizerRef = useRef<GCodeVisualizerHandle>(null);
   const codeContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [view, setView] = useState<"visualizer" | "code">("visualizer");
   const [isEditing, setIsEditing] = useState(false);
-  const [editedGCode, setEditedGCode] = useState("");
+  const [isAdvancedEditorOpen, setIsAdvancedEditorOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [scrollTop, setScrollTop] = useState(0);
   const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
   const [scrubberLine, setScrubberLine] = useState(0); // New state for the scrubber
+
+  // Undo/Redo state management
+  const {
+    state: editedGCode,
+    setState: setEditedGCode,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    reset: resetUndoRedo,
+    clear: clearUndoRedo,
+  } = useUndoRedo(gcodeLines.join("\n"));
 
   const isHoming = machineState?.status === "Home";
   const isJobActive =
@@ -259,10 +276,42 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     setScrollTop(e.currentTarget.scrollTop);
   };
 
+  // Reset undo/redo when file changes
   useEffect(() => {
-    setEditedGCode(gcodeLines.join("\n"));
+    resetUndoRedo(gcodeLines.join("\n"));
     setIsEditing(false); // Exit edit mode on new file load
-  }, [gcodeLines]);
+  }, [gcodeLines, resetUndoRedo]);
+
+  // Keyboard shortcuts for undo/redo (only when textarea is focused)
+  useEffect(() => {
+    if (!isEditing || !textareaRef.current) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+
+      // Undo: Ctrl+Z (Cmd+Z on Mac)
+      if (ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Redo: Ctrl+Y or Ctrl+Shift+Z (Cmd+Y or Cmd+Shift+Z on Mac)
+      if (ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+    };
+
+    const textarea = textareaRef.current;
+    textarea.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      textarea.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isEditing, undo, redo]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -279,11 +328,12 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
   const handleSave = () => {
     onGCodeChange(editedGCode);
+    clearUndoRedo();
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditedGCode(gcodeLines.join("\n"));
+    resetUndoRedo(gcodeLines.join("\n"));
     setIsEditing(false);
   };
 
@@ -306,6 +356,24 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     }
 
     a.download = suggestedFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Advanced Editor handlers
+  const handleAdvancedEditorSaveToApp = (content: string) => {
+    onGCodeChange(content);
+    setIsAdvancedEditorOpen(false);
+  };
+
+  const handleAdvancedEditorSaveToDisk = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -427,10 +495,12 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         if (isEditing)
           return (
             <textarea
+              ref={textareaRef}
               className="w-full h-full absolute inset-0 bg-background font-mono text-sm p-2 rounded border border-secondary focus:ring-primary focus:border-primary"
               value={editedGCode}
               onChange={(e) => setEditedGCode(e.target.value)}
               spellCheck="false"
+              autoFocus
             />
           );
         return (
@@ -650,6 +720,23 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             (isEditing ? (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={undo}
+                  disabled={!canUndo}
+                  className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={t('gcode.actions.undoTitle')}
+                >
+                  <Undo className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={!canRedo}
+                  className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={t('gcode.actions.redoTitle')}
+                >
+                  <Redo className="w-4 h-4" />
+                </button>
+                <div className="w-px h-6 bg-secondary" />
+                <button
                   onClick={handleSave}
                   className="flex items-center gap-2 px-3 py-1 bg-accent-green text-white font-semibold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                   title={t('gcode.actions.saveLocalTitle')}
@@ -672,13 +759,24 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
-                title={t('gcode.actions.editTitle')}
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors"
+                  title={t('gcode.editor.quickEdit')}
+                >
+                  <Pencil className="w-4 h-4" />
+                  {t('gcode.editor.quickEdit')}
+                </button>
+                <button
+                  onClick={() => setIsAdvancedEditorOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
+                  title={t('gcode.editor.advancedEdit')}
+                >
+                  <Code className="w-4 h-4" />
+                  {t('gcode.editor.advancedEdit')}
+                </button>
+              </div>
             ))}
         </div>
         <div className="flex items-center gap-2">
@@ -794,6 +892,18 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           />
         </div>
       )}
+
+      {/* Advanced G-code Editor Modal */}
+      <GCodeEditorModal
+        isOpen={isAdvancedEditorOpen}
+        onClose={() => setIsAdvancedEditorOpen(false)}
+        initialContent={gcodeLines.join("\n")}
+        fileName={fileName || "untitled.gcode"}
+        onSaveToApp={handleAdvancedEditorSaveToApp}
+        onSaveToDisk={handleAdvancedEditorSaveToDisk}
+        machineSettings={machineSettings}
+        unit={unit}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-Fix the import React from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tool, MachineSettings, BoreParams } from '@/types';
 import { ToolSelector, Input, Checkbox, SpindleAndFeedControls } from './SharedControls';
