@@ -83,11 +83,11 @@ const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) =
     return (
         <div className="flex items-center gap-3">
             <h4 className="text-sm font-bold text-text-secondary">{t(title === 'WPos' ? 'status.wpos' : 'status.mpos')}</h4>
-            <div className="flex gap-3 text-center font-mono bg-background px-2 py-1 rounded-md text-base">
-                <div><span className="font-bold text-red-400">X </span><span className="text-text-primary">{formatCoordinate(pos?.x)}</span></div>
-                <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary">{formatCoordinate(pos?.y)}</span></div>
-                <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary">{formatCoordinate(pos?.z)}</span></div>
-                <span className="text-xs text-text-secondary ml-1 self-center">{unit}</span>
+            <div className="flex gap-4 text-center font-mono bg-background px-3 py-1 rounded-md text-xl">
+                <div><span className="font-bold text-red-400">X </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.x)}</span></div>
+                <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.y)}</span></div>
+                <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.z)}</span></div>
+                <span className="text-sm text-text-secondary ml-1 self-center">{unit}</span>
             </div>
         </div>
     );

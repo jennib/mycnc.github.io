@@ -31,7 +31,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
     };
 
     return (
-        <div className="bg-surface rounded-lg shadow-lg p-4">
+        <div className="bg-surface rounded-lg shadow-lg p-2">
             <div
                 onClick={() => setIsCollapsed(p => !p)}
                 className="flex items-center justify-between cursor-pointer"
@@ -41,8 +41,8 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                 aria-controls="macros-panel-content"
                 onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') setIsCollapsed(p => !p); }}
             >
-                <div className="flex items-center gap-2 text-lg font-bold">
-                    <Zap className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2 text-sm font-bold text-text-secondary">
+                    <Zap className="w-4 h-4 text-primary" />
                     {t('macros.title')}
                 </div>
                 <div className="flex items-center gap-4">
@@ -72,7 +72,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
             </div>
 
             {!isCollapsed && (
-                <div id="macros-panel-content" className="mt-4 pt-4 border-t border-secondary">
+                <div id="macros-panel-content" className="mt-2 pt-2 border-t border-secondary">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {macros.map((macro, index) => (
                             <button
