@@ -1,6 +1,6 @@
 import React, { useState, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Zap, Pencil, CheckCircle, PlusCircle, ChevronDown, ChevronUp } from './Icons';
+import { Zap, Pencil, CheckCircle, PlusCircle, ChevronDown, ChevronUp, PlayCircle } from './Icons';
 
 interface Macro {
     name: string;
@@ -42,7 +42,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                 onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') setIsCollapsed(p => !p); }}
             >
                 <div className="flex items-center gap-2 text-sm font-bold text-text-secondary">
-                    <Zap className="w-4 h-4 text-primary" />
+                    <PlayCircle className="w-4 h-4 text-primary" />
                     {t('macros.title')}
                 </div>
                 <div className="flex items-center gap-4">
@@ -55,16 +55,13 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                             }
                         }}
                         disabled={disabled && !isEditMode} // Can always exit edit mode
-                        className="flex items-center gap-2 px-3 py-1 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors text-sm disabled:opacity-50"
+                        className="p-1 rounded hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary transition-colors disabled:opacity-50"
+                        title={isEditMode ? t('common.done') : t('common.edit')}
                     >
                         {isEditMode ? (
-                            <Fragment>
-                                <CheckCircle className="w-4 h-4 text-accent-green" /> {t('common.done')}
-                            </Fragment>
+                            <CheckCircle className="w-5 h-5 text-accent-green" />
                         ) : (
-                            <Fragment>
-                                <Pencil className="w-4 h-4" /> {t('common.edit')}
-                            </Fragment>
+                            <Pencil className="w-5 h-5 text-text-secondary" />
                         )}
                     </button>
                     {isCollapsed ? <ChevronDown className="w-5 h-5 text-text-secondary" /> : <ChevronUp className="w-5 h-5 text-text-secondary" />}
@@ -93,10 +90,10 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                         {isEditMode && (
                             <button
                                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onOpenEditor(null); }} // Stop propagation on Add
-                                className="p-3 border-2 border-dashed border-secondary rounded-md text-sm font-semibold text-text-secondary hover:border-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface flex flex-col items-center justify-center gap-1"
+                                className="p-3 border-2 border-dashed border-secondary rounded-md hover:border-primary hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface flex items-center justify-center"
+                                title={t('macros.add')}
                             >
-                                <PlusCircle className="w-6 h-6" />
-                                {t('macros.add')}
+                                <PlusCircle className="w-6 h-6 text-text-secondary hover:text-primary" />
                             </button>
                         )}
                     </div>
