@@ -122,7 +122,7 @@ const JogButton: React.FC<JogButtonProps> = memo(({
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
       disabled={isDisabled}
-      className={`flex items-center justify-center p-2 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
+      className={`flex items-center justify-center py-6 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
         }`}
       title={title}
     >
@@ -403,7 +403,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           <div className="flex flex-col gap-1">
             {/* Jog Controls */}
             <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1 text-center">
+              <h4 className="text-xs font-bold text-text-secondary mb-1">
                 {t('jog.title')}
               </h4>
               <div className="grid grid-cols-3 grid-rows-3 gap-1">
