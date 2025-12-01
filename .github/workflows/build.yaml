@@ -24,13 +24,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Build/release Electron app
-        uses: samuelmeuli/action-electron-builder@v1
-        with:
-          # GitHub token, automatically provided to the action
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install dependencies
+        run: npm ci
 
-          # Since we only trigger this workflow on tags (see "on:" above),
-          # we can just set this to true.
-          release: true
+      - name: Build and Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist
