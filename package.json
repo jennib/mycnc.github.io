@@ -1,7 +1,7 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.13",
+  "version": "1.0.15",
   "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
@@ -21,51 +21,23 @@
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
     "test": "vitest",
+    "check:translations": "node scripts/check-translations.cjs",
     "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
-  },
-  "build": {
-    "appId": "com.mycnc.app",
-    "productName": "myCNC",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "out/**/*",
-      "package.json",
-      "build/mycnc.icns"
-    ],
-    "mac": {
-      "category": "public.app-category.Utilities",
-      "icon": "build/mycnc.icns",
-      "extendInfo": {
-        "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
-        "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
-      }
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "build/mycnc.ico"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "category": "Utility",
-      "icon": "build/icons"
-    }
   },
   "dependencies": {
     "@types/three": "^0.181.0",
     "@vercel/analytics": "^1.5.0",
     "@xstate/react": "^6.0.0",
+    "electron-updater": "^6.6.2",
     "i18next": "^25.6.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.3.5",
+    "sharp": "^0.34.5",
     "three": "^0.181.2",
+    "to-ico": "^1.1.5",
     "xstate": "^5.24.0",
     "zustand": "^5.0.8"
   },

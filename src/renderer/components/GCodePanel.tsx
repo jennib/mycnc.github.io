@@ -494,9 +494,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           onClick={() => onJobControl("start", { startLine: 0 })}
           disabled={!isReadyToStart}
           className="col-span-3 flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:bg-secondary disabled:cursor-not-allowed text-lg"
+          title="Start Job"
         >
           <Play className="w-6 h-6" />
-          Start Job
         </button>
       );
     }
@@ -509,9 +509,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={() => onJobControl("pause")}
             disabled={isHoming}
             className="flex items-center justify-center gap-2 p-3 bg-accent-yellow text-white font-bold rounded-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
+            title="Pause Job"
           >
             <Pause className="w-6 h-6" />
-            Pause
           </button>
           <div className="relative col-span-2">
             <button
@@ -519,9 +519,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               onClick={() => onJobControl("stop")}
               disabled={isHoming}
               className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
+              title="Stop Job"
             >
               <Square className="w-6 h-6" />
-              Stop Job
             </button>
           </div>
         </>
@@ -536,9 +536,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={() => onJobControl("resume")}
             disabled={isHoming}
             className="flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
+            title="Resume Job"
           >
             <Play className="w-6 h-6" />
-            Resume
           </button>
           <div className="col-span-2">
             <button
@@ -546,9 +546,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               onClick={() => onJobControl("stop")}
               disabled={isHoming}
               className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-colors text-lg disabled:bg-secondary disabled:cursor-not-allowed"
+              title="Stop Job"
             >
               <Square className="w-6 h-6" />
-              Stop Job
             </button>
           </div>
         </>
@@ -655,7 +655,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                   title={t('gcode.actions.saveLocalTitle')}
                 >
                   <CheckCircle className="w-4 h-4" />
-                  {t('gcode.actions.saveLocal')}
                 </button>
                 <button
                   onClick={handleSaveToDisk}
@@ -663,7 +662,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                   title={t('gcode.actions.saveDisk')}
                 >
                   <Save className="w-4 h-4" />
-                  {t('gcode.actions.saveDisk')}
                 </button>
                 <button
                   onClick={handleCancel}
@@ -671,7 +669,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                   title={t('common.cancel')}
                 >
                   <X className="w-4 h-4" />
-                  {t('common.cancel')}
                 </button>
               </div>
             ) : (
@@ -681,7 +678,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 title={t('gcode.actions.editTitle')}
               >
                 <Pencil className="w-4 h-4" />
-                {t('gcode.actions.edit')}
               </button>
             ))}
         </div>
@@ -706,9 +702,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={handleUploadClick}
             disabled={isJobActive}
             className="flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t('gcode.actions.load')}
           >
             <Upload className="w-5 h-5" />
-            {t('gcode.actions.load')}
           </button>
           <button
             onClick={onClearFile}

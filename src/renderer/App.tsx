@@ -573,7 +573,7 @@ const App: React.FC = () => {
                 label: t('jog.title'),
                 icon: <Move className="w-4 h-4" />,
                 content: (
-                  <div className="h-full overflow-auto">
+                  <div className="h-full overflow-auto p-2 flex flex-col gap-2">
                     <JogPanel
                       isConnected={isConnected}
                       machineState={machineState}
@@ -598,6 +598,14 @@ const App: React.FC = () => {
                       jogFeedRate={machineSettings.jogFeedRate}
                       jobStatus={jobStatus}
                     />
+                    <MacrosPanel
+                      macros={macros}
+                      onRunMacro={handleRunMacro}
+                      onOpenEditor={uiActions.openMacroEditor}
+                      isEditMode={isMacroEditMode}
+                      onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
+                      disabled={isJobActive}
+                    />
                   </div>
                 ),
               },
@@ -608,23 +616,6 @@ const App: React.FC = () => {
                 content: (
                   <div className="h-full overflow-auto p-2">
                     <WebcamPanel />
-                  </div>
-                ),
-              },
-              {
-                id: "macros",
-                label: t('macros.title'),
-                icon: <Zap className="w-4 h-4" />,
-                content: (
-                  <div className="h-full overflow-auto p-2">
-                    <MacrosPanel
-                      macros={macros}
-                      onRunMacro={handleRunMacro}
-                      onOpenEditor={uiActions.openMacroEditor}
-                      isEditMode={isMacroEditMode}
-                      onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
-                      disabled={isJobActive}
-                    />
                   </div>
                 ),
               },

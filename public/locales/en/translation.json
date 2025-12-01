@@ -81,13 +81,19 @@
         "stepSize": "Step size:",
         "homing": {
             "title": "Homing",
-            "all": "Home All ($H)"
+            "all": "Home All ($H)",
+            "x": "Home X",
+            "y": "Home Y",
+            "z": "Home Z",
+            "xy": "Home XY"
         },
         "zero": {
             "title": "Set Zero",
             "all": "Zero All",
-            "xy": "Zero XY",
-            "z": "Zero Z"
+            "x": "Zero X",
+            "y": "Zero Y",
+            "z": "Zero Z",
+            "xy": "Zero XY"
         },
         "units": {
             "title": "Units"
@@ -123,8 +129,8 @@
             "saveDisk": "Save to Disk",
             "edit": "Edit",
             "editTitle": "Edit G-Code",
-            "generate": "Generate",
-            "generateTitle": "Generate G-Code",
+            "generate": "Generators",
+            "generateTitle": "Open G-Code Generators",
             "load": "Load File",
             "clear": "Clear G-Code & Preview",
             "scrub": "Scrub G-code Toolpath"

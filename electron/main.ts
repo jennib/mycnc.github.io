@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session, MenuItemConstructorOptions } from "electron";
+import { autoUpdater } from "electron-updater";
 import path from "path";
 import net from "net";
 
@@ -7,6 +8,7 @@ import net from "net";
 
 let mainWindow: BrowserWindow;
 let tcpSocket: net.Socket | null = null;
+let manualUpdateCheck = false;
 
 const createAboutWindow = () => {
   const aboutWindow = new BrowserWindow({
@@ -56,6 +58,79 @@ const createWindow = () => {
       contextIsolation: true, // Enable context isolation
       sandbox: true, // Re-enable sandbox for security
     },
+  });
+
+  // --- Auto Updater ---
+  // --- Auto Updater ---
+  autoUpdater.autoDownload = false;
+
+  // Check for updates once the window is ready
+  mainWindow.once('ready-to-show', () => {
+    autoUpdater.checkForUpdates();
+  });
+
+  // Optional: Log update events for debugging
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for update...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info);
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `A new version (${info.version}) is available. Do you want to download it now?`,
+      buttons: ['Yes', 'No']
+    }).then((result) => {
+      if (result.response === 0) { // 'Yes' button
+        autoUpdater.downloadUpdate();
+      }
+    });
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('Update not available:', info);
+    if (manualUpdateCheck) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'No Updates',
+        message: 'Current version is up-to-date.'
+      });
+      manualUpdateCheck = false;
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.log('Error in auto-updater. ' + err);
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Error',
+      message: 'An error occurred while updating: ' + err
+    });
+    manualUpdateCheck = false;
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    console.log(log_message);
+    // Optional: Send progress to renderer to show a progress bar
+    mainWindow.webContents.send('update-progress', progressObj.percent);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded');
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: 'Update downloaded. Application will be quit for update...',
+      buttons: ['Restart Now', 'Later']
+    }).then((result) => {
+      if (result.response === 0) { // 'Restart Now' button
+        autoUpdater.quitAndInstall();
+      }
+    });
   });
 
   // Add a handler for the 'toggle-fullscreen' event from the renderer
@@ -117,6 +192,13 @@ const createWindow = () => {
     {
       role: "help",
       submenu: [
+        {
+          label: "Check for Updates...",
+          click: () => {
+            manualUpdateCheck = true;
+            autoUpdater.checkForUpdates();
+          },
+        },
         {
           label: "About myCNC",
           click: () => {
@@ -304,7 +386,7 @@ const createWindow = () => {
       csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
     } else {
       // Stricter CSP for production
-      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self'; style-src 'self'; media-src 'self'; img-src 'self' data:;`;
+      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self'; img-src 'self' data:;`;
     }
 
     callback({

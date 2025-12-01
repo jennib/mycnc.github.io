@@ -1,0 +1,123 @@
+{
+    "appId": "com.mycnc.app",
+    "productName": "myCNC",
+    "directories": {
+        "output": "release"
+    },
+    "files": [
+        "out/**/*",
+        "package.json",
+        "build/mycnc.icns"
+    ],
+    "mac": {
+        "category": "public.app-category.developer-tools",
+        "icon": "build/mycnc.icns",
+        "target": [
+            {
+                "target": "dmg",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            }
+        ],
+        "darkModeSupport": true,
+        "hardenedRuntime": true,
+        "gatekeeperAssess": false,
+        "extendInfo": {
+            "NSCameraUsageDescription": "This app requires camera access to capture video for your CNC projects.",
+            "NSMicrophoneUsageDescription": "This app requires microphone access to capture audio."
+        }
+    },
+    "dmg": {
+        "title": "${productName} ${version}",
+        "icon": "build/mycnc.icns",
+        "iconSize": 100,
+        "contents": [
+            {
+                "x": 130,
+                "y": 220
+            },
+            {
+                "x": 410,
+                "y": 220,
+                "type": "link",
+                "path": "/Applications"
+            }
+        ],
+        "window": {
+            "width": 540,
+            "height": 380
+        },
+        "backgroundColor": "#1a1a1a"
+    },
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            }
+        ],
+        "icon": "build/mycnc.ico"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "installerIcon": "build/mycnc.ico",
+        "uninstallerIcon": "build/mycnc.ico",
+        "installerHeaderIcon": "build/mycnc.ico",
+        "createDesktopShortcut": "always",
+        "createStartMenuShortcut": true,
+        "shortcutName": "myCNC",
+        "runAfterFinish": true
+    },
+    "linux": {
+        "target": [
+            {
+                "target": "AppImage",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            },
+            {
+                "target": "deb",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            }
+        ],
+        "category": "Development",
+        "icon": "build/icons",
+        "description": "Web-based G-code sender for CNC machines",
+        "vendor": "myCNC",
+        "maintainer": "jennib <jenni.b@gmail.com>",
+        "desktop": {
+            "entry": {
+                "Name": "myCNC",
+                "Comment": "CNC Machine Controller",
+                "Categories": "Development;Engineering;",
+                "StartupNotify": "true",
+                "Terminal": "false"
+            }
+        }
+    },
+    "deb": {
+        "depends": [
+            "libnotify4",
+            "libxtst6",
+            "libnss3",
+            "libasound2",
+            "libxss1"
+        ]
+    },
+    "publish": {
+        "provider": "github",
+        "owner": "jennib",
+        "repo": "mycnc.github.io"
+    }
+}

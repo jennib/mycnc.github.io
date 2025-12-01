@@ -471,3 +471,127 @@ export const Move: React.FC<IconProps> = (props) => (
         <line x1="12" y1="2" x2="12" y2="22" />
     </svg>
 );
+export const PlayCircle: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="10 8 16 12 10 16 10 8" />
+    </svg>
+);
+export const ProbeX: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M21 3v18" />
+        <path d="M2 12h15" />
+        <path d="m13 8 4 4-4 4" />
+    </svg>
+);
+
+export const ProbeY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M3 3h18" />
+        <path d="M12 22V7" />
+        <path d="m8 11 4-4 4 4" />
+    </svg>
+);
+
+export const ProbeXY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M21 3v18" />
+        <path d="M3 21h18" />
+        <path d="M3 3 17 17" />
+        <path d="m13 17 4 4-4-4" />
+        <circle cx="19" cy="19" r="2" />
+    </svg>
+);
+export const HomeX: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#ef4444" stroke="none">X</text>
+    </svg>
+);
+
+export const HomeY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#22c55e" stroke="none">Y</text>
+    </svg>
+);
+
+export const HomeZ: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#3b82f6" stroke="none">Z</text>
+    </svg>
+);
+
+export const HomeXY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(-4, -2) scale(0.8)">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+        </g>
+        <text x="23" y="22" textAnchor="end" fontSize="14" fontWeight="bold" stroke="none">
+            <tspan fill="#ef4444">X</tspan><tspan fill="#22c55e">Y</tspan>
+        </text>
+    </svg>
+);
+export const CrosshairXY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="22" y1="12" x2="18" y2="12" />
+            <line x1="6" y1="12" x2="2" y2="12" />
+            <line x1="12" y1="6" x2="12" y2="2" />
+            <line x1="12" y1="22" x2="12" y2="18" />
+        </g>
+        <text x="23" y="22" textAnchor="end" fontSize="14" fontWeight="bold" stroke="none">
+            <tspan fill="#ef4444">X</tspan><tspan fill="#22c55e">Y</tspan>
+        </text>
+    </svg>
+);
+
+export const CrosshairZ: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="22" y1="12" x2="18" y2="12" />
+            <line x1="6" y1="12" x2="2" y2="12" />
+            <line x1="12" y1="6" x2="12" y2="2" />
+            <line x1="12" y1="22" x2="12" y2="18" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#3b82f6" stroke="none">Z</text>
+    </svg>
+);
+export const CrosshairX: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="22" y1="12" x2="18" y2="12" />
+            <line x1="6" y1="12" x2="2" y2="12" />
+            <line x1="12" y1="6" x2="12" y2="2" />
+            <line x1="12" y1="22" x2="12" y2="18" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#ef4444" stroke="none">X</text>
+    </svg>
+);
+
+export const CrosshairY: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <g transform="translate(1, 3) scale(0.7)">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="22" y1="12" x2="18" y2="12" />
+            <line x1="6" y1="12" x2="2" y2="12" />
+            <line x1="12" y1="6" x2="12" y2="2" />
+            <line x1="12" y1="22" x2="12" y2="18" />
+        </g>
+        <text x="22" y="22" textAnchor="end" fontSize="18" fontWeight="bold" fill="#22c55e" stroke="none">Y</text>
+    </svg>
+);
