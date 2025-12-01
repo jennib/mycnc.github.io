@@ -95,7 +95,25 @@
         "icon": "build/icons",
         "description": "Web-based G-code sender for CNC machines",
         "vendor": "myCNC",
-        "maintainer": "jennib <jenni.b@gmail.com>"
+        "maintainer": "jennib <jenni.b@gmail.com>",
+        "desktop": {
+            "entry": {
+                "Name": "myCNC",
+                "Comment": "CNC Machine Controller",
+                "Categories": "Development;Engineering;",
+                "StartupNotify": "true",
+                "Terminal": "false"
+            }
+        }
+    },
+    "deb": {
+        "depends": [
+            "libnotify4",
+            "libxtst6",
+            "libnss3",
+            "libasound2",
+            "libxss1"
+        ]
     },
     "publish": {
         "provider": "github",
