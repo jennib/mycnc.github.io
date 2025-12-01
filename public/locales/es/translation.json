@@ -81,13 +81,19 @@
         "stepSize": "Tamaño de paso:",
         "homing": {
             "title": "Homing",
-            "all": "Home Todo ($H)"
+            "all": "Home Todo ($H)",
+            "x": "Home X",
+            "y": "Home Y",
+            "z": "Home Z",
+            "xy": "Home XY"
         },
         "zero": {
             "title": "Establecer Cero",
             "all": "Cero Todo",
-            "xy": "Cero XY",
-            "z": "Cero Z"
+            "x": "Cero X",
+            "y": "Cero Y",
+            "z": "Cero Z",
+            "xy": "Cero XY"
         },
         "units": {
             "title": "Unidades"
@@ -123,8 +129,8 @@
             "saveDisk": "Guardar en Disco",
             "edit": "Editar",
             "editTitle": "Editar Código G",
-            "generate": "Generar",
-            "generateTitle": "Generar Código G",
+            "generate": "Generadores",
+            "generateTitle": "Abrir generadores de código G",
             "load": "Cargar Archivo",
             "clear": "Borrar Código G y Vista Previa",
             "scrub": "Recorrer Trayectoria G-code"

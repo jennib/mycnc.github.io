@@ -129,8 +129,8 @@
             "saveDisk": "Save to Disk",
             "edit": "Edit",
             "editTitle": "Edit G-Code",
-            "generate": "Generate",
-            "generateTitle": "Generate G-Code",
+            "generate": "Generators",
+            "generateTitle": "Open G-Code Generators",
             "load": "Load File",
             "clear": "Clear G-Code & Preview",
             "scrub": "Scrub G-code Toolpath"

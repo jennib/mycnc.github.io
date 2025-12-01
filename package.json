@@ -21,6 +21,7 @@
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
     "test": "vitest",
+    "check:translations": "node scripts/check-translations.cjs",
     "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
   },
   "dependencies": {

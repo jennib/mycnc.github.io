@@ -81,13 +81,19 @@
         "stepSize": "步进大小：",
         "homing": {
             "title": "归零",
-            "all": "全部归零 ($H)"
+            "all": "全部归零 ($H)",
+            "x": "X 轴归零",
+            "y": "Y 轴归零",
+            "z": "Z 轴归零",
+            "xy": "XY 轴归零"
         },
         "zero": {
             "title": "设置零点",
             "all": "全部清零",
-            "xy": "XY 清零",
-            "z": "Z 清零"
+            "x": "X 清零",
+            "y": "Y 清零",
+            "z": "Z 清零",
+            "xy": "XY 清零"
         },
         "units": {
             "title": "单位"
@@ -123,8 +129,8 @@
             "saveDisk": "保存到磁盘",
             "edit": "编辑",
             "editTitle": "编辑 G 代码",
-            "generate": "生成",
-            "generateTitle": "生成 G 代码",
+            "generate": "生成器",
+            "generateTitle": "打开 G 代码生成器",
             "load": "加载文件",
             "clear": "清除 G 代码和预览",
             "scrub": "擦洗 G 代码刀具路径"

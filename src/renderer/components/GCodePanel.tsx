@@ -689,6 +689,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             title={t('gcode.actions.generateTitle')}
           >
             <Zap className="w-5 h-5" />
+            {t('gcode.actions.generate')}
           </button>
           <input
             type="file"
