@@ -71,7 +71,7 @@
         "createDesktopShortcut": "always",
         "createStartMenuShortcut": true,
         "shortcutName": "myCNC",
-        "runAfterFinish": false
+        "runAfterFinish": true
     },
     "linux": {
         "target": [
