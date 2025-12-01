@@ -8,6 +8,7 @@ import net from "net";
 
 let mainWindow: BrowserWindow;
 let tcpSocket: net.Socket | null = null;
+let manualUpdateCheck = false;
 
 const createAboutWindow = () => {
   const aboutWindow = new BrowserWindow({
@@ -89,10 +90,24 @@ const createWindow = () => {
 
   autoUpdater.on('update-not-available', (info) => {
     console.log('Update not available:', info);
+    if (manualUpdateCheck) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'No Updates',
+        message: 'Current version is up-to-date.'
+      });
+      manualUpdateCheck = false;
+    }
   });
 
   autoUpdater.on('error', (err) => {
     console.log('Error in auto-updater. ' + err);
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Error',
+      message: 'An error occurred while updating: ' + err
+    });
+    manualUpdateCheck = false;
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
@@ -177,6 +192,13 @@ const createWindow = () => {
     {
       role: "help",
       submenu: [
+        {
+          label: "Check for Updates...",
+          click: () => {
+            manualUpdateCheck = true;
+            autoUpdater.checkForUpdates();
+          },
+        },
         {
           label: "About myCNC",
           click: () => {
