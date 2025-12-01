@@ -30,9 +30,9 @@ export function registerGCodeCompletionProvider() {
                     : cmd.code;
 
                 suggestions.push({
-                    label: cmd.code,
+                    label: `${cmd.code} (${cmd.name})`,
                     kind: monaco.languages.CompletionItemKind.Keyword,
-                    detail: cmd.name,
+                    detail: cmd.description,
                     documentation: {
                         value: [
                             `**${cmd.code}** - ${cmd.name}`,

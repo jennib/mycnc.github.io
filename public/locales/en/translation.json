@@ -267,6 +267,16 @@
             "spindleSpeed": "Spindle Speed",
             "safeZHelp": "Rapid height above stock"
         },
+        "surfacing": {
+            "width": "Width (X)",
+            "length": "Length (Y)",
+            "direction": "Direction",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical",
+            "finalDepth": "Final Depth",
+            "shouldBeNegative": "Should be negative",
+            "stepover": "Stepover %"
+        },
         "bore": {
             "centerX": "Center X",
             "centerY": "Center Y",

@@ -6,7 +6,9 @@ import { MachineSettings } from '../types';
 import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLanguage';
 import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';
 import { validateGCode, setValidationMarkers, clearValidationMarkers } from '../services/gcodeValidator';
+import { configureMonaco } from '../services/monacoConfig';
 import { X, Save, Download, Undo, Redo, Search, Code2 } from './Icons';
+import { useSettingsStore } from '../stores/settingsStore';
 
 interface GCodeEditorModalProps {
     isOpen: boolean;
@@ -30,21 +32,48 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     unit,
 }) => {
     const { t } = useTranslation();
+    const isLightMode = useSettingsStore((state) => state.isLightMode);
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
     const [content, setContent] = useState(initialContent);
     const [errorCount, setErrorCount] = useState(0);
     const [warningCount, setWarningCount] = useState(0);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isLanguageRegistered, setIsLanguageRegistered] = useState(false);
+    const [isMonacoConfigured, setIsMonacoConfigured] = useState(false);
 
-    // Register G-code language and IntelliSense once
+    // Handle mount - configure Monaco and register language
     useEffect(() => {
-        if (!isLanguageRegistered) {
-            registerGCodeLanguage();
-            registerGCodeIntelliSense();
-            setIsLanguageRegistered(true);
+        let mounted = true;
+
+        const initMonaco = async () => {
+            try {
+                // Configure Monaco loader to use local instance
+                await configureMonaco();
+
+                if (mounted) {
+                    // Register G-code language if not already registered
+                    // We can safely access the global monaco instance now
+                    if (!monaco.languages.getLanguages().some(lang => lang.id === GCODE_LANGUAGE_ID)) {
+                        registerGCodeLanguage();
+                        registerGCodeIntelliSense();
+                    }
+                    setIsMonacoConfigured(true);
+                }
+            } catch (error) {
+                console.error('Monaco initialization error:', error);
+                // Still set configured to true so we don't get stuck on loading, 
+                // though the editor might fail or fallback
+                if (mounted) setIsMonacoConfigured(true);
+            }
+        };
+
+        if (isOpen) {
+            initMonaco();
         }
-    }, [isLanguageRegistered]);
+
+        return () => {
+            mounted = false;
+        };
+    }, [isOpen]);
 
     // Update content when initialContent changes
     useEffect(() => {
@@ -68,6 +97,13 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
             }
         }
     }, [content, machineSettings]);
+
+    // Update theme when isLightMode changes
+    useEffect(() => {
+        if (isMonacoConfigured) {
+            monaco.editor.setTheme(isLightMode ? 'gcode-light' : 'gcode-dark');
+        }
+    }, [isLightMode, isMonacoConfigured]);
 
     // Handle editor mount
     const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -207,33 +243,42 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                 </div>
 
                 {/* Editor */}
-                <div className="flex-1 overflow-hidden">
-                    <Editor
-                        height="100%"
-                        language={GCODE_LANGUAGE_ID}
-                        value={content}
-                        onChange={handleContentChange}
-                        onMount={handleEditorDidMount}
-                        theme="gcode-dark"
-                        options={{
-                            automaticLayout: true,
-                            formatOnPaste: true,
-                            formatOnType: false,
-                            minimap: { enabled: true },
-                            lineNumbers: 'on',
-                            rulers: [80],
-                            wordWrap: 'off',
-                            quickSuggestions: true,
-                            suggestOnTriggerCharacters: true,
-                            acceptSuggestionOnEnter: 'on',
-                            tabCompletion: 'on',
-                            scrollBeyondLastLine: false,
-                            renderWhitespace: 'selection',
-                            fontSize: 14,
-                            fontFamily: 'Consolas, "Courier New", monospace',
-                            padding: { top: 16, bottom: 16 },
-                        }}
-                    />
+                <div className="flex-1 relative">
+                    {!isMonacoConfigured ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-background text-foreground">
+                            <div className="flex flex-col items-center gap-2">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <p>Loading Editor...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <Editor
+                            height="100%"
+                            language={GCODE_LANGUAGE_ID}
+                            value={content}
+                            onChange={handleContentChange}
+                            onMount={handleEditorDidMount}
+                            theme={isLightMode ? 'gcode-light' : 'gcode-dark'}
+                            options={{
+                                automaticLayout: true,
+                                formatOnPaste: true,
+                                formatOnType: false,
+                                minimap: { enabled: true },
+                                lineNumbers: 'on',
+                                rulers: [80],
+                                wordWrap: 'off',
+                                quickSuggestions: true,
+                                suggestOnTriggerCharacters: true,
+                                acceptSuggestionOnEnter: 'on',
+                                tabCompletion: 'on',
+                                scrollBeyondLastLine: false,
+                                renderWhitespace: 'selection',
+                                fontSize: 14,
+                                fontFamily: 'Consolas, "Courier New", monospace',
+                                padding: { top: 16, bottom: 16 },
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Status Bar */}

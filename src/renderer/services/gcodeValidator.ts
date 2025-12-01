@@ -175,6 +175,10 @@ export function validateGCode(
             }
 
             // Check work area bounds
+            // We cannot reliably check bounds without knowing the WCS offset (G54-G59)
+            // G-code coordinates are relative to WCS, not Machine Zero.
+            // For example, X-10 is valid if WCS Zero is at X100.
+            /*
             if (machineSettings.workArea) {
                 if (currentX < 0 || currentX > machineSettings.workArea.x) {
                     errors.push({
@@ -207,6 +211,7 @@ export function validateGCode(
                     });
                 }
             }
+            */
 
             // Warn about rapid moves at low Z
             if (command === 'G0' && currentZ < 0) {
