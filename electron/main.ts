@@ -304,7 +304,7 @@ const createWindow = () => {
       csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
     } else {
       // Stricter CSP for production
-      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self'; style-src 'self'; media-src 'self'; img-src 'self' data:;`;
+      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self'; img-src 'self' data:;`;
     }
 
     callback({
