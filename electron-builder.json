@@ -93,5 +93,10 @@
         "description": "Web-based G-code sender for CNC machines",
         "vendor": "myCNC",
         "maintainer": "jennib <jenni.b@gmail.com>"
+    },
+    "publish": {
+        "provider": "github",
+        "owner": "jennib",
+        "repo": "mycnc.github.io"
     }
 }
