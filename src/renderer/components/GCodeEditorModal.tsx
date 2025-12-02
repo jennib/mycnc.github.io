@@ -260,6 +260,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                             onMount={handleEditorDidMount}
                             theme={isLightMode ? 'gcode-light' : 'gcode-dark'}
                             options={{
+                                readOnly: false,
                                 automaticLayout: true,
                                 formatOnPaste: true,
                                 formatOnType: false,

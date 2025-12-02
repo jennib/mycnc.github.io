@@ -16,6 +16,7 @@ export default {
         "text-primary": "var(--color-text-primary)",
         "text-secondary": "var(--color-text-secondary)",
         "accent-green": "var(--color-accent-green)",
+        "accent-green-focus": "var(--color-accent-green-focus)",
         "accent-yellow": "var(--color-accent-yellow)",
         "accent-red": "var(--color-accent-red)",
         border: "var(--color-border)",

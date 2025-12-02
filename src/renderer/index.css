@@ -18,6 +18,8 @@
   /* Slate 400 */
   --color-accent-green: #34d399;
   /* Emerald 400 */
+  --color-accent-green-focus: #10b981;
+  /* Emerald 500 */
   --color-accent-yellow: #fbbf24;
   /* Amber 400 */
   --color-accent-red: #f87171;
@@ -46,6 +48,8 @@
   /* Slate 500 */
   --color-accent-green: #059669;
   /* Emerald 600 */
+  --color-accent-green-focus: #047857;
+  /* Emerald 700 */
   --color-accent-yellow: #d97706;
   /* Amber 600 */
   --color-accent-red: #dc2626;
