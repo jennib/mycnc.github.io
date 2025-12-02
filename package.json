@@ -1,7 +1,7 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "Gcode sender for CNC machines",
   "author": {
     "name": "jennib",
