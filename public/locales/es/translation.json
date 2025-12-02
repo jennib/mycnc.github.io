@@ -141,6 +141,7 @@
         },
         "editor": {
             "title": "Editor de G-code",
+            "edit": "Edit G-code",
             "advancedEdit": "Editor Avanzado",
             "quickEdit": "Edición Rápida",
             "format": "Formatear Código",
@@ -266,6 +267,16 @@
             "feedRate": "Velocidad de Avance",
             "spindleSpeed": "Velocidad del Husillo",
             "safeZHelp": "Altura rápida sobre el material"
+        },
+        "surfacing": {
+            "width": "Width (X)",
+            "length": "Length (Y)",
+            "direction": "Direction",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical",
+            "finalDepth": "Final Depth",
+            "shouldBeNegative": "Should be negative",
+            "stepover": "Stepover %"
         },
         "bore": {
             "centerX": "Centro X",

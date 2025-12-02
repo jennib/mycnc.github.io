@@ -1,0 +1,12 @@
+=== Translation Completeness Check ===
+
+Reference (en): 427 keys found
+
+✓ es: Complete (427 keys)
+
+✓ fr: Complete (427 keys)
+
+✓ de: Complete (427 keys)
+
+✓ zh: Complete (427 keys)
+

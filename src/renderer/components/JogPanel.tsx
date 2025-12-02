@@ -589,11 +589,13 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           <div className="flex flex-col gap-2">
             {/* Spindle Controls */}
             <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
-                {t('jog.spindle.title')}
-              </h4>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="relative flex-grow">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                  {t('jog.spindle.title')}
+                </h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative w-24 flex-shrink-0">
                   <input
                     type="number"
                     value={spindleSpeed}
@@ -601,37 +603,37 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                       setSpindleSpeed(parseInt(e.target.value, 10))
                     }
                     disabled={isSpindleDisabled}
-                    className="w-full bg-secondary/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 font-mono text-right pr-12"
+                    className="w-full bg-secondary/50 border border-white/10 rounded-lg py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 font-mono text-right pr-8"
                     aria-label="Spindle Speed in RPM"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary pointer-events-none">RPM</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-secondary pointer-events-none">RPM</span>
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  title={t('jog.spindle.cw')}
-                  onClick={() => onSpindleCommand("cw", spindleSpeed)}
-                  disabled={isSpindleDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-green"
-                >
-                  <RotateCw className="w-6 h-6" />
-                </button>
-                <button
-                  title={t('jog.spindle.ccw')}
-                  onClick={() => onSpindleCommand("ccw", spindleSpeed)}
-                  disabled={isSpindleDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-yellow"
-                >
-                  <RotateCcw className="w-6 h-6" />
-                </button>
-                <button
-                  title={t('jog.spindle.off')}
-                  onClick={() => onSpindleCommand("off", 0)}
-                  disabled={isSpindleDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-red"
-                >
-                  <PowerOff className="w-6 h-6" />
-                </button>
+                <div className="flex gap-1 flex-grow justify-end">
+                  <button
+                    title={t('jog.spindle.cw')}
+                    onClick={() => onSpindleCommand("cw", spindleSpeed)}
+                    disabled={isSpindleDisabled}
+                    className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-green flex-1"
+                  >
+                    <RotateCw className="w-5 h-5" />
+                  </button>
+                  <button
+                    title={t('jog.spindle.ccw')}
+                    onClick={() => onSpindleCommand("ccw", spindleSpeed)}
+                    disabled={isSpindleDisabled}
+                    className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-yellow flex-1"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </button>
+                  <button
+                    title={t('jog.spindle.off')}
+                    onClick={() => onSpindleCommand("off", 0)}
+                    disabled={isSpindleDisabled}
+                    className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-red flex-1"
+                  >
+                    <PowerOff className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 

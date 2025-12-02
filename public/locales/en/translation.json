@@ -141,6 +141,7 @@
         },
         "editor": {
             "title": "G-code Editor",
+            "edit": "Edit G-code",
             "advancedEdit": "Advanced Editor",
             "quickEdit": "Quick Edit",
             "format": "Format Code",

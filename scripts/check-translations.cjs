@@ -123,6 +123,29 @@ function validateTranslations() {
         console.log('');
     }
 
+    // Write report to file
+    let report = `=== Translation Completeness Check ===\n\nReference (${REFERENCE_LANG}): ${referenceKeys.length} keys found\n\n`;
+
+    results.forEach(r => {
+        if (r.status === 'complete') {
+            report += `✓ ${r.lang}: Complete (${getAllKeys(loadTranslation(r.lang)).length} keys)\n`;
+        } else {
+            report += `✗ ${r.lang}: Incomplete\n`;
+            if (r.missing.length > 0) {
+                report += `  Missing ${r.missing.length} key(s):\n`;
+                r.missing.forEach(k => report += `    - ${k}\n`);
+            }
+            if (r.extra.length > 0) {
+                report += `  Extra ${r.extra.length} key(s):\n`;
+                r.extra.forEach(k => report += `    - ${k}\n`);
+            }
+        }
+        report += '\n';
+    });
+
+    fs.writeFileSync(path.join(__dirname, '..', 'translation_report.txt'), report);
+    console.log('Report written to translation_report.txt');
+
     // Summary
     console.log(`${colors.cyan}=== Summary ===${colors.reset}`);
     const complete = results.filter(r => r.status === 'complete').length;

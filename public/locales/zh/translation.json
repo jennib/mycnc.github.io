@@ -141,6 +141,7 @@
         },
         "editor": {
             "title": "G代码编辑器",
+            "edit": "Edit G-code",
             "advancedEdit": "高级编辑器",
             "quickEdit": "快速编辑",
             "format": "格式化代码",
@@ -266,6 +267,16 @@
             "feedRate": "进给速度",
             "spindleSpeed": "主轴速度",
             "safeZHelp": "材料上方的快速高度"
+        },
+        "surfacing": {
+            "width": "Width (X)",
+            "length": "Length (Y)",
+            "direction": "Direction",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical",
+            "finalDepth": "Final Depth",
+            "shouldBeNegative": "Should be negative",
+            "stepover": "Stepover %"
         },
         "bore": {
             "centerX": "中心 X",
