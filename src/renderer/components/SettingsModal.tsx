@@ -249,6 +249,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <option value="fr">Français</option>
                                     <option value="de">Deutsch</option>
                                     <option value="zh">中文</option>
+                                    <option value="hi">हिन्दी</option>
+                                    <option value="bn">বাংলা</option>
+                                    <option value="ja">日本語</option>
+                                    <option value="uk">Українська</option>
+                                    <option value="pa">ਪੰਜਾਬੀ</option>
                                 </select>
                             </InputGroup>
                         </div>

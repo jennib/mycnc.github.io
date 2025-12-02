@@ -5,7 +5,7 @@
   <h1>mycnc.app</h1>
   
   <p>
-    <strong>A modern, web-based G-code sender for CNC machines.</strong>
+    <strong>A browser-based G-code sender for CNC machines.</strong>
   </p>
 
   <p>
@@ -19,118 +19,91 @@
       <img src="https://img.shields.io/badge/license-PolyForm_Noncommercial-blue?style=flat-square" alt="License" />
     </a>
   </p>
-
-  <p>
-    <a href="#-features">Features</a> •
-    <a href="#-getting-started">Getting Started</a> •
-    <a href="#-development">Development</a> •
-    <a href="#-building-from-source">Building</a> •
-    <a href="#-security">Security</a>
-  </p>
 </div>
 
 ---
 
-**mycnc.app** is a powerful G-code sender that runs directly in your browser or as a desktop application. Connect your CNC machine via USB and start machining immediately—no complex installation required.
+**mycnc.app** is a G-code sender that runs in your browser (Chrome/Edge) or as a desktop app. It connects to GRBL-based CNC machines via USB (WebSerial), allowing you to control your machine without installing heavy drivers or software.
 
-👉 **Try it now:** [https://mycnc.app/](https://mycnc.app/) (Includes a built-in simulator!)
-
----
-
-## ✳️ Features
-
-### 🎮 Machine Control
-- **Direct Control:** Connect via USB (WebSerial) to control GRBL-based machines.
-- **Real-time Monitoring:** View machine status, position, and active modes.
-- **Jogging:** Precise manual control with keyboard shortcuts and gamepad support.
-- **Console:** Send raw G-code commands and view machine output.
-
-### 🛠️ Productivity Tools
-- **G-code Generators:** Create toolpaths for surfacing, drilling, pockets, and text without external CAM software.
-- **G-code Editor:** Full-featured editor with syntax highlighting (Monaco Editor) and IntelliSense.
-- **3D Visualizer:** Preview toolpaths in a 3D environment before running them.
-- **Macros:** Save and execute common command sequences.
-- **Tool Library:** Manage your tool inventory for quick access.
-
-### 🌐 Modern & Accessible
-- **Cross-Platform:** Runs on Windows, macOS, and Linux (Desktop App) or Chrome/Edge (Web App).
-- **Offline Capable:** The desktop app works completely offline.
-- **Localization:** Available in English, Spanish, French, German, and Chinese.
-- **Themes:** Switch between Light and Dark modes.
-- **Webcam Support:** Monitor your machine with integrated webcam viewing.
+👉 **Try it here:** [https://mycnc.app/](https://mycnc.app/) (Includes a simulator mode)
 
 ---
 
-## 🚀 Getting Started
+## Features
 
-### Web Version
-1. Open [mycnc.app](https://mycnc.app/) in a Chromium-based browser (Chrome, Edge).
-2. Connect your CNC machine via USB.
-3. Click **Connect** and select the correct COM port.
+### Machine Control
+- **WebSerial Connection:** Connect directly to your machine from the browser.
+- **Jogging & Control:** Keyboard shortcuts, gamepad support, and standard machine controls.
+- **Console:** Direct G-code command entry and output logging.
 
-### Desktop Version
-Download the latest installer for your operating system from the [Releases](https://github.com/mycnc/mycnc.github.io/releases) page.
+### Tools
+- **Built-in CAM:** Simple generators for surfacing, drilling, pockets, and text engraving.
+- **G-code Editor:** Monaco-based editor with syntax highlighting and IntelliSense.
+- **3D Visualizer:** Preview toolpaths before cutting.
+- **Macros:** Create custom buttons for frequent commands.
+- **Tool Library:** Save your common tool parameters.
 
-- **Windows:** `.exe` installer
-- **macOS:** `.dmg` (Universal for Intel/Apple Silicon)
+### Platform
+- **Cross-Platform:** Works on Windows, macOS, Linux, and ChromeOS.
+- **Offline Support:** The desktop app works without an internet connection.
+- **Languages:** English, Spanish, French, German, Chinese, Hindi, Bengali, Japanese, Ukrainian, and Punjabi.
+- **Webcam:** Integrated camera view.
+
+---
+
+## Getting Started
+
+### Web
+1. Go to [mycnc.app](https://mycnc.app/) in Chrome or Edge.
+2. Connect your CNC via USB.
+3. Click **Connect** and pick your port.
+
+### Desktop
+Grab the installer for your OS from the [Releases](https://github.com/mycnc/mycnc.github.io/releases) page.
+- **Windows:** `.exe`
+- **macOS:** `.dmg`
 - **Linux:** `.AppImage` or `.deb`
 
 ---
 
-## 💻 Development
+## Development
 
-This project is built with **Electron**, **Vite**, **React**, and **TypeScript**.
-
-### Prerequisites
-- **Node.js:** Version 20 or higher.
+Built with Electron, Vite, React, and TypeScript.
 
 ### Setup
 ```bash
-# Clone the repository
 git clone https://github.com/mycnc/mycnc.github.io.git
 cd mycnc.github.io
-
-# Install dependencies
 npm install
 ```
 
-### Running Locally
+### Run
 ```bash
-# Run the web version (localhost:5173)
+# Web version (localhost:5173)
 npm run dev
 
-# Run the Electron desktop app
+# Electron app
 npm run electron:dev
 ```
 
----
+### Build
+Scripts are provided to build for your specific platform:
 
-## 🛠️ Building from Source
-
-We provide automated scripts to build the application for your platform.
-
-### Windows
+**Windows:**
 ```cmd
 .\build.bat
 ```
 
-### macOS / Linux
+**macOS / Linux:**
 ```bash
-chmod +x build.sh  # Make executable first
+chmod +x build.sh
 ./build.sh
 ```
-
-These scripts will automatically:
-1. Check your environment.
-2. Clean old builds.
-3. Install dependencies.
-4. Build the optimized application for your architecture.
-
-Output files will be in the `dist` folder.
+Builds land in the `dist` folder.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 <div align="center">
   <img width="800" alt="Main Interface" src="https://github.com/user-attachments/assets/7f5dc04e-257d-4f09-bf59-81a1d86e1665" />
@@ -142,14 +115,16 @@ Output files will be in the `dist` folder.
 
 ---
 
-## 🔒 Security
+## Contributing
 
-See [SECURITY.md](SECURITY.md) for known security considerations and reporting guidelines.
+We're open to contributions and feedback.
+
+- **Ideas:** Open an issue if you have a feature request or want to suggest a new language.
+- **Code:** PRs are welcome. It's usually best to open an issue first to discuss major changes.
 
 ---
 
-## 📄 License
+## License
 
 **PolyForm Noncommercial License 1.0.0**
-
-See [LICENSE](https://polyformproject.org/licenses/noncommercial/1.0.0/) for details.
+Free for personal and non-commercial use. See [LICENSE](https://polyformproject.org/licenses/noncommercial/1.0.0/).

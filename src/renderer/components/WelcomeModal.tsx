@@ -59,6 +59,11 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
                             <option value="fr">Français</option>
                             <option value="de">Deutsch</option>
                             <option value="zh">中文</option>
+                            <option value="hi">हिन्दी</option>
+                            <option value="bn">বাংলা</option>
+                            <option value="ja">日本語</option>
+                            <option value="uk">Українська</option>
+                            <option value="pa">ਪੰਜਾਬੀ</option>
                         </select>
                         <button onClick={onClose} className="p-1 rounded-md text-text-secondary hover:text-text-primary"><X className="w-6 h-6" /></button>
                     </div>
