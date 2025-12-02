@@ -413,7 +413,7 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      <header className="bg-surface/80 backdrop-blur-md border-b border-white/20 p-2 flex justify-between items-center z-20 flex-shrink-0 gap-4 shadow-sm">
+      <header className="bg-surface/95 border-b border-white/10 p-2 flex justify-between items-center z-20 flex-shrink-0 gap-4 shadow-sm">
         {/* Left: Logo */}
         <div className="flex items-center gap-4 flex-1 pl-2">
           <img src="./mycnclogo.svg" alt="myCNC Logo" className="h-8 w-auto drop-shadow-md" />
@@ -540,7 +540,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
-        <div className="h-[40vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 border-t-white/40 overflow-hidden shadow-2xl">
+        <div className="h-[40vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -564,7 +564,7 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <div className="h-[50vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 border-t-white/40 overflow-hidden shadow-2xl">
+        <div className="h-[50vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
           <Tabs
             defaultTab="controls"
             tabs={[

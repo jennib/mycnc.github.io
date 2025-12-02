@@ -53,6 +53,8 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    titleBarStyle: 'default',
+    backgroundColor: '#0f172a', // Set background color to match theme (Slate 900)
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true, // Enable context isolation
