@@ -88,7 +88,7 @@
             "xy": "Home XY"
         },
         "zero": {
-            "title": "Set Zero",
+            "title": "Set Workspace Zero",
             "all": "Zero All",
             "x": "Zero X",
             "y": "Zero Y",
@@ -117,6 +117,7 @@
         "title": "G-Code",
         "view": {
             "visualizer": "Visualizer View",
+            "list": "G-Code",
             "code": "Code View",
             "reset": "Reset to Top-Down View",
             "fit": "Fit to View",

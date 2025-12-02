@@ -183,7 +183,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md">
-            <div className="w-[98vw] h-[98vh] bg-surface/95 backdrop-blur-xl rounded-xl shadow-2xl flex flex-col border border-white/10">
+            <div className="w-[98vw] h-[98vh] bg-surface backdrop-blur-xl rounded-xl shadow-2xl flex flex-col border border-white/10">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                     <div className="flex items-center gap-3">

@@ -160,7 +160,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             aria-modal="true" role="dialog"
         >
             <div
-                className="bg-surface/95 backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-2xl border border-white/10 transform transition-all max-h-[90vh] flex flex-col"
+                className="bg-surface backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-2xl border border-white/10 transform transition-all max-h-[90vh] flex flex-col"
             >
                 <div className="p-6 border-b border-white/10 flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">{t('settings.title')}</h2>

@@ -83,7 +83,7 @@ const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) =
     return (
         <div className="flex items-center gap-3">
             <h4 className="text-sm font-bold text-text-secondary">{t(title === 'WPos' ? 'status.wpos' : 'status.mpos')}</h4>
-            <div className="flex gap-4 text-center font-mono bg-background px-3 py-1 rounded-md text-lg">
+            <div className="flex gap-4 text-center font-mono bg-background px-2 py-0.5 rounded-md text-lg">
                 <div><span className="font-bold text-red-400">X </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.x)}</span></div>
                 <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.y)}</span></div>
                 <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.z)}</span></div>
@@ -100,7 +100,7 @@ interface StatusBarProps {
 }
 
 const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => (
-    <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
+    <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
         <div className="flex items-center gap-4">
             <StatusIndicator isConnected={isConnected} machineState={machineState} />
             <div className="h-4 border-l border-white/20" />

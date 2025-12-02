@@ -1,12 +1,20 @@
 === Translation Completeness Check ===
 
-Reference (en): 427 keys found
+Reference (en): 428 keys found
 
-✓ es: Complete (427 keys)
+✗ es: Incomplete
+  Missing 1 key(s):
+    - gcode.view.list
 
-✓ fr: Complete (427 keys)
+✗ fr: Incomplete
+  Missing 1 key(s):
+    - gcode.view.list
 
-✓ de: Complete (427 keys)
+✗ de: Incomplete
+  Missing 1 key(s):
+    - gcode.view.list
 
-✓ zh: Complete (427 keys)
+✗ zh: Incomplete
+  Missing 1 key(s):
+    - gcode.view.list
 

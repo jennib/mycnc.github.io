@@ -30,6 +30,7 @@ import {
 import type { GCodeVisualizerHandle } from "./GCodeVisualizer";
 import GCodeLine from "./GCodeLine";
 import { useUndoRedo } from "../hooks/useUndoRedo";
+import Tabs from "./Tabs";
 
 const GCodeVisualizer = React.lazy(() => import("./GCodeVisualizer"));
 const GCodeEditorModal = React.lazy(() => import("./GCodeEditorModal"));
@@ -246,13 +247,38 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const isJobActive =
     jobStatus === JobStatus.Running || jobStatus === JobStatus.Paused;
 
-  const containerHeight = 0; // Removed code view
-  const visibleLines = 0; // Removed code view
-  const startIndex = 0; // Removed code view
-  const endIndex = 0; // Removed code view
+  const [containerHeight, setContainerHeight] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
 
+  const itemHeight = 24; // Fixed height for GCodeLine
   const totalLines = gcodeLines.length;
   const currentLine = Math.floor((progress / 100) * totalLines);
+
+  // Virtualization logic
+  const visibleLinesCount = Math.ceil(containerHeight / itemHeight);
+  const startIndex = Math.floor(scrollTop / itemHeight);
+  const endIndex = Math.min(totalLines, startIndex + visibleLinesCount + 10); // +10 buffer
+
+  // Resize observer to update containerHeight
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(scrollContainerRef.current);
+    return () => observer.disconnect();
+  }, [scrollContainerRef.current]);
+
+  // Auto-scroll to current line during job
+  useEffect(() => {
+    if (isJobActive && scrollContainerRef.current) {
+      const targetScrollTop = (currentLine - 5) * itemHeight; // Keep current line somewhat centered
+      scrollContainerRef.current.scrollTop = targetScrollTop;
+    }
+  }, [currentLine, isJobActive]);
 
   const visualizerCurrentLine = isJobActive ? currentLine : scrubberLine;
 
@@ -624,15 +650,83 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
 
       <div className="flex-grow relative min-h-0 mx-2 mb-2 rounded-lg overflow-hidden border border-white/10 bg-background/50">
-        {renderContent()}
-        {isDraggingOver && (
-          <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm border-4 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center pointer-events-none z-50">
-            <Upload className="w-16 h-16 text-white animate-bounce" />
-            <p className="text-xl font-bold text-white mt-4">
-              {t('gcode.status.drop')}
-            </p>
-          </div>
-        )}
+        <Tabs
+          defaultTab="visualizer"
+          tabs={[
+            {
+              id: "visualizer",
+              label: t('gcode.view.visualizer'),
+              icon: <Eye className="w-4 h-4" />,
+              content: (
+                <div className="h-full relative">
+                  {renderContent()}
+                  {isDraggingOver && (
+                    <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm border-4 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center pointer-events-none z-50">
+                      <Upload className="w-16 h-16 text-white animate-bounce" />
+                      <p className="text-xl font-bold text-white mt-4">
+                        {t('gcode.status.drop')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )
+            },
+            {
+              id: "gcode",
+              label: t('gcode.view.list'),
+              icon: <FileText className="w-4 h-4" />,
+              content: (
+                <div className="h-full relative">
+                  {gcodeLines.length > 0 ? (
+                    <div
+                      className="h-full overflow-y-auto custom-scrollbar relative bg-background/30"
+                      onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
+                      ref={scrollContainerRef}
+                    >
+                      <div style={{ height: `${totalLines * 24}px`, position: 'relative' }}>
+                        <div style={{ position: 'absolute', top: `${startIndex * 24}px`, left: 0, right: 0 }}>
+                          {gcodeLines.slice(startIndex, endIndex).map((line, index) => {
+                            const lineNumber = startIndex + index + 1;
+                            const isCurrent = lineNumber === (isJobActive ? currentLine + 1 : scrubberLine + 1);
+                            const isExecuted = lineNumber < (isJobActive ? currentLine + 1 : scrubberLine + 1);
+                            return (
+                              <div key={lineNumber} style={{ height: '24px' }}>
+                                <GCodeLine
+                                  line={line}
+                                  lineNumber={lineNumber}
+                                  isExecuted={isExecuted}
+                                  isCurrent={isCurrent}
+                                  isHovered={hoveredLineIndex === lineNumber - 1}
+                                  onRunFromHere={handleRunFromLine}
+                                  isActionable={!isJobActive}
+                                  onMouseEnter={() => setHoveredLineIndex(lineNumber - 1)}
+                                  onMouseLeave={() => setHoveredLineIndex(null)}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-text-secondary">
+                      <FileText className="w-16 h-16 mb-4 opacity-20" />
+                      <p className="font-medium">{t('gcode.status.noFile')}</p>
+                    </div>
+                  )}
+                  {isDraggingOver && (
+                    <div className="absolute inset-0 bg-primary/80 backdrop-blur-sm border-4 border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center pointer-events-none z-50">
+                      <Upload className="w-16 h-16 text-white animate-bounce" />
+                      <p className="text-xl font-bold text-white mt-4">
+                        {t('gcode.status.drop')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+          ]}
+        />
       </div>
       {isJobActive && (
         <div className="mt-auto px-2 pb-2 flex-shrink-0 grid grid-cols-2 gap-2">

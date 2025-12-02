@@ -540,7 +540,7 @@ const App: React.FC = () => {
       )}
 
       <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
-        <div className="h-[40vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
+        <div className="h-[40vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 border-t-white/40 overflow-hidden shadow-2xl">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -564,7 +564,7 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <div className="h-[50vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
+        <div className="h-[50vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 border-t-white/40 overflow-hidden shadow-2xl">
           <Tabs
             defaultTab="controls"
             tabs={[
