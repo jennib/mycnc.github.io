@@ -293,7 +293,7 @@ const App: React.FC = () => {
     toolLibrary.find((t: Tool) => t.id === selectedToolId) || null;
 
   return (
-    <div className="h-screen bg-background font-sans text-text-primary flex flex-col overflow-hidden">
+    <div className="h-screen bg-background font-sans text-text-primary flex flex-col overflow-hidden bg-gradient-to-br from-background to-surface/50">
       {!window.electronAPI?.isElectron && <Analytics />}
       <WelcomeModal
         isOpen={isWelcomeModalOpen}
@@ -413,10 +413,10 @@ const App: React.FC = () => {
         </ErrorBoundary>
       )}
 
-      <header className="bg-surface shadow-md p-1 flex justify-between items-center z-10 flex-shrink-0 gap-2">
+      <header className="bg-surface/80 backdrop-blur-md border-b border-white/20 p-2 flex justify-between items-center z-20 flex-shrink-0 gap-4 shadow-sm">
         {/* Left: Logo */}
-        <div className="flex items-center gap-4 flex-1">
-          <img src="./mycnclogo.svg" alt="myCNC Logo" className="h-10 w-auto" />
+        <div className="flex items-center gap-4 flex-1 pl-2">
+          <img src="./mycnclogo.svg" alt="myCNC Logo" className="h-8 w-auto drop-shadow-md" />
         </div>
 
         {/* Center: E-STOP */}
@@ -424,21 +424,21 @@ const App: React.FC = () => {
           {isConnected && (
             <button
               onClick={handleEmergencyStop}
-              className={`flex items-center gap-3 px-8 py-2 min-w-[280px] justify-center bg-red-600 text-white font-bold rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all duration-100 animate-pulse ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
+              className={`flex items-center gap-3 px-8 py-2 min-w-[280px] justify-center bg-red-600/90 text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-500/50 transition-all duration-200 shadow-lg shadow-red-900/20 backdrop-blur-sm ${flashingButton === 'estop' ? 'ring-4 ring-white ring-inset' : ''}`}
               title="Emergency Stop (Soft Reset) (Hotkey: Esc)"
             >
               <OctagonAlert className="w-6 h-6" />
-              <span className="text-lg">E-STOP</span>
+              <span className="text-lg tracking-wide">E-STOP</span>
             </button>
           )}
         </div>
 
         {/* Right: Buttons */}
-        <div className="flex items-center gap-2 flex-1 justify-end">
+        <div className="flex items-center gap-2 flex-1 justify-end pr-2">
           <button
             onClick={handleToggleFullscreen}
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
+            className="p-2.5 rounded-lg bg-secondary/50 text-text-primary hover:bg-secondary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
           >
             {isFullscreen ? (
               <Minimize className="w-5 h-5" />
@@ -449,7 +449,7 @@ const App: React.FC = () => {
           <button
             onClick={uiActions.openToolLibraryModal}
             title="Tool Library"
-            className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
+            className="p-2.5 rounded-lg bg-secondary/50 text-text-primary hover:bg-secondary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
           >
             <BookOpen className="w-5 h-5" />
           </button>
@@ -459,7 +459,7 @@ const App: React.FC = () => {
               uiActions.openSettingsModal();
             }}
             title="Machine Settings"
-            className="p-2 rounded-md bg-secondary text-text-primary hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface"
+            className="p-2.5 rounded-lg bg-secondary/50 text-text-primary hover:bg-secondary hover:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -489,15 +489,15 @@ const App: React.FC = () => {
 
       {alarmInfo && (
         <div
-          className="bg-accent-red/20 border-b-4 border-accent-red text-accent-red p-4 m-4 flex items-start"
+          className="bg-red-500/10 border-l-4 border-red-500 text-red-400 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
           role="alert"
         >
-          <OctagonAlert className="h-8 w-8 mr-4 flex-shrink-0" />
+          <OctagonAlert className="h-6 w-6 mr-4 flex-shrink-0 mt-1" />
           <div className="flex-grow">
             <h3 className="font-bold text-lg">{`Machine Alarm: ${alarmInfo.name}`}</h3>
-            <p className="text-sm">{alarmInfo.desc}</p>
+            <p className="text-sm opacity-90">{alarmInfo.desc}</p>
             <p className="text-sm mt-2">
-              <strong>Resolution: </strong>
+              <strong className="text-red-300">Resolution: </strong>
               {alarmInfo.resolution}
             </p>
           </div>
@@ -505,7 +505,7 @@ const App: React.FC = () => {
             id="unlock-button"
             title="Unlock Machine (Hotkey: x)"
             onClick={() => handleManualCommand("$X")}
-            className={`ml-4 flex items-center gap-2 px-4 py-2 bg-accent-red text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-100 ${flashingButton === "unlock-button"
+            className={`ml-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-200 shadow-lg ${flashingButton === "unlock-button"
               ? "ring-4 ring-white ring-inset"
               : ""
               }`}
@@ -516,7 +516,7 @@ const App: React.FC = () => {
       )}
       {!isSerialApiSupported && !useSimulator && (
         <div
-          className="bg-accent-yellow/20 border-l-4 border-accent-yellow text-accent-yellow p-4 m-4 flex items-start"
+          className="bg-yellow-500/10 border-l-4 border-yellow-500 text-yellow-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
           role="alert"
         >
           <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
@@ -528,19 +528,19 @@ const App: React.FC = () => {
       )}
       {error && (isSerialApiSupported || useSimulator) && (
         <div
-          className="bg-accent-red/20 border-l-4 border-accent-red text-accent-red p-4 m-4 flex items-start"
+          className="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
           role="alert"
         >
           <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
           <p>{error}</p>
-          <button onClick={() => setError(null)} className="ml-auto font-bold">
+          <button onClick={() => setError(null)} className="ml-auto font-bold hover:text-red-400 transition-colors">
             X
           </button>
         </div>
       )}
 
       <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
-        <div className="h-[40vh] lg:h-full">
+        <div className="h-[40vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -564,7 +564,7 @@ const App: React.FC = () => {
             isSimulated={useSimulator}
           />
         </div>
-        <div className="h-[50vh] lg:h-full">
+        <div className="h-[50vh] lg:h-full bg-surface/60 backdrop-blur-md rounded-xl border border-white/20 overflow-hidden shadow-xl">
           <Tabs
             defaultTab="controls"
             tabs={[

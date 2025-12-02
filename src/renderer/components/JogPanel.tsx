@@ -122,7 +122,7 @@ const JogButton: React.FC<JogButtonProps> = memo(({
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
       disabled={isDisabled}
-      className={`flex items-center justify-center py-6 bg-secondary rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed ${flashingButton === id ? "ring-4 ring-white ring-inset" : ""
+      className={`flex items-center justify-center py-3 bg-secondary/80 backdrop-blur-sm rounded-lg border border-white/10 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-md ${flashingButton === id ? "ring-2 ring-white ring-inset bg-primary text-white" : "text-text-primary"
         }`}
       title={title}
     >
@@ -396,17 +396,17 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     }, [jogStep, jogFeedRate]);
 
     return (
-      <div className="bg-surface rounded-lg shadow-lg flex flex-col p-1 gap-1">
+      <div className="flex flex-col p-1 gap-2 h-full">
         {/* Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-full">
           {/* Left Column: Jog + Homing */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-4">
             {/* Jog Controls */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md flex-grow flex flex-col justify-center">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.title')}
               </h4>
-              <div className="grid grid-cols-3 grid-rows-3 gap-1">
+              <div className="grid grid-cols-3 grid-rows-3 gap-2 flex-grow">
                 <div className="col-start-1 row-start-1"></div> {/* empty */}
                 <JogButton
                   id="jog-y-plus"
@@ -454,7 +454,9 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   onStopJog={handleStopJog}
                 />
                 <div className="col-start-2 row-start-2 flex items-center justify-center">
-                  <Pin className="w-8 h-8 text-text-secondary" />
+                  <div className="w-12 h-12 rounded-full bg-surface border border-white/10 flex items-center justify-center shadow-inner">
+                    <Pin className="w-6 h-6 text-primary" />
+                  </div>
                 </div>
                 <JogButton
                   id="jog-x-plus"
@@ -503,26 +505,26 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   onStopJog={handleStopJog}
                 />
               </div>
-              <div className="flex justify-around items-center mt-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-text-secondary">{t('jog.step')}</span>
-                  <div className="flex gap-1">
+              <div className="flex justify-around items-center mt-4 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-3 w-full">
+                  <span className="text-xs font-bold text-text-secondary whitespace-nowrap">{t('jog.step')}</span>
+                  <div className="flex gap-1 w-full">
                     {stepSizes.map((step, index) => (
                       <button
                         key={step}
                         id={`step-${step}`}
                         onClick={() => onStepChange(step)}
                         disabled={isControlDisabled}
-                        className={`px-2 py-1 text-xs rounded-md transition-colors relative ${jogStep === step
-                          ? "bg-primary text-white font-bold"
-                          : "bg-secondary hover:bg-secondary-focus"
+                        className={`flex-1 py-2 text-xs rounded-md transition-all relative font-mono ${jogStep === step
+                          ? "bg-primary text-white font-bold shadow-md"
+                          : "bg-secondary/80 hover:bg-secondary text-text-secondary hover:text-text-primary"
                           } ${flashingButton === `step-${step}`
                             ? "ring-2 ring-white ring-inset"
                             : ""
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          } disabled:opacity-50 disabled:cursor-not-allowed border border-white/5`}
                         title={`${t('jog.stepSize')} ${step} (Hotkey: ${index + 1})`}
                       >
-                        <span className="absolute -top-1 -right-1 text-[8px] opacity-50">
+                        <span className="absolute -top-1 -right-1 text-[8px] opacity-40 font-sans">
                           {index + 1}
                         </span>
                         {step}
@@ -534,15 +536,15 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
 
             {/* Homing Controls (Moved here) */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.homing.title')}
               </h4>
-              <div className="grid grid-cols-3 gap-1 text-sm">
+              <div className="grid grid-cols-5 gap-2 text-sm">
                 <button
                   onClick={() => onHome("all")}
                   disabled={isControlDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.all')}
                 >
                   <Home className="w-5 h-5" />
@@ -550,7 +552,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onHome("x")}
                   disabled={isControlDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.x')}
                 >
                   <HomeX className="w-5 h-5" />
@@ -558,7 +560,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onHome("y")}
                   disabled={isControlDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.y')}
                 >
                   <HomeY className="w-5 h-5" />
@@ -566,7 +568,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onHome("z")}
                   disabled={isControlDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.z')}
                 >
                   <HomeZ className="w-5 h-5" />
@@ -574,7 +576,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onHome("xy")}
                   disabled={isControlDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.xy')}
                 >
                   <HomeXY className="w-5 h-5" />
@@ -584,64 +586,66 @@ const JogPanel: React.FC<JogPanelProps> = memo(
           </div>
 
           {/* Right Column: Spindle, Zero, Probe, Units */}
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
             {/* Spindle Controls */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.spindle.title')}
               </h4>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={spindleSpeed}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setSpindleSpeed(parseInt(e.target.value, 10))
-                  }
-                  disabled={isSpindleDisabled}
-                  className="w-full bg-secondary border border-secondary rounded-md py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50"
-                  aria-label="Spindle Speed in RPM"
-                />
-                <span className="text-sm text-text-secondary">{t('jog.spindle.rpm')}</span>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="relative flex-grow">
+                  <input
+                    type="number"
+                    value={spindleSpeed}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setSpindleSpeed(parseInt(e.target.value, 10))
+                    }
+                    disabled={isSpindleDisabled}
+                    className="w-full bg-secondary/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 font-mono text-right pr-12"
+                    aria-label="Spindle Speed in RPM"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary pointer-events-none">RPM</span>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1 mt-1">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   title={t('jog.spindle.cw')}
                   onClick={() => onSpindleCommand("cw", spindleSpeed)}
                   disabled={isSpindleDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-green"
                 >
-                  <RotateCw className="w-5 h-5" />
+                  <RotateCw className="w-6 h-6" />
                 </button>
                 <button
                   title={t('jog.spindle.ccw')}
                   onClick={() => onSpindleCommand("ccw", spindleSpeed)}
                   disabled={isSpindleDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-yellow"
                 >
-                  <RotateCcw className="w-5 h-5" />
+                  <RotateCcw className="w-6 h-6" />
                 </button>
                 <button
                   title={t('jog.spindle.off')}
                   onClick={() => onSpindleCommand("off", 0)}
                   disabled={isSpindleDisabled}
-                  className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 flex justify-center"
+                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-red"
                 >
-                  <PowerOff className="w-5 h-5" />
+                  <PowerOff className="w-6 h-6" />
                 </button>
               </div>
             </div>
 
             {/* Zeroing Controls */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.zero.title')}
               </h4>
               <div className="space-y-1 text-sm">
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-5 gap-2">
                   <button
                     onClick={() => onSetZero("all")}
                     disabled={isControlDisabled}
-                    className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.all')}
                   >
                     <Crosshair className="w-5 h-5" />
@@ -649,7 +653,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     onClick={() => onSetZero("x")}
                     disabled={isControlDisabled}
-                    className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.x')}
                   >
                     <CrosshairX className="w-5 h-5" />
@@ -657,7 +661,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     onClick={() => onSetZero("y")}
                     disabled={isControlDisabled}
-                    className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.y')}
                   >
                     <CrosshairY className="w-5 h-5" />
@@ -665,7 +669,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     onClick={() => onSetZero("z")}
                     disabled={isControlDisabled}
-                    className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.z')}
                   >
                     <CrosshairZ className="w-5 h-5" />
@@ -673,7 +677,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     onClick={() => onSetZero("xy")}
                     disabled={isControlDisabled}
-                    className="p-2 bg-secondary rounded hover:bg-secondary-focus disabled:opacity-50 font-bold flex items-center justify-center"
+                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.xy')}
                   >
                     <CrosshairXY className="w-5 h-5" />
@@ -683,15 +687,15 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
 
             {/* Probe Controls */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.probe.title')}
               </h4>
-              <div className="grid grid-cols-2 gap-1 text-sm">
+              <div className="grid grid-cols-4 gap-2 text-sm">
                 <button
                   onClick={() => onProbe("X")}
                   disabled={isProbeDisabled}
-                  className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center"
+                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.x')}
                 >
                   <ProbeX className="w-5 h-5" />
@@ -699,7 +703,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("Y")}
                   disabled={isProbeDisabled}
-                  className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center"
+                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.y')}
                 >
                   <ProbeY className="w-5 h-5" />
@@ -707,7 +711,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("Z")}
                   disabled={isProbeDisabled}
-                  className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center gap-1"
+                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center gap-1 transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.z')}
                 >
                   <Probe className="w-5 h-5" />
@@ -715,7 +719,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("XY")}
                   disabled={isProbeDisabled}
-                  className="p-2 bg-primary text-white font-semibold rounded hover:bg-primary-focus disabled:opacity-50 flex items-center justify-center"
+                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.xy')}
                 >
                   <ProbeXY className="w-5 h-5" />
@@ -724,17 +728,17 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             </div>
 
             {/* Units Controls */}
-            <div className="bg-background p-1 rounded-md">
-              <h4 className="text-xs font-bold text-text-secondary mb-1">
+            <div className="bg-background/80 backdrop-blur-sm p-2 rounded-xl border border-white/10 shadow-md mt-auto">
+              <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.units.title')}
               </h4>
-              <div className="flex bg-secondary rounded-md p-1">
+              <div className="flex bg-secondary/50 rounded-lg p-1 border border-white/5">
                 <button
                   onClick={() => onUnitChange("mm")}
                   disabled={isControlDisabled}
-                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "mm"
-                    ? "bg-primary text-white"
-                    : "hover:bg-secondary-focus"
+                  className={`w-1/2 p-2 rounded-md text-sm font-semibold transition-all ${unit === "mm"
+                    ? "bg-primary text-white shadow-sm"
+                    : "hover:bg-secondary text-text-secondary hover:text-text-primary"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   mm
@@ -742,9 +746,9 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onUnitChange("in")}
                   disabled={isControlDisabled}
-                  className={`w-1/2 p-1 rounded-md text-sm font-semibold transition-colors ${unit === "in"
-                    ? "bg-primary text-white"
-                    : "hover:bg-secondary-focus"
+                  className={`w-1/2 p-2 rounded-md text-sm font-semibold transition-all ${unit === "in"
+                    ? "bg-primary text-white shadow-sm"
+                    : "hover:bg-secondary text-text-secondary hover:text-text-primary"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   in

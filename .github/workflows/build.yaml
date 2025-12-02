@@ -13,6 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false   # prevent one platform from cancelling others
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
 
@@ -28,6 +29,17 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # ----------------------------------------------------------
+      # macOS needs more memory for the Vite renderer build
+      # ----------------------------------------------------------
+      - name: Set increased Node heap memory (macOS only)
+        if: matrix.os == 'macos-latest'
+        run: echo "NODE_OPTIONS=--max-old-space-size=4096" >> $GITHUB_ENV
+
+      # ----------------------------------------------------------
+      # Linux and Windows get normal environment
+      # ----------------------------------------------------------
 
       - name: Build and Release
         env:

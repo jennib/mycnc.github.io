@@ -21,12 +21,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
     if (!isOpen) return null;
 
     return (
-        <div 
-            className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'}`}
+        <div
+            className={`fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0'}`}
             onClick={onClose}
         >
-            <div 
-                className={`bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
+            <div
+                className={`bg-surface/90 backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-2xl border border-white/10 transform transition-all duration-300 ${show ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
                 onClick={e => e.stopPropagation()}
             >
                 {children}

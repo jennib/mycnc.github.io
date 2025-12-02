@@ -18,6 +18,7 @@ export default {
         "accent-green": "var(--color-accent-green)",
         "accent-yellow": "var(--color-accent-yellow)",
         "accent-red": "var(--color-accent-red)",
+        border: "var(--color-border)",
       },
       animation: {
         "spin-slow": "spin 3s linear infinite",
@@ -29,6 +30,9 @@ export default {
             transform: "rotate(-360deg)",
           },
         },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       },
     },
   },

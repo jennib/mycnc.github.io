@@ -1,31 +1,62 @@
 :root {
-  --color-primary: #0d9488;
-  --color-primary-focus: #0f766e;
+  /* Modern Dark Theme (Midnight Blue) */
+  --color-primary: #38bdf8;
+  /* Sky 400 */
+  --color-primary-focus: #0ea5e9;
+  /* Sky 500 */
   --color-secondary: #475569;
+  /* Slate 600 */
   --color-secondary-focus: #334155;
-  --color-background: #1e293b;
-  --color-surface: #334155;
-  --color-text-primary: #f1f5f9;
+  /* Slate 700 */
+  --color-background: #0f172a;
+  /* Slate 900 */
+  --color-surface: #1e293b;
+  /* Slate 800 */
+  --color-text-primary: #f8fafc;
+  /* Slate 50 */
   --color-text-secondary: #94a3b8;
-  --color-accent-green: #10b981;
-  --color-accent-yellow: #f59e0b;
-  --color-accent-red: #ef4444;
+  /* Slate 400 */
+  --color-accent-green: #34d399;
+  /* Emerald 400 */
+  --color-accent-yellow: #fbbf24;
+  /* Amber 400 */
+  --color-accent-red: #f87171;
+  /* Red 400 */
+  --color-border: #334155;
+  /* Slate 700 */
 }
+
 .light-mode {
-  --color-primary: #0000ff;
-  --color-primary-focus: #0000dd;
-  --color-secondary: #666666;
-  --color-secondary-focus: #444444;
-  --color-background: #ffffff;
-  --color-surface: #e0e0e0;
-  --color-text-primary: #000000;
-  --color-text-secondary: #444444;
-  --color-accent-green: #006400;
-  --color-accent-yellow: #ff8c00;
-  --color-accent-red: #c80000;
+  /* Modern Light Theme (Crisp White/Gray) */
+  --color-primary: #0284c7;
+  /* Sky 600 */
+  --color-primary-focus: #0369a1;
+  /* Sky 700 */
+  --color-secondary: #e2e8f0;
+  /* Slate 200 */
+  --color-secondary-focus: #cbd5e1;
+  /* Slate 300 */
+  --color-background: #f8fafc;
+  /* Slate 50 */
+  --color-surface: #ffffff;
+  /* White */
+  --color-text-primary: #0f172a;
+  /* Slate 900 */
+  --color-text-secondary: #64748b;
+  /* Slate 500 */
+  --color-accent-green: #059669;
+  /* Emerald 600 */
+  --color-accent-yellow: #d97706;
+  /* Amber 600 */
+  --color-accent-red: #dc2626;
+  /* Red 600 */
+  --color-border: #e2e8f0;
+  /* Slate 200 */
 }
+
 .light-mode .bg-secondary {
-  color: #ffffff;
+  color: #0f172a;
+  /* Ensure text is dark on secondary buttons in light mode */
 }
 
 @tailwind base;
@@ -64,11 +95,48 @@
   box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
 }
 
-.react-switch-checkbox:checked + .react-switch-label .react-switch-button {
+.react-switch-checkbox:checked+.react-switch-label .react-switch-button {
   left: calc(100% - 2px);
   transform: translateX(-100%);
 }
 
 .react-switch-label:active .react-switch-button {
   width: 28px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary-focus);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility class for custom scrollbar in specific containers if needed */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-white-10);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-white-20);
 }

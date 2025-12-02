@@ -7,7 +7,7 @@ import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLangu
 import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';
 import { validateGCode, setValidationMarkers, clearValidationMarkers } from '../services/gcodeValidator';
 import { configureMonaco } from '../services/monacoConfig';
-import { X, Save, Download, Undo, Redo, Search, Code2 } from './Icons';
+import { X, Save, Download, Undo, Redo, Search, Code2, AlertTriangle } from './Icons';
 import { useSettingsStore } from '../stores/settingsStore';
 
 interface GCodeEditorModalProps {
@@ -181,25 +181,27 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-[90vw] h-[90vh] bg-background rounded-lg shadow-2xl flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md">
+            <div className="w-[98vw] h-[98vh] bg-surface/95 backdrop-blur-xl rounded-xl shadow-2xl flex flex-col border border-white/10">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-secondary">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                        <Code2 className="w-6 h-6 text-primary" />
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                            <Code2 className="w-6 h-6 text-primary" />
+                        </div>
                         <div>
-                            <h2 className="text-xl font-bold text-foreground">
+                            <h2 className="text-xl font-bold text-text-primary">
                                 {t('gcode.editor.title')}
                             </h2>
-                            <p className="text-sm text-muted">
+                            <p className="text-sm text-text-secondary">
                                 {fileName}
-                                {hasUnsavedChanges && <span className="text-warning ml-2">• Unsaved changes</span>}
+                                {hasUnsavedChanges && <span className="text-accent-yellow ml-2">• Unsaved changes</span>}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-2 hover:bg-secondary rounded-md transition-colors"
+                        className="p-2 hover:bg-white/5 rounded-lg transition-colors text-text-secondary hover:text-text-primary"
                         title={t('common.cancel')}
                     >
                         <X className="w-5 h-5" />
@@ -207,27 +209,27 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                 </div>
 
                 {/* Toolbar */}
-                <div className="flex items-center gap-2 px-6 py-3 border-b border-secondary bg-background-secondary">
+                <div className="flex items-center gap-2 px-6 py-3 border-b border-white/10 bg-background/30">
                     <button
                         onClick={handleUndo}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
                         title={t('gcode.actions.undoTitle')}
                     >
                         <Undo className="w-4 h-4" />
                     </button>
                     <button
                         onClick={handleRedo}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
                         title={t('gcode.actions.redoTitle')}
                     >
                         <Redo className="w-4 h-4" />
                     </button>
 
-                    <div className="w-px h-6 bg-secondary mx-2" />
+                    <div className="w-px h-6 bg-white/10 mx-2" />
 
                     <button
                         onClick={handleFind}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
                         title="Find (Ctrl+F)"
                     >
                         <Search className="w-4 h-4" />
@@ -235,7 +237,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
                     <button
                         onClick={handleFormat}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
                         title={t('gcode.editor.format')}
                     >
                         <Code2 className="w-4 h-4" />
@@ -243,9 +245,9 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                 </div>
 
                 {/* Editor */}
-                <div className="flex-1 relative">
+                <div className="flex-1 relative bg-background/50">
                     {!isMonacoConfigured ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-background text-foreground">
+                        <div className="absolute inset-0 flex items-center justify-center text-text-primary">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                                 <p>Loading Editor...</p>
@@ -274,29 +276,32 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                                 scrollBeyondLastLine: false,
                                 renderWhitespace: 'selection',
                                 fontSize: 14,
-                                fontFamily: 'Consolas, "Courier New", monospace',
+                                fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
                                 padding: { top: 16, bottom: 16 },
+                                smoothScrolling: true,
+                                cursorBlinking: "smooth",
+                                cursorSmoothCaretAnimation: "on",
                             }}
                         />
                     )}
                 </div>
 
                 {/* Status Bar */}
-                <div className="flex items-center justify-between px-6 py-3 border-t border-secondary bg-background-secondary">
-                    <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center justify-between px-6 py-3 border-t border-white/10 bg-background/30">
+                    <div className="flex items-center gap-4 text-sm font-medium">
                         {errorCount > 0 && (
-                            <span className="text-error">
-                                ❌ {errorCount} {errorCount === 1 ? 'error' : 'errors'}
+                            <span className="text-accent-red flex items-center gap-1">
+                                <AlertTriangle className="w-4 h-4" /> {errorCount} {errorCount === 1 ? 'error' : 'errors'}
                             </span>
                         )}
                         {warningCount > 0 && (
-                            <span className="text-warning">
-                                ⚠️ {warningCount} {warningCount === 1 ? 'warning' : 'warnings'}
+                            <span className="text-accent-yellow flex items-center gap-1">
+                                <AlertTriangle className="w-4 h-4" /> {warningCount} {warningCount === 1 ? 'warning' : 'warnings'}
                             </span>
                         )}
                         {errorCount === 0 && warningCount === 0 && (
-                            <span className="text-success">
-                                ✅ {t('gcode.editor.noIssues')}
+                            <span className="text-accent-green flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full bg-accent-green"></div> {t('gcode.editor.noIssues')}
                             </span>
                         )}
                     </div>
@@ -304,7 +309,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleSaveToApp}
-                            className="flex items-center gap-2 px-4 py-2 bg-accent-green text-white font-semibold rounded-md hover:bg-green-600 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-accent-green/90 text-white font-semibold rounded-lg hover:bg-accent-green shadow-lg shadow-accent-green/20 transition-all active:scale-95"
                             title={t('gcode.actions.saveLocalTitle')}
                         >
                             <Save className="w-4 h-4" />
@@ -312,7 +317,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         </button>
                         <button
                             onClick={handleSaveToDisk}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-primary/90 text-white font-semibold rounded-lg hover:bg-primary shadow-lg shadow-primary/20 transition-all active:scale-95"
                             title={t('gcode.actions.saveDisk')}
                         >
                             <Download className="w-4 h-4" />
@@ -320,7 +325,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         </button>
                         <button
                             onClick={handleClose}
-                            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all active:scale-95"
                         >
                             {t('common.cancel')}
                         </button>

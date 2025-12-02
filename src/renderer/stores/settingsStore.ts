@@ -29,7 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       jogStep: 1,
       unit: 'mm',
-      isLightMode: false,
+      isLightMode: true,
       macros: DEFAULT_MACROS,
       machineSettings: DEFAULT_SETTINGS,
       toolLibrary: DEFAULT_TOOLS,
@@ -55,27 +55,27 @@ export const useSettingsStore = create<SettingsState>()(
       merge: (persistedState, currentState) => {
         const state = persistedState as any;
         const deepMerge = (current: object, persisted: object) => {
-            const result = { ...current };
-            for (const key in persisted) {
-                if (persisted.hasOwnProperty(key)) {
-                    const currentValue = (current as any)[key];
-                    const persistedValue = (persisted as any)[key];
-                    if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) && typeof persistedValue === 'object' && persistedValue !== null && !Array.isArray(persistedValue)) {
-                        (result as any)[key] = deepMerge(currentValue, persistedValue);
-                    } else {
-                        (result as any)[key] = persistedValue;
-                    }
-                }
+          const result = { ...current };
+          for (const key in persisted) {
+            if (persisted.hasOwnProperty(key)) {
+              const currentValue = (current as any)[key];
+              const persistedValue = (persisted as any)[key];
+              if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) && typeof persistedValue === 'object' && persistedValue !== null && !Array.isArray(persistedValue)) {
+                (result as any)[key] = deepMerge(currentValue, persistedValue);
+              } else {
+                (result as any)[key] = persistedValue;
+              }
             }
-            return result;
+          }
+          return result;
         };
 
         return {
-            ...currentState,
-            ...state,
-            machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
-            generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
-            webcamSettings: { ...currentState.webcamSettings, ...(state.webcamSettings || {}) },
+          ...currentState,
+          ...state,
+          machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
+          generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
+          webcamSettings: { ...currentState.webcamSettings, ...(state.webcamSettings || {}) },
         };
       },
     }

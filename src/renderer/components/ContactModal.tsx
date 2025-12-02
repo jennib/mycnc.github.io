@@ -45,20 +45,20 @@ ${message}`
 
     return (
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
         >
             <div
-                className="bg-surface rounded-lg shadow-2xl w-full max-w-lg border border-secondary transform transition-all"
+                className="bg-surface/95 backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-lg border border-white/10 transform transition-all"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-secondary flex justify-between items-center">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">{t('contact.title')}</h2>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded-md text-text-secondary hover:text-text-primary hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-primary transition-colors"
                         aria-label="Close contact form"
                     >
                         <X className="w-6 h-6" />
@@ -67,7 +67,7 @@ ${message}`
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 space-y-4">
                         {error && (
-                            <div className="bg-accent-red/20 text-accent-red p-3 rounded-md text-sm font-semibold">
+                            <div className="bg-accent-red/20 text-accent-red p-3 rounded-lg text-sm font-semibold border border-accent-red/20">
                                 {error}
                             </div>
                         )}
@@ -81,7 +81,7 @@ ${message}`
                                 value={name}
                                 onChange={e => setName(e.target.value)}
                                 required
-                                className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
                             />
                         </div>
                         <div>
@@ -94,7 +94,7 @@ ${message}`
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
                                 required
-                                className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
                             />
                         </div>
                         <div>
@@ -107,24 +107,24 @@ ${message}`
                                 onChange={e => setMessage(e.target.value)}
                                 required
                                 rows={5}
-                                className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
                             />
                         </div>
                         <p className="text-xs text-text-secondary">
                             {t('contact.clientInfo')}
                         </p>
                     </div>
-                    <div className="bg-background px-6 py-4 flex justify-end items-center gap-4 rounded-b-lg">
+                    <div className="bg-background/30 px-6 py-4 flex justify-end items-center gap-4 rounded-b-xl border-t border-white/10">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus"
+                            className="px-4 py-2 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all active:scale-95"
                         >
                             {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus flex items-center gap-2"
+                            className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-focus flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95"
                         >
                             <Send className="w-5 h-5" />
                             {t('contact.send')}
