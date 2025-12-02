@@ -3,7 +3,7 @@
  * Provides real-time validation and linting
  */
 
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { MachineSettings } from '../types';
 import { getCommand } from '../constants/gcodeCommands';
 

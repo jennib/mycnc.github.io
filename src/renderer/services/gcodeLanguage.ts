@@ -3,7 +3,7 @@
  * Provides syntax highlighting and language configuration
  */
 
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 export const GCODE_LANGUAGE_ID = 'gcode';
 

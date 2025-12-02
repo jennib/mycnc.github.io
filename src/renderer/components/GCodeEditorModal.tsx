@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Editor, { OnMount } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { MachineSettings } from '../types';
 import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLanguage';
 import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';

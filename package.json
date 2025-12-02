@@ -22,8 +22,7 @@
     "dist": "electron-vite build && electron-builder",
     "test": "vitest",
     "check:translations": "node scripts/check-translations.cjs",
-    "clean": "rimraf dist out release node_modules package-lock.json",
-    "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
+    "clean": "rimraf dist out release node_modules package-lock.json"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
