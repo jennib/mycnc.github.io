@@ -1,24 +1,8 @@
 # Security Policy
 
-## Known Security Considerations
+## Security Status
 
-### Electron Version (Moderate Risk)
-
-**Current Status**: The project uses Electron v28.x, which has 3 moderate severity vulnerabilities related to ASAR integrity.
-
-**Recommended Fix**: Upgrade to Electron v35.7.5 or higher.
-
-**Why Not Fixed Yet**: Upgrading from Electron v28 to v35 is a major version jump (7 versions) that could introduce breaking changes. This requires:
-- Testing all Electron APIs
-- Updating electron-builder configuration
-- Full regression testing
-- Potential code changes in main process
-
-**Risk Assessment**: 
-- **Severity**: Moderate
-- **Impact**: ASAR file integrity bypass (packaging/distribution issue)
-- **Mitigation**: Affects packaged/distributed applications, not development
-- **Timeline**: Planned for future major version update
+**Current Status**: The project uses Electron v39.x and has no known vulnerabilities.
 
 ### Security Best Practices
 
@@ -43,7 +27,7 @@ Run `npm audit` regularly to check for new vulnerabilities:
 npm audit
 ```
 
-Last audit: November 2024
+Last audit: December 2025
 - **High**: 0
-- **Moderate**: 3 (Electron - documented above)
+- **Moderate**: 0
 - **Low**: 0
