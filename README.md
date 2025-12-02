@@ -44,6 +44,13 @@ Scroll down to view a sample screenshot of the app in action.
 
 ---
 
+### 💻 System Requirements
+
+**Desktop App (Electron):**
+- **Windows:** Windows 10 or later (x64, arm64)
+- **macOS:** macOS 11 (Big Sur) or later (x64, arm64)
+- **Linux:** Ubuntu 20.04 or later (or equivalent)
+
 ### 🧑‍💻 Running Locally
 
 You can also run **mycnc.app** locally on your computer.   Look in the releases section for desktop versions.

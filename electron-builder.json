@@ -12,6 +12,7 @@
     "mac": {
         "category": "public.app-category.developer-tools",
         "icon": "build/mycnc.icns",
+        "minimumSystemVersion": "11.0.0",
         "target": [
             {
                 "target": "dmg",
