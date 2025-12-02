@@ -47,6 +47,13 @@ export default defineConfig(({ mode }) => ({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'index.html')
+        },
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'xstate', '@xstate/react', 'zustand', 'i18next', 'react-i18next'],
+            three: ['three'],
+            ui: ['lucide-react']
+          }
         }
       },
       outDir: 'out/renderer',
