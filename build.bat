@@ -9,18 +9,10 @@ echo ==========================================
 echo [1/4] Checking prerequisites...
 
 where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] Node.js is not installed or not in your PATH.
-    echo         Please install Node.js from https://nodejs.org/
-    exit /b 1
-)
+if errorlevel 1 goto :ErrNode
 
 where npm >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] npm is not installed or not in your PATH.
-    echo         Please install Node.js (which includes npm).
-    exit /b 1
-)
+if errorlevel 1 goto :ErrNpm
 
 echo       - Node.js found.
 echo       - npm found.
@@ -29,19 +21,13 @@ echo       - npm found.
 echo(
 echo [2/4] Cleaning project...
 call npm run clean
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to clean the project.
-    exit /b 1
-)
+if errorlevel 1 goto :ErrClean
 
 :: 3. Install Dependencies
 echo(
 echo [3/4] Installing dependencies...
 call npm install
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to install dependencies.
-    exit /b 1
-)
+if errorlevel 1 goto :ErrInstall
 
 :: 4. Build Application
 echo(
@@ -56,11 +42,17 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" (
 echo       - Target Platform: Windows
 echo       - Target Arch:     %ARCH_FLAG%
 
-call npm run dist -- --win %ARCH_FLAG%
-if %errorlevel% neq 0 (
-    echo [ERROR] Build failed.
-    exit /b 1
-)
+:: 4a. Compile Source (Vite)
+echo(
+echo       [Step 1/2] Compiling source code...
+call npm run electron:build
+if errorlevel 1 goto :ErrBuild
+
+:: 4b. Package Application (Electron Builder)
+echo(
+echo       [Step 2/2] Packaging application...
+call npx electron-builder --win %ARCH_FLAG%
+if errorlevel 1 goto :ErrBuild
 
 echo(
 echo ==========================================
@@ -72,5 +64,29 @@ echo   %CD%\dist
 echo(
 echo You can find the installer/executable there.
 echo(
+goto :End
 
+:ErrNode
+echo [ERROR] Node.js is not installed or not in your PATH.
+echo         Please install Node.js from https://nodejs.org/
+exit /b 1
+
+:ErrNpm
+echo [ERROR] npm is not installed or not in your PATH.
+echo         Please install Node.js (which includes npm).
+exit /b 1
+
+:ErrClean
+echo [ERROR] Failed to clean the project.
+exit /b 1
+
+:ErrInstall
+echo [ERROR] Failed to install dependencies.
+exit /b 1
+
+:ErrBuild
+echo [ERROR] Build failed.
+exit /b 1
+
+:End
 endlocal

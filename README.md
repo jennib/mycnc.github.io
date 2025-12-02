@@ -56,6 +56,38 @@ You can also run **mycnc.app** locally on your computer.   Look in the releases 
 
 ---
 
+### 🛠️ Building from Source
+
+To build the desktop application (Electron) from source, follow these steps:
+
+#### Prerequisites
+- **Node.js**: Version 20 or higher (includes npm). [Download Node.js](https://nodejs.org/)
+
+#### Build Commands
+
+We provide optimized build scripts that automatically detect your operating system and architecture (e.g., Windows x64, macOS arm64) to speed up the build process.
+
+**Windows:**
+```cmd
+.\build.bat
+```
+
+**macOS / Linux:**
+```bash
+chmod +x build.sh  # Make script executable (first time only)
+./build.sh
+```
+
+These scripts will:
+1. Check for Node.js and npm.
+2. Clean previous build artifacts.
+3. Install dependencies.
+4. Build the application for your specific platform and architecture.
+
+The output files (installers/executables) will be located in the `dist` folder.
+
+---
+
 ##  Security
 
 See [SECURITY.md](SECURITY.md) for known security considerations and reporting guidelines.

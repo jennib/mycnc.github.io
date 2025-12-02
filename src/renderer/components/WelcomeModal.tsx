@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Settings, BookOpen, Zap } from './Icons';
 
@@ -42,9 +43,9 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all" onClick={e => e.stopPropagation()}>
+    return ReactDOM.createPortal(
+        <div className="fixed top-0 left-0 w-screen h-screen bg-background/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all">
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">{t('welcome.title')}</h2>
                     <div className="flex items-center gap-4">
@@ -87,7 +88,8 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

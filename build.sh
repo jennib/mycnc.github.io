@@ -64,9 +64,21 @@ fi
 echo "      - Target Platform: $OS_FLAG"
 echo "      - Target Arch:     $ARCH_FLAG"
 
-npm run dist -- $OS_FLAG $ARCH_FLAG
+# 4a. Compile Source
+echo ""
+echo "      [Step 1/2] Compiling source code..."
+npm run electron:build
 if [ $? -ne 0 ]; then
-    echo "[ERROR] Build failed."
+    echo "[ERROR] Compilation failed."
+    exit 1
+fi
+
+# 4b. Package Application
+echo ""
+echo "      [Step 2/2] Packaging application..."
+npx electron-builder $OS_FLAG $ARCH_FLAG
+if [ $? -ne 0 ]; then
+    echo "[ERROR] Packaging failed."
     exit 1
 fi
 
