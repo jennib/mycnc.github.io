@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, DragEvent, memo } from "react";
+import React, { useRef, useState, useEffect, DragEvent, memo, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 
 import { JobStatus, MachineState, Tool, MachineSettings } from "../types";
@@ -27,10 +27,12 @@ import {
   Zap,
   AlertTriangle,
 } from "./Icons";
-import GCodeVisualizer, { GCodeVisualizerHandle } from "./GCodeVisualizer";
+import type { GCodeVisualizerHandle } from "./GCodeVisualizer";
 import GCodeLine from "./GCodeLine";
 import { useUndoRedo } from "../hooks/useUndoRedo";
-import GCodeEditorModal from "./GCodeEditorModal";
+
+const GCodeVisualizer = React.lazy(() => import("./GCodeVisualizer"));
+const GCodeEditorModal = React.lazy(() => import("./GCodeEditorModal"));
 
 interface OverrideControlProps {
   label: string;
@@ -340,14 +342,16 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       return (
         <div className="absolute inset-0 overflow-hidden flex flex-col">
           <div className="flex-grow relative min-h-0">
-            <GCodeVisualizer
-              ref={visualizerRef}
-              gcodeLines={gcodeLines}
-              currentLine={visualizerCurrentLine} // Use visualizerCurrentLine
-              unit={unit}
-              hoveredLineIndex={hoveredLineIndex}
-              machineSettings={machineSettings}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <GCodeVisualizer
+                ref={visualizerRef}
+                gcodeLines={gcodeLines}
+                currentLine={visualizerCurrentLine} // Use visualizerCurrentLine
+                unit={unit}
+                hoveredLineIndex={hoveredLineIndex}
+                machineSettings={machineSettings}
+              />
+            </Suspense>
           </div>
           {/* Scrubber (Hidden during job) */}
           {gcodeLines.length > 0 && !isJobActive && (
@@ -647,16 +651,20 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       )}
 
       {/* Advanced G-code Editor Modal */}
-      <GCodeEditorModal
-        isOpen={isAdvancedEditorOpen}
-        onClose={() => setIsAdvancedEditorOpen(false)}
-        initialContent={gcodeLines.join("\n")}
-        fileName={fileName || "untitled.gcode"}
-        onSaveToApp={handleAdvancedEditorSaveToApp}
-        onSaveToDisk={handleAdvancedEditorSaveToDisk}
-        machineSettings={machineSettings}
-        unit={unit}
-      />
+      <Suspense fallback={null}>
+        {isAdvancedEditorOpen && (
+          <GCodeEditorModal
+            isOpen={isAdvancedEditorOpen}
+            onClose={() => setIsAdvancedEditorOpen(false)}
+            initialContent={gcodeLines.join("\n")}
+            fileName={fileName || "untitled.gcode"}
+            onSaveToApp={handleAdvancedEditorSaveToApp}
+            onSaveToDisk={handleAdvancedEditorSaveToDisk}
+            machineSettings={machineSettings}
+            unit={unit}
+          />
+        )}
+      </Suspense>
     </div>
   );
 };
