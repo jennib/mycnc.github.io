@@ -1,6 +1,7 @@
 import { resolve } from 'path';
 import { defineConfig, loadEnv, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig(({ mode }) => ({
   main: {
@@ -61,6 +62,15 @@ export default defineConfig(({ mode }) => ({
       },
       outDir: 'out/renderer',
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      (monacoEditorPlugin.default || monacoEditorPlugin)({
+        languageWorkers: ['editorWorkerService'],
+        customWorkers: [],
+        customDistPath: (root, outDir, base) => {
+          return resolve(outDir, 'monacoeditorwork');
+        }
+      })
+    ],
   },
 }));
