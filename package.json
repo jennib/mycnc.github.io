@@ -1,8 +1,8 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.18",
-  "description": "Gcode generator andsender for CNC machines",
+  "version": "1.0.19",
+  "description": "Gcode generator and sender for CNC machines",
   "author": {
     "name": "jennib",
     "email": "jenni.b@gmail.com"
