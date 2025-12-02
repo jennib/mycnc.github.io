@@ -7,16 +7,16 @@
         "ok": "确定",
         "edit": "编辑",
         "done": "完成",
-        "cancel": "取消",
-        "language": "语言",
         "locked": "操作期间控制台已锁定",
         "minimize": "最小化控制台",
         "fullscreen": "全屏控制台",
-        "sendCommand": "发送命令"
+        "sendCommand": "发送命令",
+        "cancel": "取消",
+        "language": "语言"
     },
     "console": {
         "title": "控制台",
-        "echo": "回显",
+        "mute": "静音",
         "verbose": "详细",
         "autoscroll": "自动滚动",
         "clear": "清除日志",
@@ -102,13 +102,39 @@
             "title": "探针",
             "x": "探针 X",
             "y": "探针 Y",
+            "z": "探针 Z",
+            "xy": "探针 XY"
+        },
+        "spindle": {
+            "title": "主轴控制",
+            "rpm": "转速",
+            "cw": "主轴开启 (顺时针)",
+            "ccw": "主轴开启 (逆时针)",
+            "off": "主轴关闭"
+        }
+    },
+    "gcode": {
+        "title": "G代码",
+        "view": {
+            "visualizer": "可视化视图",
+            "list": "G代码",
+            "code": "代码视图",
+            "reset": "重置为俯视图",
+            "fit": "适应视图",
+            "zoomIn": "放大",
+            "zoomOut": "缩小"
+        },
+        "actions": {
+            "saveLocal": "保存",
+            "saveLocalTitle": "本地保存更改",
+            "saveDisk": "保存到磁盘",
             "edit": "编辑",
             "editTitle": "编辑 G 代码",
             "generate": "生成器",
             "generateTitle": "打开 G 代码生成器",
-            "load": "加载文件",
-            "clear": "清除 G 代码和预览",
-            "scrub": "擦洗 G 代码刀具路径",
+            "load": "加载",
+            "clear": "清除",
+            "scrub": "擦洗",
             "undo": "撤销",
             "undoTitle": "撤销 (Ctrl+Z)",
             "redo": "重做",
@@ -116,7 +142,7 @@
         },
         "editor": {
             "title": "G代码编辑器",
-            "edit": "Edit G-code",
+            "edit": "编辑 G 代码",
             "advancedEdit": "高级编辑器",
             "quickEdit": "快速编辑",
             "format": "格式化代码",
@@ -141,9 +167,9 @@
             "drop": "在此处放置 G 代码文件"
         },
         "controls": {
-            "start": "启动作业",
+            "start": "启动",
             "pause": "暂停",
-            "stop": "停止作业",
+            "stop": "停止",
             "resume": "恢复",
             "feedRate": "进给速度",
             "spindle": "主轴",
@@ -400,6 +426,17 @@
             "generationFailed": "生成失败",
             "loadSender": "加载到发送器"
         },
+        "array": {
+            "enable": "启用阵列模式",
+            "rectGrid": "矩形网格",
+            "circArray": "圆形阵列",
+            "colsRows": "列数、行数",
+            "spacing": "间距（X, Y）",
+            "copies": "副本数量",
+            "center": "中心（X, Y）",
+            "radius": "半径",
+            "startAngle": "起始角度"
+        },
         "errors": {
             "selectTool": "请选择刀具。",
             "fillRequired": "请用有效数字填写所有必填字段。",
@@ -449,17 +486,6 @@
             "plungeRate": "下刀速度",
             "safeZ": "安全高度",
             "safeZHelp": "材料上方的快速高度"
-        },
-        "array": {
-            "enable": "启用阵列模式",
-            "rectGrid": "矩形网格",
-            "circArray": "圆形阵列",
-            "colsRows": "列数、行数",
-            "spacing": "间距（X, Y）",
-            "copies": "副本数量",
-            "center": "中心（X, Y）",
-            "radius": "半径",
-            "startAngle": "起始角度"
         }
     },
     "preflight": {

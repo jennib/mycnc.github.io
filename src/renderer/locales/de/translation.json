@@ -3,45 +3,45 @@
         "autoscroll": "Auto-Scroll",
         "clear": "Protokoll löschen",
         "send": "Senden",
-        "placeholder": "G-Code-Befehl eingeben...",
+        "placeholder": "G-Code Befehl eingeben...",
         "ok": "OK",
         "edit": "Bearbeiten",
         "done": "Fertig",
-        "cancel": "Abbrechen",
-        "language": "Sprache",
-        "locked": "Konsole während des Betriebs gesperrt",
+        "locked": "Konsole während Betrieb gesperrt",
         "minimize": "Konsole minimieren",
-        "fullscreen": "Konsole im Vollbild",
-        "sendCommand": "Befehl senden"
+        "fullscreen": "Vollbild Konsole",
+        "sendCommand": "Befehl senden",
+        "cancel": "Abbrechen",
+        "language": "Sprache"
     },
     "console": {
         "title": "Konsole",
-        "echo": "Echo",
+        "mute": "Stumm",
         "verbose": "Ausführlich",
         "autoscroll": "Auto-Scroll",
         "clear": "Protokoll löschen",
         "send": "Senden",
-        "placeholder": "G-Code-Befehl eingeben...",
-        "locked": "Konsole während des Betriebs gesperrt",
+        "placeholder": "G-Code Befehl eingeben...",
+        "locked": "Konsole während Betrieb gesperrt",
         "minimize": "Konsole minimieren",
-        "fullscreen": "Konsole im Vollbild",
+        "fullscreen": "Vollbild Konsole",
         "sendCommand": "Befehl senden"
     },
     "welcome": {
         "title": "Willkommen bei mycnc.app!",
-        "description": "<b>mycnc.app</b> ist ein webbasierter G-Code-Sender, der in Ihrem Browser läuft, um Ihre CNC-Maschine zu steuern. Verfahren, senden Sie Dateien und überwachen Sie Aufträge in Echtzeit über eine USB-Verbindung. Es enthält einen 3D-Werkzeugbahnvisualisierer, einen Maschinensimulator und G-Code-Generatoren für einfache Operationen.",
-        "instructions": "Um zu beginnen, führen Sie die folgenden zwei Schritte aus. Dies konfiguriert die Anwendung für Ihre spezifische Maschine.",
+        "description": "<b>mycnc.app</b> ist ein webbasierter G-Code-Sender, der in Ihrem Browser läuft, um Ihre CNC-Maschine zu steuern. Verbinden Sie sich über USB, um zu joggen, Dateien zu senden und Aufträge in Echtzeit zu überwachen. Es enthält einen 3D-Werkzeugweg-Visualisierer, einen Maschinensimulator und G-Code-Generatoren für einfache Operationen.",
+        "instructions": "Um zu beginnen, führen Sie bitte die beiden folgenden Schritte aus. Dadurch wird die Anwendung für Ihre spezifische Maschine konfiguriert.",
         "machineSetup": {
             "title": "Maschineneinrichtung",
-            "description": "Definieren Sie den Arbeitsbereich und die Spindeldrehzahl Ihrer Maschine.",
+            "description": "Definieren Sie den Arbeitsbereich und die Spindeldrehzahlen Ihrer Maschine.",
             "action": "Einstellungen öffnen"
         },
         "toolLibrary": {
             "title": "Werkzeugbibliothek",
-            "description": "Fügen Sie mindestens ein Werkzeug zur Bibliothek hinzu.",
+            "description": "Fügen Sie mindestens ein Werkzeug zu Ihrer Bibliothek hinzu.",
             "action": "Werkzeugbibliothek öffnen"
         },
-        "getStarted": "Erste Schritte",
+        "getStarted": "Loslegen",
         "trySimulator": "Simulator ausprobieren",
         "orTry": "Oder, wenn Sie die Software nur ausprobieren möchten:",
         "complete": "Fertig"
@@ -49,51 +49,51 @@
     "settings": {
         "title": "Maschineneinstellungen",
         "workArea": "Arbeitsbereichsabmessungen (mm)",
-        "jogFeedRate": "Verfahrvorschub (mm/min)",
+        "jogFeedRate": "Jog-Vorschub (mm/min)",
         "spindleSpeed": "Spindeldrehzahlbereich (RPM)",
         "controllerType": "Controller-Typ",
-        "spindleWarmup": "Spindelaufwärmverzögerung (ms)",
+        "spindleWarmup": "Spindel-Aufwärmverzögerung (ms)",
         "probe": "Taster (mm)",
         "probeFeedRate": "Taster-Vorschub",
         "customScripts": "Benutzerdefinierte G-Code-Skripte",
         "startupScript": "Startskript (bei Verbindung)",
-        "shutdownScript": "Herunterfahrskript (bei Trennung)",
+        "shutdownScript": "Abschaltskript (bei Trennung)",
         "configuration": "Konfiguration",
         "configDescription": "Alle Einstellungen, Makros und Werkzeuge exportieren/importieren.",
         "import": "Importieren",
         "export": "Exportieren",
-        "interface": "Oberflächeneinstellungen",
+        "interface": "Schnittstelleneinstellungen",
         "dialogs": "Dialogeinstellungen",
         "resetDialogsDesc": "\"Nicht mehr anzeigen\"-Dialoge zurücksetzen.",
         "resetDialogs": "Dialoge zurücksetzen",
-        "contact": "Kontakt",
+        "contact": "Kontaktieren Sie uns",
         "save": "Einstellungen speichern"
     },
     "jog": {
-        "title": "Verfahrsteuerung",
-        "yPlus": "Verfahren Y+",
-        "yMinus": "Verfahren Y-",
-        "xPlus": "Verfahren X+",
-        "xMinus": "Verfahren X-",
-        "zPlus": "Verfahren Z+",
-        "zMinus": "Verfahren Z-",
+        "title": "Jog-Steuerung",
+        "yPlus": "Jog Y+",
+        "yMinus": "Jog Y-",
+        "xPlus": "Jog X+",
+        "xMinus": "Jog X-",
+        "zPlus": "Jog Z+",
+        "zMinus": "Jog Z-",
         "step": "Schritt:",
         "stepSize": "Schrittgröße:",
         "homing": {
-            "title": "Nullpunkt fahren",
-            "all": "Alle Achsen ($H)",
-            "x": "X-Achse",
-            "y": "Y-Achse",
-            "z": "Z-Achse",
-            "xy": "XY-Achsen"
+            "title": "Referenzfahrt",
+            "all": "Alles referenzieren ($H)",
+            "x": "X referenzieren",
+            "y": "Y referenzieren",
+            "z": "Z referenzieren",
+            "xy": "XY referenzieren"
         },
         "zero": {
             "title": "Arbeitsnullpunkt setzen",
-            "all": "Alle auf Null",
-            "x": "X auf Null",
-            "y": "Y auf Null",
-            "z": "Z auf Null",
-            "xy": "XY auf Null"
+            "all": "Alles nullen",
+            "x": "X nullen",
+            "y": "Y nullen",
+            "z": "Z nullen",
+            "xy": "XY nullen"
         },
         "units": {
             "title": "Einheiten"
@@ -102,13 +102,39 @@
             "title": "Taster",
             "x": "Taster X",
             "y": "Taster Y",
+            "z": "Taster Z",
+            "xy": "Taster XY"
+        },
+        "spindle": {
+            "title": "Spindelsteuerung",
+            "rpm": "RPM",
+            "cw": "Spindel Ein (CW)",
+            "ccw": "Spindel Ein (CCW)",
+            "off": "Spindel Aus"
+        }
+    },
+    "gcode": {
+        "title": "G-Code",
+        "view": {
+            "visualizer": "Visualisierer",
+            "list": "G-Code",
+            "code": "Code-Ansicht",
+            "reset": "Draufsicht",
+            "fit": "Ansicht anpassen",
+            "zoomIn": "Vergrößern",
+            "zoomOut": "Verkleinern"
+        },
+        "actions": {
+            "saveLocal": "Speichern",
+            "saveLocalTitle": "Änderungen lokal speichern",
+            "saveDisk": "Auf Festplatte speichern",
             "edit": "Bearbeiten",
             "editTitle": "G-Code bearbeiten",
             "generate": "Generatoren",
             "generateTitle": "G-Code-Generatoren öffnen",
-            "load": "Datei laden",
-            "clear": "G-Code und Vorschau löschen",
-            "scrub": "G-Code-Werkzeugbahn durchsuchen",
+            "load": "Laden",
+            "clear": "Löschen",
+            "scrub": "Durchlaufen",
             "undo": "Rückgängig",
             "undoTitle": "Rückgängig (Strg+Z)",
             "redo": "Wiederholen",
@@ -116,13 +142,13 @@
         },
         "editor": {
             "title": "G-Code-Editor",
-            "edit": "Edit G-code",
+            "edit": "G-Code bearbeiten",
             "advancedEdit": "Erweiterter Editor",
             "quickEdit": "Schnellbearbeitung",
-            "format": "Code Formatieren",
+            "format": "Code formatieren",
             "validate": "Validieren",
-            "saveToApp": "In App Speichern",
-            "saveToDisk": "Auf Festplatte Speichern",
+            "saveToApp": "In App speichern",
+            "saveToDisk": "Auf Festplatte speichern",
             "errors": "Fehler",
             "warnings": "Warnungen",
             "noIssues": "Keine Probleme gefunden"
@@ -130,20 +156,20 @@
         "status": {
             "file": "Datei:",
             "notConnected": "Nicht verbunden",
-            "connectMessage": "Bitte verbinden Sie sich mit Ihrer Maschine oder dem Simulator über die Schaltfläche oben rechts.",
+            "connectMessage": "Bitte verbinden Sie sich über die Schaltfläche oben rechts mit Ihrer Maschine oder dem Simulator.",
             "label": "Status:",
-            "estTime": "Geschätzte Zeit",
-            "timeRem": "Verbleibende Zeit",
-            "estJobTime": "Geschätzte Auftragsdauer",
-            "estTimeRem": "Geschätzte Restzeit",
+            "estTime": "Gesch. Zeit",
+            "timeRem": "Verbleibend",
+            "estJobTime": "Geschätzte Auftragszeit",
+            "estTimeRem": "Geschätzte verbleibende Zeit",
             "noFile": "Keine G-Code-Datei geladen.",
-            "loadInstruction": "Klicken Sie auf \"Datei laden\" oder ziehen Sie eine Datei hierher, um zu beginnen.",
+            "loadInstruction": "Klicken Sie auf \"Datei laden\" oder ziehen Sie sie hierher, um zu beginnen.",
             "drop": "G-Code-Datei hier ablegen"
         },
         "controls": {
-            "start": "Auftrag starten",
+            "start": "Starten",
             "pause": "Pause",
-            "stop": "Auftrag stoppen",
+            "stop": "Stoppen",
             "resume": "Fortsetzen",
             "feedRate": "Vorschub",
             "spindle": "Spindel",
@@ -152,21 +178,21 @@
         }
     },
     "footer": {
-        "contact": "Kontakt",
+        "contact": "Kontaktieren Sie uns",
         "source": "Quellcode",
         "here": "hier"
     },
     "status": {
         "label": "Status:",
         "alarm": "Alarm:",
-        "homing": "Nullpunkt fahren",
+        "homing": "Referenzfahrt",
         "connected": "Verbunden",
         "disconnected": "Getrennt",
-        "spindleOff": "Spindel aus",
-        "clockwise": "Uhrzeigersinn",
-        "counterCw": "Gegenuhrzeigersinn",
-        "wpos": "Arbeitskoord.",
-        "mpos": "Maschinenkoord."
+        "spindleOff": "Spindel Aus",
+        "clockwise": "Im Uhrzeigersinn",
+        "counterCw": "Gegen Uhrzeigersinn",
+        "wpos": "Arbeitspos.",
+        "mpos": "Maschinenpos."
     },
     "connection": {
         "notConnected": "Nicht verbunden",
@@ -188,7 +214,7 @@
         "diameter": "Durchmesser (mm)",
         "save": "Speichern",
         "cancel": "Abbrechen",
-        "saveClose": "Speichern und schließen",
+        "saveClose": "Speichern & Schließen",
         "empty": "Ihre Werkzeugbibliothek ist leer.",
         "deleteConfirm": "Sind Sie sicher, dass Sie dieses Werkzeug löschen möchten?"
     },
@@ -199,12 +225,12 @@
         "enable": "Aktivieren",
         "local": "Lokale Kamera",
         "webrtc": "WebRTC-Stream",
-        "mute": "Stumm schalten",
+        "mute": "Stumm",
         "unmute": "Stummschaltung aufheben"
     },
     "contact": {
-        "title": "Kontakt",
-        "description": "Wenn Sie Fragen, Feedback oder Unterstützung benötigen, kontaktieren Sie uns bitte.",
+        "title": "Kontaktieren Sie uns",
+        "description": "Wenn Sie Fragen, Feedback haben oder Unterstützung benötigen, wenden Sie sich bitte an uns.",
         "email": "E-Mail",
         "send": "Nachricht senden",
         "cancel": "Abbrechen",
@@ -213,18 +239,18 @@
     },
     "info": {
         "title": "Information",
-        "content": "Dies ist ein Info-Dialog."
+        "content": "Dies ist ein Informationsmodal."
     },
     "generators": {
         "tabs": {
             "surfacing": "Planfräsen",
             "drilling": "Bohren",
-            "bore": "Aufbohren",
+            "bore": "Ausdrehen",
             "pocket": "Tasche",
             "profile": "Profil",
             "slot": "Nut",
             "text": "Text",
-            "thread": "Gewinde",
+            "thread": "Gewindefräsen",
             "relief": "Relief"
         },
         "common": {
@@ -265,9 +291,9 @@
             "stepover": "Seitenversatz"
         },
         "drilling": {
-            "singleHole": "Einzelnes Loch",
+            "singleHole": "Einzelbohrung",
             "rectPattern": "Rechteckiges Muster",
-            "circPattern": "Kreismuster",
+            "circPattern": "Kreisförmiges Muster",
             "xCoord": "X-Koordinate",
             "yCoord": "Y-Koordinate",
             "startX": "Start X",
@@ -283,10 +309,10 @@
             "startAngle": "Startwinkel",
             "finalDepth": "Endtiefe",
             "shouldBeNegative": "Sollte negativ sein",
-            "peckDepth": "Pecktiefe",
-            "peckHelp": "Inkrementelle Tiefe pro Peck",
+            "peckDepth": "Tieflochbohren Tiefe",
+            "peckHelp": "Inkrementelle Tiefe pro Hub",
             "retractHeight": "Rückzugshöhe",
-            "retractHelp": "Höhe zum Zurückziehen zwischen Pecks"
+            "retractHelp": "Höhe zum Zurückziehen zwischen den Hüben"
         },
         "pocket": {
             "rectangle": "Rechteck",
@@ -354,7 +380,7 @@
             "type": "Typ",
             "internal": "Innengewinde",
             "external": "Außengewinde",
-            "hand": "Drehrichtung",
+            "hand": "Richtung",
             "rightHand": "Rechtsgewinde",
             "leftHand": "Linksgewinde",
             "diameter": "Gewindedurchmesser",
@@ -411,17 +437,6 @@
             "radius": "Radius",
             "startAngle": "Startwinkel"
         },
-        "macro": {
-            "addTitle": "Neues Makro hinzufügen",
-            "editTitle": "Makro bearbeiten",
-            "name": "Makroname",
-            "namePlaceholder": "z.B. Z-Achse antasten",
-            "commands": "G-Code-Befehle",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "Geben Sie einen G-Code-Befehl pro Zeile ein.",
-            "delete": "Löschen",
-            "deleteConfirm": "Sind Sie sicher, dass Sie das Makro \"{{name}}\" löschen möchten?"
-        },
         "errors": {
             "selectTool": "Bitte wählen Sie ein Werkzeug aus.",
             "fillRequired": "Bitte füllen Sie alle erforderlichen Felder mit gültigen Zahlen aus.",
@@ -449,6 +464,17 @@
                 "required": "Alle Felder sind erforderlich.",
                 "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
             }
+        },
+        "macro": {
+            "addTitle": "Neues Makro hinzufügen",
+            "editTitle": "Makro bearbeiten",
+            "name": "Makroname",
+            "namePlaceholder": "z.B. Z-Achse antasten",
+            "commands": "G-Code-Befehle",
+            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+            "help": "Geben Sie einen G-Code-Befehl pro Zeile ein.",
+            "delete": "Löschen",
+            "deleteConfirm": "Sind Sie sicher, dass Sie das Makro \"{{name}}\" löschen möchten?"
         },
         "shared": {
             "tool": "Werkzeug",

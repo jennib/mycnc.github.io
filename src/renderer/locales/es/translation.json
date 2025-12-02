@@ -16,7 +16,7 @@
     },
     "console": {
         "title": "Consola",
-        "echo": "Eco",
+        "mute": "Silenciar",
         "verbose": "Detallado",
         "autoscroll": "Desplazamiento Auto",
         "clear": "Borrar Registros",
@@ -117,6 +117,7 @@
         "title": "Código G",
         "view": {
             "visualizer": "Vista Visualizador",
+            "list": "Lista G-Code",
             "code": "Vista Código",
             "reset": "Restablecer Vista Superior",
             "fit": "Ajustar a la Vista",
