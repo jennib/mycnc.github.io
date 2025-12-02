@@ -3,17 +3,16 @@
  * Provides code completion and hover tooltips
  */
 
-import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import * as monaco from 'monaco-editor';
 import { GCODE_COMMANDS, GCODE_PARAMETERS, getCommand } from '../constants/gcodeCommands';
 import { GCODE_LANGUAGE_ID } from './gcodeLanguage';
 
 /**
  * Completion provider for G-code commands
  */
-export function registerGCodeCompletionProvider(monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')) {
+export function registerGCodeCompletionProvider() {
     monaco.languages.registerCompletionItemProvider(GCODE_LANGUAGE_ID, {
         provideCompletionItems: (model, position) => {
-            console.log('[GCodeIntelliSense] Providing completion items...');
             const word = model.getWordUntilPosition(position);
             const range = {
                 startLineNumber: position.lineNumber,
@@ -136,7 +135,7 @@ export function registerGCodeCompletionProvider(monaco: typeof import('monaco-ed
 /**
  * Hover provider for G-code commands
  */
-export function registerGCodeHoverProvider(monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')) {
+export function registerGCodeHoverProvider() {
     monaco.languages.registerHoverProvider(GCODE_LANGUAGE_ID, {
         provideHover: (model, position) => {
             const word = model.getWordAtPosition(position);
@@ -224,7 +223,7 @@ export function registerGCodeHoverProvider(monaco: typeof import('monaco-editor/
 /**
  * Register all IntelliSense providers
  */
-export function registerGCodeIntelliSense(monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')) {
-    registerGCodeCompletionProvider(monaco);
-    registerGCodeHoverProvider(monaco);
+export function registerGCodeIntelliSense() {
+    registerGCodeCompletionProvider();
+    registerGCodeHoverProvider();
 }

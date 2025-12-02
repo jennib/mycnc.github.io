@@ -3,7 +3,7 @@
  * Provides real-time validation and linting
  */
 
-import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import * as monaco from 'monaco-editor';
 import { MachineSettings } from '../types';
 import { getCommand } from '../constants/gcodeCommands';
 
@@ -53,8 +53,7 @@ function parseGCodeLine(line: string): {
  */
 export function validateGCode(
     content: string,
-    machineSettings: MachineSettings,
-    monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')
+    machineSettings: MachineSettings
 ): ValidationError[] {
     const errors: ValidationError[] = [];
     const lines = content.split('\n');
@@ -290,8 +289,7 @@ export function validateGCode(
  */
 export function setValidationMarkers(
     model: monaco.editor.ITextModel,
-    errors: ValidationError[],
-    monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')
+    errors: ValidationError[]
 ) {
     const markers: monaco.editor.IMarkerData[] = errors.map(error => ({
         severity: error.severity,
@@ -308,9 +306,6 @@ export function setValidationMarkers(
 /**
  * Clear validation markers
  */
-export function clearValidationMarkers(
-    model: monaco.editor.ITextModel,
-    monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')
-) {
+export function clearValidationMarkers(model: monaco.editor.ITextModel) {
     monaco.editor.setModelMarkers(model, 'gcode-validator', []);
 }
