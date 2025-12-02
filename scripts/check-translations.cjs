@@ -10,7 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOCALES_DIR = path.join(__dirname, '..', 'public', 'locales');
+const LOCALES_DIR = path.join(__dirname, '..', 'src', 'renderer', 'locales');
 const REFERENCE_LANG = 'en';
 const LANGUAGES = ['es', 'fr', 'de', 'zh'];
 

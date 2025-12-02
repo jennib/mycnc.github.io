@@ -265,7 +265,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 </div>
                 <div className="bg-background/30 px-6 py-4 flex justify-between items-center rounded-b-xl flex-shrink-0 border-t border-white/10">
                     <div className="flex items-center gap-4 text-xs text-text-secondary">
-                        <span>&copy; {new Date().getFullYear()} mycnc.app v{process.env.APP_VERSION}</span>
+                        <span>&copy; {new Date().getFullYear()} mycnc.app v{window.electronAPI ? '1.0.21' : '1.0.21'}</span>
                         <button type="button" onClick={() => {
                             onCancel(); // Close settings modal first
                             onContactClick(); // Then open contact modal

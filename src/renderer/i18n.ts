@@ -3,11 +3,11 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 
-import enTranslation from '../../public/locales/en/translation.json';
-import esTranslation from '../../public/locales/es/translation.json';
-import frTranslation from '../../public/locales/fr/translation.json';
-import deTranslation from '../../public/locales/de/translation.json';
-import zhTranslation from '../../public/locales/zh/translation.json';
+import enTranslation from './locales/en/translation.json';
+import esTranslation from './locales/es/translation.json';
+import frTranslation from './locales/fr/translation.json';
+import deTranslation from './locales/de/translation.json';
+import zhTranslation from './locales/zh/translation.json';
 
 i18n
     // load translation using http -> see /public/locales (i.e. https://github.com/i18next/react-i18next/tree/master/example/react/public/locales)
