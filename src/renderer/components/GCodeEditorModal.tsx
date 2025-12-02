@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import Editor, { OnMount } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import Editor, { OnMount, useMonaco } from '@monaco-editor/react';
+import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { MachineSettings } from '../types';
 import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLanguage';
 import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';
@@ -41,7 +41,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isMonacoConfigured, setIsMonacoConfigured] = useState(false);
 
-    // Handle mount - configure Monaco and register language
+    // Initialize Monaco loader
     useEffect(() => {
         let mounted = true;
 
@@ -49,20 +49,9 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
             try {
                 // Configure Monaco loader to use local instance
                 await configureMonaco();
-
-                if (mounted) {
-                    // Register G-code language if not already registered
-                    // We can safely access the global monaco instance now
-                    if (!monaco.languages.getLanguages().some(lang => lang.id === GCODE_LANGUAGE_ID)) {
-                        registerGCodeLanguage();
-                        registerGCodeIntelliSense();
-                    }
-                    setIsMonacoConfigured(true);
-                }
+                if (mounted) setIsMonacoConfigured(true);
             } catch (error) {
                 console.error('Monaco initialization error:', error);
-                // Still set configured to true so we don't get stuck on loading, 
-                // though the editor might fail or fallback
                 if (mounted) setIsMonacoConfigured(true);
             }
         };
@@ -82,33 +71,42 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
         setHasUnsavedChanges(false);
     }, [initialContent]);
 
+    // Use monaco instance from hook for validation
+    const monacoInstance = useMonaco();
+
     // Validate G-code when content changes
     useEffect(() => {
-        if (editorRef.current) {
+        if (editorRef.current && monacoInstance) {
             const model = editorRef.current.getModel();
             if (model) {
-                const errors = validateGCode(content, machineSettings);
-                setValidationMarkers(model, errors);
+                const errors = validateGCode(content, machineSettings, monacoInstance);
+                setValidationMarkers(model, errors, monacoInstance);
 
                 // Count errors and warnings
-                const errCount = errors.filter(e => e.severity === monaco.MarkerSeverity.Error).length;
-                const warnCount = errors.filter(e => e.severity === monaco.MarkerSeverity.Warning).length;
+                const errCount = errors.filter(e => e.severity === monacoInstance.MarkerSeverity.Error).length;
+                const warnCount = errors.filter(e => e.severity === monacoInstance.MarkerSeverity.Warning).length;
                 setErrorCount(errCount);
                 setWarningCount(warnCount);
             }
         }
-    }, [content, machineSettings]);
+    }, [content, machineSettings, monacoInstance]);
 
     // Update theme when isLightMode changes
     useEffect(() => {
-        if (isMonacoConfigured) {
-            monaco.editor.setTheme(isLightMode ? 'gcode-light' : 'gcode-dark');
+        if (monacoInstance) {
+            monacoInstance.editor.setTheme(isLightMode ? 'gcode-light' : 'gcode-dark');
         }
-    }, [isLightMode, isMonacoConfigured]);
+    }, [isLightMode, monacoInstance]);
 
     // Handle editor mount
     const handleEditorDidMount: OnMount = (editor, monaco) => {
         editorRef.current = editor;
+
+        // Register G-code language and IntelliSense using the provided monaco instance
+        if (!monaco.languages.getLanguages().some(lang => lang.id === GCODE_LANGUAGE_ID)) {
+            registerGCodeLanguage(monaco);
+            registerGCodeIntelliSense(monaco);
+        }
 
         // Add keyboard shortcuts
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {

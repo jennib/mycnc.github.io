@@ -16,7 +16,7 @@
     },
     "console": {
         "title": "Console",
-        "echo": "Echo",
+        "mute": "Mute",
         "verbose": "Verbose",
         "autoscroll": "Autoscroll",
         "clear": "Clear Logs",

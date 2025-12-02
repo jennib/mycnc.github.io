@@ -155,7 +155,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     jogFeedRate,
     jobStatus,
   }) => {
-    const { t } = useTranslation();
+    const { t } = useTranslation('translation') as any;
     const [spindleSpeed, setSpindleSpeed] = useState(1000);
     const pressedJogKey = useRef<string | null>(null);
     const jogManagerRef = useRef<JogManager | null>(null);

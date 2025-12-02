@@ -35,7 +35,7 @@ const Console: React.FC<ConsoleProps> = ({
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const logContainerRef = useRef<HTMLDivElement>(null);
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
@@ -118,23 +118,21 @@ const Console: React.FC<ConsoleProps> = ({
 
   const isDisabled = !isConnected || isJobActive || isMacroRunning;
 
-  const containerClasses = isFullscreen
-    ? "fixed inset-0 z-50 bg-surface p-4 flex flex-col"
-    : "bg-surface rounded-lg shadow-lg flex flex-col p-4 h-full";
+  const containerClasses = "bg-surface rounded-lg shadow-lg flex flex-col p-4 h-full";
 
   return (
     <div className={containerClasses}>
       <div className="flex justify-between items-center pb-2 border-b border-secondary flex-shrink-0">
         <h3 className="text-lg font-bold">{t('console.title')}</h3>
         <div className="flex items-center gap-2">
-          <label className="flex items-center text-sm cursor-pointer" title={t('console.echo')}>
+          <label className="flex items-center text-sm cursor-pointer" title={t('console.mute')}>
             <input
               type="checkbox"
-              checked={isLogEnabled}
-              onChange={(e) => onLogEnabledChange(e.target.checked)}
+              checked={!isLogEnabled}
+              onChange={(e) => onLogEnabledChange(!e.target.checked)}
               className="mr-1"
             />
-            {t('console.echo')}
+            {t('console.mute')}
           </label>
           <label className="flex items-center text-sm cursor-pointer">
             <input
@@ -162,17 +160,7 @@ const Console: React.FC<ConsoleProps> = ({
           >
             <Trash2 className="w-4 h-4 text-text-secondary" />
           </button>
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            title={isFullscreen ? t('console.minimize') : t('console.fullscreen')}
-            className="p-1 rounded-md hover:bg-secondary"
-          >
-            {isFullscreen ? (
-              <Minimize className="w-5 h-5 text-text-secondary" />
-            ) : (
-              <Maximize className="w-5 h-5 text-text-secondary" />
-            )}
-          </button>
+
         </div>
       </div>
       <div

@@ -3,7 +3,7 @@
  * Provides syntax highlighting and language configuration
  */
 
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 export const GCODE_LANGUAGE_ID = 'gcode';
 
@@ -155,7 +155,7 @@ export const gcodeThemeLight: monaco.editor.IStandaloneThemeData = {
 /**
  * Register G-code language with Monaco Editor
  */
-export function registerGCodeLanguage() {
+export function registerGCodeLanguage(monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')) {
     // Register the language
     monaco.languages.register({ id: GCODE_LANGUAGE_ID });
 
