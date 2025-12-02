@@ -31,17 +31,11 @@ jobs:
         run: npm ci
 
       # ----------------------------------------------------------
-      # macOS needs more memory for the Vite renderer build
+      # Build and Release
+      # We set NODE_OPTIONS here to ensure it applies to the build process
       # ----------------------------------------------------------
-      - name: Set increased Node heap memory (macOS only)
-        if: matrix.os == 'macos-latest'
-        run: echo "NODE_OPTIONS=--max-old-space-size=4096" >> $GITHUB_ENV
-
-      # ----------------------------------------------------------
-      # Linux and Windows get normal environment
-      # ----------------------------------------------------------
-
       - name: Build and Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run dist
