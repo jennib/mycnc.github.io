@@ -22,6 +22,7 @@
     "dist": "electron-vite build && electron-builder",
     "test": "vitest",
     "check:translations": "node scripts/check-translations.cjs",
+    "clean": "rimraf dist out release node_modules package-lock.json",
     "psclean": "powershell -Command \"Remove-Item -Recurse -Force -ErrorAction SilentlyContinue node_modules, dist, out, package-lock.json, build_error.log\""
   },
   "dependencies": {
@@ -55,6 +56,7 @@
     "electron-vite": "^4.0.1",
     "jsdom": "^27.2.0",
     "postcss": "^8.4.38",
+    "rimraf": "^6.1.2",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.2",
     "vite": "^7.2.6",

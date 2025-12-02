@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
@@ -180,7 +181,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    return ReactDOM.createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md">
             <div className="w-[98vw] h-[98vh] bg-surface/95 backdrop-blur-xl rounded-xl shadow-2xl flex flex-col border border-white/10">
                 {/* Header */}
@@ -332,7 +333,8 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -488,13 +488,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-bold tracking-tight">{t('gcode.title')}</h2>
           <div className="flex items-center bg-background/80 rounded-lg p-1 border border-white/10">
-            <button
-              onClick={() => setIsAdvancedEditorOpen(true)}
-              title={t('gcode.editor.advancedEdit')}
-              className="p-1.5 rounded-md transition-all hover:bg-secondary text-text-secondary hover:text-text-primary"
-            >
-              <Code className="w-4 h-4" />
-            </button>
+
             {gcodeLines.length > 0 && (
               <>
                 <div className="w-px h-4 bg-white/10 mx-1" />
@@ -532,6 +526,15 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
 
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAdvancedEditorOpen(true)}
+            disabled={isJobActive}
+            className="flex items-center gap-2 px-3 py-1.5 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            title={t('gcode.editor.advancedEdit')}
+          >
+            <Code className="w-4 h-4" />
+            {t('gcode.editor.edit')}
+          </button>
           <button
             onClick={onOpenGenerator}
             disabled={isJobActive}
