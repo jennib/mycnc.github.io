@@ -60,7 +60,7 @@ echo           BUILD SUCCEEDED!
 echo ==========================================
 echo(
 echo The application artifacts are located in:
-echo   %CD%\dist
+echo   %CD%\release
 echo(
 echo You can find the installer/executable there.
 echo(

@@ -9,11 +9,11 @@
   </p>
 
   <p>
-    <a href="https://github.com/mycnc/mycnc.github.io/actions">
-      <img src="https://img.shields.io/github/actions/workflow/status/mycnc/mycnc.github.io/build.yaml?style=flat-square&logo=github" alt="Build Status" />
+    <a href="https://github.com/jennib/mycnc.github.io/actions">
+      <img src="https://img.shields.io/github/actions/workflow/status/jennib/mycnc.github.io/build.yaml?style=flat-square&logo=github" alt="Build Status" />
     </a>
-    <a href="https://github.com/mycnc/mycnc.github.io/releases">
-      <img src="https://img.shields.io/github/v/release/mycnc/mycnc.github.io?style=flat-square&logo=github" alt="Latest Release" />
+    <a href="https://github.com/jennib/mycnc.github.io/releases">
+      <img src="https://img.shields.io/github/v/release/jennib/mycnc.github.io?style=flat-square&logo=github" alt="Latest Release" />
     </a>
     <a href="https://polyformproject.org/licenses/noncommercial/1.0.0/">
       <img src="https://img.shields.io/badge/license-PolyForm_Noncommercial-blue?style=flat-square" alt="License" />
@@ -32,7 +32,7 @@
 ## Features
 
 ### Machine Control
-- **WebSerial Connection:** Connect directly to your machine from the browser.
+- **Connectivity:** Connect via USB (WebSerial) or TCP (Desktop only).
 - **Jogging & Control:** Keyboard shortcuts, gamepad support, and standard machine controls.
 - **Console:** Direct G-code command entry and output logging.
 
@@ -59,7 +59,7 @@
 3. Click **Connect** and pick your port.
 
 ### Desktop
-Grab the installer for your OS from the [Releases](https://github.com/mycnc/mycnc.github.io/releases) page.
+Grab the installer for your OS from the [Releases](https://github.com/jennib/mycnc.github.io/releases) page.
 - **Windows:** `.exe`
 - **macOS:** `.dmg`
 - **Linux:** `.AppImage` or `.deb`
@@ -72,7 +72,7 @@ Built with Electron, Vite, React, and TypeScript.
 
 ### Setup
 ```bash
-git clone https://github.com/mycnc/mycnc.github.io.git
+git clone https://github.com/jennib/mycnc.github.io.git
 cd mycnc.github.io
 npm install
 ```
@@ -99,7 +99,7 @@ Scripts are provided to build for your specific platform:
 chmod +x build.sh
 ./build.sh
 ```
-Builds land in the `dist` folder.
+Builds land in the `release` folder.
 
 ---
 
