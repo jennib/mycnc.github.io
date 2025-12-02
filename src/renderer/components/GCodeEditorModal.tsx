@@ -98,14 +98,30 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
         }
     }, [isLightMode, monacoInstance]);
 
+    // Static flag to track initialization across re-renders
+    const isGCodeInitializedRef = useRef(false);
+
     // Handle editor mount
     const handleEditorDidMount: OnMount = (editor, monaco) => {
         editorRef.current = editor;
 
         // Register G-code language and IntelliSense using the provided monaco instance
-        if (!monaco.languages.getLanguages().some(lang => lang.id === GCODE_LANGUAGE_ID)) {
+        // We use a ref to ensure this only happens once per component lifecycle,
+        // but we also check the global language registry to be safe across unmounts/remounts
+        const languages = monaco.languages.getLanguages();
+        const isLanguageRegistered = languages.some(lang => lang.id === GCODE_LANGUAGE_ID);
+
+        console.log('[GCodeEditor] Language registered in Monaco:', isLanguageRegistered);
+
+        // If language is not registered, we MUST register it and the providers.
+        // If it IS registered, we assume providers are there too, UNLESS we want to force re-registering providers.
+        // To be safe and avoid duplicates, we only register if the language is missing.
+        if (!isLanguageRegistered) {
+            console.log('[GCodeEditor] Registering G-code language and IntelliSense...');
             registerGCodeLanguage(monaco);
             registerGCodeIntelliSense(monaco);
+        } else {
+            console.log('[GCodeEditor] G-code language already registered. Skipping registration.');
         }
 
         // Add keyboard shortcuts
@@ -125,6 +141,12 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
         // Focus editor
         editor.focus();
+
+        // Log the model's language ID to verify it's set correctly
+        const model = editor.getModel();
+        if (model) {
+            console.log('[GCodeEditor] Editor Model Language ID:', model.getLanguageId());
+        }
     };
 
     // Handle content change

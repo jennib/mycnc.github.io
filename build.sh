@@ -43,7 +43,28 @@ fi
 # 4. Build Application
 echo ""
 echo "[4/4] Building application..."
-npm run dist
+
+# Detect OS
+OS_FLAG=""
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS_FLAG="--linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS_FLAG="--mac"
+else
+    echo "[WARNING] Unknown OS: $OSTYPE. Defaulting to generic build."
+fi
+
+# Detect Architecture
+ARCH_FLAG="--x64"
+ARCH=$(uname -m)
+if [[ "$ARCH" == "arm64" ]] || [[ "$ARCH" == "aarch64" ]]; then
+    ARCH_FLAG="--arm64"
+fi
+
+echo "      - Target Platform: $OS_FLAG"
+echo "      - Target Arch:     $ARCH_FLAG"
+
+npm run dist -- $OS_FLAG $ARCH_FLAG
 if [ $? -ne 0 ]; then
     echo "[ERROR] Build failed."
     exit 1

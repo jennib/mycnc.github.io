@@ -13,6 +13,7 @@ import { GCODE_LANGUAGE_ID } from './gcodeLanguage';
 export function registerGCodeCompletionProvider(monaco: typeof import('monaco-editor/esm/vs/editor/editor.api')) {
     monaco.languages.registerCompletionItemProvider(GCODE_LANGUAGE_ID, {
         provideCompletionItems: (model, position) => {
+            console.log('[GCodeIntelliSense] Providing completion items...');
             const word = model.getWordUntilPosition(position);
             const range = {
                 startLineNumber: position.lineNumber,
