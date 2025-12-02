@@ -3,6 +3,12 @@ import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
 
+import enTranslation from '../../public/locales/en/translation.json';
+import esTranslation from '../../public/locales/es/translation.json';
+import frTranslation from '../../public/locales/fr/translation.json';
+import deTranslation from '../../public/locales/de/translation.json';
+import zhTranslation from '../../public/locales/zh/translation.json';
+
 i18n
     // load translation using http -> see /public/locales (i.e. https://github.com/i18next/react-i18next/tree/master/example/react/public/locales)
     // learn more: https://github.com/i18next/i18next-http-backend
@@ -16,11 +22,11 @@ i18n
     // for all options read: https://www.i18next.com/overview/configuration-options
     .init({
         resources: {
-            en: { translation: require('../../public/locales/en/translation.json') },
-            es: { translation: require('../../public/locales/es/translation.json') },
-            fr: { translation: require('../../public/locales/fr/translation.json') },
-            de: { translation: require('../../public/locales/de/translation.json') },
-            zh: { translation: require('../../public/locales/zh/translation.json') },
+            en: { translation: enTranslation },
+            es: { translation: esTranslation },
+            fr: { translation: frTranslation },
+            de: { translation: deTranslation },
+            zh: { translation: zhTranslation },
         },
         fallbackLng: 'en',
         debug: process.env.NODE_ENV === 'development',
