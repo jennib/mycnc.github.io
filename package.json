@@ -1,7 +1,7 @@
 {
   "name": "mycnc.app",
   "private": true,
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Gcode generator and sender for CNC machines",
   "author": {
     "name": "jennib",
@@ -64,6 +64,9 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.28.1",
-    "@rollup/rollup-darwin-x64": "^4.28.1"
+    "@rollup/rollup-darwin-x64": "^4.28.1",
+    "@rollup/rollup-linux-x64-gnu": "^4.28.1",
+    "@rollup/rollup-linux-x64-musl": "^4.28.1",
+    "dmg-license": "^1.0.11"
   }
 }
