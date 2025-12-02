@@ -26,7 +26,7 @@ const NumberInput: React.FC<NumberInputProps> = ({ id, value, onChange, unit }) 
     <div className="relative flex-grow">
         <input
             id={id} type="number" value={value} onChange={onChange}
-            className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+            className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
         />
         {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">{unit}</span>}
     </div>
@@ -44,7 +44,7 @@ const ScriptInput: React.FC<ScriptInputProps> = ({ label, value, onChange, place
         <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
         <textarea
             value={value} onChange={onChange} rows={4} placeholder={placeholder}
-            className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+            className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
             spellCheck="false"
         />
     </div>
@@ -168,7 +168,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-white/5">
+                        <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <InputGroup label={t('settings.workArea')}>
                                 <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
                                 <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
@@ -186,7 +186,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="controller-type"
                                     value={localSettings.controllerType}
                                     onChange={e => handleNumericChange('controllerType', e.target.value)}
-                                    className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+                                    className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
                                 >
                                     <option value="grbl">GRBL (Standard 3-axis CNC)</option>
                                     {/* <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
@@ -214,35 +214,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
                             </InputGroup>
                         </div>
-                        <div className="space-y-4 bg-background/50 p-4 rounded-xl border border-white/5">
+                        <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.customScripts')}</h3>
                             <ScriptInput label={t('settings.startupScript')} value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
                             <ScriptInput label={t('settings.shutdownScript')} value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
-                    <div className="bg-background/50 p-4 rounded-xl border border-white/5">
+                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.configuration')}</h3>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.configDescription')}</p>
                             <div className="flex gap-2">
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
-                                <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all shadow-sm active:scale-95">
+                                <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
                                     <Upload className="w-4 h-4" />{t('settings.import')}
                                 </button>
-                                <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all shadow-sm active:scale-95">
+                                <button onClick={onExport} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
                                     <Download className="w-4 h-4" />{t('settings.export')}
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-background/50 p-4 rounded-xl border border-white/5">
+                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.interface')}</h3>
                         <div className="space-y-4">
                             <InputGroup label={t('common.language')}>
                                 <select
                                     value={i18n.language}
                                     onChange={(e) => i18n.changeLanguage(e.target.value)}
-                                    className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+                                    className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
                                 >
                                     <option value="en">English</option>
                                     <option value="es">Español</option>
@@ -253,11 +253,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </InputGroup>
                         </div>
                     </div>
-                    <div className="bg-background/50 p-4 rounded-xl border border-white/5">
+                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.dialogs')}</h3>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.resetDialogsDesc')}</p>
-                            <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all shadow-sm active:scale-95">
+                            <button onClick={onResetDialogs} className="px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
                                 {t('settings.resetDialogs')}
                             </button>
                         </div>

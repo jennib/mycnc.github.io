@@ -88,7 +88,7 @@
             "xy": "XY 轴归零"
         },
         "zero": {
-            "title": "设置零点",
+            "title": "设置工作零点",
             "all": "全部清零",
             "x": "X 清零",
             "y": "Y 清零",
@@ -102,31 +102,6 @@
             "title": "探针",
             "x": "探针 X",
             "y": "探针 Y",
-            "z": "探针 Z",
-            "xy": "探针 XY"
-        },
-        "spindle": {
-            "title": "主轴控制",
-            "rpm": "RPM",
-            "cw": "主轴开启（顺时针）",
-            "ccw": "主轴开启（逆时针）",
-            "off": "主轴关闭"
-        }
-    },
-    "gcode": {
-        "title": "G 代码",
-        "view": {
-            "visualizer": "可视化视图",
-            "code": "代码视图",
-            "reset": "重置为俯视图",
-            "fit": "适应视图",
-            "zoomIn": "放大",
-            "zoomOut": "缩小"
-        },
-        "actions": {
-            "saveLocal": "保存",
-            "saveLocalTitle": "保存更改到本地副本",
-            "saveDisk": "保存到磁盘",
             "edit": "编辑",
             "editTitle": "编辑 G 代码",
             "generate": "生成器",

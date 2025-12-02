@@ -88,7 +88,7 @@
             "xy": "XY-Achsen"
         },
         "zero": {
-            "title": "Nullpunkt setzen",
+            "title": "Arbeitsnullpunkt setzen",
             "all": "Alle auf Null",
             "x": "X auf Null",
             "y": "Y auf Null",
@@ -102,31 +102,6 @@
             "title": "Taster",
             "x": "Taster X",
             "y": "Taster Y",
-            "z": "Taster Z",
-            "xy": "Taster XY"
-        },
-        "spindle": {
-            "title": "Spindelsteuerung",
-            "rpm": "U/min",
-            "cw": "Spindel ein (Uhrzeigersinn)",
-            "ccw": "Spindel ein (Gegenuhrzeigersinn)",
-            "off": "Spindel aus"
-        }
-    },
-    "gcode": {
-        "title": "G-Code",
-        "view": {
-            "visualizer": "Visualisierungsansicht",
-            "code": "Codeansicht",
-            "reset": "Auf Draufsicht zurücksetzen",
-            "fit": "Ansicht anpassen",
-            "zoomIn": "Vergrößern",
-            "zoomOut": "Verkleinern"
-        },
-        "actions": {
-            "saveLocal": "Speichern",
-            "saveLocalTitle": "Änderungen in lokaler Kopie speichern",
-            "saveDisk": "Auf Festplatte speichern",
             "edit": "Bearbeiten",
             "editTitle": "G-Code bearbeiten",
             "generate": "Generatoren",

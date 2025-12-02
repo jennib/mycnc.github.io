@@ -86,12 +86,12 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                     {!isEditing ? (
                         <button
                             onClick={handleAddNew}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all shadow-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-md active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                             <Plus className="w-5 h-5" />{t('toolLibrary.addNew')}
                         </button>
                     ) : (
-                        <div className="bg-background/50 p-4 rounded-xl border border-primary/50 shadow-inner">
+                        <div className="bg-background/80 p-4 rounded-xl border border-white/20 shadow-lg">
                             <h3 className="font-bold mb-3 text-text-primary">{currentTool.id ? t('toolLibrary.edit') : t('toolLibrary.add')}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -101,7 +101,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                         placeholder='e.g., 1/4" 2-Flute Endmill'
                                         value={currentTool.name}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+                                        className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
                                     />
                                 </div>
                                 <div>
@@ -111,27 +111,27 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                         placeholder="e.g., 6.35"
                                         value={currentTool.diameter || ''}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, diameter: e.target.value }))}
-                                        className="w-full bg-background/50 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary"
+                                        className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
                                     />
                                 </div>
                             </div>
                             <div className="flex gap-2 mt-4 justify-end">
-                                <button onClick={handleCancelEdit} className="px-3 py-1.5 bg-secondary/80 text-text-primary rounded-lg hover:bg-secondary border border-white/5 transition-all active:scale-95">{t('toolLibrary.cancel')}</button>
-                                <button onClick={handleSaveTool} className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-focus shadow-lg shadow-primary/20 transition-all active:scale-95">{t('toolLibrary.save')}</button>
+                                <button onClick={handleCancelEdit} className="px-3 py-1.5 bg-secondary/80 text-text-primary rounded-lg hover:bg-secondary border border-white/10 transition-all active:scale-95 shadow-sm">{t('toolLibrary.cancel')}</button>
+                                <button onClick={handleSaveTool} className="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-focus shadow-lg shadow-primary/20 transition-all active:scale-95 border border-primary/50">{t('toolLibrary.save')}</button>
                             </div>
                         </div>
                     )}
                     <div className="space-y-2">
                         {localLibrary.length > 0 ? (
                             localLibrary.map(tool => (
-                                <div key={tool.id} className="flex items-center justify-between bg-background/50 p-3 rounded-xl border border-white/5 hover:bg-background/80 transition-colors">
+                                <div key={tool.id} className="flex items-center justify-between bg-background/60 p-3 rounded-xl border border-white/10 hover:bg-background/80 transition-colors shadow-sm hover:shadow-md">
                                     <div className="flex flex-col">
                                         <span className="font-semibold text-text-primary">{tool.name}</span>
                                         <span className="text-xs text-text-secondary">{`Ø ${tool.diameter} mm`}</span>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => handleEdit(tool)} className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
-                                        <button onClick={() => handleDelete(tool.id)} className="p-2 text-text-secondary hover:text-accent-red hover:bg-white/5 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                        <button onClick={() => handleEdit(tool)} className="p-2 text-text-secondary hover:text-primary hover:bg-white/10 rounded-lg transition-colors border border-transparent hover:border-white/5"><Pencil className="w-4 h-4" /></button>
+                                        <button onClick={() => handleDelete(tool.id)} className="p-2 text-text-secondary hover:text-accent-red hover:bg-white/10 rounded-lg transition-colors border border-transparent hover:border-white/5"><Trash2 className="w-4 h-4" /></button>
                                     </div>
                                 </div>
                             ))

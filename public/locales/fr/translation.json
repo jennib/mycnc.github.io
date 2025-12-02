@@ -88,7 +88,7 @@
             "xy": "Origine XY"
         },
         "zero": {
-            "title": "Définir le zéro",
+            "title": "Définir le zéro de travail",
             "all": "Tout à zéro",
             "x": "Zéro X",
             "y": "Zéro Y",
@@ -102,31 +102,6 @@
             "title": "Palpeur",
             "x": "Palper X",
             "y": "Palper Y",
-            "z": "Palper Z",
-            "xy": "Palper XY"
-        },
-        "spindle": {
-            "title": "Contrôle de la broche",
-            "rpm": "RPM",
-            "cw": "Broche activée (sens horaire)",
-            "ccw": "Broche activée (sens antihoraire)",
-            "off": "Broche désactivée"
-        }
-    },
-    "gcode": {
-        "title": "G-code",
-        "view": {
-            "visualizer": "Vue visualiseur",
-            "code": "Vue code",
-            "reset": "Réinitialiser en vue de dessus",
-            "fit": "Adapter la vue",
-            "zoomIn": "Zoom avant",
-            "zoomOut": "Zoom arrière"
-        },
-        "actions": {
-            "saveLocal": "Enregistrer",
-            "saveLocalTitle": "Enregistrer les modifications dans la copie locale",
-            "saveDisk": "Enregistrer sur le disque",
             "edit": "Éditer",
             "editTitle": "Éditer le G-code",
             "generate": "Générateurs",

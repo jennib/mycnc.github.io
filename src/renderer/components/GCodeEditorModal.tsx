@@ -210,17 +210,17 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                 </div>
 
                 {/* Toolbar */}
-                <div className="flex items-center gap-2 px-6 py-3 border-b border-white/10 bg-background/30">
+                <div className="flex items-center gap-2 px-6 py-3 border-b border-white/10 bg-background/40 shadow-sm">
                     <button
                         onClick={handleUndo}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/60 text-text-primary rounded-md hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95"
                         title={t('gcode.actions.undoTitle')}
                     >
                         <Undo className="w-4 h-4" />
                     </button>
                     <button
                         onClick={handleRedo}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/60 text-text-primary rounded-md hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95"
                         title={t('gcode.actions.redoTitle')}
                     >
                         <Redo className="w-4 h-4" />
@@ -230,7 +230,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
                     <button
                         onClick={handleFind}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/60 text-text-primary rounded-md hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95"
                         title="Find (Ctrl+F)"
                     >
                         <Search className="w-4 h-4" />
@@ -238,7 +238,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
                     <button
                         onClick={handleFormat}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 text-text-primary rounded-md hover:bg-secondary border border-white/5 transition-all shadow-sm"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary/60 text-text-primary rounded-md hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95"
                         title={t('gcode.editor.format')}
                     >
                         <Code2 className="w-4 h-4" />
