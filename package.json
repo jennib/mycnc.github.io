@@ -7,7 +7,7 @@
     ],
     "scripts": {
         "dev": "npm run dev --workspace=apps/sender",
-        "build": "npm run build --workspaces",
+        "build": "npm run build -w @mycnc/shared && npm run build --workspaces",
         "test": "npm run test --workspaces",
         "electron:dev": "npm run electron:dev --workspace=apps/sender",
         "electron:build": "npm run electron:build --workspace=apps/sender",

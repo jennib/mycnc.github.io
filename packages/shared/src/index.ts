@@ -23,7 +23,8 @@ export type {
     ReliefParams,
     GeneratorSettings,
     TimeEstimate,
-    WebcamSettings
+    WebcamSettings,
+    GCodePoint
 } from './types';
 export {
     DEFAULT_WEBCAM_SETTINGS,

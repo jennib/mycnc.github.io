@@ -18,6 +18,11 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
+    "paths": {
+      "@/*": [
+        "./src/renderer/*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

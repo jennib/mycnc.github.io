@@ -229,7 +229,7 @@ declare interface GCodeLineProps {
     onMouseLeave: () => void;
 }
 
-declare interface GCodePoint {
+export declare interface GCodePoint {
     x: number;
     y: number;
     z: number;
