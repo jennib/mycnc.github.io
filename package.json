@@ -10,10 +10,11 @@
         "build": "npm run build --workspaces",
         "test": "npm run test --workspaces",
         "electron:dev": "npm run electron:dev --workspace=apps/sender",
-        "electron:build": "npm run electron:build --workspace=apps/sender"
+        "electron:build": "npm run electron:build --workspace=apps/sender",
+        "clean": "node clean.cjs"
     },
     "devDependencies": {
-        "typescript": "^5.5.2",
+        "typescript": "5.5.2",
         "vite": "^7.2.6"
     }
 }

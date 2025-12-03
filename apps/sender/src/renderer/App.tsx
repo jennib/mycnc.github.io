@@ -175,9 +175,6 @@ const App: React.FC = () => {
       setIsSerialApiSupported(true);
     } else {
       setIsSerialApiSupported(false);
-      setError(
-        "This web browser does not support serial connections. You can still use the simulator. Or use a compatible browser like Chrome or Edge to connect to your machine."
-      );
     }
   }, []);
 
@@ -582,7 +579,7 @@ const App: React.FC = () => {
           <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
           <div>
             <p className="font-bold">Browser Not Supported</p>
-            <p>{error}</p>
+            <p>This web browser does not support serial connections. You can still use the simulator. Or use a compatible browser like Chrome or Edge to connect to your machine.</p>
           </div>
         </div>
       )}
