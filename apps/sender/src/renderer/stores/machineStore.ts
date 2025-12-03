@@ -64,14 +64,16 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       // Detect alarm state change
       if (state?.status === 'Alarm' && prevState?.status !== 'Alarm') {
         // Import useUIStore dynamically to avoid circular dependency
-        const { actions: uiActions } = require('./uiStore').useUIStore.getState();
-        const alarmCode = state.code || 'Unknown';
-        const alarmMessage = getAlarmMessage(alarmCode);
+        import('./uiStore').then(({ useUIStore }) => {
+          const { actions: uiActions } = useUIStore.getState();
+          const alarmCode = state.code || 'Unknown';
+          const alarmMessage = getAlarmMessage(alarmCode);
 
-        uiActions.openInfoModal(
-          `⚠️ ALARM ${alarmCode}`,
-          `The machine has entered an alarm state.\n\n${alarmMessage}\n\nYou must send the unlock command ($X) to clear the alarm and resume operation.`
-        );
+          uiActions.openInfoModal(
+            `⚠️ ALARM ${alarmCode}`,
+            `The machine has entered an alarm state.\n\n${alarmMessage}\n\nYou must send the unlock command ($X) to clear the alarm and resume operation.`
+          );
+        });
       }
     },
     setIsJogging: (isJogging) => set({ isJogging }),

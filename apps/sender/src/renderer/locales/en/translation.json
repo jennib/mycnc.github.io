@@ -68,7 +68,9 @@
         "resetDialogsDesc": "Reset \"Don't show again\" dialogs.",
         "resetDialogs": "Reset Dialogs",
         "contact": "Contact Us",
-        "save": "Save Settings"
+        "save": "Save Settings",
+        "importSuccess": "Settings imported successfully!",
+        "importError": "Failed to import settings."
     },
     "jog": {
         "title": "Jog Control",

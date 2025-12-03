@@ -49,7 +49,7 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
         if (status !== lastStatus.status) {
             // Suppress Run -> Idle transition log
             if (!(lastStatus.status === 'Run' && status === 'Idle')) {
-                console.log(`[Machine Status] ${lastStatus.status} → ${status}`);
+
             }
         }
 

@@ -393,8 +393,52 @@ const App: React.FC = () => {
         settings={machineSettings}
         generatorSettings={generatorSettings}
         onResetDialogs={() => { }}
-        onExport={() => { }}
-        onImport={() => { }}
+        onExport={() => {
+          const state = useSettingsStore.getState();
+          const settingsToExport = {
+            machineSettings: state.machineSettings,
+            macros: state.macros,
+            toolLibrary: state.toolLibrary,
+            generatorSettings: state.generatorSettings,
+            webcamSettings: state.webcamSettings,
+            jogStep: state.jogStep,
+            unit: state.unit,
+            isLightMode: state.isLightMode
+          };
+
+          const blob = new Blob([JSON.stringify(settingsToExport, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'mycnc-settings.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }}
+        onImport={(importedData: any) => {
+          try {
+            if (importedData.machineSettings) settingsActions.setMachineSettings(importedData.machineSettings);
+            if (importedData.macros) settingsActions.setMacros(importedData.macros);
+            if (importedData.toolLibrary) settingsActions.setToolLibrary(importedData.toolLibrary);
+            if (importedData.generatorSettings) settingsActions.setGeneratorSettings(importedData.generatorSettings);
+            if (importedData.webcamSettings) settingsActions.setWebcamSettings(importedData.webcamSettings);
+            if (importedData.jogStep) settingsActions.setJogStep(importedData.jogStep);
+            if (importedData.unit) settingsActions.setUnit(importedData.unit);
+            if (importedData.isLightMode !== undefined) settingsActions.setIsLightMode(importedData.isLightMode);
+
+            setNotifications((prev) => [
+              ...prev,
+              { id: Date.now().toString(), message: t('settings.importSuccess'), type: 'success' }
+            ]);
+          } catch (error) {
+            console.error("Error importing settings:", error);
+            setNotifications((prev) => [
+              ...prev,
+              { id: Date.now().toString(), message: t('settings.importError'), type: 'error' }
+            ]);
+          }
+        }}
         onContactClick={uiActions.openContactModal}
       />
       <ToolLibraryModal
