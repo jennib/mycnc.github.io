@@ -2,11 +2,11 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Editor, { OnMount } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
-import { MachineSettings } from '@mycnc/shared';
-import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '@/services/gcodeLanguage';
-import { registerGCodeIntelliSense } from '@/services/gcodeIntelliSense';
-import { validateGCode, setValidationMarkers, clearValidationMarkers } from '@/services/gcodeValidator';
-import { X, Save, Download, Undo, Redo, Search, Code2 } from '@mycnc/shared';
+import { MachineSettings } from '../types';
+import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLanguage';
+import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';
+import { validateGCode, setValidationMarkers, clearValidationMarkers } from '../services/gcodeValidator';
+import { X, Save, Download, Undo, Redo, Search, Code2 } from './Icons';
 
 interface GCodeEditorModalProps {
     isOpen: boolean;
@@ -78,7 +78,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
 
     // Handle editor mount
     const handleEditorDidMount: OnMount = (editor, monaco) => {
-        editorRef.current = editor;
+        editorRef.current = editor as any;
 
         // Add keyboard shortcuts
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -226,7 +226,6 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                             automaticLayout: true,
                             formatOnPaste: true,
                             formatOnType: false,
-                            minimap: { enabled: true },
                             lineNumbers: 'on',
                             rulers: [80],
                             wordWrap: 'off',
@@ -234,7 +233,6 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                             suggestOnTriggerCharacters: true,
                             acceptSuggestionOnEnter: 'on',
                             tabCompletion: 'on',
-                            scrollBeyondLastLine: false,
                             renderWhitespace: 'selection',
                             fontSize: 14,
                             fontFamily: 'Consolas, "Courier New", monospace',

@@ -8,7 +8,9 @@
     "scripts": {
         "dev": "npm run dev --workspace=apps/sender",
         "build": "npm run build --workspaces",
-        "test": "npm run test --workspaces"
+        "test": "npm run test --workspaces",
+        "electron:dev": "npm run electron:dev --workspace=apps/sender",
+        "electron:build": "npm run electron:build --workspace=apps/sender"
     },
     "devDependencies": {
         "typescript": "^5.5.2",

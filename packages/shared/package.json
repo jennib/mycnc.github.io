@@ -25,7 +25,9 @@
     "dependencies": {
         "lucide-react": "^0.555.0",
         "three": "^0.181.2",
-        "@types/three": "^0.181.0"
+        "@types/three": "^0.181.0",
+        "monaco-editor": "^0.50.0",
+        "@monaco-editor/react": "^4.6.0"
     },
     "devDependencies": {
         "@types/react": "^18.3.3",

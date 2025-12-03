@@ -1,4 +1,4 @@
-import { Macro, MachineSettings, Tool, GeneratorSettings, WebcamSettings } from './types';
+import { Macro, MachineSettings, Tool, GeneratorSettings, WebcamSettings } from '../types';
 
 export const DEFAULT_WEBCAM_SETTINGS: WebcamSettings = {
     selectedDeviceId: '',

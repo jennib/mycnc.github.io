@@ -27,14 +27,14 @@ import {
   Zap,
   AlertTriangle,
 } from "@mycnc/shared";
-import type { GCodeVisualizerHandle } from "./GCodeVisualizer";
+import type { GCodeVisualizerHandle } from "@mycnc/shared";
 import { GCodeLine } from "@mycnc/shared";
 import { useUndoRedo } from "../hooks/useUndoRedo";
 import { Tabs } from "@mycnc/shared";
 import { useSettingsStore } from "../stores/settingsStore";
 
-const GCodeVisualizer = React.lazy(() => import("./GCodeVisualizer").then(module => ({ default: module.GCodeVisualizer })));
-const GCodeEditorModal = React.lazy(() => import("./GCodeEditorModal").then(module => ({ default: module.GCodeEditorModal })));
+import { GCodeVisualizer, GCodeEditorModal } from "@mycnc/shared";
+import GCodeVisualizerWorker from '../workers/gcodeVisualizerWorker?worker';
 
 interface OverrideControlProps {
   label: string;
@@ -378,6 +378,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                 unit={unit}
                 hoveredLineIndex={hoveredLineIndex}
                 machineSettings={machineSettings}
+                createWorker={() => new GCodeVisualizerWorker()}
               />
             </Suspense>
           </div>

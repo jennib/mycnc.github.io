@@ -62,6 +62,9 @@ export default defineConfig(({ mode }) => ({
       },
       outDir: 'out/renderer',
     },
+    worker: {
+      format: 'es'
+    },
     plugins: [
       react(),
       /* (monacoEditorPlugin.default || monacoEditorPlugin)({

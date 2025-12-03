@@ -1,8 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useImperativeHandle } from 'react';
-import { MachineSettings } from '@mycnc/shared';
-import { ToolpathSegmentMetadata, BoundingBox } from '../workers/gcodeVisualizerWorker';
-import { GCodePoint } from '@mycnc/shared';
-import GCodeVisualizerWorker from '../workers/gcodeVisualizerWorker?worker';
+import { MachineSettings, ToolpathSegmentMetadata, BoundingBox, GCodePoint } from '../types';
 
 // --- Color Constants ---
 const RAPID_COLOR = [0.4, 0.4, 0.4, 1.0]; // Light gray
@@ -220,6 +217,7 @@ interface GCodeVisualizerProps {
     hoveredLineIndex: number | null;
     machineSettings: MachineSettings;
     unit: 'mm' | 'in';
+    createWorker: () => Worker;
 }
 
 export interface GCodeVisualizerHandle {
@@ -229,7 +227,7 @@ export interface GCodeVisualizerHandle {
     resetView: () => void;
 }
 
-const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerProps>(({ gcodeLines, currentLine, hoveredLineIndex, machineSettings, unit }, ref) => {
+const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerProps>(({ gcodeLines, currentLine, hoveredLineIndex, machineSettings, unit, createWorker }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const glRef = useRef<WebGLRenderingContext | null>(null);
     const programInfoRef = useRef<any>(null);
@@ -306,7 +304,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     }));
 
     useEffect(() => {
-        workerRef.current = new GCodeVisualizerWorker();
+        workerRef.current = createWorker();
 
         workerRef.current.onmessage = (event) => {
             const {

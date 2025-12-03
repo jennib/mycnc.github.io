@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import { loader } from "@monaco-editor/react";
+import { configureMonaco } from "@mycnc/shared";
 import * as monaco from "monaco-editor";
 
-// Configure Monaco loader to use local instance instead of CDN
-loader.config({ monaco });
+// Configure Monaco loader
+configureMonaco();
 
 import "./i18n";
 import "./index.css";

@@ -1,7 +1,23 @@
 // src/services/gcodeVisualizerWorker.ts
 
 import { parseGCode, GCodeSegment, GCodePoint } from '@mycnc/shared';
-import { BoundingBox, ToolpathSegmentMetadata } from '@mycnc/shared';
+
+// --- Type Definitions ---
+export interface BoundingBox {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+}
+
+export interface ToolpathSegmentMetadata {
+    startVertexIndex: number;
+    vertexCount: number;
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number;
+}
 
 interface ColorUpdate {
     offset: number;

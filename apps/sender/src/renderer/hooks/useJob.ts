@@ -4,7 +4,8 @@ import { useConnectionStore } from '@/stores/connectionStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useLogStore } from '@/stores/logStore';
-import { analyzeGCodeWithWorker, getMachineStateAtLine } from '@/services/gcodeAnalyzer';
+import { analyzeGCodeWithWorker, getMachineStateAtLine } from '@mycnc/shared';
+import AnalysisWorker from '../workers/gcodeAnalysisWorker?worker';
 import { JobStatus, TimeEstimate, Tool } from "@mycnc/shared";
 
 export function useJob() {
@@ -23,7 +24,7 @@ export function useJob() {
     switch (action) {
       case 'start':
         if (gcodeLines.length > 0) {
-          const warnings = await analyzeGCodeWithWorker(gcodeLines, machineSettings);
+          const warnings = await analyzeGCodeWithWorker(() => new AnalysisWorker(), gcodeLines, machineSettings);
           setPreflightWarnings(warnings);
           setJobStartOptions({ startLine: options?.startLine ?? 0, isDryRun: false });
           uiActions.openPreflightModal();

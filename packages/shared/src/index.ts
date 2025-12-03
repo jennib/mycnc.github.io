@@ -35,3 +35,9 @@ export {
     DEFAULT_GENERATOR_SETTINGS,
     GRBL_REALTIME_COMMANDS
 } from './constants';
+export * from './components/GCodeVisualizer';
+export * from './components/GCodeEditorModal';
+export { configureMonaco } from './services/monacoConfig';
+export * from './services/gcodeParser';
+export * from './services/gcodeAnalyzer';
+export * from './services/gcodeTimeEstimator';

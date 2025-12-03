@@ -90,18 +90,16 @@ export const getMachineStateAtLine = (gcodeLines: string[], lineNumber: number):
     return state;
 };
 
-import AnalysisWorker from '../workers/gcodeAnalysisWorker?worker';
-
-// Create a new Web Worker instance
-const analysisWorker = new AnalysisWorker();
-
-export const analyzeGCodeWithWorker = (gcodeLines: string[], settings: any): Promise<any> => {
+export const analyzeGCodeWithWorker = (createWorker: () => Worker, gcodeLines: string[], settings: any): Promise<any> => {
     return new Promise((resolve, reject) => {
+        const analysisWorker = createWorker();
         analysisWorker.onmessage = (event) => {
             resolve(event.data);
+            analysisWorker.terminate(); // Terminate after single use
         };
         analysisWorker.onerror = (error) => {
             reject(error);
+            analysisWorker.terminate();
         };
         analysisWorker.postMessage({ gcodeLines, settings });
     });

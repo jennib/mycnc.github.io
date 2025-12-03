@@ -22,11 +22,8 @@ import { Dock } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { Eye } from 'lucide-react';
 import { FileText } from 'lucide-react';
-import { GeneratorSettings as GeneratorSettings_2 } from './types';
 import { Home } from 'lucide-react';
 import { Info } from 'lucide-react';
-import { MachineSettings as MachineSettings_2 } from './types';
-import { Macro as Macro_2 } from './types';
 import { Maximize } from 'lucide-react';
 import { Minimize } from 'lucide-react';
 import { Minus } from 'lucide-react';
@@ -56,14 +53,12 @@ import { Settings } from 'lucide-react';
 import { Square } from 'lucide-react';
 import { Sun } from 'lucide-react';
 import { Terminal } from 'lucide-react';
-import { Tool as Tool_2 } from './types';
 import { Trash2 } from 'lucide-react';
 import { Undo } from 'lucide-react';
 import { Unlock } from 'lucide-react';
 import { Upload } from 'lucide-react';
 import { Volume2 } from 'lucide-react';
 import { VolumeX } from 'lucide-react';
-import { WebcamSettings as WebcamSettings_2 } from './types';
 import { X } from 'lucide-react';
 import { Zap } from 'lucide-react';
 import { ZapOff } from 'lucide-react';
@@ -71,6 +66,8 @@ import { ZoomIn } from 'lucide-react';
 import { ZoomOut } from 'lucide-react';
 
 export { AlertTriangle }
+
+export declare const analyzeGCodeWithWorker: (createWorker: () => Worker, gcodeLines: string[], settings: any) => Promise<any>;
 
 export { ArrowDown }
 
@@ -123,6 +120,8 @@ export { Code }
 
 export { Code2 }
 
+export declare function configureMonaco(): Promise<any>;
+
 export declare interface ConnectionOptions {
     type: 'usb' | 'tcp' | 'simulator';
     ip?: string;
@@ -148,15 +147,15 @@ export declare const CrosshairY: default_2.FC<IconProps>;
 
 export declare const CrosshairZ: default_2.FC<IconProps>;
 
-export declare const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings_2;
+export declare const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings;
 
-export declare const DEFAULT_MACROS: Macro_2[];
+export declare const DEFAULT_MACROS: Macro[];
 
-export declare const DEFAULT_SETTINGS: MachineSettings_2;
+export declare const DEFAULT_SETTINGS: MachineSettings;
 
-export declare const DEFAULT_TOOLS: Tool_2[];
+export declare const DEFAULT_TOOLS: Tool[];
 
-export declare const DEFAULT_WEBCAM_SETTINGS: WebcamSettings_2;
+export declare const DEFAULT_WEBCAM_SETTINGS: WebcamSettings;
 
 export { Dock }
 
@@ -186,9 +185,35 @@ export declare interface DrillingParams {
     toolId: number | null;
 }
 
+export declare const estimateGCodeTime: (gcodeLines: string[]) => TimeEstimate_2;
+
 export { Eye }
 
 export { FileText }
+
+export declare interface GCodeAnalysisState {
+    spindle: 'M3' | 'M4' | 'M5';
+    speed: number | null;
+    coolant: 'M7' | 'M8' | 'M9';
+    workCoordinateSystem: string;
+    unitMode: 'G20' | 'G21';
+    distanceMode: 'G90' | 'G91';
+    feedRate: number | null;
+}
+
+export declare const GCodeEditorModal: default_2.FC<GCodeEditorModalProps>;
+
+declare interface GCodeEditorModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    initialContent: string;
+    fileName: string;
+    onSaveToApp: (content: string) => void;
+    onSaveToDisk: (content: string, filename: string) => void;
+    machineSettings: MachineSettings;
+    unit: 'mm' | 'in';
+    isLightMode: boolean;
+}
 
 export declare const GCodeLine: default_2.FC<GCodeLineProps>;
 
@@ -204,6 +229,39 @@ declare interface GCodeLineProps {
     onMouseLeave: () => void;
 }
 
+export declare interface GCodePoint {
+    x: number;
+    y: number;
+    z: number;
+}
+
+export declare interface GCodeSegment {
+    type: 'G0' | 'G1' | 'G2' | 'G3';
+    start: GCodePoint;
+    end: GCodePoint;
+    center?: GCodePoint;
+    clockwise?: boolean;
+    line: number;
+}
+
+export declare const GCodeVisualizer: default_2.ForwardRefExoticComponent<GCodeVisualizerProps & default_2.RefAttributes<GCodeVisualizerHandle>>;
+
+export declare interface GCodeVisualizerHandle {
+    fitView: () => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
+    resetView: () => void;
+}
+
+declare interface GCodeVisualizerProps {
+    gcodeLines: string[];
+    currentLine: number;
+    hoveredLineIndex: number | null;
+    machineSettings: MachineSettings;
+    unit: 'mm' | 'in';
+    createWorker: () => Worker;
+}
+
 export declare interface GeneratorSettings {
     surfacing: SurfacingParams;
     drilling: DrillingParams;
@@ -215,6 +273,8 @@ export declare interface GeneratorSettings {
     thread: ThreadMillingParams;
     relief: ReliefParams;
 }
+
+export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
 
 export declare const GRBL_ALARM_CODES: {
     [key: number | string]: {
@@ -341,6 +401,20 @@ export { Moon }
 export { Move }
 
 export { OctagonAlert }
+
+export declare interface ParsedGCode {
+    segments: GCodeSegment[];
+    bounds: {
+        minX: number;
+        maxX: number;
+        minY: number;
+        maxY: number;
+        minZ: number;
+        maxZ: number;
+    };
+}
+
+export declare const parseGCode: (gcodeLines: string[]) => ParsedGCode;
 
 export { Pause }
 
@@ -553,6 +627,11 @@ export declare interface ThreadMillingParams {
 export declare interface TimeEstimate {
     totalTime: number;
     remainingTime: number;
+}
+
+declare interface TimeEstimate_2 {
+    totalSeconds: number;
+    cumulativeSeconds: number[];
 }
 
 export declare interface Tool {

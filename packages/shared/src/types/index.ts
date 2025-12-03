@@ -272,3 +272,25 @@ export interface WebcamSettings {
     isMuted: boolean;
 }
 
+export interface BoundingBox {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+}
+
+export interface ToolpathSegmentMetadata {
+    startVertexIndex: number;
+    vertexCount: number;
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number;
+}
+
+export interface GCodePoint {
+    x: number;
+    y: number;
+    z: number;
+}
+

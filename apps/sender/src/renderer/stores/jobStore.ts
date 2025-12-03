@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { JobStatus } from "@mycnc/shared";
-import { estimateGCodeTime } from '@/services/gcodeTimeEstimator';
+import { estimateGCodeTime } from '@mycnc/shared';
 
 interface TimeEstimate {
   totalSeconds: number;

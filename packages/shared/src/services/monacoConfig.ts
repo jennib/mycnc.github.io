@@ -7,19 +7,10 @@ import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
 
-// Define MonacoEnvironment on window
-declare global {
-    interface Window {
-        MonacoEnvironment: {
-            getWorker(workerId: string, label: string): Worker;
-        };
-    }
-}
-
 // Configure Monaco Editor loader
-export function configureMonaco() {
+export function configureMonaco(): Promise<any> {
     // Define the MonacoEnvironment global
-    self.MonacoEnvironment = {
+    (self as any).MonacoEnvironment = {
         getWorker(_: any, label: string) {
             if (label === 'json') {
                 return new jsonWorker();
