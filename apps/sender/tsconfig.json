@@ -18,23 +18,6 @@
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "allowJs": true,
-    "jsx": "react-jsx",
-    "paths": {
-      "@/*": [
-        "./src/renderer/*"
-      ],
-      "@mycnc/shared": [
-        "../../packages/shared/dist/index.d.ts"
-      ],
-      "@mycnc/shared/worker": [
-        "../../packages/shared/dist/worker.d.ts"
-      ]
-    },
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "noEmit": true,
-    "strict": true
   },
   "include": [
     "src/**/*"

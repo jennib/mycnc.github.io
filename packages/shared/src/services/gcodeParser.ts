@@ -1,5 +1,12 @@
-clockwise ?: boolean;
-line: number;
+import { GCodePoint } from '../types';
+
+export interface GCodeSegment {
+    type: 'G0' | 'G1' | 'G2' | 'G3';
+    start: GCodePoint;
+    end: GCodePoint;
+    center?: GCodePoint;
+    clockwise?: boolean;
+    line: number;
 }
 
 export interface ParsedGCode {

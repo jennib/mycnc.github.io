@@ -75,14 +75,7 @@ export default defineConfig(({ mode }) => ({
       format: 'es'
     },
     plugins: [
-      react(),
-      /* (monacoEditorPlugin.default || monacoEditorPlugin)({
-        languageWorkers: ['editorWorkerService'],
-        customWorkers: [],
-        customDistPath: (root, outDir, base) => {
-          return resolve(outDir, 'monacoeditorwork');
-        }
-      }) */
+      react()
     ],
   },
 }));

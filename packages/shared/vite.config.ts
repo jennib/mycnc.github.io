@@ -19,7 +19,7 @@ export default defineConfig({
       fileName: (format, entryName) => `${entryName}.${format}.js`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'three', 'lucide-react'],
+      external: ['react', 'react-dom', 'three', 'lucide-react', 'react-i18next', 'i18next', 'monaco-editor', '@monaco-editor/react'],
       output: {
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
