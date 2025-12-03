@@ -12,7 +12,8 @@
         "fullscreen": "Vollbild Konsole",
         "sendCommand": "Befehl senden",
         "cancel": "Abbrechen",
-        "language": "Sprache"
+        "language": "Sprache",
+        "save": "Save"
     },
     "console": {
         "title": "Konsole",
@@ -134,24 +135,22 @@
             "generateTitle": "G-Code-Generatoren öffnen",
             "load": "Laden",
             "clear": "Löschen",
-            "scrub": "Durchlaufen",
-            "undo": "Rückgängig",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "Rückgängig (Strg+Z)",
-            "redo": "Wiederholen",
-            "redoTitle": "Wiederholen (Strg+Y)"
+            "redoTitle": "Wiederholen (Strg+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "G-Code-Editor",
-            "edit": "G-Code bearbeiten",
-            "advancedEdit": "Erweiterter Editor",
-            "quickEdit": "Schnellbearbeitung",
             "format": "Code formatieren",
-            "validate": "Validieren",
+            "noIssues": "Keine Probleme gefunden",
             "saveToApp": "In App speichern",
             "saveToDisk": "Auf Festplatte speichern",
-            "errors": "Fehler",
-            "warnings": "Warnungen",
-            "noIssues": "Keine Probleme gefunden"
+            "edit": "G-Code bearbeiten",
+            "advancedEdit": "Erweiterter Editor"
         },
         "status": {
             "file": "Datei:",
@@ -235,7 +234,10 @@
         "send": "Nachricht senden",
         "cancel": "Abbrechen",
         "success": "Nachricht erfolgreich gesendet!",
-        "error": "Nachricht konnte nicht gesendet werden."
+        "error": "Nachricht konnte nicht gesendet werden.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "Information",
@@ -254,16 +256,16 @@
             "relief": "Relief"
         },
         "common": {
-            "title": "G-Code-Generator",
-            "milling": "Fräsen",
-            "textEngraving": "Textgravur",
-            "generate": "G-Code generieren",
             "direction": "Fräsrichtung",
             "horizontal": "Horizontal (X)",
             "vertical": "Vertikal (Y)",
             "finalDepth": "Endtiefe",
             "shouldBeNegative": "Sollte negativ sein",
             "stepover": "Seitenversatz",
+            "title": "G-Code-Generator",
+            "milling": "Fräsen",
+            "textEngraving": "Textgravur",
+            "generate": "G-Code generieren",
             "safeZ": "Sicherheitshöhe",
             "feedRate": "Vorschub",
             "spindleSpeed": "Spindeldrehzahl",
@@ -314,18 +316,6 @@
             "retractHeight": "Rückzugshöhe",
             "retractHelp": "Höhe zum Zurückziehen zwischen den Hüben"
         },
-        "pocket": {
-            "rectangle": "Rechteck",
-            "circle": "Kreis",
-            "width": "Breite (X)",
-            "length": "Länge (Y)",
-            "cornerRadius": "Eckenradius",
-            "diameter": "Durchmesser",
-            "totalDepth": "Gesamttiefe",
-            "shouldBeNegative": "Sollte negativ sein",
-            "depthPerPass": "Tiefe pro Durchgang",
-            "stepover": "Seitenversatz"
-        },
         "profile": {
             "rectangle": "Rechteck",
             "circle": "Kreis",
@@ -344,6 +334,18 @@
             "numTabs": "Anzahl",
             "tabWidth": "Breite",
             "tabHeight": "Höhe"
+        },
+        "pocket": {
+            "rectangle": "Rechteck",
+            "circle": "Kreis",
+            "width": "Breite (X)",
+            "length": "Länge (Y)",
+            "cornerRadius": "Eckenradius",
+            "diameter": "Durchmesser",
+            "totalDepth": "Gesamttiefe",
+            "shouldBeNegative": "Sollte negativ sein",
+            "depthPerPass": "Tiefe pro Durchgang",
+            "stepover": "Seitenversatz"
         },
         "slot": {
             "straight": "Gerade",
@@ -426,17 +428,6 @@
             "generationFailed": "Generierung fehlgeschlagen",
             "loadSender": "In Sender laden"
         },
-        "array": {
-            "enable": "Wiederholungsmuster aktivieren",
-            "rectGrid": "Rechteckiges Raster",
-            "circArray": "Kreisförmige Anordnung",
-            "colsRows": "Spalten, Reihen",
-            "spacing": "Abstand (X, Y)",
-            "copies": "Anzahl Kopien",
-            "center": "Mitte (X, Y)",
-            "radius": "Radius",
-            "startAngle": "Startwinkel"
-        },
         "errors": {
             "selectTool": "Bitte wählen Sie ein Werkzeug aus.",
             "fillRequired": "Bitte füllen Sie alle erforderlichen Felder mit gültigen Zahlen aus.",
@@ -465,17 +456,6 @@
                 "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
             }
         },
-        "macro": {
-            "addTitle": "Neues Makro hinzufügen",
-            "editTitle": "Makro bearbeiten",
-            "name": "Makroname",
-            "namePlaceholder": "z.B. Z-Achse antasten",
-            "commands": "G-Code-Befehle",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "Geben Sie einen G-Code-Befehl pro Zeile ein.",
-            "delete": "Löschen",
-            "deleteConfirm": "Sind Sie sicher, dass Sie das Makro \"{{name}}\" löschen möchten?"
-        },
         "shared": {
             "tool": "Werkzeug",
             "selectTool": "Werkzeug auswählen...",
@@ -486,37 +466,59 @@
             "plungeRate": "Eintauchvorschub",
             "safeZ": "Sicherheitshöhe",
             "safeZHelp": "Eilgangshöhe über Material"
+        },
+        "array": {
+            "enable": "Wiederholungsmuster aktivieren",
+            "rectGrid": "Rechteckiges Raster",
+            "circArray": "Kreisförmige Anordnung",
+            "colsRows": "Spalten, Reihen",
+            "spacing": "Abstand (X, Y)",
+            "copies": "Anzahl Kopien",
+            "center": "Mitte (X, Y)",
+            "radius": "Radius",
+            "startAngle": "Startwinkel"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
     },
-    "preflight": {
-        "title": "Vorflugkontrolle",
-        "review": "Bitte überprüfen Sie Folgendes, bevor Sie den Auftrag starten:",
-        "jobLoaded": "Auftragsdatei geladen: <strong>{{fileName}}</strong>",
-        "homed": "Maschine wurde referenziert",
-        "notHomed": "Maschine wurde seit der Verbindung nicht referenziert",
-        "analysisPassed": "G-Code-Analyse bestanden",
-        "error": "Fehler:",
-        "warning": "Warnung:",
-        "dryRun": "Im Testlaufmodus ausführen (keine Spindel/Laser, nur Eilgänge)",
-        "confirm": "Bestätigen & Auftrag starten"
-    },
-    "spindleConfirm": {
-        "title": "Spindelzustand bestätigen",
-        "message": "Möchten Sie die Spindel vor dem Fortfahren einschalten?",
-        "continueNoSpindle": "Ohne Spindel fortfahren",
-        "startSpindle": "Spindel starten"
-    },
-    "unsupported": {
-        "title": "Browser nicht unterstützt oder mobiles Gerät erkannt",
-        "message1": "Diese Anwendung benötigt die Web Serial API, um mit CNC-Controllern zu kommunizieren. Diese API wird derzeit in Desktop-Versionen von Browsern wie Google Chrome und Microsoft Edge unterstützt.",
-        "message2": "Mobile Browser unterstützen diese Funktion nicht.",
-        "message3": "Bitte greifen Sie von einem kompatiblen Desktop-Browser auf diese Seite zu.",
-        "checkCompat": "Web Serial API-Kompatibilität prüfen",
-        "viewCanIUse": "Auf CanIUse.com ansehen"
-    },
     "macros": {
-        "title": "Makros",
-        "add": "Makro hinzufügen",
-        "editTooltip": "\"{{name}}\" bearbeiten"
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

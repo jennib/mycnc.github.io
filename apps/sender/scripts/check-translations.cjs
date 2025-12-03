@@ -12,7 +12,7 @@ const path = require('path');
 
 const LOCALES_DIR = path.join(__dirname, '..', 'src', 'renderer', 'locales');
 const REFERENCE_LANG = 'en';
-const LANGUAGES = ['es', 'fr', 'de', 'zh'];
+const LANGUAGES = ['bn', 'de', 'es', 'fr', 'hi', 'ja', 'pa', 'uk', 'zh'];
 
 // ANSI color codes for terminal output
 const colors = {

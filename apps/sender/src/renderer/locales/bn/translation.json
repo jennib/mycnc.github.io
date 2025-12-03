@@ -12,7 +12,8 @@
         "fullscreen": "ফুলস্ক্রিন কনসোল",
         "sendCommand": "কমান্ড পাঠান",
         "cancel": "বাতিল",
-        "language": "ভাষা"
+        "language": "ভাষা",
+        "save": "Save"
     },
     "console": {
         "title": "কনসোল",
@@ -134,24 +135,22 @@
             "generateTitle": "G-Code জেনারেটর খুলুন",
             "load": "ফাইল লোড করুন",
             "clear": "G-Code এবং প্রিভিউ পরিষ্কার করুন",
-            "scrub": "G-code টুলপাথ স্ক্রাব করুন",
-            "undo": "পূর্বাবস্থায় ফিরুন",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "পূর্বাবস্থায় ফিরুন (Ctrl+Z)",
-            "redo": "পুনরায় করুন",
-            "redoTitle": "পুনরায় করুন (Ctrl+Y)"
+            "redoTitle": "পুনরায় করুন (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "G-code এডিটর",
-            "edit": "G-code সম্পাদনা করুন",
-            "advancedEdit": "উন্নত এডিটর",
-            "quickEdit": "দ্রুত সম্পাদনা",
             "format": "কোড ফরম্যাট করুন",
-            "validate": "যাচাই করুন",
+            "noIssues": "কোন সমস্যা পাওয়া যায়নি",
             "saveToApp": "অ্যাপে সংরক্ষণ করুন",
             "saveToDisk": "ডিস্কে সংরক্ষণ করুন",
-            "errors": "ত্রুটি",
-            "warnings": "সতর্কতা",
-            "noIssues": "কোন সমস্যা পাওয়া যায়নি"
+            "edit": "G-code সম্পাদনা করুন",
+            "advancedEdit": "উন্নত এডিটর"
         },
         "status": {
             "file": "ফাইল:",
@@ -235,7 +234,10 @@
         "send": "বার্তা পাঠান",
         "cancel": "বাতিল",
         "success": "বার্তা সফলভাবে পাঠানো হয়েছে!",
-        "error": "বার্তা পাঠাতে ব্যর্থ।"
+        "error": "বার্তা পাঠাতে ব্যর্থ।",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "তথ্য",
@@ -454,17 +456,6 @@
                 "email": "অনুগ্রহ করে একটি বৈধ ইমেল ঠিকানা লিখুন।"
             }
         },
-        "macro": {
-            "addTitle": "নতুন ম্যাক্রো যোগ করুন",
-            "editTitle": "ম্যাক্রো সম্পাদনা করুন",
-            "name": "ম্যাক্রো নাম",
-            "namePlaceholder": "যেমন, প্রোব Z-অক্ষ",
-            "commands": "G-Code কমান্ড",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "প্রতি লাইনে একটি G-code কমান্ড লিখুন।",
-            "delete": "মুছুন",
-            "deleteConfirm": "আপনি কি নিশ্চিত যে আপনি ম্যাক্রো \"{{name}}\" মুছতে চান?"
-        },
         "shared": {
             "tool": "টুল",
             "selectTool": "একটি টুল নির্বাচন করুন...",
@@ -486,37 +477,48 @@
             "center": "কেন্দ্র (X, Y)",
             "radius": "ব্যাসার্ধ",
             "startAngle": "শুরুর কোণ"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
     },
-    "preflight": {
-        "title": "প্রিফ্লাইট চেক",
-        "review": "কাজ শুরু করার আগে অনুগ্রহ করে নিম্নলিখিত পর্যালোচনা করুন:",
-        "jobLoaded": "জব ফাইল লোড করা হয়েছে: <strong>{{fileName}}</strong>",
-        "homed": "মেশিন হোম করা হয়েছে",
-        "notHomed": "সংযোগের পর থেকে মেশিন হোম করা হয়নি",
-        "analysisPassed": "G-code বিশ্লেষণ পাস হয়েছে",
-        "error": "ত্রুটি:",
-        "warning": "সতর্কতা:",
-        "dryRun": "ড্রাই রান মোডে চালান (কোন স্পিন্ডল/লেজার নেই, শুধুমাত্র র‍্যাপিডস)",
-        "confirm": "নিশ্চিত করুন এবং কাজ শুরু করুন"
-    },
-    "spindleConfirm": {
-        "title": "স্পিন্ডল অবস্থা নিশ্চিত করুন",
-        "message": "আপনি কি এগিয়ে যাওয়ার আগে স্পিন্ডল চালু করতে চান?",
-        "continueNoSpindle": "স্পিন্ডল ছাড়াই চালিয়ে যান",
-        "startSpindle": "স্পিন্ডল শুরু করুন"
-    },
-    "unsupported": {
-        "title": "ব্রাউজার সমর্থিত নয় বা মোবাইল ডিভাইস সনাক্ত হয়েছে",
-        "message1": "এই অ্যাপ্লিকেশনটির CNC কন্ট্রোলারের সাথে যোগাযোগ করার জন্য ওয়েব সিরিয়াল API প্রয়োজন। এই API বর্তমানে Google Chrome এবং Microsoft Edge এর মতো ব্রাউজারের ডেস্কটপ সংস্করণগুলিতে সমর্থিত।",
-        "message2": "মোবাইল ব্রাউজারগুলি এই বৈশিষ্ট্যটি সমর্থন করে না।",
-        "message3": "অনুগ্রহ করে একটি সামঞ্জস্যপূর্ণ ডেস্কটপ ব্রাউজার থেকে এই পৃষ্ঠাটি অ্যাক্সেস করুন।",
-        "checkCompat": "ওয়েব সিরিয়াল API সামঞ্জস্য পরীক্ষা করুন",
-        "viewCanIUse": "CanIUse.com এ দেখুন"
-    },
     "macros": {
-        "title": "ম্যাক্রো",
-        "add": "ম্যাক্রো যোগ করুন",
-        "editTooltip": "\"{{name}}\" সম্পাদনা করুন"
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

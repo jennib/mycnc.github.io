@@ -12,7 +12,8 @@
         "fullscreen": "全画面コンソール",
         "sendCommand": "コマンドを送信",
         "cancel": "キャンセル",
-        "language": "言語"
+        "language": "言語",
+        "save": "Save"
     },
     "console": {
         "title": "コンソール",
@@ -134,24 +135,22 @@
             "generateTitle": "Gコードジェネレーターを開く",
             "load": "ファイルをロード",
             "clear": "Gコードとプレビューをクリア",
-            "scrub": "Gコードツールパスをスクラブ",
-            "undo": "元に戻す",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "元に戻す (Ctrl+Z)",
-            "redo": "やり直す",
-            "redoTitle": "やり直す (Ctrl+Y)"
+            "redoTitle": "やり直す (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "Gコードエディタ",
-            "edit": "Gコードを編集",
-            "advancedEdit": "高度なエディタ",
-            "quickEdit": "クイック編集",
             "format": "コードをフォーマット",
-            "validate": "検証",
+            "noIssues": "問題は見つかりませんでした",
             "saveToApp": "アプリに保存",
             "saveToDisk": "ディスクに保存",
-            "errors": "エラー",
-            "warnings": "警告",
-            "noIssues": "問題は見つかりませんでした"
+            "edit": "Gコードを編集",
+            "advancedEdit": "高度なエディタ"
         },
         "status": {
             "file": "ファイル:",
@@ -235,7 +234,10 @@
         "send": "メッセージを送信",
         "cancel": "キャンセル",
         "success": "メッセージが正常に送信されました！",
-        "error": "メッセージの送信に失敗しました。"
+        "error": "メッセージの送信に失敗しました。",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "情報",
@@ -454,17 +456,6 @@
                 "email": "有効なメールアドレスを入力してください。"
             }
         },
-        "macro": {
-            "addTitle": "新しいマクロを追加",
-            "editTitle": "マクロを編集",
-            "name": "マクロ名",
-            "namePlaceholder": "例: Z軸プローブ",
-            "commands": "Gコードコマンド",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "1行に1つのGコードコマンドを入力してください。",
-            "delete": "削除",
-            "deleteConfirm": "マクロ「{{name}}」を削除してもよろしいですか？"
-        },
         "shared": {
             "tool": "ツール",
             "selectTool": "ツールを選択...",
@@ -486,37 +477,48 @@
             "center": "中心 (X, Y)",
             "radius": "半径",
             "startAngle": "開始角度"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
     },
-    "preflight": {
-        "title": "プレフライトチェック",
-        "review": "ジョブを開始する前に以下を確認してください:",
-        "jobLoaded": "ジョブファイルがロードされました: <strong>{{fileName}}</strong>",
-        "homed": "マシンはホームポジションに移動しました",
-        "notHomed": "接続以降、マシンはホームポジションに移動していません",
-        "analysisPassed": "Gコード分析に合格しました",
-        "error": "エラー:",
-        "warning": "警告:",
-        "dryRun": "ドライランモードで実行 (スピンドル/レーザーなし、早送りのみ)",
-        "confirm": "確認してジョブを開始"
-    },
-    "spindleConfirm": {
-        "title": "スピンドル状態の確認",
-        "message": "続行する前にスピンドルをオンにしますか？",
-        "continueNoSpindle": "スピンドルなしで続行",
-        "startSpindle": "スピンドルを開始"
-    },
-    "unsupported": {
-        "title": "ブラウザがサポートされていないか、モバイルデバイスが検出されました",
-        "message1": "このアプリケーションは、CNCコントローラーと通信するためにWeb Serial APIが必要です。このAPIは現在、Google ChromeやMicrosoft Edgeなどのブラウザのデスクトップバージョンでサポートされています。",
-        "message2": "モバイルブラウザはこの機能をサポートしていません。",
-        "message3": "互換性のあるデスクトップブラウザからこのページにアクセスしてください。",
-        "checkCompat": "Web Serial APIの互換性を確認",
-        "viewCanIUse": "CanIUse.comで表示"
-    },
     "macros": {
-        "title": "マクロ",
-        "add": "マクロを追加",
-        "editTooltip": "「{{name}}」を編集"
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

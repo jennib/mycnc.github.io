@@ -12,7 +12,8 @@
         "fullscreen": "Повноекранна консоль",
         "sendCommand": "Надіслати команду",
         "cancel": "Скасувати",
-        "language": "Мова"
+        "language": "Мова",
+        "save": "Save"
     },
     "console": {
         "title": "Консоль",
@@ -134,24 +135,22 @@
             "generateTitle": "Відкрити генератори G-коду",
             "load": "Завантажити файл",
             "clear": "Очистити G-код та попередній перегляд",
-            "scrub": "Прокрутити траєкторію G-коду",
-            "undo": "Скасувати",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "Скасувати (Ctrl+Z)",
-            "redo": "Повторити",
-            "redoTitle": "Повторити (Ctrl+Y)"
+            "redoTitle": "Повторити (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "Редактор G-коду",
-            "edit": "Редагувати G-код",
-            "advancedEdit": "Розширений редактор",
-            "quickEdit": "Швидке редагування",
             "format": "Форматувати код",
-            "validate": "Перевірити",
+            "noIssues": "Проблем не знайдено",
             "saveToApp": "Зберегти в програму",
             "saveToDisk": "Зберегти на диск",
-            "errors": "помилки",
-            "warnings": "попередження",
-            "noIssues": "Проблем не знайдено"
+            "edit": "Редагувати G-код",
+            "advancedEdit": "Розширений редактор"
         },
         "status": {
             "file": "Файл:",
@@ -235,7 +234,10 @@
         "send": "Надіслати повідомлення",
         "cancel": "Скасувати",
         "success": "Повідомлення успішно надіслано!",
-        "error": "Не вдалося надіслати повідомлення."
+        "error": "Не вдалося надіслати повідомлення.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "Інформація",
@@ -454,17 +456,6 @@
                 "email": "Будь ласка, введіть дійсну адресу електронної пошти."
             }
         },
-        "macro": {
-            "addTitle": "Додати нове макро",
-            "editTitle": "Редагувати макро",
-            "name": "Назва макросу",
-            "namePlaceholder": "напр., Зонд вісь Z",
-            "commands": "Команди G-коду",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "Введіть одну команду G-коду в рядку.",
-            "delete": "Видалити",
-            "deleteConfirm": "Ви впевнені, що хочете видалити макрос \"{{name}}\"?"
-        },
         "shared": {
             "tool": "Інструмент",
             "selectTool": "Виберіть інструмент...",
@@ -486,37 +477,48 @@
             "center": "Центр (X, Y)",
             "radius": "Радіус",
             "startAngle": "Початковий кут"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
     },
-    "preflight": {
-        "title": "Передпольотна перевірка",
-        "review": "Будь ласка, перевірте наступне перед початком роботи:",
-        "jobLoaded": "Файл завдання завантажено: <strong>{{fileName}}</strong>",
-        "homed": "Верстат повернуто додому",
-        "notHomed": "Верстат не повертався додому з моменту підключення",
-        "analysisPassed": "Аналіз G-коду пройдено",
-        "error": "Помилка:",
-        "warning": "Попередження:",
-        "dryRun": "Запустити в режимі Dry Run (без шпинделя/лазера, тільки швидкі переміщення)",
-        "confirm": "Підтвердити та почати роботу"
-    },
-    "spindleConfirm": {
-        "title": "Підтвердити стан шпинделя",
-        "message": "Ви хочете увімкнути шпиндель перед продовженням?",
-        "continueNoSpindle": "Продовжити без шпинделя",
-        "startSpindle": "Запустити шпиндель"
-    },
-    "unsupported": {
-        "title": "Браузер не підтримується або виявлено мобільний пристрій",
-        "message1": "Ця програма вимагає Web Serial API для зв'язку з контролерами ЧПК. Цей API наразі підтримується в настільних версіях браузерів, таких як Google Chrome та Microsoft Edge.",
-        "message2": "Мобільні браузери не підтримують цю функцію.",
-        "message3": "Будь ласка, зайдіть на цю сторінку з сумісного настільного браузера.",
-        "checkCompat": "Перевірити сумісність Web Serial API",
-        "viewCanIUse": "Переглянути на CanIUse.com"
-    },
     "macros": {
-        "title": "Макроси",
-        "add": "Додати макрос",
-        "editTooltip": "Редагувати \"{{name}}\""
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

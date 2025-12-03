@@ -12,7 +12,8 @@
         "fullscreen": "Consola Pantalla Completa",
         "sendCommand": "Enviar Comando",
         "cancel": "Cancelar",
-        "language": "Idioma"
+        "language": "Idioma",
+        "save": "Save"
     },
     "console": {
         "title": "Consola",
@@ -134,24 +135,22 @@
             "generateTitle": "Abrir generadores de código G",
             "load": "Cargar Archivo",
             "clear": "Borrar Código G y Vista Previa",
-            "scrub": "Recorrer Trayectoria G-code",
-            "undo": "Deshacer",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "Deshacer (Ctrl+Z)",
-            "redo": "Rehacer",
-            "redoTitle": "Rehacer (Ctrl+Y)"
+            "redoTitle": "Rehacer (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "Editor de G-code",
-            "edit": "Edit G-code",
-            "advancedEdit": "Editor Avanzado",
-            "quickEdit": "Edición Rápida",
             "format": "Formatear Código",
-            "validate": "Validar",
+            "noIssues": "No se encontraron problemas",
             "saveToApp": "Guardar en la Aplicación",
             "saveToDisk": "Guardar en Disco",
-            "errors": "errores",
-            "warnings": "advertencias",
-            "noIssues": "No se encontraron problemas"
+            "edit": "Edit G-code",
+            "advancedEdit": "Editor Avanzado"
         },
         "status": {
             "file": "Archivo:",
@@ -235,7 +234,10 @@
         "send": "Enviar Mensaje",
         "cancel": "Cancelar",
         "success": "¡Mensaje enviado con éxito!",
-        "error": "Error al enviar mensaje."
+        "error": "Error al enviar mensaje.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "Información",
@@ -454,17 +456,6 @@
                 "email": "Por favor ingrese una dirección de correo electrónico válida."
             }
         },
-        "macro": {
-            "addTitle": "Agregar Nueva Macro",
-            "editTitle": "Editar Macro",
-            "name": "Nombre de Macro",
-            "namePlaceholder": "ej., Sondear Eje Z",
-            "commands": "Comandos G-Code",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "Ingrese un comando G-code por línea.",
-            "delete": "Eliminar",
-            "deleteConfirm": "¿Está seguro de que desea eliminar la macro \"{{name}}\"?"
-        },
         "shared": {
             "tool": "Herramienta",
             "selectTool": "Seleccione una herramienta...",
@@ -486,37 +477,48 @@
             "center": "Centro (X, Y)",
             "radius": "Radio",
             "startAngle": "Ángulo Inicial"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
-    },
-    "preflight": {
-        "title": "Verificación Previa",
-        "review": "Por favor revise lo siguiente antes de iniciar el trabajo:",
-        "jobLoaded": "Archivo de trabajo cargado: <strong>{{fileName}}</strong>",
-        "homed": "La máquina ha sido referenciada (homed)",
-        "notHomed": "La máquina no ha sido referenciada desde la conexión",
-        "analysisPassed": "Análisis de código G aprobado",
-        "error": "Error:",
-        "warning": "Advertencia:",
-        "dryRun": "Ejecutar en modo de prueba (sin husillo/láser, solo movimientos rápidos)",
-        "confirm": "Confirmar e Iniciar Trabajo"
-    },
-    "spindleConfirm": {
-        "title": "Confirmar Estado del Husillo",
-        "message": "¿Desea encender el husillo antes de continuar?",
-        "continueNoSpindle": "Continuar sin Husillo",
-        "startSpindle": "Iniciar Husillo"
-    },
-    "unsupported": {
-        "title": "Navegador No Soportado o Dispositivo Móvil Detectado",
-        "message1": "Esta aplicación requiere la API Web Serial para comunicarse con controladores CNC. Esta API es soportada actualmente en versiones de escritorio de navegadores como Google Chrome y Microsoft Edge.",
-        "message2": "Los navegadores móviles no soportan esta característica.",
-        "message3": "Por favor acceda a esta página desde un navegador de escritorio compatible.",
-        "checkCompat": "Verificar compatibilidad de API Web Serial",
-        "viewCanIUse": "Ver en CanIUse.com"
     },
     "macros": {
         "title": "Macros",
-        "add": "Agregar Macro",
-        "editTooltip": "Editar \"{{name}}\""
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

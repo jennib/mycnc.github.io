@@ -12,7 +12,8 @@
         "fullscreen": "Console plein écran",
         "sendCommand": "Envoyer la commande",
         "cancel": "Annuler",
-        "language": "Langue"
+        "language": "Langue",
+        "save": "Save"
     },
     "console": {
         "title": "Console",
@@ -134,24 +135,22 @@
             "generateTitle": "Ouvrir les générateurs",
             "load": "Charger",
             "clear": "Effacer",
-            "scrub": "Parcourir",
-            "undo": "Annuler",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "Annuler (Ctrl+Z)",
-            "redo": "Rétablir",
-            "redoTitle": "Rétablir (Ctrl+Y)"
+            "redoTitle": "Rétablir (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "Éditeur G-code",
-            "edit": "Éditer G-code",
-            "advancedEdit": "Éditeur Avancé",
-            "quickEdit": "Édition Rapide",
             "format": "Formater le Code",
-            "validate": "Valider",
+            "noIssues": "Aucun problème trouvé",
             "saveToApp": "Enregistrer dans l'App",
             "saveToDisk": "Enregistrer sur le Disque",
-            "errors": "erreurs",
-            "warnings": "avertissements",
-            "noIssues": "Aucun problème trouvé"
+            "edit": "Éditer G-code",
+            "advancedEdit": "Éditeur Avancé"
         },
         "status": {
             "file": "Fichier :",
@@ -235,7 +234,10 @@
         "send": "Envoyer le message",
         "cancel": "Annuler",
         "success": "Message envoyé avec succès !",
-        "error": "Échec de l'envoi du message."
+        "error": "Échec de l'envoi du message.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "Information",
@@ -254,16 +256,16 @@
             "relief": "Relief"
         },
         "common": {
-            "title": "Générateur de G-code",
-            "milling": "Fraisage",
-            "textEngraving": "Gravure de texte",
-            "generate": "Générer du G-code",
             "direction": "Direction de fraisage",
             "horizontal": "Horizontal (X)",
             "vertical": "Vertical (Y)",
             "finalDepth": "Profondeur finale",
             "shouldBeNegative": "Doit être négatif",
             "stepover": "Pas latéral",
+            "title": "Générateur de G-code",
+            "milling": "Fraisage",
+            "textEngraving": "Gravure de texte",
+            "generate": "Générer du G-code",
             "safeZ": "Hauteur de sécurité",
             "feedRate": "Vitesse d'avance",
             "spindleSpeed": "Vitesse de broche",
@@ -314,18 +316,6 @@
             "retractHeight": "Hauteur de retrait",
             "retractHelp": "Hauteur de retrait entre les picages"
         },
-        "pocket": {
-            "rectangle": "Rectangle",
-            "circle": "Cercle",
-            "width": "Largeur (X)",
-            "length": "Longueur (Y)",
-            "cornerRadius": "Rayon des coins",
-            "diameter": "Diamètre",
-            "totalDepth": "Profondeur totale",
-            "shouldBeNegative": "Doit être négatif",
-            "depthPerPass": "Profondeur par passe",
-            "stepover": "Pas latéral"
-        },
         "profile": {
             "rectangle": "Rectangle",
             "circle": "Cercle",
@@ -344,6 +334,18 @@
             "numTabs": "Nombre",
             "tabWidth": "Largeur",
             "tabHeight": "Hauteur"
+        },
+        "pocket": {
+            "rectangle": "Rectangle",
+            "circle": "Cercle",
+            "width": "Largeur (X)",
+            "length": "Longueur (Y)",
+            "cornerRadius": "Rayon des coins",
+            "diameter": "Diamètre",
+            "totalDepth": "Profondeur totale",
+            "shouldBeNegative": "Doit être négatif",
+            "depthPerPass": "Profondeur par passe",
+            "stepover": "Pas latéral"
         },
         "slot": {
             "straight": "Droit",
@@ -426,17 +428,6 @@
             "generationFailed": "Échec de la génération",
             "loadSender": "Charger dans l'expéditeur"
         },
-        "array": {
-            "enable": "Activer le motif de tableau",
-            "rectGrid": "Grille rectangulaire",
-            "circArray": "Tableau circulaire",
-            "colsRows": "Colonnes, Lignes",
-            "spacing": "Espacement (X, Y)",
-            "copies": "Nombre de copies",
-            "center": "Centre (X, Y)",
-            "radius": "Rayon",
-            "startAngle": "Angle de départ"
-        },
         "errors": {
             "selectTool": "Veuillez sélectionner un outil.",
             "fillRequired": "Veuillez remplir tous les champs obligatoires avec des nombres valides.",
@@ -465,17 +456,6 @@
                 "email": "Veuillez saisir une adresse e-mail valide."
             }
         },
-        "macro": {
-            "addTitle": "Ajouter une nouvelle macro",
-            "editTitle": "Éditer la macro",
-            "name": "Nom de la macro",
-            "namePlaceholder": "ex: Palper l'axe Z",
-            "commands": "Commandes G-code",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "Entrez une commande G-code par ligne.",
-            "delete": "Supprimer",
-            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la macro \"{{name}}\" ?"
-        },
         "shared": {
             "tool": "Outil",
             "selectTool": "Sélectionner un outil...",
@@ -486,37 +466,59 @@
             "plungeRate": "Vitesse de plongée",
             "safeZ": "Z de sécurité",
             "safeZHelp": "Hauteur rapide au-dessus du brut"
+        },
+        "array": {
+            "enable": "Activer le motif de tableau",
+            "rectGrid": "Grille rectangulaire",
+            "circArray": "Tableau circulaire",
+            "colsRows": "Colonnes, Lignes",
+            "spacing": "Espacement (X, Y)",
+            "copies": "Nombre de copies",
+            "center": "Centre (X, Y)",
+            "radius": "Rayon",
+            "startAngle": "Angle de départ"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
-    },
-    "preflight": {
-        "title": "Vérification avant vol",
-        "review": "Veuillez vérifier les points suivants avant de démarrer le travail :",
-        "jobLoaded": "Fichier de travail chargé : <strong>{{fileName}}</strong>",
-        "homed": "La machine a été référencée",
-        "notHomed": "La machine n'a pas été référencée depuis la connexion",
-        "analysisPassed": "Analyse du G-code réussie",
-        "error": "Erreur :",
-        "warning": "Avertissement :",
-        "dryRun": "Exécuter en mode test (pas de broche/laser, rapides uniquement)",
-        "confirm": "Confirmer et démarrer le travail"
-    },
-    "spindleConfirm": {
-        "title": "Confirmer l'état de la broche",
-        "message": "Voulez-vous allumer la broche avant de continuer ?",
-        "continueNoSpindle": "Continuer sans broche",
-        "startSpindle": "Démarrer la broche"
-    },
-    "unsupported": {
-        "title": "Navigateur non pris en charge ou appareil mobile détecté",
-        "message1": "Cette application nécessite l'API Web Serial pour communiquer avec les contrôleurs CNC. Cette API est actuellement prise en charge dans les versions de bureau de navigateurs tels que Google Chrome et Microsoft Edge.",
-        "message2": "Les navigateurs mobiles ne prennent pas en charge cette fonctionnalité.",
-        "message3": "Veuillez accéder à cette page depuis un navigateur de bureau compatible.",
-        "checkCompat": "Vérifier la compatibilité de l'API Web Serial",
-        "viewCanIUse": "Voir sur CanIUse.com"
     },
     "macros": {
         "title": "Macros",
-        "add": "Ajouter une macro",
-        "editTooltip": "Éditer \"{{name}}\""
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

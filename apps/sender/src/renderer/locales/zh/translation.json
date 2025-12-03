@@ -12,7 +12,8 @@
         "fullscreen": "全屏控制台",
         "sendCommand": "发送命令",
         "cancel": "取消",
-        "language": "语言"
+        "language": "语言",
+        "save": "Save"
     },
     "console": {
         "title": "控制台",
@@ -134,24 +135,22 @@
             "generateTitle": "打开 G 代码生成器",
             "load": "加载",
             "clear": "清除",
-            "scrub": "擦洗",
-            "undo": "撤销",
+            "saveToApp": "Save to App",
+            "saveToDisk": "Save to Disk",
             "undoTitle": "撤销 (Ctrl+Z)",
-            "redo": "重做",
-            "redoTitle": "重做 (Ctrl+Y)"
+            "redoTitle": "重做 (Ctrl+Y)",
+            "errors": "errors",
+            "warnings": "warnings",
+            "noIssues": "No issues found"
         },
         "editor": {
             "title": "G代码编辑器",
-            "edit": "编辑 G 代码",
-            "advancedEdit": "高级编辑器",
-            "quickEdit": "快速编辑",
             "format": "格式化代码",
-            "validate": "验证",
+            "noIssues": "未发现问题",
             "saveToApp": "保存到应用",
             "saveToDisk": "保存到磁盘",
-            "errors": "错误",
-            "warnings": "警告",
-            "noIssues": "未发现问题"
+            "edit": "编辑 G 代码",
+            "advancedEdit": "高级编辑器"
         },
         "status": {
             "file": "文件：",
@@ -235,7 +234,10 @@
         "send": "发送消息",
         "cancel": "取消",
         "success": "消息发送成功！",
-        "error": "发送消息失败。"
+        "error": "发送消息失败。",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "信息",
@@ -254,16 +256,16 @@
             "relief": "浮雕"
         },
         "common": {
-            "title": "G 代码生成器",
-            "milling": "铣削",
-            "textEngraving": "文字雕刻",
-            "generate": "生成 G 代码",
             "direction": "铣削方向",
             "horizontal": "水平（X）",
             "vertical": "垂直（Y）",
             "finalDepth": "最终深度",
             "shouldBeNegative": "应为负值",
             "stepover": "横向进给",
+            "title": "G 代码生成器",
+            "milling": "铣削",
+            "textEngraving": "文字雕刻",
+            "generate": "生成 G 代码",
             "safeZ": "安全高度",
             "feedRate": "进给速度",
             "spindleSpeed": "主轴速度",
@@ -426,17 +428,6 @@
             "generationFailed": "生成失败",
             "loadSender": "加载到发送器"
         },
-        "array": {
-            "enable": "启用阵列模式",
-            "rectGrid": "矩形网格",
-            "circArray": "圆形阵列",
-            "colsRows": "列数、行数",
-            "spacing": "间距（X, Y）",
-            "copies": "副本数量",
-            "center": "中心（X, Y）",
-            "radius": "半径",
-            "startAngle": "起始角度"
-        },
         "errors": {
             "selectTool": "请选择刀具。",
             "fillRequired": "请用有效数字填写所有必填字段。",
@@ -465,17 +456,6 @@
                 "email": "请输入有效的电子邮件地址。"
             }
         },
-        "macro": {
-            "addTitle": "添加新宏",
-            "editTitle": "编辑宏",
-            "name": "宏名称",
-            "namePlaceholder": "例如，探针 Z 轴",
-            "commands": "G 代码命令",
-            "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-            "help": "每行输入一个 G 代码命令。",
-            "delete": "删除",
-            "deleteConfirm": "您确定要删除宏\"{{name}}\"吗？"
-        },
         "shared": {
             "tool": "刀具",
             "selectTool": "选择刀具...",
@@ -486,37 +466,59 @@
             "plungeRate": "下刀速度",
             "safeZ": "安全高度",
             "safeZHelp": "材料上方的快速高度"
+        },
+        "array": {
+            "enable": "启用阵列模式",
+            "rectGrid": "矩形网格",
+            "circArray": "圆形阵列",
+            "colsRows": "列数、行数",
+            "spacing": "间距（X, Y）",
+            "copies": "副本数量",
+            "center": "中心（X, Y）",
+            "radius": "半径",
+            "startAngle": "起始角度"
+        },
+        "preflight": {
+            "title": "Preflight Check",
+            "review": "Please review the following before starting the job:",
+            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+            "homed": "Machine has been homed",
+            "notHomed": "Machine has not been homed since connecting",
+            "analysisPassed": "G-code analysis passed",
+            "error": "Error:",
+            "warning": "Warning:",
+            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+            "confirm": "Confirm & Start Job"
+        },
+        "spindleConfirm": {
+            "title": "Confirm Spindle State",
+            "message": "Do you want to turn the spindle on before proceeding?",
+            "continueNoSpindle": "Continue without Spindle",
+            "startSpindle": "Start Spindle"
+        },
+        "unsupported": {
+            "title": "Browser Not Supported or Mobile Device Detected",
+            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+            "message2": "Mobile browsers do not support this feature.",
+            "message3": "Please access this page from a compatible desktop browser.",
+            "checkCompat": "Check Web Serial API compatibility",
+            "viewCanIUse": "View on CanIUse.com"
         }
     },
-    "preflight": {
-        "title": "预检查",
-        "review": "在启动作业之前，请检查以下内容：",
-        "jobLoaded": "已加载作业文件：<strong>{{fileName}}</strong>",
-        "homed": "机器已归零",
-        "notHomed": "自连接以来机器尚未归零",
-        "analysisPassed": "G 代码分析通过",
-        "error": "错误：",
-        "warning": "警告：",
-        "dryRun": "以试运行模式运行（无主轴/激光，仅快速移动）",
-        "confirm": "确认并启动作业"
-    },
-    "spindleConfirm": {
-        "title": "确认主轴状态",
-        "message": "您想在继续之前打开主轴吗？",
-        "continueNoSpindle": "不使用主轴继续",
-        "startSpindle": "启动主轴"
-    },
-    "unsupported": {
-        "title": "不支持的浏览器或检测到移动设备",
-        "message1": "此应用程序需要 Web Serial API 才能与 CNC 控制器通信。此 API 目前在 Google Chrome 和 Microsoft Edge 等浏览器的桌面版本中受支持。",
-        "message2": "移动浏览器不支持此功能。",
-        "message3": "请从兼容的桌面浏览器访问此页面。",
-        "checkCompat": "检查 Web Serial API 兼容性",
-        "viewCanIUse": "在 CanIUse.com 上查看"
-    },
     "macros": {
-        "title": "宏",
-        "add": "添加宏",
-        "editTooltip": "编辑\"{{name}}\""
+        "title": "Macros",
+        "add": "Add Macro",
+        "editTooltip": "Edit \"{{name}}\""
+    },
+    "macro": {
+        "addTitle": "Add New Macro",
+        "editTitle": "Edit Macro",
+        "name": "Macro Name",
+        "namePlaceholder": "e.g., Probe Z-Axis",
+        "commands": "G-Code Commands",
+        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
+        "help": "Enter one G-code command per line.",
+        "delete": "Delete",
+        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }
 }

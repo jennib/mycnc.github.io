@@ -540,7 +540,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.homing.title')}
               </h4>
-              <div className="grid grid-cols-5 gap-2 text-sm">
+              <div className={`grid gap-2 text-sm ${machineSettings?.controllerType === "grbl" ? "grid-cols-1" : "grid-cols-5"}`}>
                 <button
                   onClick={() => onHome("all")}
                   disabled={isControlDisabled}
@@ -549,38 +549,42 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 >
                   <Home className="w-5 h-5" />
                 </button>
-                <button
-                  onClick={() => onHome("x")}
-                  disabled={isControlDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
-                  title={t('jog.homing.x')}
-                >
-                  <HomeX className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onHome("y")}
-                  disabled={isControlDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
-                  title={t('jog.homing.y')}
-                >
-                  <HomeY className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onHome("z")}
-                  disabled={isControlDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
-                  title={t('jog.homing.z')}
-                >
-                  <HomeZ className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onHome("xy")}
-                  disabled={isControlDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
-                  title={t('jog.homing.xy')}
-                >
-                  <HomeXY className="w-5 h-5" />
-                </button>
+                {machineSettings?.controllerType !== "grbl" && (
+                  <>
+                    <button
+                      onClick={() => onHome("x")}
+                      disabled={isControlDisabled}
+                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      title={t('jog.homing.x')}
+                    >
+                      <HomeX className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => onHome("y")}
+                      disabled={isControlDisabled}
+                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      title={t('jog.homing.y')}
+                    >
+                      <HomeY className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => onHome("z")}
+                      disabled={isControlDisabled}
+                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      title={t('jog.homing.z')}
+                    >
+                      <HomeZ className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => onHome("xy")}
+                      disabled={isControlDisabled}
+                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      title={t('jog.homing.xy')}
+                    >
+                      <HomeXY className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
