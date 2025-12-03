@@ -1,6 +1,11 @@
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 // import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig(({ mode }) => ({
@@ -44,7 +49,11 @@ export default defineConfig(({ mode }) => ({
       'process.env.GEMINI_API_KEY': JSON.stringify(loadEnv(mode, '.', '').GEMINI_API_KEY)
     },
     resolve: {
-      alias: { '@': resolve(__dirname, 'src/renderer') }
+      alias: {
+        '@': resolve(__dirname, 'src/renderer'),
+        '@mycnc/shared/worker': resolve(__dirname, '../../packages/shared/dist/worker.js'),
+        '@mycnc/shared': resolve(__dirname, '../../packages/shared/dist/index.js')
+      }
     },
     build: {
       sourcemap: false,

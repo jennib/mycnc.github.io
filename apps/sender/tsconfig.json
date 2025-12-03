@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+    "baseUrl": ".",
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "module": "ESNext",
@@ -22,6 +23,12 @@
     "paths": {
       "@/*": [
         "./src/renderer/*"
+      ],
+      "@mycnc/shared": [
+        "../../packages/shared/dist/index.d.ts"
+      ],
+      "@mycnc/shared/worker": [
+        "../../packages/shared/dist/worker.d.ts"
       ]
     },
     "allowImportingTsExtensions": true,

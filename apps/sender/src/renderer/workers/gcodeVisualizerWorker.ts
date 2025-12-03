@@ -1,7 +1,6 @@
 // src/services/gcodeVisualizerWorker.ts
 
-import { parseGCode, GCodeSegment, GCodePoint } from '@mycnc/shared';
-import { BoundingBox, ToolpathSegmentMetadata } from '@mycnc/shared';
+import { parseGCode, GCodeSegment, GCodePoint, BoundingBox, ToolpathSegmentMetadata } from '@mycnc/shared/worker';
 
 interface ColorUpdate {
     offset: number;

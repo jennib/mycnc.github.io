@@ -10,13 +10,21 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        worker: resolve(__dirname, 'src/worker.ts')
+      },
       name: 'MyCNCShared',
-      fileName: 'mycnc-shared',
-      formats: ['es']
+      formats: ['es'],
+      fileName: (format, entryName) => `${entryName}.${format}.js`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'three', 'lucide-react']
+      external: ['react', 'react-dom', 'three', 'lucide-react'],
+      output: {
+        entryFileNames: '[name].js',
+        chunkFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash].[ext]'
+      }
     }
   }
 });

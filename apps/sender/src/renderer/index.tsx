@@ -4,7 +4,10 @@ import App from "./App.tsx";
 import { configureMonaco } from "@mycnc/shared";
 import * as monaco from "monaco-editor";
 
+import { setupMonacoWorkers } from "./monacoWorker";
+
 // Configure Monaco loader
+setupMonacoWorkers();
 configureMonaco();
 
 import "./i18n";
