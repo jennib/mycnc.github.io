@@ -352,8 +352,25 @@ const App: React.FC = () => {
       <MacroEditorModal
         isOpen={isMacroEditorOpen}
         onCancel={uiActions.closeMacroEditor}
-        onSave={() => { }}
-        onDelete={() => { }}
+        onSave={(newMacro, index) => {
+          if (index !== null) {
+            // Edit existing
+            const newMacros = [...macros];
+            newMacros[index] = newMacro;
+            settingsActions.setMacros(newMacros);
+          } else {
+            // Add new
+            settingsActions.setMacros([...macros, newMacro]);
+          }
+          uiActions.closeMacroEditor();
+        }}
+        onDelete={(index) => {
+          if (index !== null) {
+            const newMacros = macros.filter((_, i) => i !== index);
+            settingsActions.setMacros(newMacros);
+            uiActions.closeMacroEditor();
+          }
+        }}
         macro={editingMacroIndex !== null ? macros[editingMacroIndex] : null}
         index={editingMacroIndex}
       />
