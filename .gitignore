@@ -113,3 +113,13 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Electron build output
+dist-electron/
+release/
+
+# Vite cache
+.vite/
+
+# Project specific
+tsc_output*
