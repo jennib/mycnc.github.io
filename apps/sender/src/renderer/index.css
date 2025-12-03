@@ -1,0 +1,146 @@
+:root {
+  /* Modern Dark Theme (Midnight Blue) */
+  --color-primary: #38bdf8;
+  /* Sky 400 */
+  --color-primary-focus: #0ea5e9;
+  /* Sky 500 */
+  --color-secondary: #475569;
+  /* Slate 600 */
+  --color-secondary-focus: #334155;
+  /* Slate 700 */
+  --color-background: #0f172a;
+  /* Slate 900 */
+  --color-surface: #1e293b;
+  /* Slate 800 */
+  --color-text-primary: #f8fafc;
+  /* Slate 50 */
+  --color-text-secondary: #94a3b8;
+  /* Slate 400 */
+  --color-accent-green: #34d399;
+  /* Emerald 400 */
+  --color-accent-green-focus: #10b981;
+  /* Emerald 500 */
+  --color-accent-yellow: #fbbf24;
+  /* Amber 400 */
+  --color-accent-red: #f87171;
+  /* Red 400 */
+  --color-border: #334155;
+  /* Slate 700 */
+}
+
+.light-mode {
+  /* Modern Light Theme (Crisp White/Gray) */
+  --color-primary: #0284c7;
+  /* Sky 600 */
+  --color-primary-focus: #0369a1;
+  /* Sky 700 */
+  --color-secondary: #e2e8f0;
+  /* Slate 200 */
+  --color-secondary-focus: #cbd5e1;
+  /* Slate 300 */
+  --color-background: #f8fafc;
+  /* Slate 50 */
+  --color-surface: #ffffff;
+  /* White */
+  --color-text-primary: #0f172a;
+  /* Slate 900 */
+  --color-text-secondary: #64748b;
+  /* Slate 500 */
+  --color-accent-green: #059669;
+  /* Emerald 600 */
+  --color-accent-green-focus: #047857;
+  /* Emerald 700 */
+  --color-accent-yellow: #d97706;
+  /* Amber 600 */
+  --color-accent-red: #dc2626;
+  /* Red 600 */
+  --color-border: #e2e8f0;
+  /* Slate 200 */
+}
+
+.light-mode .bg-secondary {
+  color: #0f172a;
+  /* Ensure text is dark on secondary buttons in light mode */
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-switch-checkbox {
+  height: 0;
+  width: 0;
+  visibility: hidden;
+}
+
+.react-switch-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  width: 50px;
+  height: 25px;
+  background: grey;
+  border-radius: 100px;
+  position: relative;
+  transition: background-color .2s;
+}
+
+.react-switch-label .react-switch-button {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 45px;
+  transition: 0.2s;
+  background: #fff;
+  box-shadow: 0 0 2px 0 rgba(10, 10, 10, 0.29);
+}
+
+.react-switch-checkbox:checked+.react-switch-label .react-switch-button {
+  left: calc(100% - 2px);
+  transform: translateX(-100%);
+}
+
+.react-switch-label:active .react-switch-button {
+  width: 28px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary-focus);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility class for custom scrollbar in specific containers if needed */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-white-10);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-white-20);
+}
