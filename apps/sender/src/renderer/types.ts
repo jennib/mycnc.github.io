@@ -247,6 +247,54 @@ export interface ReliefParams {
     gamma: number;
     contrast: number;
     smoothing: number;
+    detail: number; // Unsharp mask amount
+    quality: 'low' | 'medium' | 'high';
+
+    // Color Adjustments
+    colorAdjustmentEnabled: boolean;
+
+    // More (High Gain)
+    adjustColorHigh: string;
+    adjustAmountHigh: number;
+    adjustToleranceHigh: number;
+
+    // Less (Low Gain)
+    adjustColorLow: string;
+    adjustAmountLow: number;
+    adjustToleranceLow: number;
+
+    // Normal (No Gain)
+    adjustColorMid: string;
+    adjustToleranceMid: number;
+
+    // Spectrum Gain (256 Colors)
+    spectrumGainEnabled: boolean;
+    spectrumGainHigh: number; // For Red/Warm
+    spectrumGainLow: number;  // For Blue/Cool
+}
+
+export interface STLParams {
+    file: File | null;
+    fileName: string;
+    width: number | string;
+    length: number | string;
+    depth: number | string;
+    zSafe: number | string;
+    margin: number;
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
+    toolId: number | null;
+    stepover: number | string;
+    feedRate: number | string;
+    spindleSpeed: number | string;
+    roughingEnabled: boolean;
+    roughingToolId: number | null;
+    roughingStepdown: number | string;
+    roughingStepover: number | string;
+    roughingStockToLeave: number | string;
+    roughingFeed: number | string;
+    roughingSpindle: number | string;
 }
 
 export interface GeneratorSettings {
@@ -259,6 +307,7 @@ export interface GeneratorSettings {
     text: TextParams;
     thread: ThreadMillingParams;
     relief: ReliefParams;
+    stl: STLParams;
 }
 
 export interface TimeEstimate {

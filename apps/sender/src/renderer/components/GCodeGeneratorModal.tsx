@@ -12,7 +12,9 @@ import ProfileGenerator from './ProfileGenerator';
 import PocketGenerator from './PocketGenerator';
 import ThreadMillingGenerator from './ThreadMillingGenerator';
 import TextGenerator from './TextGenerator';
+
 import ReliefGenerator from './ReliefGenerator';
+import STLGenerator from './STLGenerator';
 
 interface TabProps {
     label: string;
@@ -1143,8 +1145,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return { code, paths, bounds, error: null };
     };
 
-    const generateReliefCode = async (machineSettings: MachineSettings) => {
-        const reliefParams = generatorSettings.relief;
+    const generateReliefCode = async (machineSettings: MachineSettings, overrideParams?: ReliefParams) => {
+        const reliefParams = overrideParams || generatorSettings.relief;
         if (!reliefParams.imageDataUrl) return { error: t('generators.errors.noImage'), code: [], paths: [], bounds: {} };
 
         try {
@@ -1296,6 +1298,77 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         else if (activeTab === 'text') result = generateTextCode(settings);
         else if (activeTab === 'thread') result = generateThreadMillingCode(settings);
         else if (activeTab === 'relief') result = await generateReliefCode(settings);
+        else if (activeTab === 'stl') {
+            const stlParams = generatorSettings.stl;
+            // Construct ReliefParams from STLParams
+            // We need the height map from the STL generator. 
+            // Since we don't have it in state here easily without lifting state up significantly,
+            // we can use a ref or a global/window variable as a temporary hack, 
+            // OR better: The STLGenerator should have updated a ref in this component via a callback.
+
+            // Let's assume we have the height map in a ref or state. 
+            // Actually, we haven't implemented the callback in GCodeGeneratorModal yet.
+            // Let's check if we can access the height map.
+
+            // For now, let's use the window object hack as mentioned in the plan/summary if needed, 
+            // but a cleaner way is to have a state for stlHeightMap.
+            const heightMapUrl = (window as any).currentStlHeightMap;
+
+            if (!heightMapUrl) {
+                result = { error: "No STL height map generated. Please wait for preview.", code: [], paths: [], bounds: {} };
+            } else {
+                const reliefParams: ReliefParams = {
+                    ...generatorSettings.relief, // Use defaults from relief for missing props
+                    operation: 'both', // Force both or let user choose? STL params has roughing/finishing
+                    width: stlParams.width,
+                    length: stlParams.length,
+                    maxDepth: stlParams.depth, // STL depth is positive size, Relief maxDepth is negative
+                    zSafe: stlParams.zSafe,
+                    keepAspectRatio: true,
+                    imageDataUrl: heightMapUrl,
+                    invert: false, // Height map is already correct (white=high)
+                    gamma: 1.0,
+                    contrast: 1.0,
+                    smoothing: 0,
+                    detail: 0,
+                    quality: 'medium',
+
+                    roughingEnabled: stlParams.roughingEnabled,
+                    roughingToolId: stlParams.roughingToolId,
+                    roughingStepdown: stlParams.roughingStepdown,
+                    roughingStepover: stlParams.roughingStepover,
+                    roughingStockToLeave: stlParams.roughingStockToLeave,
+                    roughingFeed: stlParams.roughingFeed,
+                    roughingSpindle: stlParams.roughingSpindle,
+
+                    finishingEnabled: true,
+                    finishingToolId: stlParams.toolId,
+                    finishingStepover: stlParams.stepover,
+                    finishingAngle: 0, // Default to X raster
+                    finishingFeed: stlParams.feedRate,
+                    finishingSpindle: stlParams.spindleSpeed,
+
+                    colorAdjustmentEnabled: false,
+                    adjustColorHigh: '#000000',
+                    adjustAmountHigh: 0,
+                    adjustToleranceHigh: 0,
+                    adjustColorLow: '#000000',
+                    adjustAmountLow: 0,
+                    adjustToleranceLow: 0,
+                    adjustColorMid: '#000000',
+                    adjustToleranceMid: 0,
+                    spectrumGainEnabled: false,
+                    spectrumGainHigh: 0,
+                    spectrumGainLow: 0
+                };
+                // Fix maxDepth sign if needed. Relief expects negative? 
+                // In ReliefGenerator, maxDepth is usually negative. 
+                // STL size.z is positive. So we should probably negate it.
+                reliefParams.maxDepth = -Math.abs(Number(stlParams.depth));
+
+                result = await generateReliefCode(settings, reliefParams);
+            }
+        }
 
         if (result.error) {
             setGenerationError(result.error);
@@ -1424,6 +1497,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.tabs.slot')} isActive={activeTab === 'slot'} onClick={() => setActiveTab('slot')} />
                             <Tab label={t('generators.tabs.thread')} isActive={activeTab === 'thread'} onClick={() => setActiveTab('thread')} />
                             <Tab label={t('generators.tabs.relief')} isActive={activeTab === 'relief'} onClick={() => setActiveTab('relief')} />
+                            <Tab label={t('generators.tabs.stl')} isActive={activeTab === 'stl'} onClick={() => setActiveTab('stl')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">{t('generators.common.textEngraving')}</div>
                             <Tab label={t('generators.tabs.text')} isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                         </div>
@@ -1526,6 +1600,22 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     settings={settings}
                                     selectedToolId={selectedToolId}
                                     onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'stl' && (
+                                <STLGenerator
+                                    params={generatorSettings.stl as STLParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                    onGenerateHeightMap={(url) => {
+                                        (window as any).currentStlHeightMap = url;
+                                        // Trigger generation now that we have the map
+                                        handleGenerateRef.current();
+                                    }}
                                 />
                             )}
                         </div>

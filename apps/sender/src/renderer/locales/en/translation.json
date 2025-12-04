@@ -255,7 +255,8 @@
             "slot": "Slot",
             "text": "Text",
             "thread": "Thread Milling",
-            "relief": "Relief"
+            "relief": "Relief",
+            "stl": "STL"
         },
         "common": {
             "direction": "Milling Direction",
@@ -415,6 +416,18 @@
             "invert": "Invert (Dark = High)",
             "smoothing": "Smoothing",
             "smoothingHelp": "Apply Gaussian Blur to reduce noise",
+            "detail": "Detail Enhancement",
+            "detailHelp": "Sharpens edges to bring out details (Unsharp Mask)",
+            "quality": "Generation Quality",
+            "qualityLow": "Low (Fast)",
+            "qualityMedium": "Medium",
+            "qualityHigh": "High (Slow)",
+            "colorAdjustment": "Color Height Adjustment",
+            "adjustHigh": "More Height (Boost)",
+            "adjustLow": "Less Height (Reduce)",
+            "adjustMid": "Normal Height (No Change)",
+            "amount": "Amount",
+            "tolerance": "Tolerance",
             "roughingPass": "4. Roughing Pass",
             "enable": "Enable",
             "roughingTool": "Roughing Tool",
@@ -432,6 +445,10 @@
             "selectToolPreview": "Please select a tool to generate a preview.",
             "generationFailed": "Generation Failed",
             "loadSender": "Load into Sender"
+        },
+        "stl": {
+            "sourceFile": "Source STL File",
+            "orientation": "Orientation (Rotation in Degrees)"
         },
         "errors": {
             "selectTool": "Please select a tool.",

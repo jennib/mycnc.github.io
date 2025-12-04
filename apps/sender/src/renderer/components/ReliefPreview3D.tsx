@@ -10,7 +10,9 @@ interface ReliefPreview3DProps {
     gamma: number;
     contrast: number;
     invert: boolean;
-    smoothing: number;
+    spectrumGainEnabled: boolean;
+    spectrumGainHigh: number;
+    spectrumGainLow: number;
 }
 
 const ReliefPreview3D: React.FC<ReliefPreview3DProps> = ({
@@ -21,7 +23,10 @@ const ReliefPreview3D: React.FC<ReliefPreview3DProps> = ({
     gamma,
     contrast,
     invert,
-    smoothing
+    smoothing,
+    spectrumGainEnabled,
+    spectrumGainHigh,
+    spectrumGainLow
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
@@ -118,6 +123,8 @@ const ReliefPreview3D: React.FC<ReliefPreview3DProps> = ({
                 const g = pixels[idx + 1];
                 const b = pixels[idx + 2];
                 let brightness = (r + g + b) / (3 * 255);
+
+
 
                 // Contrast
                 brightness = (brightness - 0.5) * contrast + 0.5;

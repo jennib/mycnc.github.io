@@ -208,8 +208,35 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                             help={t('generators.relief.smoothingHelp')}
                                         />
                                     </div>
+                                    <div className="col-span-2">
+                                        <Slider
+                                            label={t('generators.relief.detail')}
+                                            value={params.detail || 0}
+                                            onChange={(v) => handleParamChange('detail', v)}
+                                            min={0}
+                                            max={10}
+                                            step={1}
+                                            help={t('generators.relief.detailHelp')}
+                                        />
+                                    </div>
+                                    <div className="col-span-2 flex flex-col gap-2">
+                                        <label className="text-sm font-semibold text-text-secondary">{t('generators.relief.quality')}</label>
+                                        <select
+                                            value={params.quality || 'medium'}
+                                            onChange={(e) => handleParamChange('quality', e.target.value)}
+                                            className="bg-background border border-secondary rounded p-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                                        >
+                                            <option value="low">{t('generators.relief.qualityLow')} (500px)</option>
+                                            <option value="medium">{t('generators.relief.qualityMedium')} (1000px)</option>
+                                            <option value="high">{t('generators.relief.qualityHigh')} (2000px)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
+
+
+
+
 
                             {/* Roughing Pass */}
                             <div className="border-b border-secondary pb-4">

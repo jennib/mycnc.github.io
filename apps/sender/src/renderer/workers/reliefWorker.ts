@@ -1,4 +1,5 @@
-import type { ReliefParams, Tool } from '@mycnc/shared';
+import type { Tool } from '@mycnc/shared';
+import type { ReliefParams } from '../types';
 
 // Define message types
 export interface ReliefWorkerMessage {
@@ -79,6 +80,35 @@ const gaussianBlur = (pixels: Uint8ClampedArray, width: number, height: number, 
     return target;
 };
 
+// Unsharp Mask Implementation
+const unsharpMask = (pixels: Uint8ClampedArray, width: number, height: number, amount: number) => {
+    if (amount <= 0) return pixels;
+
+    // Create blurred version
+    const blurred = gaussianBlur(pixels, width, height, 2); // Fixed radius for high-pass
+    const target = new Uint8ClampedArray(pixels.length);
+
+    const strength = amount * 0.5; // Scale 0-10 to reasonable strength
+
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+
+        const blurR = blurred[i];
+        const blurG = blurred[i + 1];
+        const blurB = blurred[i + 2];
+
+        // Original + (Original - Blurred) * Strength
+        target[i] = Math.min(255, Math.max(0, r + (r - blurR) * strength));
+        target[i + 1] = Math.min(255, Math.max(0, g + (g - blurG) * strength));
+        target[i + 2] = Math.min(255, Math.max(0, b + (b - blurB) * strength));
+        target[i + 3] = pixels[i + 3];
+    }
+
+    return target;
+};
+
 self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
     const { params, toolLibrary, imageBitmap } = e.data;
 
@@ -109,8 +139,11 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
         const ctx = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
         if (!ctx) throw new Error('Failed to create offscreen context');
 
-        // Limit resolution for performance (max 500px dimension)
-        const MAX_RES = 500;
+        // Resolution based on Quality setting
+        let MAX_RES = 1000; // Default Medium
+        if (params.quality === 'low') MAX_RES = 500;
+        if (params.quality === 'high') MAX_RES = 2000;
+
         let w = bitmap.width;
         let h = bitmap.height;
         if (w > MAX_RES || h > MAX_RES) {
@@ -124,6 +157,12 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
         ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         let pixels = imgData.data;
+
+        // Apply Detail Enhancement (Unsharp Mask)
+        if (params.detail && params.detail > 0) {
+            console.log('Worker: Applying detail enhancement', params.detail);
+            pixels = unsharpMask(pixels, canvas.width, canvas.height, params.detail);
+        }
 
         // Apply Smoothing
         if (params.smoothing && params.smoothing > 0) {
@@ -146,8 +185,13 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
             const idx = (py * pixelWidth + px) * 4;
 
             // Grayscale
-            const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
+            const r = pixels[idx];
+            const g = pixels[idx + 1];
+            const b = pixels[idx + 2];
+            const brightness = (r + g + b) / 3;
             let normalized = brightness / 255;
+
+
 
             // Contrast
             if (params.contrast !== 1.0) {
