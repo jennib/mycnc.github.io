@@ -163,6 +163,8 @@
             "timeRem": "Time Rem.",
             "estJobTime": "Estimated Job Time",
             "estTimeRem": "Estimated Time Remaining",
+            "homing": "Machine is homing",
+            "jobActive": "Job is currently active",
             "noFile": "No G-code file loaded.",
             "loadInstruction": "Click \"Load File\" or drag and drop here to begin.",
             "drop": "Drop G-code file here"

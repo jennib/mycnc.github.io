@@ -80,7 +80,13 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
             >
                 <div className="p-6 border-b border-white/10 flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">{t('toolLibrary.title')}</h2>
-                    <button onClick={onCancel} className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"><X className="w-6 h-6" /></button>
+                    <button
+                        onClick={onCancel}
+                        disabled={isEditing}
+                        className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
                 </div>
                 <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
                     {!isEditing ? (

@@ -411,13 +411,21 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   };
 
   const renderJobControls = () => {
-    if (isReadyToStart) {
+    if (isReadyToStart || !isReadyToStart) { // Always render the button, but disable it if not ready
+      let tooltip = t('gcode.controls.start');
+      if (!isReadyToStart) {
+        if (!isConnected && !isSimulated) tooltip = t('gcode.status.notConnected');
+        else if (gcodeLines.length === 0) tooltip = t('gcode.status.noFile');
+        else if (isHoming) tooltip = t('gcode.status.homing');
+        else if (jobStatus !== JobStatus.Idle && jobStatus !== JobStatus.Stopped && jobStatus !== JobStatus.Complete) tooltip = t('gcode.status.jobActive');
+      }
+
       return (
         <button
           onClick={() => onJobControl("start", { startLine: 0 })}
           disabled={!isReadyToStart}
           className="col-span-3 flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none text-lg"
-          title="Start Job"
+          title={tooltip}
         >
           <Play className="w-6 h-6" />
         </button>

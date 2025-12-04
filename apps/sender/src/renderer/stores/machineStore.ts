@@ -130,6 +130,13 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
           type: 'error',
           message: 'Probe settings are not configured.',
         });
+
+        import('./uiStore').then(({ useUIStore }) => {
+          useUIStore.getState().actions.openInfoModal(
+            'Probe Settings Missing',
+            'Please configure probe settings (Feed Rate and Travel Distance) in the Machine Settings before probing.'
+          );
+        });
         return;
       }
 

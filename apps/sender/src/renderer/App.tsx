@@ -54,6 +54,7 @@ const MainApp: React.FC = () => {
   const isHomedSinceConnect = useMachineStore(
     (state) => state.isHomedSinceConnect
   );
+  const isConnecting = useConnectionStore((state) => state.isConnecting);
   const isMacroRunning = useMachineStore((state) => state.isMacroRunning);
   const handleSetZero = useMachineStore((state) => state.actions.handleSetZero);
   const handleSpindleCommand = useMachineStore(
@@ -520,6 +521,7 @@ const MainApp: React.FC = () => {
           />
           <SerialConnector
             isConnected={isConnected}
+            isConnecting={isConnecting}
             portInfo={portInfo}
             onConnect={handleConnect}
             onDisconnect={handleDisconnect}

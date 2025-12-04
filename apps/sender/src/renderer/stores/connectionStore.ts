@@ -85,6 +85,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         addLog({ type: 'error', message: `Failed to connect: ${errorMessage}` });
         set({ isConnecting: false });
+
+        // Import dynamically to avoid circular dependency if needed, or just use the store
+        const { openInfoModal } = require('./uiStore').useUIStore.getState().actions;
+        openInfoModal('Connection Failed', errorMessage);
       }
     },
     disconnect: async () => {
