@@ -160,6 +160,13 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
         camera.top = camHeight / 2;
         camera.bottom = -camHeight / 2;
 
+        // Update renderer size to match aspect ratio
+        const aspect = camWidth / camHeight;
+        const renderWidth = containerRef.current.clientWidth;
+        const renderHeight = renderWidth / aspect;
+
+        rendererRef.current.setSize(renderWidth, renderHeight);
+
         // Let's use a custom material for reliable "Height Map" generation
         const heightMapMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -255,7 +262,7 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
             {/* Preview Area */}
             <div className="border-b border-secondary pb-4">
                 <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.preview')} (Height Map)</h3>
-                <div ref={containerRef} className="w-full aspect-square bg-black rounded border border-secondary/50 overflow-hidden" />
+                <div ref={containerRef} className="w-full bg-black rounded border border-secondary/50 overflow-hidden" />
             </div>
 
             {/* Tooling (Reuse Relief Params UI logic essentially, but simplified) */}
