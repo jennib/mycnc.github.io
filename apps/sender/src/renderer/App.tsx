@@ -1,9 +1,7 @@
-﻿import React, { useState, useCallback, useRef, useEffect } from "react";
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { JobStatus, Tool, ConnectionOptions } from "@mycnc/shared";
-import SerialConnector from "./components/SerialConnector";
-import GCodePanel from "./components/GCodePanel";
+import { HashRouter, Routes, Route } from 'react-router-dom';
+import CameraWindow from "./components/CameraWindow";
 import Console from "./components/Console";
 import JogPanel from "./components/JogPanel";
 import MacrosPanel from "./components/MacrosPanel";
@@ -15,6 +13,9 @@ import SettingsModal from "./components/SettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
+import SerialConnector from "./components/SerialConnector";
+import GCodePanel from "./components/GCodePanel";
+import { JobStatus, ConnectionOptions, Tool } from "./types";
 import { ThemeToggle, Tabs } from "@mycnc/shared";
 import {
   AlertTriangle,
@@ -46,7 +47,7 @@ import { useJobStore } from "./stores/jobStore";
 import { useJob } from "./hooks/useJob";
 import { useLogStore } from "./stores/logStore";
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
   const { t } = useTranslation();
   const machineState = useMachineStore((state) => state.machineState);
   const isJogging = useMachineStore((state) => state.isJogging);
@@ -704,6 +705,17 @@ const App: React.FC = () => {
       </main>
 
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <Routes>
+        <Route path="/camera-popout" element={<CameraWindow />} />
+        <Route path="/" element={<MainApp />} />
+      </Routes>
+    </HashRouter>
   );
 };
 

@@ -25,4 +25,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.removeListener("is-fullscreen", subscription);
     };
   },
+  openCameraWindow: (params: any) => ipcRenderer.send('open-camera-window', params),
+  closeCameraWindow: () => ipcRenderer.send('close-camera-window'),
 });

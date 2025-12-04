@@ -11,6 +11,9 @@ interface ElectronAPI {
     toggleFullscreen: () => void;
     getFullscreenState: () => void;
     onFullscreenChange: (callback: (isFullScreen: boolean) => void) => () => void;
+
+    openCameraWindow: (params: { mode: 'local' | 'webrtc'; deviceId?: string; url?: string }) => void;
+    closeCameraWindow: () => void;
 }
 
 // Augment the Window interface to include electronAPI

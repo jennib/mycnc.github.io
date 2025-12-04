@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AlertTriangle, RefreshCw, Dock } from "@mycnc/shared";
+import { AlertTriangle, RefreshCw, Dock, Maximize, Minimize } from "@mycnc/shared";
 import { useSettingsStore } from '@/stores/settingsStore';
 
 interface LocalCameraProps {
@@ -9,6 +9,7 @@ interface LocalCameraProps {
     onTogglePiP: () => void;
     onPiPChange: (isPiP: boolean) => void;
     videoRef: React.RefObject<HTMLVideoElement>;
+    isPoppedOut?: boolean;
 }
 
 const isElectron = !!window.electronAPI?.isElectron;
@@ -19,7 +20,8 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
     isInPiP,
     onTogglePiP,
     onPiPChange,
-    videoRef
+    videoRef,
+    isPoppedOut = false
 }) => {
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [audioInputDevices, setAudioInputDevices] = useState<MediaDeviceInfo[]>([]);
@@ -176,13 +178,33 @@ const LocalCamera: React.FC<LocalCameraProps> = ({
                 )}
             </div>
 
-            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
+
+            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative group">
                 {/* Video element is always rendered here, even when in PiP */}
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={isInPiP ? "w-px h-px opacity-0 absolute pointer-events-none" : "w-full h-full object-contain"}
+                />
+
+                {/* Controls Overlay */}
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {!isPoppedOut && (
+                        <button
+                            onClick={onTogglePiP}
+                            className="p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-md backdrop-blur-sm transition-colors"
+                            title={isInPiP ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
+                        >
+                            {isInPiP ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                        </button>
+                    )}
+                </div>
 
                 {/* Show overlay when in PiP mode */}
                 {isInPiP && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-90 z-20">
+                    <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
                         <div className="text-center text-text-secondary p-4">
                             <Dock className="w-12 h-12 mx-auto mb-3 opacity-75" />
                             <p className="text-sm font-semibold mb-2">Video is in Picture-in-Picture mode</p>

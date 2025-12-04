@@ -147,6 +147,51 @@ const createWindow = () => {
     return { action: "deny" };
   });
 
+  // --- Camera Popout Window ---
+  let cameraWindow: BrowserWindow | null = null;
+
+  ipcMain.on('open-camera-window', (event, params) => {
+    if (cameraWindow) {
+      cameraWindow.focus();
+      return;
+    }
+
+    cameraWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      title: 'Camera View',
+      backgroundColor: '#0f172a',
+      autoHideMenuBar: true,
+      webPreferences: {
+        preload: path.join(__dirname, '../preload/preload.cjs'),
+        contextIsolation: true,
+        sandbox: true,
+      },
+    });
+
+    const query = new URLSearchParams(params).toString();
+    const hash = `#/camera-popout?${query}`;
+
+    if (process.env.VITE_DEV_SERVER_URL) {
+      cameraWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}${hash}`);
+    } else {
+      cameraWindow.loadFile(path.join(__dirname, "../renderer/index.html"), { hash: hash });
+    }
+
+    cameraWindow.on('closed', () => {
+      cameraWindow = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('camera-window-closed');
+      }
+    });
+  });
+
+  ipcMain.on('close-camera-window', () => {
+    if (cameraWindow) {
+      cameraWindow.close();
+    }
+  });
+
   // --- Menu Template ---
   const menuTemplate: MenuItemConstructorOptions[] = [
     {

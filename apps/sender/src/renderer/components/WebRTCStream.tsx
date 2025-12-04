@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { AlertTriangle, RefreshCw, Dock } from "@mycnc/shared";
+import { AlertTriangle, RefreshCw, Dock, Maximize, Minimize } from "@mycnc/shared";
 
 interface WebRTCStreamProps {
     volume: number;
@@ -8,6 +8,7 @@ interface WebRTCStreamProps {
     onTogglePiP: () => void;
     onPiPChange: (isPiP: boolean) => void;
     videoRef: React.RefObject<HTMLVideoElement>;
+    isPoppedOut?: boolean;
 }
 
 const WebRTCStream: React.FC<WebRTCStreamProps> = ({
@@ -16,7 +17,8 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     isInPiP,
     onTogglePiP,
     onPiPChange,
-    videoRef
+    videoRef,
+    isPoppedOut = false
 }) => {
     const [webRTCUrl, setWebRTCUrl] = useState('ws://10.0.0.162:8888/webrtc');
     const [isConnected, setIsConnected] = useState(false);
@@ -183,20 +185,6 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         };
     }, [videoRef, onPiPChange]);
 
-    if (isInPiP) {
-        return (
-            <div className="relative aspect-video bg-background rounded-md">
-                <button
-                    onClick={onTogglePiP}
-                    title="Dock to Panel"
-                    className="absolute top-2 right-2 flex items-center gap-2 p-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                    <Dock className="w-5 h-5" />
-                </button>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col gap-4">
             <div className='flex items-center gap-2'>
@@ -216,8 +204,45 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
                 </button>
             </div>
 
-            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative">
-                <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-contain" />
+
+            <div className="aspect-video bg-background rounded-md overflow-hidden flex items-center justify-center relative group">
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={isInPiP ? "w-px h-px opacity-0 absolute pointer-events-none" : "w-full h-full object-contain"}
+                />
+
+                {/* Controls Overlay */}
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {!isPoppedOut && (
+                        <button
+                            onClick={onTogglePiP}
+                            className="p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-md backdrop-blur-sm transition-colors"
+                            title={isInPiP ? "Exit Picture-in-Picture" : "Picture-in-Picture"}
+                        >
+                            {isInPiP ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                        </button>
+                    )}
+                </div>
+
+                {/* Show overlay when in PiP mode */}
+                {isInPiP && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
+                        <div className="text-center text-text-secondary p-4">
+                            <Dock className="w-12 h-12 mx-auto mb-3 opacity-75" />
+                            <p className="text-sm font-semibold mb-2">Video is in Picture-in-Picture mode</p>
+                            <button
+                                onClick={onTogglePiP}
+                                className="px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                            >
+                                Exit Picture-in-Picture
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-background bg-opacity-75 z-10">
                         <div className="text-center text-text-secondary p-4">
