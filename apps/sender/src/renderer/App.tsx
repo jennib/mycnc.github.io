@@ -416,14 +416,7 @@ const MainApp: React.FC = () => {
         }}
         onImport={(importedData: any) => {
           try {
-            if (importedData.machineSettings) settingsActions.setMachineSettings(importedData.machineSettings);
-            if (importedData.macros) settingsActions.setMacros(importedData.macros);
-            if (importedData.toolLibrary) settingsActions.setToolLibrary(importedData.toolLibrary);
-            if (importedData.generatorSettings) settingsActions.setGeneratorSettings(importedData.generatorSettings);
-            if (importedData.webcamSettings) settingsActions.setWebcamSettings(importedData.webcamSettings);
-            if (importedData.jogStep) settingsActions.setJogStep(importedData.jogStep);
-            if (importedData.unit) settingsActions.setUnit(importedData.unit);
-            if (importedData.isLightMode !== undefined) settingsActions.setIsLightMode(importedData.isLightMode);
+            settingsActions.importSettings(importedData);
 
             setNotifications((prev) => [
               ...prev,

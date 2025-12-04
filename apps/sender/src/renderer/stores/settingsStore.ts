@@ -12,6 +12,7 @@ interface SettingsState {
   toolLibrary: Tool[];
   generatorSettings: GeneratorSettings;
   webcamSettings: WebcamSettings;
+  buildAreaMeasurementDirections: { X: 1 | -1; Y: 1 | -1; Z: 1 | -1 };
   actions: {
     setJogStep: (step: number) => void;
     setUnit: (unit: 'mm' | 'in') => void;
@@ -21,8 +22,26 @@ interface SettingsState {
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
     setGeneratorSettings: (settings: GeneratorSettings | ((prev: GeneratorSettings) => GeneratorSettings)) => void;
     setWebcamSettings: (settings: Partial<WebcamSettings>) => void;
+    setBuildAreaMeasurementDirections: (directions: { X: 1 | -1; Y: 1 | -1; Z: 1 | -1 }) => void;
+    importSettings: (settings: Partial<SettingsState>) => void;
   };
 }
+
+const deepMerge = (current: any, persisted: any): any => {
+  const result = { ...current };
+  for (const key in persisted) {
+    if (persisted.hasOwnProperty(key)) {
+      const currentValue = current[key];
+      const persistedValue = persisted[key];
+      if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) && typeof persistedValue === 'object' && persistedValue !== null && !Array.isArray(persistedValue)) {
+        result[key] = deepMerge(currentValue, persistedValue);
+      } else {
+        result[key] = persistedValue;
+      }
+    }
+  }
+  return result;
+};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -35,6 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
       toolLibrary: DEFAULT_TOOLS,
       generatorSettings: DEFAULT_GENERATOR_SETTINGS,
       webcamSettings: DEFAULT_WEBCAM_SETTINGS,
+      buildAreaMeasurementDirections: { X: 1, Y: 1, Z: 1 },
       actions: {
         setJogStep: (step) => set({ jogStep: step }),
         setUnit: (unit) => set({ unit: unit }),
@@ -44,6 +64,22 @@ export const useSettingsStore = create<SettingsState>()(
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
         setGeneratorSettings: (settings) => set((state) => ({ generatorSettings: typeof settings === 'function' ? settings(state.generatorSettings) : settings })),
         setWebcamSettings: (settings) => set((state) => ({ webcamSettings: { ...state.webcamSettings, ...settings } })),
+        setBuildAreaMeasurementDirections: (directions) => set({ buildAreaMeasurementDirections: directions }),
+        importSettings: (importedSettings) => set((state) => {
+          const newState = { ...state };
+          if (importedSettings.machineSettings) newState.machineSettings = deepMerge(state.machineSettings, importedSettings.machineSettings);
+          if (importedSettings.generatorSettings) newState.generatorSettings = deepMerge(state.generatorSettings, importedSettings.generatorSettings);
+          if (importedSettings.webcamSettings) newState.webcamSettings = { ...state.webcamSettings, ...importedSettings.webcamSettings };
+
+          // For arrays and primitives, we usually want to overwrite
+          if (importedSettings.macros) newState.macros = importedSettings.macros;
+          if (importedSettings.toolLibrary) newState.toolLibrary = importedSettings.toolLibrary;
+          if (importedSettings.jogStep) newState.jogStep = importedSettings.jogStep;
+          if (importedSettings.unit) newState.unit = importedSettings.unit;
+          if (importedSettings.isLightMode !== undefined) newState.isLightMode = importedSettings.isLightMode;
+
+          return newState;
+        }),
       },
     }),
     {
@@ -54,22 +90,6 @@ export const useSettingsStore = create<SettingsState>()(
         ),
       merge: (persistedState, currentState) => {
         const state = persistedState as any;
-        const deepMerge = (current: object, persisted: object) => {
-          const result = { ...current };
-          for (const key in persisted) {
-            if (persisted.hasOwnProperty(key)) {
-              const currentValue = (current as any)[key];
-              const persistedValue = (persisted as any)[key];
-              if (typeof currentValue === 'object' && currentValue !== null && !Array.isArray(currentValue) && typeof persistedValue === 'object' && persistedValue !== null && !Array.isArray(persistedValue)) {
-                (result as any)[key] = deepMerge(currentValue, persistedValue);
-              } else {
-                (result as any)[key] = persistedValue;
-              }
-            }
-          }
-          return result;
-        };
-
         return {
           ...currentState,
           ...state,

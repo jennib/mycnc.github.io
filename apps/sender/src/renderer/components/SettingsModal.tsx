@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, X, Upload, Download } from "@mycnc/shared";
+import { Save, X, Upload, Download, Ruler } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
+import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
 interface InputGroupProps {
     label: string;
@@ -66,6 +67,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
     const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
+    const [showBuildAreaModal, setShowBuildAreaModal] = useState(false);
     const importFileRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -154,6 +156,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         event.target.value = ""; // Reset file input
     };
 
+    const handleApplyMeasurement = (measurements: { x?: number, y?: number, z?: number }) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            workArea: {
+                ...prev.workArea,
+                x: measurements.x !== undefined ? measurements.x : prev.workArea.x,
+                y: measurements.y !== undefined ? measurements.y : prev.workArea.y,
+                z: measurements.z !== undefined ? measurements.z : prev.workArea.z
+            }
+        }));
+    };
+
     return (
         <div
             className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center"
@@ -173,6 +187,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
                                 <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
                                 <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
+                                <button
+                                    onClick={() => setShowBuildAreaModal(true)}
+                                    className="ml-2 p-2 bg-secondary/50 text-text-primary rounded hover:bg-secondary border border-white/10"
+                                    title="Measure Build Area"
+                                >
+                                    <Ruler className="w-5 h-5" />
+                                </button>
                             </InputGroup>
                             <InputGroup label={t('settings.jogFeedRate')}>
                                 <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
@@ -290,6 +311,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     </div>
                 </div>
             </div>
+            <BuildAreaMeasurementModal
+                isOpen={showBuildAreaModal}
+                onClose={() => setShowBuildAreaModal(false)}
+                onApply={handleApplyMeasurement}
+            />
         </div>
     );
 };

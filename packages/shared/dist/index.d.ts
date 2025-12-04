@@ -6,6 +6,7 @@ import { ArrowUp } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
 import { Camera } from 'lucide-react';
 import { CameraOff } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { CheckCircle } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { ChevronRight } from 'lucide-react';
@@ -22,6 +23,7 @@ import { Dock } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { Eye } from 'lucide-react';
 import { FileText } from 'lucide-react';
+import { Hand } from 'lucide-react';
 import { Home } from 'lucide-react';
 import { Info } from 'lucide-react';
 import { Maximize } from 'lucide-react';
@@ -46,6 +48,7 @@ import { Redo } from 'lucide-react';
 import { RefreshCw } from 'lucide-react';
 import { RotateCcw } from 'lucide-react';
 import { RotateCw } from 'lucide-react';
+import { Ruler } from 'lucide-react';
 import { Save } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { Send } from 'lucide-react';
@@ -99,6 +102,8 @@ export declare interface BoreParams {
 export { Camera }
 
 export { CameraOff }
+
+export { Check }
 
 export { CheckCircle }
 
@@ -312,6 +317,8 @@ export declare const GRBL_REALTIME_COMMANDS: {
     readonly TOGGLE_FLOOD_COOLANT: " ";
     readonly TOGGLE_MIST_COOLANT: "¡";
 };
+
+export { Hand }
 
 export { Home }
 
@@ -527,6 +534,8 @@ export declare interface ReliefParams {
 export { RotateCcw }
 
 export { RotateCw }
+
+export { Ruler }
 
 export { Save }
 

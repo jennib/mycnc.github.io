@@ -65,6 +65,9 @@ import {
     Code2,
     Undo,
     Redo,
+    Ruler,
+    Check,
+    Hand,
     // Custom icons that don't have direct Lucide equivalents or need specific composition
     // We can compose them using Lucide primitives or keep custom SVGs if absolutely necessary.
     // For now, I'll try to map them or keep the custom ones if they are complex (like the Probe/Home XY ones).
@@ -139,7 +142,10 @@ export {
     Search,
     Code2,
     Undo,
-    Redo
+    Redo,
+    Ruler,
+    Check,
+    Hand
 };
 
 // Custom Composite Icons (using Lucide style)
