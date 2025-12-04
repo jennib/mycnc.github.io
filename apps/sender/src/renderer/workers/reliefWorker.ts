@@ -381,6 +381,7 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                 const minY = -offset;
                 const maxY = numericLength + offset;
                 const cutZ = -Math.abs(cutoutDepth); // Ensure negative
+                const depthPerPass = Math.abs(Number(stlParams.cutoutDepthPerPass) || cutoutDepth);
 
                 // Define perimeter segments
                 const perimeterLength = 2 * (maxX - minX + maxY - minY);
@@ -393,13 +394,7 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                     { start: { x: minX, y: maxY }, end: { x: minX, y: minY }, axis: 'y', len: maxY - minY }
                 ];
 
-                // Move to start
-                code.push(`G0 X${minX.toFixed(3)} Y${minY.toFixed(3)}`);
-                code.push(`G1 Z${cutZ.toFixed(3)} F${feed}`); // Plunge
-
-                let distanceTraveled = 0;
-
-                // Better approach: Pre-calculate tab intervals
+                // Pre-calculate tab intervals
                 const tabIntervals: { start: number, end: number }[] = [];
                 if (tabsEnabled) {
                     for (let i = 0; i < tabCount; i++) {
@@ -415,34 +410,57 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                 // Walk the path with small resolution to handle tabs
                 const resolution = 1.0; // 1mm resolution for checking tabs
 
-                for (const seg of segments) {
-                    const steps = Math.ceil(seg.len / resolution);
-                    const stepSize = seg.len / steps;
+                // Multi-pass loop
+                let currentZ = 0;
+                while (currentZ > cutZ) {
+                    currentZ -= depthPerPass;
+                    if (currentZ < cutZ) currentZ = cutZ; // Clamp to final depth
 
-                    for (let i = 1; i <= steps; i++) {
-                        const progress = i * stepSize;
-                        const currentDist = distanceTraveled + progress;
+                    // Move to start of pass
+                    code.push(`G0 Z${(currentZ + depthPerPass + 1).toFixed(3)}`); // Safe hop up? Or just stay at previous Z? 
+                    // Actually, we are already at previous Z or safe Z. 
+                    // Let's move to XY first then plunge.
+                    code.push(`G0 X${minX.toFixed(3)} Y${minY.toFixed(3)}`);
 
-                        // Calculate current position
-                        let x = seg.start.x;
-                        let y = seg.start.y;
+                    // Determine Z for start point (check if it's a tab)
+                    // Start point distance is 0.
+                    const startIsTab = isTab(0);
+                    const startZ = startIsTab ? Math.max(currentZ, cutZ + tabHeight) : currentZ;
 
-                        if (seg.axis === 'x') {
-                            // Moving X
-                            const dir = seg.end.x > seg.start.x ? 1 : -1;
-                            x += dir * progress;
-                        } else {
-                            // Moving Y
-                            const dir = seg.end.y > seg.start.y ? 1 : -1;
-                            y += dir * progress;
+                    code.push(`G1 Z${startZ.toFixed(3)} F${feed}`);
+
+                    let distanceTraveled = 0;
+
+                    for (const seg of segments) {
+                        const steps = Math.ceil(seg.len / resolution);
+                        const stepSize = seg.len / steps;
+
+                        for (let i = 1; i <= steps; i++) {
+                            const progress = i * stepSize;
+                            const currentDist = distanceTraveled + progress;
+
+                            // Calculate current position
+                            let x = seg.start.x;
+                            let y = seg.start.y;
+
+                            if (seg.axis === 'x') {
+                                // Moving X
+                                const dir = seg.end.x > seg.start.x ? 1 : -1;
+                                x += dir * progress;
+                            } else {
+                                // Moving Y
+                                const dir = seg.end.y > seg.start.y ? 1 : -1;
+                                y += dir * progress;
+                            }
+
+                            // Check Z height (Tab or Cut)
+                            // If it's a tab, Z cannot go lower than (cutZ + tabHeight)
+                            const targetZ = isTab(currentDist) ? Math.max(currentZ, cutZ + tabHeight) : currentZ;
+
+                            code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${targetZ.toFixed(3)}`);
                         }
-
-                        // Check Z height (Tab or Cut)
-                        const z = isTab(currentDist) ? (cutZ + tabHeight) : cutZ;
-
-                        code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${z.toFixed(3)}`);
+                        distanceTraveled += seg.len;
                     }
-                    distanceTraveled += seg.len;
                 }
             }
         }

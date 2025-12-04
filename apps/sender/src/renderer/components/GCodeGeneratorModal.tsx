@@ -165,6 +165,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     }, [activeTab]);
     const [generatedGCode, setGeneratedGCode] = useState('');
     const [previewPaths, setPreviewPaths] = useState<{ paths: PreviewPath[]; bounds: Bounds }>({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+    const [isGenerating, setIsGenerating] = useState(false);
     const [viewBox, setViewBox] = useState('0 0 100 100');
     const [generationError, setGenerationError] = useState<string | null>(null);
 
@@ -1286,7 +1287,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     }, [arraySettings]);
 
     const handleGenerate = useCallback(async () => {
+        setIsGenerating(true);
         setGenerationError(null);
+
+        // Small delay to allow UI to update with loading state
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
 
         if (activeTab === 'surfacing') result = generateSurfacingCode(settings);
@@ -1359,7 +1365,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     adjustToleranceMid: 0,
                     spectrumGainEnabled: false,
                     spectrumGainHigh: 0,
-                    spectrumGainLow: 0
+                    spectrumGainLow: 0,
+
+                    // Cutout Params
+                    cutoutEnabled: stlParams.cutoutEnabled,
+                    cutoutToolId: stlParams.cutoutToolId,
+                    cutoutDepth: stlParams.cutoutDepth,
+                    cutoutDepthPerPass: stlParams.cutoutDepthPerPass,
+                    cutoutTabsEnabled: stlParams.cutoutTabsEnabled,
+                    cutoutTabWidth: stlParams.cutoutTabWidth,
+                    cutoutTabHeight: stlParams.cutoutTabHeight,
+                    cutoutTabCount: stlParams.cutoutTabCount
                 };
                 // Fix maxDepth sign if needed. Relief expects negative? 
                 // In ReliefGenerator, maxDepth is usually negative. 
@@ -1374,6 +1390,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             setGenerationError(result.error);
             setGeneratedGCode('');
             setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } }); // Reset preview on error
+            setIsGenerating(false);
             return;
         }
 
@@ -1384,6 +1401,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
+        setIsGenerating(false);
     }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, generateReliefCode]);
 
     const handleGenerateRef = React.useRef(handleGenerate);
@@ -1455,6 +1473,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null);
 
     const renderPreviewContent = () => {
+        if (isGenerating) {
+            return (
+                <div className="aspect-square w-full bg-secondary rounded flex items-center justify-center p-4 text-center">
+                    <div className="flex flex-col items-center gap-2 text-primary">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                        <p className="font-bold animate-pulse">Generating G-Code...</p>
+                    </div>
+                </div>
+            );
+        }
         if (!currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null)) {
             return (
                 <div className="aspect-square w-full bg-secondary rounded flex items-center justify-center p-4 text-center text-text-secondary" >
@@ -1634,8 +1662,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     title="Regenerate G-Code and Preview"
                                     className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
                                 >
-                                    <Zap className="w-4 h-4" />
-                                    {t('generators.common.generate')}
+                                    {isGenerating ? (
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                        <Zap className="w-4 h-4" />
+                                    )}
+                                    {isGenerating ? 'Generating...' : t('generators.common.generate')}
                                 </button>
                             </div>
 

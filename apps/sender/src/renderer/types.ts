@@ -270,7 +270,18 @@ export interface ReliefParams {
     // Spectrum Gain (256 Colors)
     spectrumGainEnabled: boolean;
     spectrumGainHigh: number; // For Red/Warm
+    spectrumGainHigh: number; // For Red/Warm
     spectrumGainLow: number;  // For Blue/Cool
+
+    // Cutout (from STL)
+    cutoutEnabled?: boolean;
+    cutoutToolId?: number | null;
+    cutoutDepth?: number | string;
+    cutoutDepthPerPass?: number | string;
+    cutoutTabsEnabled?: boolean;
+    cutoutTabWidth?: number | string;
+    cutoutTabHeight?: number | string;
+    cutoutTabCount?: number | string;
 }
 
 export interface STLParams {
@@ -298,6 +309,7 @@ export interface STLParams {
     cutoutEnabled: boolean;
     cutoutToolId: number | null;
     cutoutDepth: number | string;
+    cutoutDepthPerPass: number | string;
     cutoutTabsEnabled: boolean;
     cutoutTabWidth: number | string;
     cutoutTabHeight: number | string;

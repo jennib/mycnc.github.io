@@ -335,6 +335,7 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
                             label="Cutout Tool"
                         />
                         <Input label="Cutout Depth" value={params.cutoutDepth} onChange={(e) => onParamsChange('cutoutDepth', e.target.value)} unit={unit} />
+                        <Input label={t('generators.stl.depthPerPass') || "Depth per Pass"} value={params.cutoutDepthPerPass} onChange={(e) => onParamsChange('cutoutDepthPerPass', e.target.value)} unit={unit} />
 
                         <div className="flex items-center justify-between mt-2">
                             <span className="text-sm font-semibold text-text-secondary">Tabs</span>
