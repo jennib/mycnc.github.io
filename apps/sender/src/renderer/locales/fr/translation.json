@@ -165,7 +165,9 @@
             "estTimeRem": "Temps restant estimé",
             "noFile": "Aucun fichier G-code chargé.",
             "loadInstruction": "Cliquez sur \"Charger un fichier\" ou déposez ici pour commencer.",
-            "drop": "Déposez le fichier G-code ici"
+            "drop": "Déposez le fichier G-code ici",
+            "homing": "Retour à l'origine...",
+            "jobActive": "Travail actif"
         },
         "controls": {
             "start": "Démarrer",
@@ -227,7 +229,8 @@
         "local": "Caméra locale",
         "webrtc": "Flux WebRTC",
         "mute": "Muet",
-        "unmute": "Réactiver le son"
+        "unmute": "Réactiver le son",
+        "popout": "Fenêtre contextuelle"
     },
     "contact": {
         "title": "Nous contacter",

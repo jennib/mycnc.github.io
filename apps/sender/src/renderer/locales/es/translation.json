@@ -165,7 +165,9 @@
             "estTimeRem": "Tiempo Estimado Restante",
             "noFile": "Ningún archivo G-code cargado.",
             "loadInstruction": "Haga clic en \"Cargar Archivo\" o arrastre y suelte aquí para comenzar.",
-            "drop": "Suelte archivo G-code aquí"
+            "drop": "Suelte archivo G-code aquí",
+            "homing": "Homing...",
+            "jobActive": "Trabajo activo"
         },
         "controls": {
             "start": "Iniciar Trabajo",
@@ -227,7 +229,8 @@
         "local": "Cámara Local",
         "webrtc": "Transmisión WebRTC",
         "mute": "Silenciar",
-        "unmute": "Activar Sonido"
+        "unmute": "Activar Sonido",
+        "popout": "Ventana emergente"
     },
     "contact": {
         "title": "Contáctenos",

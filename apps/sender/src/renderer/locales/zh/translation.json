@@ -165,7 +165,9 @@
             "estTimeRem": "预计剩余时间",
             "noFile": "未加载 G 代码文件。",
             "loadInstruction": "点击\"加载文件\"或拖放到此处开始。",
-            "drop": "在此处放置 G 代码文件"
+            "drop": "在此处放置 G 代码文件",
+            "homing": "归零中...",
+            "jobActive": "作业进行中"
         },
         "controls": {
             "start": "启动",
@@ -227,7 +229,8 @@
         "local": "本地摄像头",
         "webrtc": "WebRTC 流",
         "mute": "静音",
-        "unmute": "取消静音"
+        "unmute": "取消静音",
+        "popout": "弹出"
     },
     "contact": {
         "title": "联系我们",

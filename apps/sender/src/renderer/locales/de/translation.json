@@ -165,7 +165,9 @@
             "estTimeRem": "Geschätzte verbleibende Zeit",
             "noFile": "Keine G-Code-Datei geladen.",
             "loadInstruction": "Klicken Sie auf \"Datei laden\" oder ziehen Sie sie hierher, um zu beginnen.",
-            "drop": "G-Code-Datei hier ablegen"
+            "drop": "G-Code-Datei hier ablegen",
+            "homing": "Referenzfahrt...",
+            "jobActive": "Auftrag aktiv"
         },
         "controls": {
             "start": "Starten",
@@ -227,7 +229,8 @@
         "local": "Lokale Kamera",
         "webrtc": "WebRTC-Stream",
         "mute": "Stumm",
-        "unmute": "Stummschaltung aufheben"
+        "unmute": "Stummschaltung aufheben",
+        "popout": "Popout"
     },
     "contact": {
         "title": "Kontaktieren Sie uns",

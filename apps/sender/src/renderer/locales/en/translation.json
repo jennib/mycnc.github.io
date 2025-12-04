@@ -229,7 +229,8 @@
         "local": "Local Camera",
         "webrtc": "WebRTC Stream",
         "mute": "Mute",
-        "unmute": "Unmute"
+        "unmute": "Unmute",
+        "popout": "Popout Camera"
     },
     "contact": {
         "title": "Contact Us",
