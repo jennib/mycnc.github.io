@@ -27,4 +27,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
   openCameraWindow: (params: any) => ipcRenderer.send('open-camera-window', params),
   closeCameraWindow: () => ipcRenderer.send('close-camera-window'),
+  onCameraWindowClosed: (callback: () => void) => ipcRenderer.on('camera-window-closed', callback),
 });

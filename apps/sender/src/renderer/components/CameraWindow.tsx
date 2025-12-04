@@ -43,6 +43,8 @@ const CameraWindow: React.FC = () => {
                         onPiPChange={() => { }}
                         videoRef={videoRef}
                         isPoppedOut={true}
+                        url={url || undefined}
+                        autoConnect={true}
                     />
                 )}
             </div>

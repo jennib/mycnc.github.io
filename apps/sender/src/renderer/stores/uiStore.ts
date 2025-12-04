@@ -21,6 +21,7 @@ type UIState = {
   infoModalTitle: string;
   infoModalMessage: string;
   returnToWelcome: boolean;
+  isWebcamPeekOpen: boolean;
   actions: {
     openPreflightModal: () => void;
     closePreflightModal: () => void;
@@ -41,6 +42,7 @@ type UIState = {
     openInfoModal: (title: string, message: string) => void;
     closeInfoModal: () => void;
     setReturnToWelcome: (shouldReturn: boolean) => void;
+    toggleWebcamPeek: () => void;
   };
 };
 
@@ -55,7 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
   isGCodeModalOpen: false,
   isSpindleModalOpen: false,
   spindleModalArgs: {
-    onConfirm: () => {},
+    onConfirm: () => { },
     title: '',
     message: '',
   },
@@ -63,6 +65,7 @@ export const useUIStore = create<UIState>((set) => ({
   infoModalTitle: '',
   infoModalMessage: '',
   returnToWelcome: false,
+  isWebcamPeekOpen: false,
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
     closePreflightModal: () => set({ isPreflightModalOpen: false }),
@@ -83,5 +86,6 @@ export const useUIStore = create<UIState>((set) => ({
     openInfoModal: (title, message) => set({ isInfoModalOpen: true, infoModalTitle: title, infoModalMessage: message }),
     closeInfoModal: () => set({ isInfoModalOpen: false }),
     setReturnToWelcome: (shouldReturn) => set({ returnToWelcome: shouldReturn }),
+    toggleWebcamPeek: () => set((state) => ({ isWebcamPeekOpen: !state.isWebcamPeekOpen })),
   },
 }));

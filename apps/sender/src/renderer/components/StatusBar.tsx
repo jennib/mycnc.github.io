@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PowerOff, RotateCw, RotateCcw, OctagonAlert } from "@mycnc/shared";
+import { PowerOff, RotateCw, RotateCcw, OctagonAlert, Camera } from "@mycnc/shared";
 import { MachineState } from '@/types';
+import { useUIStore } from '@/stores/uiStore';
 
 interface StatusIndicatorProps {
     isConnected: boolean;
@@ -99,19 +100,32 @@ interface StatusBarProps {
     unit: 'mm' | 'in';
 }
 
-const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => (
-    <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
-        <div className="flex items-center gap-4">
-            <StatusIndicator isConnected={isConnected} machineState={machineState} />
-            <div className="h-4 border-l border-white/20" />
-            <SpindleStatusIndicator isConnected={isConnected} machineState={machineState} />
+const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => {
+    const { isWebcamPeekOpen, actions: { toggleWebcamPeek } } = useUIStore();
+
+    return (
+        <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
+            <div className="flex items-center gap-4">
+                <StatusIndicator isConnected={isConnected} machineState={machineState} />
+                <div className="h-4 border-l border-white/20" />
+                <SpindleStatusIndicator isConnected={isConnected} machineState={machineState} />
+            </div>
+            <div className="flex items-center gap-4">
+                <PositionDisplay title="WPos" pos={machineState?.wpos} unit={unit} />
+                <div className="h-4 border-l border-white/20" />
+                <PositionDisplay title="MPos" pos={machineState?.mpos} unit={unit} />
+            </div>
+            <div className="absolute right-4 flex items-center">
+                <button
+                    onClick={toggleWebcamPeek}
+                    className={`p-1.5 rounded-md transition-colors ${isWebcamPeekOpen ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/5'}`}
+                    title="Toggle Webcam Peek"
+                >
+                    <Camera className="w-4 h-4" />
+                </button>
+            </div>
         </div>
-        <div className="flex items-center gap-4">
-            <PositionDisplay title="WPos" pos={machineState?.wpos} unit={unit} />
-            <div className="h-4 border-l border-white/20" />
-            <PositionDisplay title="MPos" pos={machineState?.mpos} unit={unit} />
-        </div>
-    </div>
-));
+    )
+});
 
 export default StatusBar;

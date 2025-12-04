@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AlertTriangle, RefreshCw, Dock, Maximize, Minimize } from "@mycnc/shared";
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface WebRTCStreamProps {
     volume: number;
@@ -9,6 +10,9 @@ interface WebRTCStreamProps {
     onPiPChange: (isPiP: boolean) => void;
     videoRef: React.RefObject<HTMLVideoElement>;
     isPoppedOut?: boolean;
+    url?: string;
+    autoConnect?: boolean;
+    onConnectionChange?: (isConnected: boolean) => void;
 }
 
 const WebRTCStream: React.FC<WebRTCStreamProps> = ({
@@ -18,9 +22,32 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     onTogglePiP,
     onPiPChange,
     videoRef,
-    isPoppedOut = false
+    isPoppedOut = false,
+    url,
+    autoConnect = false,
+    onConnectionChange
 }) => {
-    const [webRTCUrl, setWebRTCUrl] = useState('ws://10.0.0.162:8888/webrtc');
+    const { webcamSettings, actions: { setWebcamSettings } } = useSettingsStore();
+
+    // Use URL from props (for popout) or settings (for main window), defaulting to settings if prop is missing
+    const effectiveUrl = url || webcamSettings.webRTCUrl || 'ws://10.0.0.162:8888/webrtc';
+
+    const [webRTCUrl, setWebRTCUrl] = useState(effectiveUrl);
+
+    // Sync local state with settings if not popped out (popout uses url prop)
+    useEffect(() => {
+        if (!isPoppedOut && webcamSettings.webRTCUrl && webcamSettings.webRTCUrl !== webRTCUrl) {
+            setWebRTCUrl(webcamSettings.webRTCUrl);
+        }
+    }, [webcamSettings.webRTCUrl, isPoppedOut]);
+
+    const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newUrl = e.target.value;
+        setWebRTCUrl(newUrl);
+        if (!isPoppedOut) {
+            setWebcamSettings({ webRTCUrl: newUrl });
+        }
+    };
     const [isConnected, setIsConnected] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -155,6 +182,18 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         }
     }, [isConnected, webRTCUrl, isMuted, volume, disconnect, videoRef]);
 
+    // Auto-connect if requested
+    useEffect(() => {
+        if (autoConnect && !isConnected) {
+            connect();
+        }
+    }, [autoConnect, isConnected, connect]);
+
+    // Notify parent of connection change
+    useEffect(() => {
+        onConnectionChange?.(isConnected);
+    }, [isConnected, onConnectionChange]);
+
     // Update volume/mute when props change
     useEffect(() => {
         if (videoRef.current) {
@@ -191,7 +230,7 @@ const WebRTCStream: React.FC<WebRTCStreamProps> = ({
                 <input
                     type="text"
                     value={webRTCUrl}
-                    onChange={(e) => setWebRTCUrl(e.target.value)}
+                    onChange={handleUrlChange}
                     placeholder="e.g., ws://localhost:8080"
                     className="w-full p-2 bg-background border border-secondary rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     disabled={isConnected}

@@ -13,6 +13,7 @@ import SettingsModal from "./components/SettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
+import WebcamPeek from "./components/WebcamPeek";
 import SerialConnector from "./components/SerialConnector";
 import GCodePanel from "./components/GCodePanel";
 import { JobStatus, ConnectionOptions, Tool } from "./types";
@@ -539,6 +540,7 @@ const MainApp: React.FC = () => {
         machineState={machineState}
         unit={unit}
       />
+      <WebcamPeek />
 
       {alarmInfo && (
         <div

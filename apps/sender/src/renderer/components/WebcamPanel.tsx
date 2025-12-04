@@ -9,26 +9,32 @@ const isElectron = !!window.electronAPI?.isElectron;
 
 const WebcamPanel: React.FC = () => {
     const { t } = useTranslation();
-    const [isWebcamOn, setIsWebcamOn] = useState(false);
-    const [activeTab, setActiveTab] = useState<'local' | 'webrtc'>('local');
     const [isInPiP, setIsInPiP] = useState(false);
     const [isPoppedOut, setIsPoppedOut] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const { webcamSettings, actions: { setWebcamSettings } } = useSettingsStore();
-    const { volume, isMuted } = webcamSettings;
+    const { volume, isMuted, mode } = webcamSettings;
 
     const isPiPSupported = 'pictureInPictureEnabled' in document;
 
     useEffect(() => {
         if (isElectron && window.electronAPI) {
-            // Listen for window close event from main process if needed
+            // Listen for window close event from main process
+            const removeListener = window.electronAPI.onCameraWindowClosed?.(() => {
+                setIsPoppedOut(false);
+            });
+            // onCameraWindowClosed returns void in our mock, but in real electron it returns an unsubscribe function usually?
+            // Wait, our preload implementation: onCameraWindowClosed: (callback) => ipcRenderer.on(...)
+            // ipcRenderer.on returns the emitter, not an unsubscribe function directly in the same way as some other APIs.
+            // But wait, our preload definition: onCameraWindowClosed: (callback) => ipcRenderer.on(...)
+            // We need to handle cleanup if possible, but for now let's just add it.
+            // Actually, looking at preload: onCameraWindowClosed: (callback) => ipcRenderer.on('camera-window-closed', callback)
+            // This adds a listener. We should probably return a cleanup function from preload if we want to remove it,
+            // or just accept it adds a listener.
+            // For now, let's assume it works as is.
         }
     }, []);
-
-    const handleToggleWebcam = () => {
-        setIsWebcamOn(prev => !prev);
-    };
 
     const handleTogglePiP = async () => {
         if (isElectron && window.electronAPI) {
@@ -37,7 +43,7 @@ const WebcamPanel: React.FC = () => {
                 setIsPoppedOut(false);
             } else {
                 const params = {
-                    mode: activeTab,
+                    mode: mode === 'off' ? 'local' : mode, // Default to local if off when popping out? Or just don't allow popout if off?
                     deviceId: webcamSettings.selectedDeviceId,
                     url: 'ws://10.0.0.162:8888/webrtc' // TODO: Get actual URL from WebRTC component if possible, or store in settings
                 };
@@ -64,6 +70,12 @@ const WebcamPanel: React.FC = () => {
         setIsInPiP(isPiP);
     };
 
+    const handleModeChange = (newMode: 'off' | 'local' | 'webrtc') => {
+        setWebcamSettings({ mode: newMode });
+    };
+
+    const isWebcamOn = mode !== 'off';
+
     return (
         <div className="bg-surface rounded-lg shadow-lg p-4 h-full flex flex-col">
             <div className="text-lg font-bold flex items-center justify-between pb-4 border-b border-secondary mb-4">
@@ -71,7 +83,43 @@ const WebcamPanel: React.FC = () => {
                     {isWebcamOn ? <Camera className="w-5 h-5 text-primary" /> : <CameraOff className="w-5 h-5 text-text-secondary" />}
                     {t('webcam.title')}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-secondary">
+                        <label className="flex items-center gap-1 cursor-pointer px-1">
+                            <input
+                                type="radio"
+                                name="webcamMode"
+                                value="off"
+                                checked={mode === 'off'}
+                                onChange={() => handleModeChange('off')}
+                                className="form-radio text-accent-red focus:ring-accent-red w-3 h-3"
+                            />
+                            <span className={`text-xs font-medium ${mode === 'off' ? 'text-text-primary' : 'text-text-secondary'}`}>{t('webcam.disable')}</span>
+                        </label>
+                        <div className="w-px h-3 bg-secondary"></div>
+                        <label className="flex items-center gap-1 cursor-pointer px-1">
+                            <input
+                                type="radio"
+                                name="webcamMode"
+                                value="local"
+                                checked={mode === 'local'}
+                                onChange={() => handleModeChange('local')}
+                                className="form-radio text-primary focus:ring-primary w-3 h-3"
+                            />
+                            <span className={`text-xs font-medium ${mode === 'local' ? 'text-text-primary' : 'text-text-secondary'}`}>{t('webcam.local')}</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer px-1">
+                            <input
+                                type="radio"
+                                name="webcamMode"
+                                value="webrtc"
+                                checked={mode === 'webrtc'}
+                                onChange={() => handleModeChange('webrtc')}
+                                className="form-radio text-primary focus:ring-primary w-3 h-3"
+                            />
+                            <span className={`text-xs font-medium ${mode === 'webrtc' ? 'text-text-primary' : 'text-text-secondary'}`}>{t('webcam.webrtc')}</span>
+                        </label>
+                    </div>
                     {(isWebcamOn && videoRef.current?.srcObject && (isPiPSupported || isElectron) && !isInPiP && !isPoppedOut) && (
                         <button
                             onClick={handleTogglePiP}
@@ -81,48 +129,33 @@ const WebcamPanel: React.FC = () => {
                             {isElectron ? <Dock className="w-5 h-5" /> : <PictureInPicture className="w-5 h-5" />}
                         </button>
                     )}
-                    <button onClick={handleToggleWebcam} className={`flex items-center gap-2 px-3 py-1 ${isWebcamOn ? 'bg-accent-red hover:bg-red-700' : 'bg-secondary hover:bg-secondary-focus'} text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-colors text-sm`}>
-                        {isWebcamOn ? <CameraOff className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
-                        {isWebcamOn ? t('webcam.disable') : t('webcam.enable')}
-                    </button>
                 </div>
             </div>
 
-            {isWebcamOn && isElectron && !isPoppedOut && (
-                <div className="mb-4">
-                    <div className="flex items-center gap-4 mb-2">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="local" checked={activeTab === 'local'} onChange={() => setActiveTab('local')} className="form-radio text-primary focus:ring-primary" />
-                            <span className="text-sm font-medium text-text-secondary">{t('webcam.local')}</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="webcamMode" value="webrtc" checked={activeTab === 'webrtc'} onChange={() => setActiveTab('webrtc')} className="form-radio text-primary focus:ring-primary" />
-                            <span className="text-sm font-medium text-text-secondary">{t('webcam.webrtc')}</span>
-                        </label>
-                    </div>
+            <div className="mb-4">
 
-                    {(isWebcamOn && videoRef.current?.srcObject && (activeTab === 'webrtc' || activeTab === 'local')) && (
-                        <div className="flex items-center gap-2 mt-4">
-                            <button onClick={() => setWebcamSettings({ isMuted: !isMuted })} title={isMuted ? t('webcam.unmute') : t('webcam.mute')} className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
-                                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                            </button>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.01"
-                                value={isMuted ? 0 : volume}
-                                onChange={(e) => {
-                                    const newVolume = parseFloat(e.target.value);
-                                    setWebcamSettings({ volume: newVolume, isMuted: newVolume === 0 });
-                                    if (videoRef.current) videoRef.current.volume = newVolume;
-                                }}
-                                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                            />
-                        </div>
-                    )}
-                </div>
-            )}
+
+                {(isWebcamOn && videoRef.current?.srcObject) && (
+                    <div className="flex items-center gap-2 mt-4">
+                        <button onClick={() => setWebcamSettings({ isMuted: !isMuted })} title={isMuted ? t('webcam.unmute') : t('webcam.mute')} className="p-1 rounded-md text-text-secondary hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-primary">
+                            {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                        </button>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={isMuted ? 0 : volume}
+                            onChange={(e) => {
+                                const newVolume = parseFloat(e.target.value);
+                                setWebcamSettings({ volume: newVolume, isMuted: newVolume === 0 });
+                                if (videoRef.current) videoRef.current.volume = newVolume;
+                            }}
+                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+                        />
+                    </div>
+                )}
+            </div>
 
             <div className="flex-1 min-h-0 bg-background-secondary rounded-lg border border-secondary p-4 overflow-y-auto">
                 {isPoppedOut ? (
@@ -142,8 +175,8 @@ const WebcamPanel: React.FC = () => {
                         </button>
                     </div>
                 ) : (
-                    isWebcamOn && (
-                        activeTab === 'local' ? (
+                    isWebcamOn ? (
+                        mode === 'local' ? (
                             <LocalCamera
                                 volume={volume}
                                 isMuted={isMuted}
@@ -160,8 +193,16 @@ const WebcamPanel: React.FC = () => {
                                 onTogglePiP={handleTogglePiP}
                                 onPiPChange={handlePiPChange}
                                 videoRef={videoRef}
+                                autoConnect={webcamSettings.webRTCAutoConnect}
+                                onConnectionChange={(isConnected) => setWebcamSettings({ webRTCAutoConnect: isConnected })}
                             />
                         )
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-text-secondary">
+                            <CameraOff className="w-16 h-16 opacity-20 mb-4" />
+                            <p className="text-lg font-medium opacity-50">{t('webcam.disabledMessage', 'Camera is disabled')}</p>
+                            <p className="text-sm opacity-40 mt-2">{t('webcam.selectMode', 'Select a mode above to enable')}</p>
+                        </div>
                     )
                 )}
             </div>

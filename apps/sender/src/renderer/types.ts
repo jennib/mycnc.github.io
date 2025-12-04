@@ -343,5 +343,7 @@ export interface WebcamSettings {
     selectedAudioDeviceId: string;
     volume: number;
     isMuted: boolean;
+    mode: 'off' | 'local' | 'webrtc';
+    webRTCAutoConnect?: boolean;
 }
 

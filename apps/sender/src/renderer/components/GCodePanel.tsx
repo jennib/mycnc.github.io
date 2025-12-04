@@ -521,6 +521,38 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      <div className="px-2 pt-2 pb-1 space-y-2">
+        <div className="grid grid-cols-3 gap-2">{renderJobControls()}</div>
+        <div className="w-full bg-secondary/50 rounded-full h-2 overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex justify-between items-center text-xs font-medium text-text-secondary">
+          <p>
+            {t('gcode.status.label')} <span className={`font-bold capitalize ${jobStatus === JobStatus.Running ? 'text-accent-green' : 'text-text-primary'}`}>{jobStatus}</span>
+            {isJobActive && totalLines > 0 && (
+              <span className="ml-2 font-mono bg-background/50 px-1.5 py-0.5 rounded text-[10px]">{`${currentLine} / ${totalLines}`}</span>
+            )}
+          </p>
+          <div className="flex items-center gap-4">
+            {gcodeLines.length > 0 && totalSeconds > 0 && (
+              <div
+                title={timeTitle}
+                className="flex items-center gap-1.5"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{`${timeLabel}:`}</span>
+                <span className="font-mono ml-1 text-text-primary">
+                  {formatTime(displayTime)}
+                </span>
+              </div>
+            )}
+            <p className="font-bold text-text-primary">{`${progress.toFixed(1)}%`}</p>
+          </div>
+        </div>
+      </div>
       <div className="flex justify-between items-center mb-1 pb-1 border-b border-white/10 flex-shrink-0 px-2 pt-2">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-bold tracking-tight">{t('gcode.title')}</h2>
@@ -618,7 +650,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           </p>
         )}
         <div className="space-y-2 flex-shrink-0 mb-2">
-          <div className="grid grid-cols-3 gap-2">{renderJobControls()}</div>
           {!isConnected && gcodeLines.length > 0 && (
             <div className="bg-accent-yellow/20 border border-accent-yellow/50 text-accent-yellow p-2 rounded-lg text-center backdrop-blur-sm">
               <p className="font-bold text-sm">{t('gcode.status.notConnected')}</p>
@@ -627,35 +658,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               </p>
             </div>
           )}
-          <div className="w-full bg-secondary/50 rounded-full h-2 overflow-hidden">
-            <div
-              className="bg-primary h-full rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(56,189,248,0.5)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex justify-between items-center text-xs font-medium text-text-secondary">
-            <p>
-              {t('gcode.status.label')} <span className={`font-bold capitalize ${jobStatus === JobStatus.Running ? 'text-accent-green' : 'text-text-primary'}`}>{jobStatus}</span>
-              {isJobActive && totalLines > 0 && (
-                <span className="ml-2 font-mono bg-background/50 px-1.5 py-0.5 rounded text-[10px]">{`${currentLine} / ${totalLines}`}</span>
-              )}
-            </p>
-            <div className="flex items-center gap-4">
-              {gcodeLines.length > 0 && totalSeconds > 0 && (
-                <div
-                  title={timeTitle}
-                  className="flex items-center gap-1.5"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{`${timeLabel}:`}</span>
-                  <span className="font-mono ml-1 text-text-primary">
-                    {formatTime(displayTime)}
-                  </span>
-                </div>
-              )}
-              <p className="font-bold text-text-primary">{`${progress.toFixed(1)}%`}</p>
-            </div>
-          </div>
+
         </div>
       </div>
 

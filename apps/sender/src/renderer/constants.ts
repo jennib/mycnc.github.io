@@ -5,6 +5,8 @@ export const DEFAULT_WEBCAM_SETTINGS: WebcamSettings = {
     selectedAudioDeviceId: '',
     volume: 0.5,
     isMuted: true,
+    mode: 'off',
+    webRTCAutoConnect: false,
 };
 
 
