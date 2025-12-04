@@ -1147,252 +1147,47 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const reliefParams = generatorSettings.relief;
         if (!reliefParams.imageDataUrl) return { error: t('generators.errors.noImage'), code: [], paths: [], bounds: {} };
 
-        const { width, length, maxDepth, zSafe, invert, roughingEnabled, roughingToolId, roughingStepdown, roughingStepover, roughingStockToLeave, roughingFeed, roughingSpindle, finishingEnabled, finishingToolId, finishingStepover, finishingAngle, finishingFeed, finishingSpindle, operation } = reliefParams;
-
-        const numericWidth = parseFloat(String(width));
-        const numericLength = parseFloat(String(length));
-        const numericMaxDepth = parseFloat(String(maxDepth));
-        const numericZSafe = parseFloat(String(zSafe));
-
-        if ([numericWidth, numericLength, numericMaxDepth, numericZSafe].some(isNaN) || numericWidth <= 0 || numericLength <= 0) {
-            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
-        }
-
-        const doRoughing = (operation === 'both' || operation === 'roughing') && roughingEnabled;
-        const doFinishing = (operation === 'both' || operation === 'finishing') && finishingEnabled;
-
-        if (!doRoughing && !doFinishing) {
-            return { error: t('generators.errors.enablePass'), code: [], paths: [], bounds: {} };
-        }
-
-        // Load Image
-        const img = new Image();
-        img.src = reliefParams.imageDataUrl;
         try {
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = () => reject(new Error("Failed to load image"));
+            // Decode image using Image object to avoid fetch issues with data URLs in Electron
+            const bitmap = await new Promise<ImageBitmap>((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    createImageBitmap(img).then(resolve).catch(reject);
+                };
+                img.onerror = () => reject(new Error('Failed to load image source'));
+                img.src = reliefParams.imageDataUrl!;
             });
-        } catch (e) {
-            return { error: t('generators.errors.loadImage'), code: [], paths: [], bounds: {} };
-        }
 
-        const canvas = document.createElement('canvas');
-        // Limit resolution for performance if needed, but for now use full res or max 500px
-        const MAX_RES = 500;
-        let w = img.width;
-        let h = img.height;
-        if (w > MAX_RES || h > MAX_RES) {
-            const ratio = w / h;
-            if (w > h) { w = MAX_RES; h = MAX_RES / ratio; }
-            else { h = MAX_RES; w = MAX_RES * ratio; }
-        }
-        canvas.width = Math.floor(w);
-        canvas.height = Math.floor(h);
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return { error: t('generators.errors.canvasError'), code: [], paths: [], bounds: {} };
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const pixels = imgData.data;
-        const pixelWidth = imgData.width;
-        const pixelHeight = imgData.height;
+            return new Promise<{ code: string[]; paths: any[]; bounds: any; error: string | null }>((resolve) => {
+                const worker = new Worker(new URL('../workers/reliefWorker.ts', import.meta.url), { type: 'module' });
 
-        const getZAt = (xPct: number, yPct: number) => {
-            const clampedXPct = Math.max(0, Math.min(1, xPct));
-            const clampedYPct = Math.max(0, Math.min(1, yPct));
-            const px = Math.min(pixelWidth - 1, Math.floor(clampedXPct * (pixelWidth - 1)));
-            const py = Math.min(pixelHeight - 1, Math.floor(clampedYPct * (pixelHeight - 1)));
-            const idx = (py * pixelWidth + px) * 4;
-            const brightness = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3;
-            if (isNaN(brightness)) {
-                // This should effectively be impossible now with correct stride and clamping
-                return 0;
-            }
-            let normalized = brightness / 255;
-
-            // Apply Contrast: (val - 0.5) * contrast + 0.5
-            // We clamp to 0-1 to avoid out of bounds
-            if (reliefParams.contrast !== 1.0) {
-                normalized = (normalized - 0.5) * reliefParams.contrast + 0.5;
-                normalized = Math.max(0, Math.min(1, normalized));
-            }
-
-            // Apply Gamma: val ^ gamma
-            if (reliefParams.gamma !== 1.0) {
-                normalized = Math.pow(normalized, reliefParams.gamma);
-                normalized = Math.max(0, Math.min(1, normalized));
-            }
-
-            // Invert: Dark(0) = High(0), Light(1) = Low(MaxDepth) -> z = normalized * MaxDepth
-            // Normal: White(1) = High(0), Black(0) = Low(MaxDepth) -> z = (1 - normalized) * MaxDepth
-            return invert ? (normalized * numericMaxDepth) : ((1 - normalized) * numericMaxDepth);
-        };
-
-        const code: string[] = [`(--- Relief Carving ---)`, `(Operation: ${operation})`, `G21 G90`];
-        const paths: PreviewPath[] = [];
-
-        // --- Roughing ---
-        if (doRoughing) {
-            const toolIndex = toolLibrary.findIndex(t => t.id === roughingToolId);
-            if (toolIndex === -1) return { error: t('generators.errors.roughingTool'), code: [], paths: [], bounds: {} };
-            const tool = toolLibrary[toolIndex];
-            const toolDia = parseFloat(String(tool.diameter || 0));
-            if (isNaN(toolDia) || toolDia <= 0) return { error: t('generators.errors.roughingParams'), code: [], paths: [], bounds: {} };
-
-            const stepdown = parseFloat(String(roughingStepdown));
-            const stepover = parseFloat(String(roughingStepover));
-            const stock = parseFloat(String(roughingStockToLeave));
-            const feed = parseFloat(String(roughingFeed));
-            const spindle = parseFloat(String(roughingSpindle));
-
-            if ([stepdown, stepover, stock, feed, spindle].some(isNaN)) return { error: t('generators.errors.roughingParams'), code: [], paths: [], bounds: {} };
-
-            code.push(`(--- Roughing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
-
-            const stepoverDist = toolDia * (stepover / 100);
-            let currentZ = 0;
-
-            // Z-Level Roughing Loop
-            while (currentZ > numericMaxDepth + stock) {
-                currentZ -= stepdown;
-                if (currentZ < numericMaxDepth + stock) currentZ = numericMaxDepth + stock;
-
-                code.push(`(Roughing Level Z=${currentZ.toFixed(3)})`);
-
-                // Raster X
-                let y = 0;
-                let direction = 1;
-                while (y <= numericLength) {
-                    const yPct = 1 - (y / numericLength); // Image Y is inverted relative to Machine Y usually (Top vs Bottom)
-                    // Actually, let's map Image (0,0) Top-Left to Machine (0, Length) Top-Left.
-                    // So Machine Y = Length corresponds to Image Y = 0.
-                    // Machine Y = 0 corresponds to Image Y = Height.
-
-                    const startX = (direction === 1) ? 0 : numericWidth;
-                    const endX = (direction === 1) ? numericWidth : 0;
-
-                    code.push(`G0 X${startX.toFixed(3)} Y${y.toFixed(3)}`);
-                    code.push(`G1 Z${currentZ.toFixed(3)} F${feed}`); // Plunge to layer depth (simplified)
-
-                    // Scan line
-                    const numSteps = Math.ceil(numericWidth / (toolDia / 2)); // Resolution of check
-                    for (let i = 0; i <= numSteps; i++) {
-                        const x = (direction === 1) ? (i / numSteps) * numericWidth : numericWidth - (i / numSteps) * numericWidth;
-                        const xPct = x / numericWidth;
-                        const modelZ = getZAt(xPct, yPct);
-
-                        // If model is higher than current layer + stock, we must cut at model height + stock (or retract)
-                        // If model is lower, we cut at current layer
-                        let cutZ = Math.max(currentZ, modelZ + stock);
-
-                        if (isNaN(cutZ)) {
-                            console.error('NaN cutZ detected', { currentZ, modelZ, stock, xPct, yPct, x, y });
-                            return { error: t('generators.errors.calcError'), code: [], paths: [], bounds: {} };
-                        }
-
-                        // Optimization: Don't emit every point, only changes
-                        // For now, simple linear moves
-                        if (i === 0) code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${cutZ.toFixed(3)} F${feed}`);
-                        else code.push(`G1 X${x.toFixed(3)} Z${cutZ.toFixed(3)}`);
-
-                        // Preview path (sampled)
-                        if (i % 5 === 0) {
-                            const prevX = (direction === 1) ? ((i - 5) / numSteps) * numericWidth : numericWidth - ((i - 5) / numSteps) * numericWidth;
-                            paths.push({ d: `M ${prevX} ${y} L ${x} ${y}`, stroke: 'var(--color-primary)', strokeWidth: '0.5%' });
-                        }
+                worker.onmessage = (e) => {
+                    const { type, code, paths, bounds, error } = e.data;
+                    if (type === 'success') {
+                        resolve({ code, paths, bounds, error: null });
+                    } else {
+                        resolve({ error: error || 'Unknown worker error', code: [], paths: [], bounds: {} });
                     }
+                    worker.terminate();
+                };
 
-                    code.push(`G0 Z${numericZSafe}`);
-                    y += stepoverDist;
-                    direction *= -1;
-                }
-            }
+                worker.onerror = (err) => {
+                    console.error('Relief worker error:', err);
+                    resolve({ error: 'Worker failed', code: [], paths: [], bounds: {} });
+                    worker.terminate();
+                };
+
+                worker.postMessage({
+                    type: 'generate',
+                    params: reliefParams,
+                    toolLibrary: toolLibrary,
+                    imageBitmap: bitmap
+                }, [bitmap]); // Transfer the bitmap
+            });
+        } catch (err) {
+            console.error('Failed to load image for worker:', err);
+            return { error: 'Failed to load image', code: [], paths: [], bounds: {} };
         }
-
-        // --- Finishing ---
-        if (doFinishing) {
-            const toolIndex = toolLibrary.findIndex(t => t.id === finishingToolId);
-            if (toolIndex === -1) return { error: t('generators.errors.finishingTool'), code: [], paths: [], bounds: {} };
-            const tool = toolLibrary[toolIndex];
-            const toolDia = (tool.diameter === '' ? 0 : tool.diameter);
-            const stepover = parseFloat(String(finishingStepover));
-            const angle = parseFloat(String(finishingAngle));
-            const feed = parseFloat(String(finishingFeed));
-            const spindle = parseFloat(String(finishingSpindle));
-
-            if ([stepover, angle, feed, spindle].some(isNaN)) return { error: t('generators.errors.finishingParams'), code: [], paths: [], bounds: {} };
-
-            code.push(`(--- Finishing ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
-
-            const stepoverDist = toolDia * (stepover / 100);
-
-            // Simple Raster X (ignoring angle for MVP, or implementing simple 0/90)
-            // Implementing arbitrary angle is complex for raster. Let's stick to X (0) or Y (90).
-            const isYScan = Math.abs(angle - 90) < 45;
-
-            if (!isYScan) {
-                // Scan X, Step Y
-                let y = 0;
-                let direction = 1;
-                while (y <= numericLength) {
-                    const yPct = 1 - (y / numericLength);
-                    const startX = (direction === 1) ? 0 : numericWidth;
-
-                    code.push(`G0 X${startX.toFixed(3)} Y${y.toFixed(3)}`);
-                    // Plunge to first point Z
-                    const startZ = getZAt((direction === 1 ? 0 : 1), yPct);
-                    code.push(`G1 Z${startZ.toFixed(3)} F${feed}`);
-
-                    const numSteps = Math.ceil(numericWidth / (toolDia / 4)); // Higher res for finish
-                    for (let i = 1; i <= numSteps; i++) {
-                        const x = (direction === 1) ? (i / numSteps) * numericWidth : numericWidth - (i / numSteps) * numericWidth;
-                        const xPct = x / numericWidth;
-                        const z = getZAt(xPct, yPct);
-                        code.push(`G1 X${x.toFixed(3)} Z${z.toFixed(3)}`);
-
-                        // Preview path (sampled)
-                        if (i % 5 === 0) {
-                            const prevX = (direction === 1) ? ((i - 5) / numSteps) * numericWidth : numericWidth - ((i - 5) / numSteps) * numericWidth;
-                            paths.push({ d: `M ${prevX} ${y} L ${x} ${y}`, stroke: 'var(--color-accent-yellow)', strokeWidth: '0.5%' });
-                        }
-                    }
-                    y += stepoverDist;
-                    direction *= -1;
-                }
-            } else {
-                // Scan Y, Step X
-                let x = 0;
-                let direction = 1;
-                while (x <= numericWidth) {
-                    const xPct = x / numericWidth;
-                    const startY = (direction === 1) ? 0 : numericLength;
-
-                    code.push(`G0 X${x.toFixed(3)} Y${startY.toFixed(3)}`);
-                    const startZ = getZAt(xPct, (direction === 1 ? 1 : 0)); // y=0 is bottom (pct=1), y=Len is top (pct=0)
-                    code.push(`G1 Z${startZ.toFixed(3)} F${feed}`);
-
-                    const numSteps = Math.ceil(numericLength / (toolDia / 4));
-                    for (let i = 1; i <= numSteps; i++) {
-                        const y = (direction === 1) ? (i / numSteps) * numericLength : numericLength - (i / numSteps) * numericLength;
-                        const yPct = 1 - (y / numericLength);
-                        const z = getZAt(xPct, yPct);
-                        code.push(`G1 Y${y.toFixed(3)} Z${z.toFixed(3)}`);
-
-                        if (i % 5 === 0) {
-                            const prevY = (direction === 1) ? ((i - 5) / numSteps) * numericLength : numericLength - ((i - 5) / numSteps) * numericLength;
-                            paths.push({ d: `M ${x} ${prevY} L ${x} ${y}`, stroke: 'var(--color-accent-yellow)', strokeWidth: '0.5%' });
-                        }
-                    }
-                    x += stepoverDist;
-                    direction *= -1;
-                }
-            }
-        }
-
-        code.push(`G0 Z${numericZSafe}`, `M5`, `G0 X0 Y0`);
-
-        const bounds = { minX: 0, maxX: numericWidth, minY: 0, maxY: numericLength, minZ: numericMaxDepth, maxZ: numericZSafe };
-        return { code, paths, bounds, error: null };
     };
 
     const applyArrayPattern = useCallback((singleOpResult: { code: string[]; paths: PreviewPath[]; bounds: Bounds }) => {

@@ -172,9 +172,12 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                 </div>
                             </div>
 
-                            {/* Tone Mapping (Gamma/Contrast) */}
+                            {/* Tone Mapping (Gamma/Contrast/Smoothing) */}
                             <div className="border-b border-secondary pb-4">
                                 <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.relief.toneMapping')}</h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <Checkbox label={t('generators.relief.invert')} checked={params.invert} onChange={(v) => handleParamChange('invert', v)} />
+                                </div>
                                 <div className="grid grid-cols-2 gap-4 mt-2">
                                     <Slider
                                         label={t('generators.relief.gamma')}
@@ -194,6 +197,17 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                         step={0.1}
                                         help={t('generators.relief.contrastHelp')}
                                     />
+                                    <div className="col-span-2">
+                                        <Slider
+                                            label={t('generators.relief.smoothing')}
+                                            value={params.smoothing || 0}
+                                            onChange={(v) => handleParamChange('smoothing', v)}
+                                            min={0}
+                                            max={10}
+                                            step={1}
+                                            help={t('generators.relief.smoothingHelp')}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -291,6 +305,8 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                         maxDepth={parseFloat(String(params.maxDepth)) || -10}
                         gamma={params.gamma}
                         contrast={params.contrast}
+                        invert={params.invert}
+                        smoothing={params.smoothing || 0}
                     />
                 )}
             </div>

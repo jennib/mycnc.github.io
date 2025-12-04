@@ -246,6 +246,7 @@ export interface ReliefParams {
     keepAspectRatio: boolean;
     gamma: number;
     contrast: number;
+    smoothing: number; // 0-10, default 0
 }
 
 export interface GeneratorSettings {
