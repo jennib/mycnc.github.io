@@ -295,6 +295,13 @@ export interface STLParams {
     roughingStockToLeave: number | string;
     roughingFeed: number | string;
     roughingSpindle: number | string;
+    cutoutEnabled: boolean;
+    cutoutToolId: number | null;
+    cutoutDepth: number | string;
+    cutoutTabsEnabled: boolean;
+    cutoutTabWidth: number | string;
+    cutoutTabHeight: number | string;
+    cutoutTabCount: number | string;
 }
 
 export interface GeneratorSettings {

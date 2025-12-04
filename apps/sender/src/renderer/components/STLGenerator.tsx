@@ -15,6 +15,7 @@ interface STLGeneratorProps {
     onGenerateHeightMap: (imageDataUrl: string) => void; // Callback to pass generated height map back to parent or worker
 }
 
+
 const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, toolLibrary, unit, settings, onGenerateHeightMap }) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,6 +216,14 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
 
     return (
         <div className="space-y-4">
+            {/* Experimental Warning */}
+            <div className="bg-accent-yellow/10 border border-accent-yellow/30 rounded p-3 text-sm text-accent-yellow flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <div>
+                    <strong>Experimental Feature:</strong> This generator is currently in beta. Please verify the generated G-code carefully before running.
+                </div>
+            </div>
+
             {/* File Input */}
             <div className="border-b border-secondary pb-4">
                 <h3 className="font-bold text-lg mb-2 text-text-primary">{t('generators.stl.sourceFile')}</h3>
@@ -283,7 +292,7 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
             </div>
 
             {/* Roughing */}
-            <div>
+            <div className="border-b border-secondary pb-4">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg text-text-primary">{t('generators.relief.roughingPass')}</h3>
                     <Checkbox label={t('generators.relief.enable')} checked={params.roughingEnabled} onChange={(v) => onParamsChange('roughingEnabled', v)} />
@@ -306,6 +315,39 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
                             <Input label={t('generators.common.feedRate')} value={params.roughingFeed} onChange={(e) => onParamsChange('roughingFeed', e.target.value)} unit={`${unit}/min`} />
                             <Input label={t('generators.common.spindleSpeed')} value={params.roughingSpindle} onChange={(e) => onParamsChange('roughingSpindle', e.target.value)} unit="RPM" />
                         </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Contour Cutout */}
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg text-text-primary">Contour Cutout</h3>
+                    <Checkbox label={t('generators.relief.enable')} checked={params.cutoutEnabled} onChange={(v) => onParamsChange('cutoutEnabled', v)} />
+                </div>
+                {params.cutoutEnabled && (
+                    <div className="space-y-3 pl-2 border-l-2 border-primary/30">
+                        <ToolSelector
+                            selectedId={params.cutoutToolId}
+                            onChange={(id) => onParamsChange('cutoutToolId', id)}
+                            unit={unit}
+                            toolLibrary={toolLibrary}
+                            label="Cutout Tool"
+                        />
+                        <Input label="Cutout Depth" value={params.cutoutDepth} onChange={(e) => onParamsChange('cutoutDepth', e.target.value)} unit={unit} />
+
+                        <div className="flex items-center justify-between mt-2">
+                            <span className="text-sm font-semibold text-text-secondary">Tabs</span>
+                            <Checkbox label="Enable Tabs" checked={params.cutoutTabsEnabled} onChange={(v) => onParamsChange('cutoutTabsEnabled', v)} />
+                        </div>
+
+                        {params.cutoutTabsEnabled && (
+                            <div className="grid grid-cols-3 gap-4">
+                                <Input label="Count" value={params.cutoutTabCount} onChange={(e) => onParamsChange('cutoutTabCount', e.target.value)} unit="" type="number" />
+                                <Input label="Width" value={params.cutoutTabWidth} onChange={(e) => onParamsChange('cutoutTabWidth', e.target.value)} unit={unit} />
+                                <Input label="Height" value={params.cutoutTabHeight} onChange={(e) => onParamsChange('cutoutTabHeight', e.target.value)} unit={unit} />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

@@ -349,6 +349,101 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                         direction *= -1;
                     }
                 }
+
+            }
+        }
+
+
+        // --- Contour Cutout ---
+        // Cast params to any to access new properties not yet in ReliefParams interface
+        const stlParams = params as any;
+
+        if (stlParams.cutoutEnabled) {
+            const tool = toolLibrary.find(t => t.id === stlParams.cutoutToolId);
+            if (tool) {
+                const toolDia = parseFloat(String(tool.diameter || 0));
+                if (toolDia <= 0) throw new Error('Cutout tool diameter must be greater than 0');
+
+                const cutoutDepth = parseFloat(String(stlParams.cutoutDepth));
+                const feed = parseFloat(String(stlParams.roughingFeed)); // Use roughing feed for cutout
+                const spindle = parseFloat(String(stlParams.roughingSpindle));
+                const tabsEnabled = stlParams.cutoutTabsEnabled;
+                const tabCount = parseInt(String(stlParams.cutoutTabCount || 4));
+                const tabWidth = parseFloat(String(stlParams.cutoutTabWidth || 5));
+                const tabHeight = parseFloat(String(stlParams.cutoutTabHeight || 2));
+
+                code.push(`(--- Contour Cutout ---)`, `(Tool: ${tool.name})`, `M3 S${spindle}`, `G0 Z${numericZSafe}`);
+
+                // Calculate path (offset by tool radius)
+                const offset = toolDia / 2;
+                const minX = -offset;
+                const maxX = numericWidth + offset;
+                const minY = -offset;
+                const maxY = numericLength + offset;
+                const cutZ = -Math.abs(cutoutDepth); // Ensure negative
+
+                // Define perimeter segments
+                const perimeterLength = 2 * (maxX - minX + maxY - minY);
+                const tabSpacing = perimeterLength / tabCount;
+
+                const segments = [
+                    { start: { x: minX, y: minY }, end: { x: maxX, y: minY }, axis: 'x', len: maxX - minX },
+                    { start: { x: maxX, y: minY }, end: { x: maxX, y: maxY }, axis: 'y', len: maxY - minY },
+                    { start: { x: maxX, y: maxY }, end: { x: minX, y: maxY }, axis: 'x', len: maxX - minX }, // Length is positive for calc
+                    { start: { x: minX, y: maxY }, end: { x: minX, y: minY }, axis: 'y', len: maxY - minY }
+                ];
+
+                // Move to start
+                code.push(`G0 X${minX.toFixed(3)} Y${minY.toFixed(3)}`);
+                code.push(`G1 Z${cutZ.toFixed(3)} F${feed}`); // Plunge
+
+                let distanceTraveled = 0;
+
+                // Better approach: Pre-calculate tab intervals
+                const tabIntervals: { start: number, end: number }[] = [];
+                if (tabsEnabled) {
+                    for (let i = 0; i < tabCount; i++) {
+                        const center = (i + 0.5) * tabSpacing;
+                        tabIntervals.push({ start: center - tabWidth / 2, end: center + tabWidth / 2 });
+                    }
+                }
+
+                const isTab = (dist: number) => {
+                    return tabIntervals.some(t => dist >= t.start && dist <= t.end);
+                };
+
+                // Walk the path with small resolution to handle tabs
+                const resolution = 1.0; // 1mm resolution for checking tabs
+
+                for (const seg of segments) {
+                    const steps = Math.ceil(seg.len / resolution);
+                    const stepSize = seg.len / steps;
+
+                    for (let i = 1; i <= steps; i++) {
+                        const progress = i * stepSize;
+                        const currentDist = distanceTraveled + progress;
+
+                        // Calculate current position
+                        let x = seg.start.x;
+                        let y = seg.start.y;
+
+                        if (seg.axis === 'x') {
+                            // Moving X
+                            const dir = seg.end.x > seg.start.x ? 1 : -1;
+                            x += dir * progress;
+                        } else {
+                            // Moving Y
+                            const dir = seg.end.y > seg.start.y ? 1 : -1;
+                            y += dir * progress;
+                        }
+
+                        // Check Z height (Tab or Cut)
+                        const z = isTab(currentDist) ? (cutZ + tabHeight) : cutZ;
+
+                        code.push(`G1 X${x.toFixed(3)} Y${y.toFixed(3)} Z${z.toFixed(3)}`);
+                    }
+                    distanceTraveled += seg.len;
+                }
             }
         }
 

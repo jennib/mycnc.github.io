@@ -236,14 +236,10 @@
         "send": "Send Message",
         "cancel": "Cancel",
         "success": "Message sent successfully!",
-        "error": "Failed to send message.",
+        "error": "Error sending message.",
         "name": "Name",
         "message": "Message",
         "clientInfo": "Include system information"
-    },
-    "info": {
-        "title": "Information",
-        "content": "This is an information modal."
     },
     "generators": {
         "tabs": {
@@ -284,17 +280,6 @@
             "shouldBeNegative": "Should be negative",
             "stepover": "Stepover %"
         },
-        "bore": {
-            "centerX": "Center X",
-            "centerY": "Center Y",
-            "holeDiameter": "Hole Diameter",
-            "holeDepth": "Hole Depth",
-            "enableCounterbore": "Enable Counterbore",
-            "cbDiameter": "CB Diameter",
-            "cbDepth": "CB Depth",
-            "depthPerPass": "Depth per Pass",
-            "stepover": "Stepover"
-        },
         "drilling": {
             "singleHole": "Single Hole",
             "rectPattern": "Rectangular Pattern",
@@ -318,6 +303,17 @@
             "peckHelp": "Incremental depth per peck",
             "retractHeight": "Retract Height",
             "retractHelp": "Height to retract to between pecks"
+        },
+        "bore": {
+            "centerX": "Center X",
+            "centerY": "Center Y",
+            "holeDiameter": "Hole Diameter",
+            "holeDepth": "Hole Depth",
+            "enableCounterbore": "Enable Counterbore",
+            "cbDiameter": "CB Diameter",
+            "cbDepth": "CB Depth",
+            "depthPerPass": "Depth per Pass",
+            "stepover": "Stepover"
         },
         "profile": {
             "rectangle": "Rectangle",
@@ -499,33 +495,33 @@
             "center": "Center (X, Y)",
             "radius": "Radius",
             "startAngle": "Start Angle"
-        },
-        "preflight": {
-            "title": "Preflight Check",
-            "review": "Please review the following before starting the job:",
-            "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
-            "homed": "Machine has been homed",
-            "notHomed": "Machine has not been homed since connecting",
-            "analysisPassed": "G-code analysis passed",
-            "error": "Error:",
-            "warning": "Warning:",
-            "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
-            "confirm": "Confirm & Start Job"
-        },
-        "spindleConfirm": {
-            "title": "Confirm Spindle State",
-            "message": "Do you want to turn the spindle on before proceeding?",
-            "continueNoSpindle": "Continue without Spindle",
-            "startSpindle": "Start Spindle"
-        },
-        "unsupported": {
-            "title": "Browser Not Supported or Mobile Device Detected",
-            "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
-            "message2": "Mobile browsers do not support this feature.",
-            "message3": "Please access this page from a compatible desktop browser.",
-            "checkCompat": "Check Web Serial API compatibility",
-            "viewCanIUse": "View on CanIUse.com"
         }
+    },
+    "preflight": {
+        "title": "Preflight Check",
+        "review": "Please review the following before starting the job:",
+        "jobLoaded": "Job file loaded: <strong>{{fileName}}</strong>",
+        "homed": "Machine has been homed",
+        "notHomed": "Machine has not been homed since connecting",
+        "analysisPassed": "G-code analysis passed",
+        "error": "Error:",
+        "warning": "Warning:",
+        "dryRun": "Run in Dry Run mode (no spindle/laser, rapids only)",
+        "confirm": "Confirm & Start Job"
+    },
+    "spindleConfirm": {
+        "title": "Confirm Spindle State",
+        "message": "Do you want to turn the spindle on before proceeding?",
+        "continueNoSpindle": "Continue without Spindle",
+        "startSpindle": "Start Spindle"
+    },
+    "unsupported": {
+        "title": "Browser Not Supported or Mobile Device Detected",
+        "message1": "This application requires the Web Serial API to communicate with CNC controllers. This API is currently supported in desktop versions of browsers like Google Chrome and Microsoft Edge.",
+        "message2": "Mobile browsers do not support this feature.",
+        "message3": "Please access this page from a compatible desktop browser.",
+        "checkCompat": "Check Web Serial API compatibility",
+        "viewCanIUse": "View on CanIUse.com"
     },
     "macros": {
         "title": "Macros",
