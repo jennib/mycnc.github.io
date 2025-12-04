@@ -1372,6 +1372,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     cutoutToolId: stlParams.cutoutToolId,
                     cutoutDepth: stlParams.cutoutDepth,
                     cutoutDepthPerPass: stlParams.cutoutDepthPerPass,
+                    cutoutStepIn: stlParams.cutoutStepIn,
+                    cutoutXYPasses: stlParams.cutoutXYPasses,
                     cutoutTabsEnabled: stlParams.cutoutTabsEnabled,
                     cutoutTabWidth: stlParams.cutoutTabWidth,
                     cutoutTabHeight: stlParams.cutoutTabHeight,
@@ -1424,8 +1426,18 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
     const handleParamChange = useCallback((field: string, value: any) => {
         const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'spectrumGainEnabled'].includes(field);
-        const parsedValue = isNumberField ? (value === '' || value === '-' ? value : parseFloat(value as string)) : value;
-        if (isNumberField && value !== '' && value !== '-' && isNaN(parsedValue as number)) return;
+
+        let parsedValue = value;
+        if (isNumberField) {
+            // Allow empty, minus, or valid number string (including partials like "0." or "-0.")
+            if (value === '' || value === '-' || /^-?\d*\.?\d*$/.test(value as string)) {
+                parsedValue = value;
+            } else {
+                const num = parseFloat(value as string);
+                if (isNaN(num)) return;
+                parsedValue = num;
+            }
+        }
 
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange((prevSettings) => ({

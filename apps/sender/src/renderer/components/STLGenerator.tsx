@@ -336,6 +336,10 @@ const STLGenerator: React.FC<STLGeneratorProps> = ({ params, onParamsChange, too
                         />
                         <Input label="Cutout Depth" value={params.cutoutDepth} onChange={(e) => onParamsChange('cutoutDepth', e.target.value)} unit={unit} />
                         <Input label={t('generators.stl.depthPerPass') || "Depth per Pass"} value={params.cutoutDepthPerPass} onChange={(e) => onParamsChange('cutoutDepthPerPass', e.target.value)} unit={unit} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input label="XY Passes" value={params.cutoutXYPasses} onChange={(e) => onParamsChange('cutoutXYPasses', e.target.value)} unit="" type="number" />
+                            <Input label="Step In" value={params.cutoutStepIn} onChange={(e) => onParamsChange('cutoutStepIn', e.target.value)} unit={unit} />
+                        </div>
 
                         <div className="flex items-center justify-between mt-2">
                             <span className="text-sm font-semibold text-text-secondary">Tabs</span>

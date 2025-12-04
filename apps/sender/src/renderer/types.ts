@@ -69,15 +69,15 @@ export interface MachineSettings {
 
 
 export interface SurfacingParams {
-    width: number | '';
-    length: number | '';
-    depth: number | '';
-    stepover: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
-    startX: number | '';
-    startY: number | '';
+    width: number | string;
+    length: number | string;
+    depth: number | string;
+    stepover: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    startX: number | string;
+    startY: number | string;
     toolId: number | null;
     direction: 'horizontal' | 'vertical';
 
@@ -85,101 +85,101 @@ export interface SurfacingParams {
 
 export interface DrillingParams {
     drillType: 'single' | 'rect' | 'circ';
-    depth: number | '';
-    peck: number | '';
-    retract: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
-    singleX: number | '';
-    singleY: number | '';
-    rectCols: number | '';
-    rectRows: number | '';
-    rectSpacingX: number | '';
-    rectSpacingY: number | '';
-    rectStartX: number | '';
-    rectStartY: number | '';
-    circCenterX: number | '';
-    circCenterY: number | '';
-    circRadius: number | '';
-    circHoles: number | '';
-    circStartAngle: number | '';
+    depth: number | string;
+    peck: number | string;
+    retract: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    singleX: number | string;
+    singleY: number | string;
+    rectCols: number | string;
+    rectRows: number | string;
+    rectSpacingX: number | string;
+    rectSpacingY: number | string;
+    rectStartX: number | string;
+    rectStartY: number | string;
+    circCenterX: number | string;
+    circCenterY: number | string;
+    circRadius: number | string;
+    circHoles: number | string;
+    circStartAngle: number | string;
 
     toolId: number | null;
 }
 
 export interface BoreParams {
-    centerX: number | '';
-    centerY: number | '';
-    holeDiameter: number | '';
-    holeDepth: number | '';
+    centerX: number | string;
+    centerY: number | string;
+    holeDiameter: number | string;
+    holeDepth: number | string;
     counterboreEnabled: boolean;
-    cbDiameter: number | '';
-    cbDepth: number | '';
-    depthPerPass: number | '';
-    feed: number | '';
-    plungeFeed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
+    cbDiameter: number | string;
+    cbDepth: number | string;
+    depthPerPass: number | string;
+    feed: number | string;
+    plungeFeed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
 
-    stepover: number | '';
+    stepover: number | string;
     toolId: number | null;
 }
 
 export interface PocketParams {
     shape: 'rect' | 'circ';
-    width: number | '';
-    length: number | '';
-    cornerRadius: number | '';
-    diameter: number | '';
-    depth: number | '';
-    depthPerPass: number | '';
-    stepover: number | '';
-    feed: number | '';
-    plungeFeed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
+    width: number | string;
+    length: number | string;
+    cornerRadius: number | string;
+    diameter: number | string;
+    depth: number | string;
+    depthPerPass: number | string;
+    stepover: number | string;
+    feed: number | string;
+    plungeFeed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
 
     toolId: number | null;
 }
 
 export interface ProfileParams {
     shape: 'rect' | 'circ';
-    width: number | '';
-    length: number | '';
-    cornerRadius: number | '';
-    diameter: number | '';
-    depth: number | '';
-    depthPerPass: number | '';
+    width: number | string;
+    length: number | string;
+    cornerRadius: number | string;
+    diameter: number | string;
+    depth: number | string;
+    depthPerPass: number | string;
     cutSide: 'outside' | 'inside' | 'online';
     tabsEnabled: boolean;
-    numTabs: number | '';
-    tabWidth: number | '';
-    tabHeight: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
+    numTabs: number | string;
+    tabWidth: number | string;
+    tabHeight: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
 
     toolId: number | null;
 }
 
 export interface SlotParams {
     type: 'straight' | 'arc';
-    slotWidth: number | '';
-    depth: number | '';
-    depthPerPass: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
-    startX: number | '';
-    startY: number | '';
-    endX: number | '';
-    endY: number | '';
-    centerX: number | '';
-    centerY: number | '';
-    radius: number | '';
-    startAngle: number | '';
-    endAngle: number | '';
+    slotWidth: number | string;
+    depth: number | string;
+    depthPerPass: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    startX: number | string;
+    startY: number | string;
+    endX: number | string;
+    endY: number | string;
+    centerX: number | string;
+    centerY: number | string;
+    radius: number | string;
+    startAngle: number | string;
+    endAngle: number | string;
 
     toolId: number | null;
 }
@@ -187,15 +187,15 @@ export interface SlotParams {
 export interface TextParams {
     text: string;
     font: string;
-    height: number | '';
-    spacing: number | '';
-    startX: number | '';
-    startY: number | '';
+    height: number | string;
+    spacing: number | string;
+    startX: number | string;
+    startY: number | string;
     alignment: 'left' | 'center' | 'right';
-    depth: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
+    depth: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
 
     toolId: number | null;
 }
@@ -203,12 +203,12 @@ export interface TextParams {
 export interface ThreadMillingParams {
     type: 'internal' | 'external';
     hand: 'right' | 'left';
-    diameter: number | '';
-    pitch: number | '';
-    depth: number | '';
-    feed: number | '';
-    spindle: number | '';
-    safeZ: number | '';
+    diameter: number | string;
+    pitch: number | string;
+    depth: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
 
     toolId: number | null;
 }
@@ -278,6 +278,8 @@ export interface ReliefParams {
     cutoutToolId?: number | null;
     cutoutDepth?: number | string;
     cutoutDepthPerPass?: number | string;
+    cutoutStepIn?: number | string;
+    cutoutXYPasses?: number | string;
     cutoutTabsEnabled?: boolean;
     cutoutTabWidth?: number | string;
     cutoutTabHeight?: number | string;
@@ -310,6 +312,8 @@ export interface STLParams {
     cutoutToolId: number | null;
     cutoutDepth: number | string;
     cutoutDepthPerPass: number | string;
+    cutoutStepIn: number | string;
+    cutoutXYPasses: number | string;
     cutoutTabsEnabled: boolean;
     cutoutTabWidth: number | string;
     cutoutTabHeight: number | string;

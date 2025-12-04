@@ -108,14 +108,28 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
         }
 
         // If A: field is missing, it implies no accessories are active (Spindle Off)
+        // OR the controller is configured to not report accessories (e.g. $10 mask).
+        // In that case, we try to infer spindle state from the speed (FS: field).
         if (!accessoryFound) {
-            if (!parsed.spindle) {
+            if (parsed.spindle) {
+                // FS: was present, so we have a speed reading
+                if (parsed.spindle.speed > 0) {
+                    // If speed is > 0, the spindle is likely ON.
+                    // If our current state is 'off', assume 'cw' (most common).
+                    // If it's already 'cw' or 'ccw', preserve it.
+                    if (parsed.spindle.state === 'off') {
+                        parsed.spindle.state = 'cw';
+                    }
+                } else {
+                    // If speed is 0, spindle is definitely OFF.
+                    parsed.spindle.state = 'off';
+                }
+            } else {
+                // No FS: and no A:. We have no info. Fallback to off.
                 parsed.spindle = {
                     state: 'off',
                     speed: lastStatus.spindle?.speed ?? 0
                 };
-            } else {
-                parsed.spindle.state = 'off';
             }
         }
 
