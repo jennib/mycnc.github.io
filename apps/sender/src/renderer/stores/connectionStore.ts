@@ -77,38 +77,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
             setJobStatus(JobStatus.Complete);
             addLog({ type: 'info', message: 'Job completed successfully.' });
 
-            // Play completion sound using Web Audio API
-            const soundUrl = '/completion-sound.mp3';
-            const playSound = async () => {
-              try {
-                const response = await fetch(soundUrl);
-                if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
-                const arrayBuffer = await response.arrayBuffer();
-
-                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-                if (!AudioContext) return;
-
-                const audioCtx = new AudioContext();
-                try {
-                  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                  const source = audioCtx.createBufferSource();
-                  source.buffer = audioBuffer;
-                  source.connect(audioCtx.destination);
-                  source.start(0);
-                } catch (decodeError) {
-                  // Fallback: Play a simple beep if file is corrupted
-                  const oscillator = audioCtx.createOscillator();
-                  oscillator.type = 'sine';
-                  oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-                  oscillator.connect(audioCtx.destination);
-                  oscillator.start();
-                  oscillator.stop(audioCtx.currentTime + 0.5);
-                }
-              } catch (e: any) {
-                console.error("Error in audio playback:", e.message);
-              }
-            };
-            playSound();
+            // Play completion sound using AudioService
+            import('../services/AudioService').then(({ audioService }) => {
+              audioService.playCompletionSound();
+            });
           }
         });
 

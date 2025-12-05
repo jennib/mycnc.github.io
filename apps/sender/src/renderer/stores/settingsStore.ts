@@ -7,6 +7,7 @@ interface SettingsState {
   jogStep: number;
   unit: 'mm' | 'in';
   isLightMode: boolean;
+  playCompletionSound: boolean;
   macros: Macro[];
   machineSettings: MachineSettings;
   toolLibrary: Tool[];
@@ -17,6 +18,7 @@ interface SettingsState {
     setJogStep: (step: number) => void;
     setUnit: (unit: 'mm' | 'in') => void;
     setIsLightMode: (isLight: boolean) => void;
+    setPlayCompletionSound: (play: boolean) => void;
     setMacros: (macros: Macro[] | ((prev: Macro[]) => Macro[])) => void;
     setMachineSettings: (settings: MachineSettings | ((prev: MachineSettings) => MachineSettings)) => void;
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
@@ -49,6 +51,7 @@ export const useSettingsStore = create<SettingsState>()(
       jogStep: 1,
       unit: 'mm',
       isLightMode: true,
+      playCompletionSound: true,
       macros: DEFAULT_MACROS,
       machineSettings: DEFAULT_SETTINGS,
       toolLibrary: DEFAULT_TOOLS,
@@ -59,6 +62,7 @@ export const useSettingsStore = create<SettingsState>()(
         setJogStep: (step) => set({ jogStep: step }),
         setUnit: (unit) => set({ unit: unit }),
         setIsLightMode: (isLight) => set({ isLightMode: isLight }),
+        setPlayCompletionSound: (play) => set({ playCompletionSound: play }),
         setMacros: (macros) => set((state) => ({ macros: typeof macros === 'function' ? macros(state.macros) : macros })),
         setMachineSettings: (settings) => set((state) => ({ machineSettings: typeof settings === 'function' ? settings(state.machineSettings) : settings })),
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
@@ -77,6 +81,7 @@ export const useSettingsStore = create<SettingsState>()(
           if (importedSettings.jogStep) newState.jogStep = importedSettings.jogStep;
           if (importedSettings.unit) newState.unit = importedSettings.unit;
           if (importedSettings.isLightMode !== undefined) newState.isLightMode = importedSettings.isLightMode;
+          if (importedSettings.playCompletionSound !== undefined) newState.playCompletionSound = importedSettings.playCompletionSound;
 
           return newState;
         }),

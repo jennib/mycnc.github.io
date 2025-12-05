@@ -277,6 +277,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <option value="pa">ਪੰਜਾਬੀ</option>
                                 </select>
                             </InputGroup>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="play-sound"
+                                    checked={localSettings.playCompletionSound}
+                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, playCompletionSound: e.target.checked }))}
+                                    className="w-5 h-5 rounded border-white/20 bg-surface text-primary focus:ring-primary"
+                                />
+                                <label htmlFor="play-sound" className="text-sm font-medium text-text-primary">
+                                    {t('settings.playCompletionSound', 'Play Completion Sound')}
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
