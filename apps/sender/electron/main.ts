@@ -4,6 +4,8 @@ import path from "path";
 import net from "net";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 
 
 let mainWindow: BrowserWindow;
@@ -430,10 +432,10 @@ const createWindow = () => {
 
     if (isDevelopment) {
       // Relaxed CSP for development
-      csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data:;`;
+      csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
     } else {
       // Stricter CSP for production
-      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self'; img-src 'self' data:;`;
+      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:;`;
     }
 
     callback({
