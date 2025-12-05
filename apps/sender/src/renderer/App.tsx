@@ -36,6 +36,7 @@ import {
 } from "@mycnc/shared";
 import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
+import Logo from "./components/Logo";
 
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
@@ -492,7 +493,7 @@ const MainApp: React.FC = () => {
       <header className="bg-surface/95 border-b border-white/10 p-2 flex justify-between items-center z-20 flex-shrink-0 gap-4 shadow-sm">
         {/* Left: Logo */}
         <div className="flex items-center gap-4 flex-1 pl-2">
-          <img src="./mycnclogo.svg" alt="myCNC Logo" className="h-8 w-auto drop-shadow-md" />
+          <Logo className="h-8 w-auto drop-shadow-md text-text-primary" />
         </div>
 
         {/* Center: E-STOP */}

@@ -41,7 +41,7 @@
        transform="matrix(0.26458333,0,0,0.26458333,40.790762,132.65232)"><g
          transform="translate(86,60)"
          fill="none"
-         stroke="#222222"
+         stroke="#FFFFFF"
          stroke-width="4"
          id="g2"><circle
            r="48"
@@ -66,7 +66,7 @@
          font-weight="700"
          font-size="64px"
          letter-spacing="-0.02em"
-         fill="#222222"
+         fill="#FFFFFF"
          id="text2"><tspan
    style="fill:#6744e9;fill-opacity:1"
    id="tspan14">mycnc</tspan>.app</text></g></g></svg>

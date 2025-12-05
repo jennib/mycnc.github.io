@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Monitor, Smartphone, Zap, Github } from 'lucide-react';
+import Logo from "./Logo";
 
 const MobileLanding: React.FC = () => {
     const { t } = useTranslation();
@@ -33,7 +34,7 @@ const MobileLanding: React.FC = () => {
                 <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary blur-xl opacity-50 rounded-full" />
                     <div className="relative bg-surface p-4 rounded-2xl border border-white/10 shadow-2xl">
-                        <img src="./mycnclogo.svg" alt="myCNC" className="w-16 h-16" />
+                        <Logo className="w-16 h-16 text-text-primary" />
                     </div>
                 </div>
 
