@@ -49,13 +49,16 @@
            cx="0"
            cy="0" /><path
            d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z"
-           id="path1" /><use
-           href="#fluteMono"
+           id="path1" />
+        <path
+           d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z"
            transform="rotate(120)"
-           id="use1" /><use
-           href="#fluteMono"
-           transform="rotate(-120)"
-           id="use2" /><circle
+           id="path2" />
+        <path
+           d="M 0,-48 A 48,48 0 0 1 30,16 L 10,6 A 12,12 0 0 0 0,-12 Z"
+           transform="rotate(240)"
+           id="path3" />
+        <circle
            r="12"
            id="circle2"
            cx="0"
