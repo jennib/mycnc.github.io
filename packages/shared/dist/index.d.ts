@@ -395,6 +395,7 @@ export declare interface MachineState {
 
 export declare interface Macro {
     name: string;
+    description?: string;
     commands: string[];
 }
 

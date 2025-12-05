@@ -103,6 +103,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
     thread: { type: 'internal', hand: 'right', diameter: 10, pitch: 1, depth: 10, feed: 200, spindle: 10000, safeZ: 5, toolId: null },
     relief: { imageDataUrl: null, invert: false, width: 100, length: 100, maxDepth: -5, zSafe: 5, roughingEnabled: true, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, finishingEnabled: true, finishingToolId: null, finishingStepover: 10, finishingAngle: 0, finishingFeed: 1000, finishingSpindle: 10000, operation: 'both', keepAspectRatio: true, gamma: 1.0, contrast: 1.0 },
     stl: { file: null, fileName: '', width: 100, length: 100, depth: 20, zSafe: 5, margin: 0, rotationX: 0, rotationY: 0, rotationZ: 0, toolId: null, stepover: 10, feedRate: 800, spindleSpeed: 10000, roughingEnabled: false, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, cutoutEnabled: false, cutoutToolId: null, cutoutDepth: 20, cutoutDepthPerPass: 5, cutoutStepIn: 1, cutoutXYPasses: 1, cutoutTabsEnabled: true, cutoutTabWidth: 5, cutoutTabHeight: 2, cutoutTabCount: 4 },
+    svg: { file: null, fileName: '', svgContent: '', scale: 1, rotation: 0, positionX: 0, positionY: 0, depth: -1, feed: 800, spindle: 10000, toolId: null },
 };
 
 export const GRBL_REALTIME_COMMANDS = {

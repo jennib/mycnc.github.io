@@ -311,6 +311,21 @@ export interface STLParams {
     cutoutTabCount: number | string;
 }
 
+export interface SVGParams {
+    file: File | null;
+    fileName: string;
+    svgContent: string;
+    scale: number | string;
+    rotation: number | string;
+    positionX: number | string;
+    positionY: number | string;
+    depth: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    toolId: number | null;
+}
+
 export interface GeneratorSettings {
     surfacing: SurfacingParams;
     drilling: DrillingParams;
@@ -322,6 +337,7 @@ export interface GeneratorSettings {
     thread: ThreadMillingParams;
     relief: ReliefParams;
     stl: STLParams;
+    svg: SVGParams;
 }
 
 export interface TimeEstimate {

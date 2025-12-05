@@ -253,6 +253,12 @@
         "clientInfo": "Include system information"
     },
     "generators": {
+        "common": {
+            "title": "G-Code Generators",
+            "milling": "Milling",
+            "textEngraving": "Engraving",
+            "generate": "Generate G-Code"
+        },
         "tabs": {
             "surfacing": "Surfacing",
             "drilling": "Drilling",
@@ -260,22 +266,11 @@
             "pocket": "Pocket",
             "profile": "Profile",
             "slot": "Slot",
-            "text": "Text",
             "thread": "Thread Milling",
             "relief": "Relief",
-            "stl": "STL"
-        },
-        "common": {
-            "direction": "Milling Direction",
-            "horizontal": "Horizontal (X)",
-            "vertical": "Vertical (Y)",
-            "finalDepth": "Final Depth",
-            "shouldBeNegative": "Should be negative",
-            "stepover": "Stepover",
-            "title": "G-Code Generators",
-            "milling": "Milling",
-            "textEngraving": "Engraving",
-            "generate": "Generate G-Code",
+            "stl": "STL Slice",
+            "text": "Text",
+            "svg": "SVG",
             "safeZ": "Safe Z",
             "feedRate": "Feed Rate",
             "spindleSpeed": "Spindle Speed",
@@ -369,27 +364,6 @@
             "radius": "Radius",
             "startAngle": "Start Angle",
             "endAngle": "End Angle",
-            "slotWidth": "Slot Width",
-            "totalDepth": "Total Depth",
-            "shouldBeNegative": "Should be negative",
-            "depthPerPass": "Depth per Pass"
-        },
-        "text": {
-            "text": "Text",
-            "font": "Font",
-            "height": "Height",
-            "spacing": "Character Spacing",
-            "startX": "Start X",
-            "startY": "Start Y",
-            "alignment": "Alignment",
-            "left": "Left",
-            "center": "Center",
-            "right": "Right",
-            "engravingDepth": "Engraving Depth",
-            "shouldBeNegative": "Should be negative"
-        },
-        "thread": {
-            "type": "Type",
             "internal": "Internal",
             "external": "External",
             "hand": "Hand",
@@ -456,6 +430,15 @@
         "stl": {
             "sourceFile": "Source STL File",
             "orientation": "Orientation (Rotation in Degrees)"
+        },
+        "svg": {
+            "file": "SVG File",
+            "upload": "Click to upload SVG",
+            "scale": "Scale",
+            "rotation": "Rotation (°)",
+            "position": "Position Offset",
+            "depth": "Engraving Depth",
+            "shouldBeNegative": "Should be negative"
         },
         "errors": {
             "selectTool": "Please select a tool.",

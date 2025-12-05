@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from "@mycnc/shared";
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS, CharacterStroke, CharacterOutline } from '@/services/cncFonts.js';
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams } from '@/types';
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams, STLParams } from '@/types';
 import SlotGenerator from './SlotGenerator';
 import SurfacingGenerator from './SurfacingGenerator';
 import DrillingGenerator from './DrillingGenerator';
@@ -15,6 +15,8 @@ import TextGenerator from './TextGenerator';
 
 import ReliefGenerator from './ReliefGenerator';
 import STLGenerator from './STLGenerator';
+import SVGGenerator from './SVGGenerator';
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 
 interface TabProps {
     label: string;
@@ -1193,6 +1195,138 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
     };
 
+    const generateSVGCode = (machineSettings: MachineSettings) => {
+        const svgParams = generatorSettings.svg;
+        const toolIndex = toolLibrary.findIndex(t => t.id === svgParams.toolId);
+        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        const selectedTool = toolLibrary[toolIndex];
+        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+
+        const { svgContent, scale, rotation, positionX, positionY, depth, feed, spindle, safeZ } = svgParams;
+
+        const numericScale = parseFloat(String(scale));
+        const numericRotation = parseFloat(String(rotation));
+        const numericPositionX = parseFloat(String(positionX));
+        const numericPositionY = parseFloat(String(positionY));
+        const numericDepth = parseFloat(String(depth));
+        const numericFeed = parseFloat(String(feed));
+        const numericSpindle = parseFloat(String(spindle));
+        const numericSafeZ = parseFloat(String(safeZ));
+
+        if ([numericScale, numericRotation, numericPositionX, numericPositionY, numericDepth, numericFeed, numericSpindle, numericSafeZ].some(isNaN) || !svgContent) {
+            return { error: t('generators.errors.fillRequired'), code: [], paths: [], bounds: {} };
+        }
+
+        const loader = new SVGLoader();
+        const svgData = loader.parse(svgContent);
+
+        const code = [
+            `(--- SVG Engraving ---)`,
+            `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
+            `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ.toFixed(3)}`
+        ];
+        const paths: PreviewPath[] = [];
+        const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+        const updateBounds = (x: number, y: number) => {
+            bounds.minX = Math.min(bounds.minX, x);
+            bounds.maxX = Math.max(bounds.maxX, x);
+            bounds.minY = Math.min(bounds.minY, y);
+            bounds.maxY = Math.max(bounds.maxY, y);
+        };
+
+        // Helper to rotate point
+        const rotatePoint = (x: number, y: number, angleDeg: number) => {
+            const angleRad = angleDeg * (Math.PI / 180);
+            const cos = Math.cos(angleRad);
+            const sin = Math.sin(angleRad);
+            return {
+                x: x * cos - y * sin,
+                y: x * sin + y * cos
+            };
+        };
+
+        // 1. Calculate bounds of the raw SVG data to normalize coordinates
+        let rawMinX = Infinity, rawMaxX = -Infinity, rawMinY = Infinity, rawMaxY = -Infinity;
+        const allShapes: { shape: THREE.Shape; points: THREE.Vector2[] }[] = [];
+
+        svgData.paths.forEach((path) => {
+            const shapes = SVGLoader.createShapes(path);
+            shapes.forEach((shape) => {
+                const points = shape.getPoints();
+                if (points.length > 0) {
+                    allShapes.push({ shape, points });
+                    points.forEach(p => {
+                        if (p.x < rawMinX) rawMinX = p.x;
+                        if (p.x > rawMaxX) rawMaxX = p.x;
+                        if (p.y < rawMinY) rawMinY = p.y;
+                        if (p.y > rawMaxY) rawMaxY = p.y;
+                    });
+                }
+            });
+        });
+
+        if (allShapes.length === 0) {
+            return { error: "No valid paths found in SVG", code: [], paths: [], bounds: {} };
+        }
+
+        // 2. Generate G-code with normalized coordinates
+        // We want the bottom-left of the SVG content (minX, maxY in SVG coords) to map to (0,0) in CNC coords (before user offset)
+        // SVG Y is down (minY is top), CNC Y is up.
+        // Normalized X = (x - rawMinX) * scale
+        // Normalized Y = (rawMaxY - y) * scale  <-- This flips Y and shifts origin to bottom
+
+        allShapes.forEach(({ points }) => {
+            if (points.length > 0) {
+                let firstPoint = points[0];
+
+                // Normalize and Scale
+                let currentX = (firstPoint.x - rawMinX) * numericScale;
+                let currentY = (rawMaxY - firstPoint.y) * numericScale;
+
+                // Rotate
+                let rotated = rotatePoint(currentX, currentY, numericRotation);
+
+                // Translate (User Position)
+                let finalX = rotated.x + numericPositionX;
+                let finalY = rotated.y + numericPositionY;
+
+                code.push(`G0 X${finalX.toFixed(3)} Y${finalY.toFixed(3)}`);
+                code.push(`G1 Z${numericDepth.toFixed(3)} F${numericFeed / 2}`);
+
+                let pathD = `M ${finalX} ${finalY}`;
+                updateBounds(finalX, finalY);
+
+                for (let i = 1; i < points.length; i++) {
+                    const p = points[i];
+
+                    // Normalize and Scale
+                    currentX = (p.x - rawMinX) * numericScale;
+                    currentY = (rawMaxY - p.y) * numericScale;
+
+                    // Rotate
+                    rotated = rotatePoint(currentX, currentY, numericRotation);
+
+                    // Translate
+                    finalX = rotated.x + numericPositionX;
+                    finalY = rotated.y + numericPositionY;
+
+                    code.push(`G1 X${finalX.toFixed(3)} Y${finalY.toFixed(3)} F${numericFeed}`);
+                    pathD += ` L ${finalX} ${finalY}`;
+                    updateBounds(finalX, finalY);
+                }
+
+                code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+                paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+            }
+        });
+
+        code.push(`M5`);
+        code.push(`G0 X0 Y0`);
+
+        return { code, paths, bounds, error: null };
+    };
+
     const applyArrayPattern = useCallback((singleOpResult: { code: string[]; paths: PreviewPath[]; bounds: Bounds }) => {
         const { code: singleCode, paths: singlePaths, bounds: singleBounds } = singleOpResult;
         const { pattern, rectCols, rectRows, rectSpacingX, rectSpacingY, circCopies, circRadius, circCenterX, circCenterY, circStartAngle } = arraySettings;
@@ -1303,6 +1437,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         else if (activeTab === 'slot') result = generateSlotCode(settings);
         else if (activeTab === 'text') result = generateTextCode(settings);
         else if (activeTab === 'thread') result = generateThreadMillingCode(settings);
+        else if (activeTab === 'svg') result = generateSVGCode(settings);
         else if (activeTab === 'relief') result = await generateReliefCode(settings);
         else if (activeTab === 'stl') {
             const stlParams = generatorSettings.stl;
@@ -1361,23 +1496,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     adjustColorLow: '#000000',
                     adjustAmountLow: 0,
                     adjustToleranceLow: 0,
-                    adjustColorMid: '#000000',
-                    adjustToleranceMid: 0,
-                    spectrumGainEnabled: false,
-                    spectrumGainHigh: 0,
-                    spectrumGainLow: 0,
-
-                    // Cutout Params
-                    cutoutEnabled: stlParams.cutoutEnabled,
-                    cutoutToolId: stlParams.cutoutToolId,
-                    cutoutDepth: stlParams.cutoutDepth,
-                    cutoutDepthPerPass: stlParams.cutoutDepthPerPass,
-                    cutoutStepIn: stlParams.cutoutStepIn,
-                    cutoutXYPasses: stlParams.cutoutXYPasses,
-                    cutoutTabsEnabled: stlParams.cutoutTabsEnabled,
-                    cutoutTabWidth: stlParams.cutoutTabWidth,
-                    cutoutTabHeight: stlParams.cutoutTabHeight,
-                    cutoutTabCount: stlParams.cutoutTabCount
                 };
                 // Fix maxDepth sign if needed. Relief expects negative? 
                 // In ReliefGenerator, maxDepth is usually negative. 
@@ -1404,7 +1522,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
         setPreviewPaths({ paths: result.paths, bounds: result.bounds });
         setIsGenerating(false);
-    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, generateReliefCode]);
+    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, generateReliefCode, generateSVGCode]);
 
     const handleGenerateRef = React.useRef(handleGenerate);
     useEffect(() => {
@@ -1424,8 +1542,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         });
     };
 
+
+
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'spectrumGainEnabled'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1540,6 +1660,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.tabs.stl')} isActive={activeTab === 'stl'} onClick={() => setActiveTab('stl')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">{t('generators.common.textEngraving')}</div>
                             <Tab label={t('generators.tabs.text')} isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
+                            <Tab label={t('generators.tabs.svg')} isActive={activeTab === 'svg'} onClick={() => setActiveTab('svg')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && (
@@ -1589,6 +1710,18 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'profile' && (
                                 <ProfileGenerator
                                     params={generatorSettings.profile as ProfileParams}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+
+                            {activeTab === 'svg' && (
+                                <SVGGenerator
+                                    params={generatorSettings.svg}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
@@ -1649,8 +1782,6 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
-                                    selectedToolId={selectedToolId}
-                                    onToolSelect={onToolSelect}
                                     onGenerateHeightMap={(url) => {
                                         (window as any).currentStlHeightMap = url;
                                         // Trigger generation now that we have the map
@@ -1667,33 +1798,31 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     </div>
                     <div className="bg-background p-4 rounded-md flex flex-col gap-4">
                         <div className="flex justify-between items-center border-b border-secondary pb-2 mb-2">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold">{t('generators.relief.previewTitle')}</h3>
-                                <button
-                                    onClick={handleGenerate}
-                                    title="Regenerate G-Code and Preview"
-                                    className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
-                                >
-                                    {isGenerating ? (
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    ) : (
-                                        <Zap className="w-4 h-4" />
-                                    )}
-                                    {isGenerating ? 'Generating...' : t('generators.common.generate')}
-                                </button>
-                            </div>
+                            <h3 className="font-bold">{t('generators.relief.previewTitle')}</h3>
+                            <button
+                                onClick={handleGenerate}
+                                title="Regenerate G-Code and Preview"
+                                className="px-2 py-1 bg-primary text-white text-xs font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-1"
+                            >
+                                {isGenerating ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                ) : (
+                                    <Zap className="w-4 h-4" />
+                                )}
+                                {isGenerating ? 'Generating...' : t('generators.common.generate')}
+                            </button>
+                        </div >
 
-                            <div className="flex items-center gap-1">
-                                <button onClick={() => handleZoom(1.5)} title={t('gcode.view.zoomOut')} className="p-1.5 rounded-md hover:bg-secondary">
-                                    <ZoomOut className="w-5 h-5 text-text-secondary" />
-                                </button>
-                                <button onClick={() => handleZoom(1 / 1.5)} title={t('gcode.view.zoomIn')} className="p-1.5 rounded-md hover:bg-secondary">
-                                    <ZoomIn className="w-5 h-5 text-text-secondary" />
-                                </button>
-                                <button onClick={fitView} title={t('gcode.view.fit')} className="p-1.5 rounded-md hover:bg-secondary">
-                                    <Maximize className="w-5 h-5 text-text-secondary" />
-                                </button>
-                            </div>
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => handleZoom(1.5)} title={t('gcode.view.zoomOut')} className="p-1.5 rounded-md hover:bg-secondary">
+                                <ZoomOut className="w-5 h-5 text-text-secondary" />
+                            </button>
+                            <button onClick={() => handleZoom(1 / 1.5)} title={t('gcode.view.zoomIn')} className="p-1.5 rounded-md hover:bg-secondary">
+                                <ZoomIn className="w-5 h-5 text-text-secondary" />
+                            </button>
+                            <button onClick={fitView} title={t('gcode.view.fit')} className="p-1.5 rounded-md hover:bg-secondary">
+                                <Maximize className="w-5 h-5 text-text-secondary" />
+                            </button>
                         </div>
                         {renderPreviewContent()}
                         <textarea
@@ -1702,8 +1831,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             className="w-full flex-grow bg-secondary font-mono text-sm p-2 rounded-md border border-secondary focus:outline-none focus:ring-1 focus:ring-primary"
                             rows={8}
                         />
-                    </div>
-                </div>
+                    </div >
+                </div >
                 <div className="bg-background px-6 py-4 flex justify-end gap-4 rounded-b-lg">
                     <button onClick={onClose} className="px-4 py-2 bg-secondary text-white font-semibold rounded-md hover:bg-secondary-focus">
                         {t('common.cancel')}
@@ -1718,8 +1847,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         {t('generators.relief.loadSender')}
                     </button>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
