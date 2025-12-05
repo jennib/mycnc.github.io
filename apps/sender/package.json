@@ -1,7 +1,7 @@
 {
   "name": "@mycnc/sender",
   "private": true,
-  "version": "1.0.30",
+  "version": "1.0.31",
   "description": "Gcode generator and sender for CNC machines",
   "author": {
     "name": "jennib",
@@ -20,6 +20,7 @@
     "electron:build": "electron-vite build",
     "preview": "electron-vite preview",
     "dist": "electron-vite build && electron-builder",
+    "release": "electron-vite build && electron-builder --publish always",
     "test": "vitest",
     "check:translations": "node scripts/check-translations.cjs",
     "clean": "node clean.cjs"

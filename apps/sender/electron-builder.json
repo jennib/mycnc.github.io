@@ -2,6 +2,7 @@
     "appId": "com.mycnc.app",
     "electronVersion": "39.2.4",
     "productName": "myCNC",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "directories": {
         "output": "release"
     },
