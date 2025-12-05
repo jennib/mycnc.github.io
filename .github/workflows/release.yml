@@ -1,0 +1,37 @@
+name: Desktop Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/sender/package.json'
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Shared Package
+        run: npm run build -w @mycnc/shared
+
+      - name: Build & Release Electron App
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run dist --workspace=apps/sender
