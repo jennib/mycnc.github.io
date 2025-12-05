@@ -56,17 +56,16 @@ const MainApp: React.FC = () => {
   // Mobile Detection
   useEffect(() => {
     const checkMobile = () => {
-      if (window.innerWidth < 768) {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isIPad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+      if (isMobile || isIPad) {
         navigate('/mobile');
       }
     };
 
-    // Check on mount
     checkMobile();
-
-    // Check on resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
   }, [navigate]);
 
   const machineState = useMachineStore((state) => state.machineState);

@@ -9,12 +9,15 @@ const MobileLanding: React.FC = () => {
 
     useEffect(() => {
         const checkDesktop = () => {
-            if (window.innerWidth >= 768) {
+            const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            const isIPad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+            if (!isMobile && !isIPad) {
                 navigate('/');
             }
         };
-        window.addEventListener('resize', checkDesktop);
-        return () => window.removeEventListener('resize', checkDesktop);
+        checkDesktop();
     }, [navigate]);
 
     return (
