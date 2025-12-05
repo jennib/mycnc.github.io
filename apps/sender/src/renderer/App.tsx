@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import MobileLanding from "./components/MobileLanding";
+import DesktopBanner from "./components/DesktopBanner";
 import CameraWindow from "./components/CameraWindow";
 import Console from "./components/Console";
 import JogPanel from "./components/JogPanel";
@@ -311,6 +312,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="h-screen bg-background font-sans text-text-primary flex flex-col overflow-hidden bg-gradient-to-br from-background to-surface/50">
+      <DesktopBanner />
       {!window.electronAPI?.isElectron && <Analytics />}
       <WelcomeModal
         isOpen={isWelcomeModalOpen}
