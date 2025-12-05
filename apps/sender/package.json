@@ -1,7 +1,7 @@
 {
   "name": "@mycnc/sender",
   "private": true,
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "Gcode generator and sender for CNC machines",
   "author": {
     "name": "jennib",
