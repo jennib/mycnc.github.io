@@ -87,6 +87,20 @@
             },
             {
                 "target": "deb",
+                "arch": [
+                    "x64",
+                    "arm64"
+                ]
+            }
+        ],
+        "category": "Development",
+        "icon": "build/icons/512x512.png",
+        "description": "Web-based G-code sender for CNC machines",
+        "vendor": "myCNC",
+        "maintainer": "jennib <jenni.b@gmail.com>",
+        "desktop": {
+            "entry": {
+                "Name": "myCNC",
                 "Comment": "CNC Machine Controller",
                 "Categories": "Development;Engineering;",
                 "StartupNotify": "true",
