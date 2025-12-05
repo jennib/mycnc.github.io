@@ -59,9 +59,13 @@
         "customScripts": "কাস্টম G-Code স্ক্রিপ্ট",
         "startupScript": "স্টার্টআপ স্ক্রিপ্ট (সংযোগের সময়)",
         "shutdownScript": "শাটডাউন স্ক্রিপ্ট (সংযোগ বিচ্ছিন্ন করার সময়)",
-        "configuration": "কনফিগারেশন",
-        "configDescription": "সমস্ত সেটিংস, ম্যাক্রো এবং টুল এক্সপোর্ট/ইম্পোর্ট করুন।",
-        "import": "ইম্পোর্ট",
+        "configuration": "Configuration",
+        "configDescription": "Export/Import all settings, macros, and tools.",
+        "appConfiguration": "Application Settings",
+        "appConfigDescription": "Backup and restore your application preferences, tools, and macros.",
+        "machineConfiguration": "Machine Firmware",
+        "machineConfigDescription": "Manage your GRBL firmware settings ($$ commands).",
+        "import": "Import",
         "export": "এক্সপোর্ট",
         "interface": "ইন্টারফেস সেটিংস",
         "dialogs": "ডায়ালগ সেটিংস",
@@ -71,7 +75,8 @@
         "save": "সেটিংস সংরক্ষণ করুন",
         "importSuccess": "Settings imported successfully!",
         "importError": "Failed to import settings.",
-        "playCompletionSound": "Play Completion Sound"
+        "playCompletionSound": "Play Completion Sound",
+        "firmware": "Firmware"
     },
     "jog": {
         "title": "জগ নিয়ন্ত্রণ",
@@ -549,5 +554,22 @@
         "descriptionPlaceholder": "Optional description...",
         "delete": "Delete",
         "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
+    },
+    "grblSettings": {
+        "title": "GRBL Firmware Settings",
+        "description": "Backup and restore your GRBL firmware configuration ($$ settings). This is useful for migrating settings between machines or recovering from a reset.",
+        "notConnected": "Not connected to machine",
+        "readingSettings": "Reading settings from machine...",
+        "backupSuccess": "Settings backed up successfully",
+        "noSettingsFound": "No settings received from machine",
+        "backupError": "Failed to backup settings",
+        "invalidFile": "No valid GRBL settings found in file",
+        "confirmRestore": "About to restore {{count}} settings. This will overwrite current machine configuration. Continue?",
+        "restoring": "Restoring settings...",
+        "restoreSuccess": "Settings restored successfully",
+        "restorePartial": "Restore complete with {{count}} errors",
+        "backup": "Backup Settings",
+        "restore": "Restore Settings",
+        "currentSettings": "Current Settings"
     }
 }

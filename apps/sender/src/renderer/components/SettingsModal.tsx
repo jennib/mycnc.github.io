@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, X, Upload, Download, Ruler } from "@mycnc/shared";
+import { Save, X, Upload, Download, Ruler, Settings } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
 import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
@@ -61,9 +61,10 @@ interface SettingsModalProps {
     onExport: () => void;
     onImport: (imported: any) => void;
     onContactClick: () => void;
+    onOpenGrblSettings: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings }) => {
     const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
@@ -242,9 +243,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                     </div>
                     <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
-                        <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.configuration')}</h3>
+                        <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.machineConfiguration', 'Machine Firmware')}</h3>
                         <div className="flex items-center justify-between">
-                            <p className="text-sm text-text-secondary">{t('settings.configDescription')}</p>
+                            <p className="text-sm text-text-secondary">{t('settings.machineConfigDescription', 'Manage your GRBL firmware settings ($$ commands).')}</p>
+                            <button onClick={onOpenGrblSettings} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
+                                <Settings className="w-4 h-4" />{t('settings.firmware', 'Firmware')}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                        <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.appConfiguration', 'Application Settings')}</h3>
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm text-text-secondary">{t('settings.appConfigDescription', 'Export/Import all settings, macros, and tools.')}</p>
                             <div className="flex gap-2">
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
                                 <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">

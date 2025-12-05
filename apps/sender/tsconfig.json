@@ -22,7 +22,8 @@
       "@/*": [
         "./src/renderer/*"
       ]
-    }
+    },
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*"

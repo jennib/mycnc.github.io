@@ -12,6 +12,7 @@ import PreflightChecklistModal from "./components/PreflightChecklistModal";
 import WelcomeModal from "./components/WelcomeModal";
 import MacroEditorModal from "./components/MacroEditorModal";
 import SettingsModal from "./components/SettingsModal";
+import GrblSettingsModal from "./components/GrblSettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
@@ -453,7 +454,9 @@ const MainApp: React.FC = () => {
           }
         }}
         onContactClick={uiActions.openContactModal}
+        onOpenGrblSettings={uiActions.openGrblSettingsModal}
       />
+      <GrblSettingsModal />
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}
         onCancel={() => {

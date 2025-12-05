@@ -61,6 +61,10 @@
         "shutdownScript": "Shutdown Script (on disconnect)",
         "configuration": "Configuration",
         "configDescription": "Export/Import all settings, macros, and tools.",
+        "appConfiguration": "Application Settings",
+        "appConfigDescription": "Backup and restore your application preferences, tools, and macros.",
+        "machineConfiguration": "Machine Firmware",
+        "machineConfigDescription": "Manage your GRBL firmware settings ($$ commands).",
         "import": "Import",
         "export": "Export",
         "interface": "Interface Settings",
@@ -71,7 +75,8 @@
         "save": "Save Settings",
         "importSuccess": "Settings imported successfully!",
         "importError": "Failed to import settings.",
-        "playCompletionSound": "Play Completion Sound"
+        "playCompletionSound": "Play Completion Sound",
+        "firmware": "Firmware"
     },
     "jog": {
         "title": "Jog Control",
@@ -549,5 +554,22 @@
         "help": "Enter one G-code command per line. Semicolons (;) can be used to separate multiple commands on the same line.",
         "delete": "Delete",
         "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
+    },
+    "grblSettings": {
+        "title": "GRBL Firmware Settings",
+        "description": "Backup and restore your GRBL firmware configuration ($$ settings). This is useful for migrating settings between machines or recovering from a reset.",
+        "notConnected": "Not connected to machine",
+        "readingSettings": "Reading settings from machine...",
+        "backupSuccess": "Settings backed up successfully",
+        "noSettingsFound": "No settings received from machine",
+        "backupError": "Failed to backup settings",
+        "invalidFile": "No valid GRBL settings found in file",
+        "confirmRestore": "About to restore {{count}} settings. This will overwrite current machine configuration. Continue?",
+        "restoring": "Restoring settings...",
+        "restoreSuccess": "Settings restored successfully",
+        "restorePartial": "Restore complete with {{count}} errors",
+        "backup": "Backup Settings",
+        "restore": "Restore Settings",
+        "currentSettings": "Current Settings"
     }
 }
