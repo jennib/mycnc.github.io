@@ -225,8 +225,21 @@ export class GrblController implements Controller {
         this.serialService.send(command);
     }
 
+    private pollCount = 0;
+
     requestStatusUpdate() {
         this.sendRealtimeCommand('?');
+
+        // Poll parser state ($G) every 2 seconds (approx) to keep WCS and other modes in sync.
+        // Only send if no other command is pending to avoid 'ok' response collision.
+        this.pollCount++;
+        if (this.pollCount % 2 === 0) {
+            if (!this.linePromiseResolve) {
+                this.serialService.send('$G\n').catch(err => {
+                    console.error('Failed to poll parser state:', err);
+                });
+            }
+        }
     }
 
     jog(x: number, y: number, z: number, feedRate: number): void {

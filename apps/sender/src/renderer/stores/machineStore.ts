@@ -92,11 +92,11 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
     handleSetZero: (axes) => {
       const { actions: connectionActions } = useConnectionStore.getState();
       const commandMap = {
-        all: 'G10 L20 P1 X0 Y0 Z0',
-        x: 'G10 L20 P1 X0',
-        y: 'G10 L20 P1 Y0',
-        z: 'G10 L20 P1 Z0',
-        xy: 'G10 L20 P1 X0 Y0',
+        all: 'G10 L20 P0 X0 Y0 Z0',
+        x: 'G10 L20 P0 X0',
+        y: 'G10 L20 P0 Y0',
+        z: 'G10 L20 P0 Z0',
+        xy: 'G10 L20 P0 X0 Y0',
       };
       const command = commandMap[axes];
       if (command) {

@@ -4,7 +4,7 @@ import { PowerOff, RotateCw, RotateCcw, OctagonAlert, Camera } from "@mycnc/shar
 import { MachineState } from '@/types';
 import { useUIStore } from '@/stores/uiStore';
 import { useConnectionStore } from '@/stores/connectionStore';
-import { useTranslation } from 'react-i18next';
+
 
 const WCS_OPTIONS = ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'];
 
