@@ -41,6 +41,7 @@ export interface MachineState {
     wpos: MachinePosition;
     mpos: MachinePosition;
     wco: MachinePosition; // Added wco
+    wcs: string; // Added wcs (e.g., G54)
     spindle: { state: 'cw' | 'ccw' | 'off'; speed: number }; // Changed to 'cw' | 'ccw' | 'off'
     ov: number[];
 }

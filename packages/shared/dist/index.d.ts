@@ -385,6 +385,7 @@ export declare interface MachineState {
     wpos: MachinePosition;
     mpos: MachinePosition;
     wco: MachinePosition;
+    wcs: string;
     spindle: {
         state: 'cw' | 'ccw' | 'off';
         speed: number;

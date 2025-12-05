@@ -1,7 +1,7 @@
 import { MachineState, ConnectionOptions, MachineSettings, PortInfo } from "@mycnc/shared";
 import { Controller } from './Controller';
 import { SerialService } from '../services/serialService';
-import { parseGrblStatus } from '../services/grblParser';
+import { parseGrblStatus, parseGrblParserState } from '../services/grblParser';
 import { GrblSimulator } from '../services/simulators/GrblSimulator';
 import { EventEmitter } from '../utils/EventEmitter';
 
@@ -26,6 +26,7 @@ export class GrblController implements Controller {
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
+        wcs: 'G54',
         spindle: { state: 'off', speed: 0 },
         ov: [100, 100, 100],
     };
@@ -64,6 +65,7 @@ export class GrblController implements Controller {
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
+                wcs: 'G54',
                 spindle: { state: 'off', speed: 0 },
                 ov: [100, 100, 100],
             };
@@ -97,6 +99,9 @@ export class GrblController implements Controller {
 
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
             this.isPollingInAlarmState = false;
+
+            // Request initial parser state (for WCS)
+            this.sendRealtimeCommand('$G');
 
         } catch (error) {
             this.isHandshakeInProgress = false;
@@ -143,6 +148,15 @@ export class GrblController implements Controller {
                     ...statusUpdate
                 };
 
+                this.emitter.emit('state', { type: 'state', data: this.lastStatus });
+            }
+        } else if (trimmedValue.startsWith('[GC:') && trimmedValue.endsWith(']')) {
+            const parserState = parseGrblParserState(trimmedValue);
+            if (parserState) {
+                this.lastStatus = {
+                    ...this.lastStatus,
+                    ...parserState
+                };
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
             }
         } else if (trimmedValue) {

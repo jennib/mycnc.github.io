@@ -149,3 +149,24 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
         return null; // Failed to parse
     }
 }
+
+export function parseGrblParserState(stateStr: string): Partial<MachineState> | null {
+    try {
+        // Format: [GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0]
+        const content = stateStr.slice(4, -1); // Remove [GC: and ]
+        const parts = content.split(' ');
+        const parsed: Partial<MachineState> = {};
+
+        for (const part of parts) {
+            if (part.startsWith('G5') && part.length === 3) {
+                // G54, G55, G56, G57, G58, G59
+                parsed.wcs = part;
+            }
+        }
+
+        return parsed;
+    } catch (e) {
+        console.error("Failed to parse GRBL parser state:", stateStr, e);
+        return null;
+    }
+}

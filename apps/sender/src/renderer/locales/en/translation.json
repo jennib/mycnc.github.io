@@ -188,19 +188,6 @@
     "status": {
         "label": "Status:",
         "alarm": "Alarm:",
-        "homing": "Homing",
-        "connected": "Connected",
-        "disconnected": "Disconnected",
-        "spindleOff": "Spindle Off",
-        "clockwise": "Clockwise",
-        "counterCw": "Counter-CW",
-        "wpos": "WPos",
-        "mpos": "MPos"
-    },
-    "connection": {
-        "notConnected": "Not Connected",
-        "unknownPort": "Unknown Port",
-        "useSimulator": "Use Simulator",
         "usb": "USB",
         "tcp": "TCP",
         "ip": "IP Address",

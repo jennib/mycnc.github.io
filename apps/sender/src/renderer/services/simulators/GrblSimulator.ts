@@ -21,6 +21,7 @@ export class GrblSimulator implements Simulator {
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
+        wcs: 'G54',
         spindle: { state: 'off', speed: 0 },
         ov: [100, 100, 100],
     };
@@ -109,6 +110,28 @@ export class GrblSimulator implements Simulator {
         // Realtime commands (single characters)
         if (command.length === 1) {
             this.processRealtimeCommand(command);
+            return;
+        }
+
+        // Handle $G command (Parser State)
+        if (command === '$G') {
+            // [GC:G0 G54 G17 G21 G90 G94 M5 M9 T0 F0 S0]
+            // We need to reflect the current state
+            const motionMode = 'G0'; // Simplified
+            const wcs = this.state.wcs || 'G54';
+            const plane = 'G17';
+            const units = 'G21'; // Metric
+            const dist = this.positioningMode === 'absolute' ? 'G90' : 'G91';
+            const feed = 'G94';
+            const spindle = 'M5';
+            const coolant = 'M9';
+            const tool = 'T0';
+            const f = 'F0';
+            const s = 'S0';
+
+            const gc = `[GC:${motionMode} ${wcs} ${plane} ${units} ${dist} ${feed} ${spindle} ${coolant} ${tool} ${f} ${s}]`;
+            this.emitData(gc + '\r\n');
+            this.emitData('ok\r\n');
             return;
         }
 
@@ -202,6 +225,24 @@ export class GrblSimulator implements Simulator {
 
         if (upperCmd === 'G91') {
             this.positioningMode = 'incremental';
+            this.emitData('ok\r\n');
+            return;
+        }
+
+        // Handle WCS selection (G54-G59)
+        if (upperCmd.match(/^G5[4-9]$/)) {
+            this.state.wcs = upperCmd;
+            // Simulate different WCO for each system to make it visible
+            const offsetMap: Record<string, { x: number, y: number, z: number }> = {
+                'G54': { x: 0, y: 0, z: 0 },
+                'G55': { x: 10, y: 10, z: 0 },
+                'G56': { x: 20, y: 20, z: 5 },
+                'G57': { x: -10, y: -10, z: 0 },
+                'G58': { x: -20, y: -20, z: -5 },
+                'G59': { x: 50, y: 50, z: 10 },
+            };
+            this.state.wco = offsetMap[upperCmd] || { x: 0, y: 0, z: 0 };
+            this.updateWPos();
             this.emitData('ok\r\n');
             return;
         }

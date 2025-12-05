@@ -52,6 +52,7 @@ const initialState = {
   isJogging: false,
   isHomedSinceConnect: false,
   isMacroRunning: false,
+  wcs: 'G54',
 };
 
 export const useMachineStore = create<MachineStoreState>((set, get) => ({

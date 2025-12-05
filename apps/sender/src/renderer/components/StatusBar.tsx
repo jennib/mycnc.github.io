@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { PowerOff, RotateCw, RotateCcw, OctagonAlert, Camera } from "@mycnc/shared";
 import { MachineState } from '@/types';
 import { useUIStore } from '@/stores/uiStore';
+import { useConnectionStore } from '@/stores/connectionStore';
+import { useTranslation } from 'react-i18next';
+
+const WCS_OPTIONS = ['G54', 'G55', 'G56', 'G57', 'G58', 'G59'];
 
 interface StatusIndicatorProps {
     isConnected: boolean;
@@ -101,7 +105,14 @@ interface StatusBarProps {
 }
 
 const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => {
+    const { t } = useTranslation();
     const { isWebcamPeekOpen, actions: { toggleWebcamPeek } } = useUIStore();
+    const { actions: connectionActions } = useConnectionStore();
+
+    const handleWCSChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newWCS = e.target.value;
+        connectionActions.sendLine(newWCS);
+    };
 
     return (
         <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
@@ -111,6 +122,20 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
                 <SpindleStatusIndicator isConnected={isConnected} machineState={machineState} />
             </div>
             <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <span className="font-semibold text-text-secondary">{t('status.wcs')}</span>
+                    <select
+                        value={machineState?.wcs || 'G54'}
+                        onChange={handleWCSChange}
+                        disabled={!isConnected || machineState?.status !== 'Idle'}
+                        className="bg-background border border-white/10 rounded px-2 py-0.5 text-text-primary font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                        title="Select Work Coordinate System"
+                    >
+                        {WCS_OPTIONS.map(wcs => (
+                            <option key={wcs} value={wcs}>{wcs}</option>
+                        ))}
+                    </select>
+                </div>
                 <PositionDisplay title="WPos" pos={machineState?.wpos} unit={unit} />
                 <div className="h-4 border-l border-white/20" />
                 <PositionDisplay title="MPos" pos={machineState?.mpos} unit={unit} />
