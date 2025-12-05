@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Download, Upload, AlertTriangle, CheckCircle } from "@mycnc/shared";
+import { X, Download, Upload, AlertTriangle, CheckCircle, Save, RefreshCw } from "@mycnc/shared";
 import { useUIStore } from '../stores/uiStore';
 import { useConnectionStore } from '../stores/connectionStore';
+import { GRBL_SETTINGS, GrblSettingDefinition } from '../constants/grblSettings';
 
 const GrblSettingsModal: React.FC = () => {
     const { t } = useTranslation();
@@ -10,6 +11,8 @@ const GrblSettingsModal: React.FC = () => {
     const { isConnected, actions: connectionActions } = useConnectionStore();
     const controller = useConnectionStore(state => state.controller);
 
+    const [parsedSettings, setParsedSettings] = useState<Record<number, string>>({});
+    const [modifiedSettings, setModifiedSettings] = useState<Record<number, string>>({});
     const [isBackingUp, setIsBackingUp] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
     const [restoreProgress, setRestoreProgress] = useState(0);
@@ -28,6 +31,22 @@ const GrblSettingsModal: React.FC = () => {
 
     if (!isGrblSettingsModalOpen) return null;
 
+    const parseSettings = (lines: string[]) => {
+        const parsed: Record<number, string> = {};
+        lines.forEach(line => {
+            if (line.startsWith('$') && line.includes('=')) {
+                const parts = line.substring(1).split('=');
+                const id = parseInt(parts[0]);
+                const value = parts[1].split('(')[0].trim(); // Remove comments if any
+                if (!isNaN(id)) {
+                    parsed[id] = value;
+                }
+            }
+        });
+        setParsedSettings(parsed);
+        setModifiedSettings({});
+    };
+
     const handleBackup = async () => {
         if (!isConnected || !controller) {
             setStatusMessage({ type: 'error', text: t('grblSettings.notConnected', 'Not connected to machine') });
@@ -44,29 +63,21 @@ const GrblSettingsModal: React.FC = () => {
         const dataHandler = (data: any) => {
             if (data.type === 'received') {
                 const line = data.message.trim();
-                // Match lines like $0=10, $100=250.000, etc.
                 if (line.startsWith('$') && line.includes('=')) {
                     collectedSettings.push(line);
                 }
             }
         };
 
-        // Attach listener
         controller.on('data', dataHandler);
 
-        // Send command
         try {
             await connectionActions.sendLine('$$');
-
-            // Wait for settings to arrive. GRBL sends them quickly.
-            // We'll wait for 2 seconds of silence or a max timeout.
-            // A simple timeout is usually sufficient for $$ output.
             await new Promise(resolve => {
                 timeoutId = setTimeout(resolve, 2000);
             });
 
             if (collectedSettings.length > 0) {
-                // Sort settings by ID for consistency
                 collectedSettings.sort((a, b) => {
                     const idA = parseInt(a.substring(1).split('=')[0]);
                     const idB = parseInt(b.substring(1).split('=')[0]);
@@ -74,18 +85,7 @@ const GrblSettingsModal: React.FC = () => {
                 });
 
                 setSettingsList(collectedSettings);
-
-                // Create download
-                const blob = new Blob([collectedSettings.join('\n')], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `grbl-settings-${new Date().toISOString().split('T')[0]}.txt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
+                parseSettings(collectedSettings);
                 setStatusMessage({ type: 'success', text: t('grblSettings.backupSuccess', 'Settings backed up successfully') });
             } else {
                 setStatusMessage({ type: 'error', text: t('grblSettings.noSettingsFound', 'No settings received from machine') });
@@ -153,24 +153,85 @@ const GrblSettingsModal: React.FC = () => {
         event.target.value = "";
     };
 
+    const handleSettingChange = (id: number, value: string) => {
+        setModifiedSettings(prev => ({
+            ...prev,
+            [id]: value
+        }));
+    };
+
+    const handleBitmaskChange = (id: number, bit: number, checked: boolean) => {
+        const currentValue = parseInt(modifiedSettings[id] ?? parsedSettings[id] ?? '0');
+        let newValue = currentValue;
+        if (checked) {
+            newValue |= bit;
+        } else {
+            newValue &= ~bit;
+        }
+        handleSettingChange(id, newValue.toString());
+    };
+
+    const handleApplyChanges = async () => {
+        const updates = Object.entries(modifiedSettings);
+        if (updates.length === 0) return;
+
+        setIsRestoring(true); // Reuse restoring state for saving
+        setStatusMessage({ type: 'info', text: 'Saving changes...' });
+
+        let failCount = 0;
+        for (const [id, value] of updates) {
+            try {
+                await connectionActions.sendLine(`$${id}=${value}`);
+                // Small delay
+                await new Promise(r => setTimeout(r, 50));
+            } catch (error) {
+                console.error(`Failed to set $${id}=${value}`, error);
+                failCount++;
+            }
+        }
+
+        setIsRestoring(false);
+        setModifiedSettings({});
+
+        if (failCount === 0) {
+            setStatusMessage({ type: 'success', text: 'Settings saved successfully' });
+            handleBackup(); // Refresh
+        } else {
+            setStatusMessage({ type: 'error', text: `Saved with ${failCount} errors` });
+        }
+    };
+
+    // Group settings by section
+    const groupedSettings = GRBL_SETTINGS.reduce((acc, setting) => {
+        if (!acc[setting.section]) acc[setting.section] = [];
+        acc[setting.section].push(setting);
+        return acc;
+    }, {} as Record<string, GrblSettingDefinition[]>);
+
     return (
         <div
             className="fixed inset-0 bg-background/80 backdrop-blur-md z-[60] flex items-center justify-center"
             aria-modal="true" role="dialog"
         >
-            <div className="bg-surface backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-lg border border-white/10 transform transition-all flex flex-col max-h-[90vh]">
+            <div className="bg-surface backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-4xl border border-white/10 transform transition-all flex flex-col max-h-[90vh]">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">{t('grblSettings.title', 'GRBL Firmware Settings')}</h2>
-                    <button onClick={uiActions.closeGrblSettingsModal} className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
-                        <X className="w-6 h-6" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleBackup}
+                            disabled={isBackingUp || isRestoring || !isConnected}
+                            className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors"
+                            title="Refresh Settings"
+                        >
+                            <RefreshCw className={`w-5 h-5 ${isBackingUp ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button onClick={uiActions.closeGrblSettingsModal} className="p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-white/5 transition-colors">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
 
-                <div className="p-6 space-y-6 overflow-y-auto">
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-sm text-blue-200">
-                        <p>{t('grblSettings.description', 'Backup and restore your GRBL firmware configuration ($$ settings). This is useful for migrating settings between machines or recovering from a reset.')}</p>
-                    </div>
-
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
                     {statusMessage && (
                         <div className={`p-4 rounded-lg flex items-start gap-3 ${statusMessage.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
                             statusMessage.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
@@ -178,21 +239,105 @@ const GrblSettingsModal: React.FC = () => {
                             }`}>
                             {statusMessage.type === 'success' ? <CheckCircle className="w-5 h-5 mt-0.5" /> :
                                 statusMessage.type === 'error' ? <AlertTriangle className="w-5 h-5 mt-0.5" /> :
-                                    <AlertTriangle className="w-5 h-5 mt-0.5" />} {/* Info icon fallback */}
+                                    <AlertTriangle className="w-5 h-5 mt-0.5" />}
                             <div>{statusMessage.text}</div>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            onClick={handleBackup}
-                            disabled={isBackingUp || isRestoring || !isConnected}
-                            className="flex flex-col items-center justify-center gap-3 p-6 bg-background/60 border border-white/10 rounded-xl hover:bg-secondary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-                        >
-                            <Download className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
-                            <span className="font-bold text-text-primary">{t('grblSettings.backup', 'Backup Settings')}</span>
-                        </button>
+                    {!isConnected && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-sm text-yellow-200 flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5" />
+                            {t('grblSettings.notConnected', 'Not connected to machine')}
+                        </div>
+                    )}
 
+                    {Object.entries(groupedSettings).map(([section, settings]) => (
+                        <div key={section} className="space-y-4">
+                            <h3 className="text-lg font-bold text-primary border-b border-white/10 pb-2">{section}</h3>
+                            <div className="grid grid-cols-1 gap-4">
+                                {settings.map(setting => {
+                                    const rawValue = modifiedSettings[setting.id] ?? parsedSettings[setting.id] ?? '';
+                                    const isModified = modifiedSettings[setting.id] !== undefined;
+
+                                    return (
+                                        <div key={setting.id} className="bg-background/40 p-4 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs text-text-secondary bg-black/30 px-1.5 py-0.5 rounded">${setting.id}</span>
+                                                        <span className="font-semibold text-text-primary">{setting.name}</span>
+                                                    </div>
+                                                    <p className="text-xs text-text-secondary mt-1">{setting.description}</p>
+                                                </div>
+                                                {setting.unit && <span className="text-xs text-text-secondary font-mono">{setting.unit}</span>}
+                                            </div>
+
+                                            <div className="mt-3">
+                                                {setting.type === 'boolean' ? (
+                                                    <select
+                                                        value={rawValue}
+                                                        onChange={(e) => handleSettingChange(setting.id, e.target.value)}
+                                                        className={`w-full bg-black/20 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                    >
+                                                        {setting.options?.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : setting.type === 'bitmask' ? (
+                                                    <div className="flex flex-wrap gap-4">
+                                                        {setting.options?.map(opt => {
+                                                            const val = parseInt(rawValue || '0');
+                                                            const checked = (val & opt.value) === opt.value;
+                                                            return (
+                                                                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={checked}
+                                                                        onChange={(e) => handleBitmaskChange(setting.id, opt.value, e.target.checked)}
+                                                                        className="rounded border-white/20 bg-black/20 text-primary focus:ring-primary"
+                                                                    />
+                                                                    <span className={`text-sm ${checked ? 'text-text-primary' : 'text-text-secondary'}`}>{opt.label}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        value={rawValue}
+                                                        onChange={(e) => handleSettingChange(setting.id, e.target.value)}
+                                                        className={`w-full bg-black/20 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                        step={setting.type === 'float' ? "0.001" : "1"}
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="p-6 border-t border-white/10 flex justify-between items-center bg-surface/50">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => {
+                                const blob = new Blob([settingsList.join('\n')], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `grbl-settings-${new Date().toISOString().split('T')[0]}.txt`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }}
+                            className="px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all"
+                        >
+                            <Download className="w-4 h-4 inline-block mr-2" />
+                            {t('grblSettings.backup', 'Backup to File')}
+                        </button>
                         <div className="relative">
                             <input
                                 type="file"
@@ -203,40 +348,28 @@ const GrblSettingsModal: React.FC = () => {
                             />
                             <button
                                 onClick={() => importFileRef.current?.click()}
-                                disabled={isBackingUp || isRestoring || !isConnected}
-                                className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 bg-background/60 border border-white/10 rounded-xl hover:bg-secondary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                                className="px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all"
                             >
-                                <Upload className="w-8 h-8 text-accent-yellow group-hover:scale-110 transition-transform" />
-                                <span className="font-bold text-text-primary">{t('grblSettings.restore', 'Restore Settings')}</span>
+                                <Upload className="w-4 h-4 inline-block mr-2" />
+                                {t('grblSettings.restore', 'Restore from File')}
                             </button>
                         </div>
                     </div>
 
-                    {isRestoring && (
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm text-text-secondary">
-                                <span>{t('common.progress', 'Progress')}</span>
-                                <span>{restoreProgress}%</span>
-                            </div>
-                            <div className="h-2 bg-background rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-primary transition-all duration-300"
-                                    style={{ width: `${restoreProgress}%` }}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {settingsList.length > 0 && (
-                        <div className="space-y-2">
-                            <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider">{t('grblSettings.currentSettings', 'Current Settings')}</h3>
-                            <div className="bg-black/40 rounded-lg p-4 font-mono text-xs text-text-secondary max-h-48 overflow-y-auto border border-white/5">
-                                {settingsList.map((line, i) => (
-                                    <div key={i}>{line}</div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <div className="flex gap-2">
+                        <button onClick={uiActions.closeGrblSettingsModal} className="px-4 py-2 bg-secondary/80 text-text-primary font-semibold rounded-lg hover:bg-secondary border border-white/5 transition-all">
+                            {t('common.cancel', 'Close')}
+                        </button>
+                        {Object.keys(modifiedSettings).length > 0 && (
+                            <button
+                                onClick={handleApplyChanges}
+                                className="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-focus flex items-center gap-2 shadow-lg shadow-primary/20 transition-all animate-pulse"
+                            >
+                                <Save className="w-5 h-5" />
+                                Apply {Object.keys(modifiedSettings).length} Changes
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
