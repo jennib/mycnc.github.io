@@ -188,6 +188,20 @@
     "status": {
         "label": "Status:",
         "alarm": "Alarm:",
+        "homing": "Homing",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "spindleOff": "Spindle Off",
+        "clockwise": "Clockwise",
+        "counterCw": "Counter-CW",
+        "wpos": "WPos",
+        "mpos": "MPos",
+        "wcs": "WCS"
+    },
+    "connection": {
+        "notConnected": "Not Connected",
+        "unknownPort": "Unknown Port",
+        "useSimulator": "Use Simulator",
         "usb": "USB",
         "tcp": "TCP",
         "ip": "IP Address",
@@ -517,7 +531,10 @@
     "macros": {
         "title": "Macros",
         "add": "Add Macro",
-        "editTooltip": "Edit \"{{name}}\""
+        "editTooltip": "Edit \"{{name}}\"",
+        "import": "Import Macros",
+        "export": "Export Macros",
+        "importError": "Failed to import macros. Please check the file format."
     },
     "macro": {
         "addTitle": "Add New Macro",
@@ -526,7 +543,9 @@
         "namePlaceholder": "e.g., Probe Z-Axis",
         "commands": "G-Code Commands",
         "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-        "help": "Enter one G-code command per line.",
+        "description": "Description",
+        "descriptionPlaceholder": "Optional description...",
+        "help": "Enter one G-code command per line. Semicolons (;) can be used to separate multiple commands on the same line.",
         "delete": "Delete",
         "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }

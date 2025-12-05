@@ -1,7 +1,7 @@
 {
     "common": {
-        "autoscroll": "Auto-Scroll",
-        "clear": "Protokoll löschen",
+        "autoscroll": "Autoscroll",
+        "clear": "Protokolle löschen",
         "send": "Senden",
         "placeholder": "G-Code Befehl eingeben...",
         "ok": "OK",
@@ -19,8 +19,8 @@
         "title": "Konsole",
         "mute": "Stumm",
         "verbose": "Ausführlich",
-        "autoscroll": "Auto-Scroll",
-        "clear": "Protokoll löschen",
+        "autoscroll": "Autoscroll",
+        "clear": "Protokolle löschen",
         "send": "Senden",
         "placeholder": "G-Code Befehl eingeben...",
         "locked": "Konsole während Betrieb gesperrt",
@@ -30,8 +30,8 @@
     },
     "welcome": {
         "title": "Willkommen bei mycnc.app!",
-        "description": "<b>mycnc.app</b> ist ein webbasierter G-Code-Sender, der in Ihrem Browser läuft, um Ihre CNC-Maschine zu steuern. Verbinden Sie sich über USB, um zu joggen, Dateien zu senden und Aufträge in Echtzeit zu überwachen. Es enthält einen 3D-Werkzeugweg-Visualisierer, einen Maschinensimulator und G-Code-Generatoren für einfache Operationen.",
-        "instructions": "Um zu beginnen, führen Sie bitte die beiden folgenden Schritte aus. Dadurch wird die Anwendung für Ihre spezifische Maschine konfiguriert.",
+        "description": "<b>mycnc.app</b> ist ein webbasierter G-Code-Sender, der in Ihrem Browser läuft, um Ihre CNC-Maschine zu steuern. Verbinden Sie sich über USB, um zu joggen, Dateien zu senden und Jobs in Echtzeit zu überwachen. Es enthält einen 3D-Werkzeugweg-Visualisierer, einen Maschinensimulator und G-Code-Generatoren für einfache Operationen.",
+        "instructions": "Um zu beginnen, schließen Sie bitte die beiden folgenden Schritte ab. Dies konfiguriert die Anwendung für Ihre spezifische Maschine.",
         "machineSetup": {
             "title": "Maschineneinrichtung",
             "description": "Definieren Sie den Arbeitsbereich und die Spindeldrehzahlen Ihrer Maschine.",
@@ -50,15 +50,15 @@
     "settings": {
         "title": "Maschineneinstellungen",
         "workArea": "Arbeitsbereichsabmessungen (mm)",
-        "jogFeedRate": "Jog-Vorschub (mm/min)",
+        "jogFeedRate": "Jog-Vorschubgeschwindigkeit (mm/min)",
         "spindleSpeed": "Spindeldrehzahlbereich (RPM)",
-        "controllerType": "Controller-Typ",
-        "spindleWarmup": "Spindel-Aufwärmverzögerung (ms)",
-        "probe": "Taster (mm)",
-        "probeFeedRate": "Taster-Vorschub",
+        "controllerType": "Steuerungstyp",
+        "spindleWarmup": "Spindelaufwärmverzögerung (ms)",
+        "probe": "Sonde (mm)",
+        "probeFeedRate": "Sondenvorschubgeschwindigkeit",
         "customScripts": "Benutzerdefinierte G-Code-Skripte",
         "startupScript": "Startskript (bei Verbindung)",
-        "shutdownScript": "Abschaltskript (bei Trennung)",
+        "shutdownScript": "Herunterfahrskript (bei Trennung)",
         "configuration": "Konfiguration",
         "configDescription": "Alle Einstellungen, Makros und Werkzeuge exportieren/importieren.",
         "import": "Importieren",
@@ -84,29 +84,29 @@
         "stepSize": "Schrittgröße:",
         "homing": {
             "title": "Referenzfahrt",
-            "all": "Alles referenzieren ($H)",
-            "x": "X referenzieren",
-            "y": "Y referenzieren",
-            "z": "Z referenzieren",
-            "xy": "XY referenzieren"
+            "all": "Alle Referenz ($H)",
+            "x": "Referenz X",
+            "y": "Referenz Y",
+            "z": "Referenz Z",
+            "xy": "Referenz XY"
         },
         "zero": {
             "title": "Arbeitsnullpunkt setzen",
-            "all": "Alles nullen",
-            "x": "X nullen",
-            "y": "Y nullen",
-            "z": "Z nullen",
-            "xy": "XY nullen"
+            "all": "Alle Nullen",
+            "x": "Null X",
+            "y": "Null Y",
+            "z": "Null Z",
+            "xy": "Null XY"
         },
         "units": {
             "title": "Einheiten"
         },
         "probe": {
-            "title": "Taster",
-            "x": "Taster X",
-            "y": "Taster Y",
-            "z": "Taster Z",
-            "xy": "Taster XY"
+            "title": "Sonde",
+            "x": "Sonde X",
+            "y": "Sonde Y",
+            "z": "Sonde Z",
+            "xy": "Sonde XY"
         },
         "spindle": {
             "title": "Spindelsteuerung",
@@ -119,11 +119,11 @@
     "gcode": {
         "title": "G-Code",
         "view": {
-            "visualizer": "Visualisierer",
+            "visualizer": "Visualisierer-Ansicht",
             "list": "G-Code",
             "code": "Code-Ansicht",
-            "reset": "Draufsicht",
-            "fit": "Ansicht anpassen",
+            "reset": "Auf Draufsicht zurücksetzen",
+            "fit": "An Ansicht anpassen",
             "zoomIn": "Vergrößern",
             "zoomOut": "Verkleinern"
         },
@@ -135,18 +135,18 @@
             "editTitle": "G-Code bearbeiten",
             "generate": "Generatoren",
             "generateTitle": "G-Code-Generatoren öffnen",
-            "load": "Laden",
-            "clear": "Löschen",
+            "load": "Datei laden",
+            "clear": "G-Code & Vorschau löschen",
             "saveToApp": "Save to App",
             "saveToDisk": "Save to Disk",
-            "undoTitle": "Rückgängig (Strg+Z)",
-            "redoTitle": "Wiederholen (Strg+Y)",
+            "undoTitle": "Rückgängig (Ctrl+Z)",
+            "redoTitle": "Wiederholen (Ctrl+Y)",
             "errors": "errors",
             "warnings": "warnings",
             "noIssues": "No issues found"
         },
         "editor": {
-            "title": "G-Code-Editor",
+            "title": "G-Code Editor",
             "format": "Code formatieren",
             "noIssues": "Keine Probleme gefunden",
             "saveToApp": "In App speichern",
@@ -160,19 +160,19 @@
             "connectMessage": "Bitte verbinden Sie sich über die Schaltfläche oben rechts mit Ihrer Maschine oder dem Simulator.",
             "label": "Status:",
             "estTime": "Gesch. Zeit",
-            "timeRem": "Verbleibend",
-            "estJobTime": "Geschätzte Auftragszeit",
+            "timeRem": "Verbl. Zeit",
+            "estJobTime": "Geschätzte Jobzeit",
             "estTimeRem": "Geschätzte verbleibende Zeit",
             "noFile": "Keine G-Code-Datei geladen.",
             "loadInstruction": "Klicken Sie auf \"Datei laden\" oder ziehen Sie sie hierher, um zu beginnen.",
             "drop": "G-Code-Datei hier ablegen",
             "homing": "Referenzfahrt...",
-            "jobActive": "Auftrag aktiv"
+            "jobActive": "Job aktiv"
         },
         "controls": {
-            "start": "Starten",
+            "start": "Job starten",
             "pause": "Pause",
-            "stop": "Stoppen",
+            "stop": "Job stoppen",
             "resume": "Fortsetzen",
             "feedRate": "Vorschub",
             "spindle": "Spindel",
@@ -195,7 +195,8 @@
         "clockwise": "Im Uhrzeigersinn",
         "counterCw": "Gegen Uhrzeigersinn",
         "wpos": "Arbeitspos.",
-        "mpos": "Maschinenpos."
+        "mpos": "Maschinenpos.",
+        "wcs": "WCS"
     },
     "connection": {
         "notConnected": "Nicht verbunden",
@@ -231,7 +232,7 @@
         "webrtc": "WebRTC-Stream",
         "mute": "Stumm",
         "unmute": "Stummschaltung aufheben",
-        "popout": "Popout"
+        "popout": "Popout-Kamera"
     },
     "contact": {
         "title": "Kontaktieren Sie uns",
@@ -530,7 +531,10 @@
     "macros": {
         "title": "Macros",
         "add": "Add Macro",
-        "editTooltip": "Edit \"{{name}}\""
+        "editTooltip": "Edit \"{{name}}\"",
+        "import": "Import Macros",
+        "export": "Export Macros",
+        "importError": "Failed to import macros. Please check the file format."
     },
     "macro": {
         "addTitle": "Add New Macro",
@@ -539,7 +543,9 @@
         "namePlaceholder": "e.g., Probe Z-Axis",
         "commands": "G-Code Commands",
         "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-        "help": "Enter one G-code command per line.",
+        "description": "Description",
+        "descriptionPlaceholder": "Optional description...",
+        "help": "Enter one G-code command per line. Semicolons (;) can be used to separate multiple commands on the same line.",
         "delete": "Delete",
         "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
     }

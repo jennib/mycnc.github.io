@@ -1,5 +1,6 @@
 {
     "common": {
+        "save": "Save",
         "autoscroll": "Desplazamiento Auto",
         "clear": "Borrar Registros",
         "send": "Enviar",
@@ -229,6 +230,9 @@
         "unmute": "Activar Sonido"
     },
     "contact": {
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information",
         "title": "Contáctenos",
         "description": "Si tiene alguna pregunta, comentario o necesita soporte, por favor contáctenos.",
         "email": "Correo Electrónico",

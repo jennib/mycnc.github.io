@@ -657,6 +657,7 @@ const MainApp: React.FC = () => {
                       macros={macros}
                       onRunMacro={handleRunMacro}
                       onOpenEditor={uiActions.openMacroEditor}
+                      onImportMacros={settingsActions.setMacros}
                       isEditMode={isMacroEditMode}
                       onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
                       disabled={isJobActive}

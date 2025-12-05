@@ -1,0 +1,69 @@
+﻿[36m=== Editor Translation Completeness Check ===[0m
+
+[34mReference (en): 432 keys found[0m
+
+[36mChecking bn...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking de...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking es...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking fr...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking hi...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking ja...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking pa...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking uk...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+[36mChecking zh...[0m
+  [31mΓ£ù Missing 4 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+
+Report written to C:\Users\jenni\Projects\mycnc.github.io\apps\editor\translation_report.txt
+[31mIncomplete translations found.[0m

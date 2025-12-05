@@ -1,22 +1,22 @@
 === Translation Completeness Check ===
 
-Reference (en): 452 keys found
+Reference (en): 458 keys found
 
-✓ bn: Complete (452 keys)
+✓ bn: Complete (458 keys)
 
-✓ de: Complete (452 keys)
+✓ de: Complete (458 keys)
 
-✓ es: Complete (452 keys)
+✓ es: Complete (458 keys)
 
-✓ fr: Complete (452 keys)
+✓ fr: Complete (458 keys)
 
-✓ hi: Complete (452 keys)
+✓ hi: Complete (458 keys)
 
-✓ ja: Complete (452 keys)
+✓ ja: Complete (458 keys)
 
-✓ pa: Complete (452 keys)
+✓ pa: Complete (458 keys)
 
-✓ uk: Complete (452 keys)
+✓ uk: Complete (458 keys)
 
-✓ zh: Complete (452 keys)
+✓ zh: Complete (458 keys)
 

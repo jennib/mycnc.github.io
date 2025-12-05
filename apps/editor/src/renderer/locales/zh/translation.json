@@ -1,5 +1,6 @@
 {
     "common": {
+        "save": "Save",
         "autoscroll": "自动滚动",
         "clear": "清除日志",
         "send": "发送",
@@ -229,6 +230,9 @@
         "unmute": "取消静音"
     },
     "contact": {
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information",
         "title": "联系我们",
         "description": "如果您有任何问题、反馈或需要支持，请与我们联系。",
         "email": "电子邮件",

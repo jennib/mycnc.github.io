@@ -1,5 +1,6 @@
 {
     "common": {
+        "save": "Save",
         "autoscroll": "ਆਟੋ-ਸਕ੍ਰੋਲ",
         "clear": "ਲੌਗ ਸਾਫ਼ ਕਰੋ",
         "send": "ਭੇਜੋ",
@@ -229,6 +230,9 @@
         "unmute": "ਅਨਮਿਊਟ"
     },
     "contact": {
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information",
         "title": "ਸੰਪਰਕ ਕਰੋ",
         "description": "ਜੇ ਤੁਹਾਡੇ ਕੋਈ ਸਵਾਲ, ਫੀਡਬੈਕ ਹੈ, ਜਾਂ ਸਹਾਇਤਾ ਦੀ ਲੋੜ ਹੈ, ਤਾਂ ਕਿਰਪਾ ਕਰਕੇ ਸਾਡੇ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
         "email": "ਈਮੇਲ",

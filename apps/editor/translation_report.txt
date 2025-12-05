@@ -1,0 +1,22 @@
+=== Editor Translation Completeness Check ===
+
+Reference (en): 432 keys found
+
+✓ bn: Complete
+
+✓ de: Complete
+
+✓ es: Complete
+
+✓ fr: Complete
+
+✓ hi: Complete
+
+✓ ja: Complete
+
+✓ pa: Complete
+
+✓ uk: Complete
+
+✓ zh: Complete
+

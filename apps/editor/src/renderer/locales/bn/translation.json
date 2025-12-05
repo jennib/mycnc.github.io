@@ -1,5 +1,6 @@
 {
     "common": {
+        "save": "Save",
         "autoscroll": "অটো-স্ক্রল",
         "clear": "লগ পরিষ্কার করুন",
         "send": "পাঠান",
@@ -229,6 +230,9 @@
         "unmute": "শব্দ চালু করুন"
     },
     "contact": {
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information",
         "title": "যোগাযোগ করুন",
         "description": "আপনার যদি কোন প্রশ্ন, মতামত থাকে বা সহায়তার প্রয়োজন হয়, তবে অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন।",
         "email": "ইমেল",

@@ -236,7 +236,10 @@
         "send": "Send Message",
         "cancel": "Cancel",
         "success": "Message sent successfully!",
-        "error": "Failed to send message."
+        "error": "Failed to send message.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     },
     "info": {
         "title": "Information",
@@ -519,21 +522,5 @@
         "title": "Macros",
         "add": "Add Macro",
         "editTooltip": "Edit \"{{name}}\""
-    },
-    "macro": {
-        "addTitle": "Add New Macro",
-        "editTitle": "Edit Macro",
-        "name": "Macro Name",
-        "namePlaceholder": "e.g., Probe Z-Axis",
-        "commands": "G-Code Commands",
-        "commandsPlaceholder": "G21\\nG90\\nG0 Z10\\n...",
-        "help": "Enter one G-code command per line.",
-        "delete": "Delete",
-        "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
-    },
-    "contact": {
-        "name": "Name",
-        "message": "Message",
-        "clientInfo": "Include system information"
     }
 }

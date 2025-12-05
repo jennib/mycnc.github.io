@@ -1,5 +1,6 @@
 {
     "common": {
+        "save": "Save",
         "autoscroll": "ऑटो-स्क्रॉल",
         "clear": "लॉग साफ़ करें",
         "send": "भेजें",
@@ -229,6 +230,9 @@
         "unmute": "अनम्यूट"
     },
     "contact": {
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information",
         "title": "संपर्क करें",
         "description": "यदि आपके कोई प्रश्न, प्रतिक्रिया है, या सहायता की आवश्यकता है, तो कृपया हमसे संपर्क करें।",
         "email": "ईमेल",

@@ -1,0 +1,33 @@
+﻿[36m=== Editor Translation Completeness Check ===[0m
+
+[34mReference (en): 432 keys found[0m
+
+[36mChecking bn...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking de...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking es...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking fr...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking hi...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking ja...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking pa...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking uk...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+[36mChecking zh...[0m
+  [32mΓ£ô Complete (432 keys)[0m
+
+Report written to C:\Users\jenni\Projects\mycnc.github.io\apps\editor\translation_report.txt
+[32mAll languages complete![0m

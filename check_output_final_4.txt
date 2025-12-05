@@ -1,0 +1,34 @@
+﻿[36m=== Translation Completeness Check ===[0m
+
+[34mReference (en): 458 keys found[0m
+
+[36mChecking bn...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking de...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking es...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking fr...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking hi...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking ja...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking pa...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking uk...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking zh...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+Report written to translation_report.txt
+[36m=== Summary ===[0m
+[32mAll 9 languages are complete! Γ£ô[0m

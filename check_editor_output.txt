@@ -1,0 +1,222 @@
+﻿[36m=== Editor Translation Completeness Check ===[0m
+
+[34mReference (en): 434 keys found[0m
+
+[36mChecking bn...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking de...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking es...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking fr...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking hi...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking ja...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking pa...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking uk...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+[36mChecking zh...[0m
+  [31mΓ£ù Missing 13 key(s):[0m
+    - common.save
+    - contact.clientInfo
+    - contact.message
+    - contact.name
+    - macro.addTitle
+    - macro.commands
+    - macro.commandsPlaceholder
+    - macro.delete
+    - macro.deleteConfirm
+    - macro.editTitle
+    - macro.help
+    - macro.name
+    - macro.namePlaceholder
+  [33mΓÜá Extra 7 key(s)[0m
+    - contact.cancel
+    - contact.description
+    - contact.email
+    - contact.error
+    - contact.send
+    - contact.success
+    - contact.title
+
+Report written to C:\Users\jenni\Projects\mycnc.github.io\apps\editor\translation_report.txt
+[31mIncomplete translations found.[0m

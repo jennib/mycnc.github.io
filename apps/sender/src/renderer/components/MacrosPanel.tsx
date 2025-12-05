@@ -1,9 +1,10 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Zap, Pencil, CheckCircle, PlusCircle, ChevronDown, ChevronUp, PlayCircle } from "@mycnc/shared";
+import { Zap, Pencil, CheckCircle, PlusCircle, ChevronDown, ChevronUp, PlayCircle, Download, Upload } from "@mycnc/shared";
 
 interface Macro {
     name: string;
+    description?: string;
     commands: string[];
 }
 
@@ -11,14 +12,49 @@ interface MacrosPanelProps {
     macros: Macro[];
     onRunMacro: (commands: string[]) => void;
     onOpenEditor: (index: number | null) => void;
+    onImportMacros: (macros: Macro[]) => void;
     isEditMode: boolean;
     onToggleEditMode: () => void;
     disabled: boolean;
 }
 
-const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEditor, isEditMode, onToggleEditMode, disabled }) => {
+const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEditor, onImportMacros, isEditMode, onToggleEditMode, disabled }) => {
     const { t } = useTranslation();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const importFileRef = React.useRef<HTMLInputElement>(null);
+
+    const handleExport = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(macros, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "macros.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    };
+
+    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const importedMacros = JSON.parse(e.target?.result as string);
+                if (Array.isArray(importedMacros)) {
+                    onImportMacros(importedMacros);
+                } else {
+                    alert(t('macros.importError'));
+                }
+            } catch (error) {
+                console.error("Failed to import macros:", error);
+                alert(t('macros.importError'));
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = ""; // Reset
+    };
 
     const handleButtonClick = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
         // Prevent event bubbling up to the main button when clicking the small edit icon
@@ -46,6 +82,25 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                     {t('macros.title')}
                 </div>
                 <div className="flex items-center gap-4">
+                    {isEditMode && (
+                        <div className="flex items-center gap-2">
+                            <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleImport} />
+                            <button
+                                onClick={(e) => { e.stopPropagation(); importFileRef.current?.click(); }}
+                                className="p-1 rounded hover:bg-secondary-focus text-text-secondary"
+                                title={t('macros.import')}
+                            >
+                                <Upload className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={handleExport}
+                                className="p-1 rounded hover:bg-secondary-focus text-text-secondary"
+                                title={t('macros.export')}
+                            >
+                                <Download className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                     <button
                         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                             e.stopPropagation();
@@ -76,10 +131,15 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                                 key={index}
                                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleButtonClick(e, index)}
                                 disabled={disabled && !isEditMode}
-                                className="relative p-3 bg-secondary rounded-md text-sm font-semibold hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed text-left"
-                                title={isEditMode ? t('macros.editTooltip', { name: macro.name }) : macro.commands.join('; ')}
+                                className="relative p-3 bg-secondary rounded-md text-sm font-semibold hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed text-left group"
+                                title={isEditMode ? t('macros.editTooltip', { name: macro.name }) : (macro.description || macro.commands.join('; '))}
                             >
-                                {macro.name}
+                                <div className="flex flex-col">
+                                    <span>{macro.name}</span>
+                                    {macro.description && (
+                                        <span className="text-xs text-text-secondary font-normal truncate">{macro.description}</span>
+                                    )}
+                                </div>
                                 {isEditMode && (
                                     <div className="absolute top-1 right-1 p-1 rounded-full bg-primary/50 hover:bg-primary">
                                         <Pencil className="w-3 h-3 text-white" />

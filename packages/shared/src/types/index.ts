@@ -54,6 +54,7 @@ export interface Tool {
 
 export interface Macro {
     name: string;
+    description?: string;
     commands: string[];
 }
 

@@ -1,0 +1,60 @@
+﻿[36m=== Translation Completeness Check ===[0m
+
+[34mReference (en): 458 keys found[0m
+
+[36mChecking bn...[0m
+  [31mΓ£ù Missing 6 key(s):[0m
+    - macro.description
+    - macro.descriptionPlaceholder
+    - macros.export
+    - macros.import
+    - macros.importError
+    - status.wcs
+
+[36mChecking de...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking es...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking fr...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking hi...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+[36mChecking ja...[0m
+  [31mΓ£ù Missing 6 key(s):[0m
+    - macro.description
+    - macro.descriptionPlaceholder
+    - macros.export
+    - macros.import
+    - macros.importError
+    - status.wcs
+
+[36mChecking pa...[0m
+  [31mΓ£ù Missing 6 key(s):[0m
+    - macro.description
+    - macro.descriptionPlaceholder
+    - macros.export
+    - macros.import
+    - macros.importError
+    - status.wcs
+
+[36mChecking uk...[0m
+  [31mΓ£ù Missing 6 key(s):[0m
+    - macro.description
+    - macro.descriptionPlaceholder
+    - macros.export
+    - macros.import
+    - macros.importError
+    - status.wcs
+
+[36mChecking zh...[0m
+  [32mΓ£ô Complete (458 keys)[0m
+
+Report written to translation_report.txt
+[36m=== Summary ===[0m
+[31m5/9 languages complete[0m
+[33m
+Please update the translation files to include all missing keys.[0m

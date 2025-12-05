@@ -54,6 +54,7 @@ export interface Tool {
 
 export interface Macro {
     name: string;
+    description?: string;
     commands: string[];
 }
 
@@ -264,18 +265,6 @@ export interface ReliefParams {
     adjustAmountLow: number;
     adjustToleranceLow: number;
 
-    // Normal (No Gain)
-    adjustColorMid: string;
-    adjustToleranceMid: number;
-
-    // Spectrum Gain (256 Colors)
-    spectrumGainEnabled: boolean;
-    spectrumGainHigh: number; // For Red/Warm
-    spectrumGainHigh: number; // For Red/Warm
-    spectrumGainLow: number;  // For Blue/Cool
-
-    // Cutout (from STL)
-    cutoutEnabled?: boolean;
     cutoutToolId?: number | null;
     cutoutDepth?: number | string;
     cutoutDepthPerPass?: number | string;

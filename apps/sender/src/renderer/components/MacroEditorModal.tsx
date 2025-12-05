@@ -16,11 +16,13 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
     const { t } = useTranslation();
     const isEditing = macro != null && index != null;
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [commands, setCommands] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             setName(isEditing ? macro.name : '');
+            setDescription(isEditing ? macro.description || '' : '');
             setCommands(isEditing ? macro.commands.join('\n') : '');
         }
     }, [isOpen, macro, isEditing]);
@@ -35,7 +37,8 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
         }
         const newMacro = {
             name: name.trim(),
-            commands: commands.split('\n').map(cmd => cmd.trim()).filter(cmd => cmd)
+            description: description.trim(),
+            commands: commands.split(/[\n;]/).map(cmd => cmd.trim()).filter(cmd => cmd)
         };
         onSave(newMacro, index);
         onCancel(); // Close modal on save
@@ -78,6 +81,17 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                             value={name}
                             onChange={e => setName(e.target.value)}
                             placeholder={t('macro.namePlaceholder')}
+                            className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="macro-description" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.description')}</label>
+                        <input
+                            id="macro-description"
+                            type="text"
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                            placeholder={t('macro.descriptionPlaceholder')}
                             className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                         />
                     </div>
