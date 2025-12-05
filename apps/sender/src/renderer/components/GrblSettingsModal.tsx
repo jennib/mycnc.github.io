@@ -277,7 +277,7 @@ const GrblSettingsModal: React.FC = () => {
                                                     <select
                                                         value={rawValue}
                                                         onChange={(e) => handleSettingChange(setting.id, e.target.value)}
-                                                        className={`w-full bg-black/20 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                        className={`w-full bg-black/20 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
                                                     >
                                                         {setting.options?.map(opt => (
                                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -294,7 +294,7 @@ const GrblSettingsModal: React.FC = () => {
                                                                         type="checkbox"
                                                                         checked={checked}
                                                                         onChange={(e) => handleBitmaskChange(setting.id, opt.value, e.target.checked)}
-                                                                        className="rounded border-white/20 bg-black/20 text-primary focus:ring-primary"
+                                                                        className="rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
                                                                     />
                                                                     <span className={`text-sm ${checked ? 'text-text-primary' : 'text-text-secondary'}`}>{opt.label}</span>
                                                                 </label>
@@ -306,7 +306,7 @@ const GrblSettingsModal: React.FC = () => {
                                                         type="number"
                                                         value={rawValue}
                                                         onChange={(e) => handleSettingChange(setting.id, e.target.value)}
-                                                        className={`w-full bg-black/20 border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                        className={`w-full bg-black/20 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
                                                         step={setting.type === 'float' ? "0.001" : "1"}
                                                     />
                                                 )}

@@ -10,14 +10,14 @@ interface RadioGroupProps {
 }
 
 export const RadioGroup: React.FC<RadioGroupProps> = ({ label, options, selected, onChange }) => (
-    <div className="mb-2">
-        {label && <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>}
-        <div className="flex bg-secondary rounded-md p-1">
+    <div className="mb-4">
+        {label && <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>}
+        <div className="flex bg-black/20 rounded-lg p-1 border border-white/5">
             {options.map(opt => (
                 <button
                     key={opt.value}
                     onClick={() => onChange(opt.value)}
-                    className={`w-full p-1 rounded-md text-sm font-semibold transition-colors ${selected === opt.value ? 'bg-primary text-white' : 'hover:bg-secondary-focus'}`}
+                    className={`flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all duration-200 ${selected === opt.value ? 'bg-primary text-white shadow-md' : 'text-text-secondary hover:text-text-primary hover:bg-white/5'}`}
                 >
                     {opt.label}
                 </button>
@@ -44,20 +44,35 @@ interface InputProps {
 }
 
 export const Input: React.FC<InputProps> = ({ label, value, valueX, valueY, onChange, onChangeX, onChangeY, unit, help, isXY = false, type = 'text', step, min, max }) => (
-    <div>
-        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+    <div className="mb-4">
+        <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>
         {isXY ? (
-            <div className="flex gap-2">
-                <input type="number" value={valueX} onChange={onChangeX} className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary" />
-                <input type="number" value={valueY} onChange={onChangeY} className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary" />
+            <div className="flex gap-3">
+                <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary">X</span>
+                    <input
+                        type="number" value={valueX} onChange={onChangeX}
+                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 pl-7 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                    />
+                </div>
+                <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary">Y</span>
+                    <input
+                        type="number" value={valueY} onChange={onChangeY}
+                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 pl-7 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                    />
+                </div>
             </div>
         ) : (
             <div className="relative">
-                <input type={type} step={step} min={min} max={max} value={value} onChange={onChange} className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary" />
-                {unit && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-secondary">{unit}</span>}
+                <input
+                    type={type} step={step} min={min} max={max} value={value} onChange={onChange}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                />
+                {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary bg-black/20 px-1.5 py-0.5 rounded">{unit}</span>}
             </div>
         )}
-        {help && <p className="text-xs text-text-secondary mt-1">{help}</p>}
+        {help && <p className="text-xs text-text-tertiary mt-1.5 leading-relaxed">{help}</p>}
     </div>
 );
 
@@ -68,14 +83,17 @@ interface CheckboxProps {
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({ label, checked, onChange }) => (
-    <label className="flex items-center gap-2 cursor-pointer font-semibold text-text-primary">
+    <label className="flex items-center gap-3 cursor-pointer group mb-4">
+        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${checked ? 'bg-primary border-primary' : 'bg-black/20 border-white/20 group-hover:border-white/40'}`}>
+            {checked && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+        </div>
         <input
             type="checkbox"
             checked={checked}
             onChange={e => onChange(e.target.checked)}
-            className="h-4 w-4 rounded border-secondary text-primary focus:ring-primary"
+            className="hidden"
         />
-        {label}
+        <span className={`text-sm font-medium transition-colors ${checked ? 'text-text-primary' : 'text-text-secondary group-hover:text-text-primary'}`}>{label}</span>
     </label>
 );
 
@@ -93,19 +111,25 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({ selectedId, onChange
     const displayLabel = label || t('generators.shared.tool');
 
     return (
-        <div className={colSpan}>
-            <label className="block text-sm font-medium text-text-secondary mb-1">{displayLabel}</label>
-            <select
-                value={selectedId || ''}
-                onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="w-full bg-background border-secondary rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-                disabled={!toolLibrary || toolLibrary.length === 0}
-            >
-                <option value="">{toolLibrary && toolLibrary.length > 0 ? t('generators.shared.selectTool') : t('generators.shared.noTools')}</option>
-                {toolLibrary && toolLibrary.map(tool => <option key={tool.id} value={tool.id}>{`${tool.name} (Ø ${tool.diameter}${unit})`}</option>)}
-            </select>
+        <div className={`${colSpan} mb-4`}>
+            <label className="block text-sm font-bold text-text-secondary mb-2">{displayLabel}</label>
+            <div className="relative">
+                <select
+                    value={selectedId || ''}
+                    onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
+                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20 disabled:opacity-50"
+                    disabled={!toolLibrary || toolLibrary.length === 0}
+                >
+                    <option value="">{toolLibrary && toolLibrary.length > 0 ? t('generators.shared.selectTool') : t('generators.shared.noTools')}</option>
+                    {toolLibrary && toolLibrary.map(tool => <option key={tool.id} value={tool.id}>{`${tool.name} (Ø ${tool.diameter}${unit})`}</option>)}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </div>
+            </div>
             {(!toolLibrary || toolLibrary.length === 0) && (
-                <p className="text-xs text-text-secondary mt-1">
+                <p className="text-xs text-accent-yellow mt-1.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     {t('generators.shared.addTools')}
                 </p>
             )}
@@ -129,7 +153,7 @@ export const SpindleAndFeedControls: React.FC<SpindleAndFeedControlsProps> = ({ 
 
     return (
         <React.Fragment>
-            <hr className="border-secondary" />
+            <div className="my-6 border-t border-white/10" />
             <div className="grid grid-cols-2 gap-4">
                 <Input label={displayFeedLabel} value={params.feed} onChange={e => onParamChange('feed', e.target.value)} unit={unit + '/min'} />
                 <Input label={t('generators.shared.spindleSpeed')} value={params.spindle} onChange={e => onParamChange('spindle', e.target.value)} unit="RPM" />
@@ -149,23 +173,19 @@ interface ArrayControlsProps {
 export const ArrayControls: React.FC<ArrayControlsProps> = ({ settings, onChange, unit }) => {
     const { t } = useTranslation();
 
-    const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange({ ...settings, isEnabled: e.target.checked });
+    const handleToggle = (checked: boolean) => {
+        onChange({ ...settings, isEnabled: checked });
     };
 
     return (
-        <div className="bg-background/50 p-4 rounded-md">
-            <label className="flex items-center gap-2 cursor-pointer font-semibold text-text-primary">
-                <input
-                    type="checkbox"
-                    checked={settings.isEnabled}
-                    onChange={handleToggle}
-                    className="h-4 w-4 rounded border-secondary text-primary focus:ring-primary"
-                />
-                {t('generators.array.enable')}
-            </label>
+        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+            <Checkbox
+                label={t('generators.array.enable')}
+                checked={settings.isEnabled}
+                onChange={handleToggle}
+            />
             {settings.isEnabled && (
-                <div className="mt-4 pt-4 border-t border-secondary space-y-4">
+                <div className="mt-4 pt-4 border-t border-white/10 space-y-4 animate-in slide-in-from-top-2 duration-200">
                     <RadioGroup options={[{ value: 'rect', label: t('generators.array.rectGrid') }, { value: 'circ', label: t('generators.array.circArray') }]} selected={settings.pattern} onChange={val => onChange({ ...settings, pattern: val })} />
                     {settings.pattern === 'rect' ? (
                         <React.Fragment>

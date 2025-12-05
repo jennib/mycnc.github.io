@@ -10,9 +10,9 @@ interface InputGroupProps {
 }
 
 const InputGroup: React.FC<InputGroupProps> = ({ label, children }) => (
-    <div>
+    <div className="mb-4">
         <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>
-        <div className="flex items-center gap-2">{children}</div>
+        <div className="flex items-center gap-3">{children}</div>
     </div>
 );
 
@@ -27,9 +27,9 @@ const NumberInput: React.FC<NumberInputProps> = ({ id, value, onChange, unit }) 
     <div className="relative flex-grow">
         <input
             id={id} type="number" value={value} onChange={onChange}
-            className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
         />
-        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">{unit}</span>}
+        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary bg-black/20 px-1.5 py-0.5 rounded">{unit}</span>}
     </div>
 );
 
@@ -41,11 +41,11 @@ interface ScriptInputProps {
 }
 
 const ScriptInput: React.FC<ScriptInputProps> = ({ label, value, onChange, placeholder }) => (
-    <div>
-        <label className="block text-sm font-medium text-text-secondary mb-1">{label}</label>
+    <div className="mb-4">
+        <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>
         <textarea
             value={value} onChange={onChange} rows={4} placeholder={placeholder}
-            className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
             spellCheck="false"
         />
     </div>
@@ -208,7 +208,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="controller-type"
                                     value={localSettings.controllerType}
                                     onChange={e => handleNumericChange('controllerType', e.target.value)}
-                                    className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
                                 >
                                     <option value="grbl">GRBL (Standard 3-axis CNC)</option>
                                     {/* <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
@@ -273,7 +273,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <select
                                     value={i18n.language}
                                     onChange={(e) => i18n.changeLanguage(e.target.value)}
-                                    className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
                                 >
                                     <option value="en">English</option>
                                     <option value="es">Español</option>
@@ -293,7 +293,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="play-sound"
                                     checked={localSettings.playCompletionSound}
                                     onChange={(e) => setLocalSettings(prev => ({ ...prev, playCompletionSound: e.target.checked }))}
-                                    className="w-5 h-5 rounded border-white/20 bg-surface text-primary focus:ring-primary"
+                                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
                                 />
                                 <label htmlFor="play-sound" className="text-sm font-medium text-text-primary">
                                     {t('settings.playCompletionSound', 'Play Completion Sound')}

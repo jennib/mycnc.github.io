@@ -274,7 +274,7 @@
             "stepover": "Stepover",
             "title": "G-Code Generators",
             "milling": "Milling",
-            "textEngraving": "Text Engraving",
+            "textEngraving": "Engraving",
             "generate": "Generate G-Code",
             "safeZ": "Safe Z",
             "feedRate": "Feed Rate",

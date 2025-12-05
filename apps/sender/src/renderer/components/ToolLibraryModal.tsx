@@ -107,7 +107,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                         placeholder='e.g., 1/4" 2-Flute Endmill'
                                         value={currentTool.name}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
                                     />
                                 </div>
                                 <div>
@@ -117,7 +117,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                         placeholder="e.g., 6.35"
                                         value={currentTool.diameter || ''}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, diameter: e.target.value }))}
-                                        className="w-full bg-surface border border-white/20 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner"
+                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
                                     />
                                 </div>
                             </div>
