@@ -100,6 +100,16 @@ const MobileLanding: React.FC = () => {
                                 </li>
                             </ul>
                         </div>
+
+                        <button
+                            onClick={() => {
+                                sessionStorage.setItem('mobile_bypass', 'true');
+                                navigate('/');
+                            }}
+                            className="w-full mt-6 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium text-text-secondary transition-colors flex items-center justify-center gap-2"
+                        >
+                            <span>I have a compatible adapter (Chrome 142+)</span>
+                        </button>
                     </div>
                 </div>
 

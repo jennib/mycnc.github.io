@@ -60,7 +60,7 @@ const MainApp: React.FC = () => {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
       const isIPad = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
-      if (isMobile || isIPad) {
+      if ((isMobile || isIPad) && sessionStorage.getItem('mobile_bypass') !== 'true') {
         navigate('/mobile');
       }
     };
