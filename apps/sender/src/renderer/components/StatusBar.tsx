@@ -104,6 +104,15 @@ interface StatusBarProps {
     unit: 'mm' | 'in';
 }
 
+const WCS_STYLES: Record<string, { border: string; text: string }> = {
+    'G54': { border: 'border-l-blue-500', text: 'text-blue-500' },
+    'G55': { border: 'border-l-red-500', text: 'text-red-500' },
+    'G56': { border: 'border-l-green-500', text: 'text-green-500' },
+    'G57': { border: 'border-l-yellow-500', text: 'text-yellow-500' },
+    'G58': { border: 'border-l-purple-500', text: 'text-purple-500' },
+    'G59': { border: 'border-l-orange-500', text: 'text-orange-500' },
+};
+
 const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => {
     const { t } = useTranslation();
     const { isWebcamPeekOpen, actions: { toggleWebcamPeek } } = useUIStore();
@@ -113,6 +122,9 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
         const newWCS = e.target.value;
         connectionActions.sendLine(newWCS);
     };
+
+    const currentWCS = machineState?.wcs || 'G54';
+    const wcsStyle = WCS_STYLES[currentWCS] || { border: 'border-l-transparent', text: '' };
 
     return (
         <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
@@ -125,14 +137,20 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
                 <div className="flex items-center gap-2">
                     <span className="font-semibold text-text-secondary">{t('status.wcs')}</span>
                     <select
-                        value={machineState?.wcs || 'G54'}
+                        value={currentWCS}
                         onChange={handleWCSChange}
                         disabled={!isConnected || machineState?.status !== 'Idle'}
-                        className="bg-background border border-white/10 rounded px-2 py-0.5 text-text-primary font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+                        className={`bg-background border border-white/10 rounded-r rounded-l-sm px-2 py-0.5 text-text-primary font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 border-l-4 ${wcsStyle.border}`}
                         title="Select Work Coordinate System"
                     >
                         {WCS_OPTIONS.map(wcs => (
-                            <option key={wcs} value={wcs}>{wcs}</option>
+                            <option
+                                key={wcs}
+                                value={wcs}
+                                className={WCS_STYLES[wcs]?.text || ''}
+                            >
+                                {wcs}
+                            </option>
                         ))}
                     </select>
                 </div>
