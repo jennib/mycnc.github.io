@@ -206,7 +206,8 @@
         "ip": "IP 地址",
         "port": "端口",
         "disconnect": "断开连接",
-        "connect": "连接"
+        "connect": "连接",
+        "connecting": "正在连接..."
     },
     "toolLibrary": {
         "title": "刀具库",

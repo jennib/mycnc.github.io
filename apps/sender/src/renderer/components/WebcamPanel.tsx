@@ -76,6 +76,12 @@ const WebcamPanel: React.FC = () => {
 
     const isWebcamOn = mode !== 'off';
 
+    const handleConnectionChange = React.useCallback((isConnected: boolean) => {
+        if (webcamSettings.webRTCAutoConnect !== isConnected) {
+            setWebcamSettings({ webRTCAutoConnect: isConnected });
+        }
+    }, [webcamSettings.webRTCAutoConnect, setWebcamSettings]);
+
     return (
         <div className="bg-surface rounded-lg shadow-lg p-4 h-full flex flex-col">
             <div className="text-lg font-bold flex items-center justify-between pb-4 border-b border-secondary mb-4">
@@ -194,7 +200,7 @@ const WebcamPanel: React.FC = () => {
                                 onPiPChange={handlePiPChange}
                                 videoRef={videoRef}
                                 autoConnect={webcamSettings.webRTCAutoConnect}
-                                onConnectionChange={(isConnected) => setWebcamSettings({ webRTCAutoConnect: isConnected })}
+                                onConnectionChange={handleConnectionChange}
                             />
                         )
                     ) : (

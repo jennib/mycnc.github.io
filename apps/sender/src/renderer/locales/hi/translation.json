@@ -180,90 +180,20 @@
             "resetTitle": "100% पर रीसेट करें"
         }
     },
-    "footer": {
-        "contact": "संपर्क करें",
-        "source": "स्रोत कोड",
-        "here": "यहाँ"
-    },
-    "status": {
-        "label": "स्थिति:",
-        "alarm": "अलार्म:",
-        "homing": "होमिंग",
-        "connected": "कनेक्टेड",
-        "disconnected": "डिस्कनेक्टेड",
-        "spindleOff": "स्पिंडल बंद",
-        "clockwise": "दक्षिणावर्त",
-        "counterCw": "वामावर्त",
-        "wpos": "WPos",
-        "mpos": "MPos"
-    },
-    "connection": {
-        "notConnected": "कनेक्ट नहीं है",
-        "unknownPort": "अज्ञात पोर्ट",
-        "useSimulator": "सिम्युलेटर का उपयोग करें",
-        "usb": "USB",
-        "tcp": "TCP",
-        "ip": "IP पता",
-        "port": "पोर्ट",
-        "disconnect": "डिस्कनेक्ट",
-        "connect": "कनेक्ट"
-    },
-    "toolLibrary": {
-        "title": "टूल लाइब्रेरी",
-        "addNew": "नया टूल जोड़ें",
-        "edit": "टूल संपादित करें",
-        "add": "टूल जोड़ें",
-        "name": "टूल का नाम",
-        "diameter": "व्यास (mm)",
-        "save": "सहेजें",
-        "cancel": "रद्द करें",
-        "saveClose": "सहेजें और बंद करें",
-        "empty": "आपकी टूल लाइब्रेरी खाली है।",
-        "deleteConfirm": "क्या आप वाकई इस टूल को हटाना चाहते हैं?"
-    },
-    "webcam": {
-        "title": "वेबकैम",
-        "pip": "पिक्चर-इन-पिक्चर",
-        "disable": "अक्षम करें",
-        "enable": "सक्षम करें",
-        "local": "स्थानीय कैमरा",
-        "webrtc": "WebRTC स्ट्रीम",
-        "mute": "म्यूट",
-        "unmute": "अनम्यूट",
-        "popout": "पॉपआउट"
-    },
-    "contact": {
-        "title": "संपर्क करें",
-        "description": "यदि आपके कोई प्रश्न, प्रतिक्रिया है, या सहायता की आवश्यकता है, तो कृपया हमसे संपर्क करें।",
-        "email": "ईमेल",
-        "send": "संदेश भेजें",
-        "cancel": "रद्द करें",
-        "success": "संदेश सफलतापूर्वक भेजा गया!",
-        "error": "Error:",
-        "name": "Name",
-        "message": "Message",
-        "clientInfo": "Include system information"
-    },
     "generators": {
         "tabs": {
-            "surfacing": "Surfacing",
             "drilling": "Drilling",
             "bore": "Bore",
-            "pocket": "Pocket",
             "profile": "Profile",
+            "pocket": "Pocket",
             "slot": "Slot",
             "text": "Text",
-            "thread": "Thread Milling",
+            "thread": "Thread",
             "relief": "Relief",
-            "stl": "STL"
+            "stl": "STL",
+            "surfacing": "Surfacing"
         },
         "common": {
-            "direction": "Milling Direction",
-            "horizontal": "Horizontal (X)",
-            "vertical": "Vertical (Y)",
-            "finalDepth": "Final Depth",
-            "shouldBeNegative": "Should be negative",
-            "stepover": "Stepover",
             "title": "G-Code Generators",
             "milling": "Milling",
             "textEngraving": "Text Engraving",
@@ -271,7 +201,13 @@
             "safeZ": "Safe Z",
             "feedRate": "Feed Rate",
             "spindleSpeed": "Spindle Speed",
-            "safeZHelp": "Rapid height above stock"
+            "safeZHelp": "Rapid height above stock",
+            "direction": "Direction",
+            "horizontal": "Horizontal",
+            "vertical": "Vertical",
+            "finalDepth": "Final Depth",
+            "shouldBeNegative": "Should be negative",
+            "stepover": "Stepover %"
         },
         "surfacing": {
             "width": "Width (X)",
@@ -541,5 +477,70 @@
         "help": "Enter one G-code command per line.",
         "delete": "Delete",
         "deleteConfirm": "Are you sure you want to delete the macro \"{{name}}\"?"
+    },
+    "footer": {
+        "contact": "Contact Us",
+        "source": "Source Code",
+        "here": "here"
+    },
+    "status": {
+        "label": "Status:",
+        "alarm": "Alarm:",
+        "homing": "Homing",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "spindleOff": "Spindle Off",
+        "clockwise": "Clockwise",
+        "counterCw": "Counter-CW",
+        "wpos": "WPos",
+        "mpos": "MPos"
+    },
+    "connection": {
+        "notConnected": "Not Connected",
+        "unknownPort": "Unknown Port",
+        "useSimulator": "Use Simulator",
+        "usb": "USB",
+        "tcp": "TCP",
+        "ip": "IP Address",
+        "port": "Port",
+        "disconnect": "Disconnect",
+        "connect": "Connect",
+        "connecting": "Connecting..."
+    },
+    "toolLibrary": {
+        "title": "Tool Library",
+        "addNew": "Add New Tool",
+        "edit": "Edit Tool",
+        "add": "Add Tool",
+        "name": "Tool Name",
+        "diameter": "Diameter (mm)",
+        "save": "Save",
+        "cancel": "Cancel",
+        "saveClose": "Save & Close",
+        "empty": "Your tool library is empty.",
+        "deleteConfirm": "Are you sure you want to delete this tool?"
+    },
+    "webcam": {
+        "title": "Webcam",
+        "pip": "Picture-in-Picture",
+        "disable": "Disable",
+        "enable": "Enable",
+        "local": "Local Camera",
+        "webrtc": "WebRTC Stream",
+        "mute": "Mute",
+        "unmute": "Unmute",
+        "popout": "Popout Camera"
+    },
+    "contact": {
+        "title": "Contact Us",
+        "description": "If you have any questions, feedback, or need support, please reach out to us.",
+        "email": "Email",
+        "send": "Send Message",
+        "cancel": "Cancel",
+        "success": "Message sent successfully!",
+        "error": "Error sending message.",
+        "name": "Name",
+        "message": "Message",
+        "clientInfo": "Include system information"
     }
 }

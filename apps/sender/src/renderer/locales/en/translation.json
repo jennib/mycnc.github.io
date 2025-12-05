@@ -206,7 +206,8 @@
         "ip": "IP Address",
         "port": "Port",
         "disconnect": "Disconnect",
-        "connect": "Connect"
+        "connect": "Connect",
+        "connecting": "Connecting..."
     },
     "toolLibrary": {
         "title": "Tool Library",

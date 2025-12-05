@@ -206,7 +206,8 @@
         "ip": "IPアドレス",
         "port": "ポート",
         "disconnect": "切断",
-        "connect": "接続"
+        "connect": "接続",
+        "connecting": "接続中..."
     },
     "toolLibrary": {
         "title": "ツールライブラリ",

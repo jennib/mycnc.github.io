@@ -206,7 +206,8 @@
         "ip": "IP ਪਤਾ",
         "port": "ਪੋਰਟ",
         "disconnect": "ਡਿਸਕਨੈਕਟ ਕਰੋ",
-        "connect": "ਕਨੈਕਟ ਕਰੋ"
+        "connect": "ਕਨੈਕਟ ਕਰੋ",
+        "connecting": "ਕਨੈਕਟ ਹੋ ਰਿਹਾ ਹੈ..."
     },
     "toolLibrary": {
         "title": "ਟੂਲ ਲਾਇਬ੍ਰੇਰੀ",

@@ -206,7 +206,8 @@
         "ip": "Dirección IP",
         "port": "Puerto",
         "disconnect": "Desconectar",
-        "connect": "Conectar"
+        "connect": "Conectar",
+        "connecting": "Conectando..."
     },
     "toolLibrary": {
         "title": "Biblioteca de Herramientas",
