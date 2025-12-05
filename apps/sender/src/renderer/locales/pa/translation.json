@@ -70,7 +70,8 @@
         "contact": "ਸੰਪਰਕ ਕਰੋ",
         "save": "ਸੈਟਿੰਗਾਂ ਸੁਰੱਖਿਅਤ ਕਰੋ",
         "importSuccess": "Settings imported successfully!",
-        "importError": "Failed to import settings."
+        "importError": "Failed to import settings.",
+        "playCompletionSound": "Play Completion Sound"
     },
     "jog": {
         "title": "ਜੌਗ ਕੰਟਰੋਲ",

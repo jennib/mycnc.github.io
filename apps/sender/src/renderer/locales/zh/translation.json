@@ -70,7 +70,8 @@
         "contact": "联系我们",
         "save": "保存设置",
         "importSuccess": "Settings imported successfully!",
-        "importError": "Failed to import settings."
+        "importError": "Failed to import settings.",
+        "playCompletionSound": "Play Completion Sound"
     },
     "jog": {
         "title": "点动控制",

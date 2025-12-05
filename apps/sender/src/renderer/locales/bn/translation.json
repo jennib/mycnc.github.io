@@ -70,7 +70,8 @@
         "contact": "যোগাযোগ করুন",
         "save": "সেটিংস সংরক্ষণ করুন",
         "importSuccess": "Settings imported successfully!",
-        "importError": "Failed to import settings."
+        "importError": "Failed to import settings.",
+        "playCompletionSound": "Play Completion Sound"
     },
     "jog": {
         "title": "জগ নিয়ন্ত্রণ",

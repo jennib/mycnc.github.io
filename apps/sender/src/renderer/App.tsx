@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import MobileLanding from "./components/MobileLanding";
 import CameraWindow from "./components/CameraWindow";
 import Console from "./components/Console";
 import JogPanel from "./components/JogPanel";
@@ -50,6 +51,24 @@ import { useLogStore } from "./stores/logStore";
 
 const MainApp: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Mobile Detection
+  useEffect(() => {
+    const checkMobile = () => {
+      if (window.innerWidth < 768) {
+        navigate('/mobile');
+      }
+    };
+
+    // Check on mount
+    checkMobile();
+
+    // Check on resize
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [navigate]);
+
   const machineState = useMachineStore((state) => state.machineState);
   const isJogging = useMachineStore((state) => state.isJogging);
   const isHomedSinceConnect = useMachineStore(
@@ -711,6 +730,7 @@ const App: React.FC = () => {
     <HashRouter>
       <Routes>
         <Route path="/camera-popout" element={<CameraWindow />} />
+        <Route path="/mobile" element={<MobileLanding />} />
         <Route path="/" element={<MainApp />} />
       </Routes>
     </HashRouter>
