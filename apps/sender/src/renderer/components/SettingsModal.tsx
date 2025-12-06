@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, X, Upload, Download, Ruler, Settings } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
+import { useSettingsStore } from '../stores/settingsStore';
 import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
 import NumberInput from './ui/NumberInput';
@@ -271,6 +272,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     {t('settings.playCompletionSound', 'Play Completion Sound')}
                                 </label>
                             </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="enable-osk"
+                                    checked={useSettingsStore.getState().isVirtualKeyboardEnabled}
+                                    onChange={(e) => useSettingsStore.getState().actions.setIsVirtualKeyboardEnabled(e.target.checked)}
+                                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
+                                />
+                                <label htmlFor="enable-osk" className="text-sm font-medium text-text-primary">
+                                    {t('settings.enableVirtualKeyboard', 'Enable On-Screen Keyboard')}
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
@@ -310,7 +323,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 onClose={() => setShowBuildAreaModal(false)}
                 onApply={handleApplyMeasurement}
             />
-        </div>
+        </div >
     );
 };
 

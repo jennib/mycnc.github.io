@@ -46,10 +46,16 @@ export interface MachineState {
     ov: number[];
 }
 
+export type ToolType = 'endmill' | 'ballmill' | 'bullhead' | 'vbit30' | 'vbit60' | 'vbit90' | 'surfacing' | 'cornmill';
+export type CutDirection = 'up' | 'down' | 'compression';
+
 export interface Tool {
     id: number;
     name: string;
     diameter: number | '';
+    type: ToolType;
+    flutes: number | '';
+    cutDirection: CutDirection;
 }
 
 export interface Macro {

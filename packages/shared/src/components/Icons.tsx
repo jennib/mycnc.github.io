@@ -68,9 +68,7 @@ import {
     Ruler,
     Check,
     Hand,
-    // Custom icons that don't have direct Lucide equivalents or need specific composition
-    // We can compose them using Lucide primitives or keep custom SVGs if absolutely necessary.
-    // For now, I'll try to map them or keep the custom ones if they are complex (like the Probe/Home XY ones).
+    GripHorizontal
 } from 'lucide-react';
 
 import React from 'react';
@@ -145,7 +143,8 @@ export {
     Redo,
     Ruler,
     Check,
-    Hand
+    Hand,
+    GripHorizontal
 };
 
 // Custom Composite Icons (using Lucide style)

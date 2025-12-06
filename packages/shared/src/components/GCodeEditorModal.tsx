@@ -18,6 +18,7 @@ interface GCodeEditorModalProps {
     machineSettings: MachineSettings;
     unit: 'mm' | 'in';
     isLightMode: boolean;
+    TouchInputComponent?: React.ComponentType<any>;
 }
 
 const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
@@ -30,6 +31,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     machineSettings,
     unit,
     isLightMode,
+    TouchInputComponent
 }) => {
     const { t } = useTranslation();
     const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -37,6 +39,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     const [errorCount, setErrorCount] = useState(0);
     const [warningCount, setWarningCount] = useState(0);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [isTouchMode, setIsTouchMode] = useState(false);
 
     // Handle mount - register language
     useEffect(() => {
@@ -183,6 +186,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         onClick={handleUndo}
                         className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
                         title={t('gcode.actions.undoTitle')}
+                        disabled={isTouchMode}
                     >
                         <Undo className="w-4 h-4" />
                     </button>
@@ -190,6 +194,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         onClick={handleRedo}
                         className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
                         title={t('gcode.actions.redoTitle')}
+                        disabled={isTouchMode}
                     >
                         <Redo className="w-4 h-4" />
                     </button>
@@ -200,6 +205,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         onClick={handleFind}
                         className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
                         title="Find (Ctrl+F)"
+                        disabled={isTouchMode}
                     >
                         <Search className="w-4 h-4" />
                     </button>
@@ -208,37 +214,62 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         onClick={handleFormat}
                         className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
                         title={t('gcode.editor.format')}
+                        disabled={isTouchMode}
                     >
                         <Code2 className="w-4 h-4" />
                     </button>
+
+                    {TouchInputComponent && (
+                        <>
+                            <div className="w-px h-6 bg-secondary mx-2" />
+                            <button
+                                onClick={() => setIsTouchMode(!isTouchMode)}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors ${isTouchMode ? 'bg-primary text-white' : 'bg-secondary text-white hover:bg-secondary-focus'}`}
+                                title="Toggle Touch Mode"
+                            >
+                                <span className="font-bold text-xs">KEYBOARD</span>
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 <div className="flex-1 relative">
-                    <Editor
-                        height="100%"
-                        language={GCODE_LANGUAGE_ID}
-                        value={content}
-                        onChange={handleContentChange}
-                        onMount={handleEditorDidMount}
-                        theme={isLightMode ? 'gcode-light' : 'gcode-dark'}
-                        options={{
-                            readOnly: false,
-                            automaticLayout: true,
-                            formatOnPaste: true,
-                            formatOnType: false,
-                            lineNumbers: 'on',
-                            rulers: [80],
-                            wordWrap: 'off',
-                            quickSuggestions: true,
-                            suggestOnTriggerCharacters: true,
-                            acceptSuggestionOnEnter: 'on',
-                            tabCompletion: 'on',
-                            renderWhitespace: 'selection',
-                            fontSize: 14,
-                            fontFamily: 'Consolas, "Courier New", monospace',
-                            padding: { top: 16, bottom: 16 },
-                        }}
-                    />
+                    {isTouchMode && TouchInputComponent ? (
+                        <div className="h-full p-4">
+                            <TouchInputComponent
+                                value={content}
+                                onChange={handleContentChange}
+                                className="h-full font-mono text-sm"
+                                spellCheck={false}
+                            />
+                        </div>
+                    ) : (
+                        <Editor
+                            height="100%"
+                            language={GCODE_LANGUAGE_ID}
+                            value={content}
+                            onChange={handleContentChange}
+                            onMount={handleEditorDidMount}
+                            theme={isLightMode ? 'gcode-light' : 'gcode-dark'}
+                            options={{
+                                readOnly: false,
+                                automaticLayout: true,
+                                formatOnPaste: true,
+                                formatOnType: false,
+                                lineNumbers: 'on',
+                                rulers: [80],
+                                wordWrap: 'off',
+                                quickSuggestions: true,
+                                suggestOnTriggerCharacters: true,
+                                acceptSuggestionOnEnter: 'on',
+                                tabCompletion: 'on',
+                                renderWhitespace: 'selection',
+                                fontSize: 14,
+                                fontFamily: 'Consolas, "Courier New", monospace',
+                                padding: { top: 16, bottom: 16 },
+                            }}
+                        />
+                    )}
                 </div>
 
                 {/* Status Bar */}

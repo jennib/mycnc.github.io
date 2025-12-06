@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useKeyboardStore } from '../../stores/keyboardStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface TextAreaInputProps {
     value?: string;
@@ -49,7 +50,11 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
     const handleFocus = () => {
         if (disabled) return;
 
+        // Check if OSK is enabled
+        if (!useSettingsStore.getState().isVirtualKeyboardEnabled) return;
+
         syncCursor();
+        const rect = inputRef.current?.getBoundingClientRect();
 
         actions.openKeyboard({
             layout: 'text', // Always text layout for scripts
@@ -57,6 +62,7 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
             cursorPosition: inputRef.current?.selectionStart || 0,
             label: label || placeholder,
             multiline: true, // Enable multiline support
+            inputRect: rect,
             onChange: (newValue, newCursor) => {
                 if (isSyncing.current) return;
 
@@ -69,11 +75,6 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
                 inputRef.current?.blur();
             }
         });
-
-        // Scroll into view when keyboard opens
-        setTimeout(() => {
-            inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
     };
 
     const handleClick = () => {
@@ -81,12 +82,14 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
         // Re-trigger keyboard opening logic incase it was closed but we are still mistakenly focused
         if (inputRef.current) {
             const currentPos = inputRef.current?.selectionStart || 0;
+            const rect = inputRef.current?.getBoundingClientRect();
             actions.openKeyboard({
                 layout: 'text',
                 value: value,
                 cursorPosition: currentPos,
                 label: label || placeholder,
                 multiline: true,
+                inputRect: rect,
                 onChange: (newValue, newCursor) => {
                     if (isSyncing.current) return;
 

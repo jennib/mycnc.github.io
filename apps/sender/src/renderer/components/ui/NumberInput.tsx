@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useKeyboardStore } from '../../stores/keyboardStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface NumberInputProps {
     value: number | string;
@@ -73,7 +74,12 @@ const NumberInput: React.FC<NumberInputProps> = ({
 
     const handleFocus = () => {
         if (disabled) return;
+
+        // Check if OSK is enabled
+        if (!useSettingsStore.getState().isVirtualKeyboardEnabled) return;
+
         const currentPos = inputRef.current?.selectionStart || 0;
+        const rect = inputRef.current?.getBoundingClientRect();
 
         actions.openKeyboard({
             layout: 'numpad',
@@ -81,6 +87,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
             cursorPosition: currentPos,
             label: label || (unit ? `Value (${unit})` : 'Value'),
             unit,
+            inputRect: rect,
             onChange: (newValue, newCursor) => {
                 if (isSyncing.current) return;
 
@@ -94,11 +101,6 @@ const NumberInput: React.FC<NumberInputProps> = ({
                 inputRef.current?.blur();
             }
         });
-
-        // Scroll into view when keyboard opens
-        setTimeout(() => {
-            inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
     };
 
     const handleClick = () => {

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useKeyboardStore } from '../../stores/keyboardStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface TextInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -55,6 +56,10 @@ const TextInput: React.FC<TextInputProps> = ({
         // Call original onFocus if exists
         onFocus?.(e);
         const currentPos = inputRef.current?.selectionStart || 0;
+        const rect = inputRef.current?.getBoundingClientRect();
+
+        // Check if OSK is enabled
+        if (!useSettingsStore.getState().isVirtualKeyboardEnabled) return;
 
         // Open OSK
         actions.openKeyboard({
@@ -62,6 +67,7 @@ const TextInput: React.FC<TextInputProps> = ({
             value: String(value || ''),
             cursorPosition: currentPos,
             label: label || placeholder,
+            inputRect: rect,
             onChange: (newValue, newCursor) => {
                 if (isSyncing.current) return;
 
@@ -81,28 +87,23 @@ const TextInput: React.FC<TextInputProps> = ({
                 inputRef.current?.blur();
             }
         });
-
-        // Scroll into view when keyboard opens
-        setTimeout(() => {
-            inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
     };
 
     const handleClick = () => {
         syncCursor();
-        // Since we can't easily access the event object to pass to handleFocus fully constructed 
-        // (and we don't strictly need to for the logic we care about), we just trigger the store action logic logic manually
-        // or just mock the event.
-        // Actually, easiest way is just to manually trigger the open logic again.
         if (inputRef.current) {
-            // handleFocus({ target: inputRef.current } as any); 
-            // Correct approach:
             const currentPos = inputRef.current?.selectionStart || 0;
+            const rect = inputRef.current?.getBoundingClientRect();
+
+            // Check if OSK is enabled
+            if (!useSettingsStore.getState().isVirtualKeyboardEnabled) return;
+
             actions.openKeyboard({
                 layout: layout,
                 value: String(value || ''),
                 cursorPosition: currentPos,
                 label: label || placeholder,
+                inputRect: rect,
                 onChange: (newValue, newCursor) => {
                     if (isSyncing.current) return;
 
@@ -121,11 +122,6 @@ const TextInput: React.FC<TextInputProps> = ({
                     inputRef.current?.blur();
                 }
             });
-
-            // Scroll into view when keyboard opens
-            setTimeout(() => {
-                inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }, 100);
         }
     };
 
@@ -135,6 +131,11 @@ const TextInput: React.FC<TextInputProps> = ({
         // The VirtualKeyboard prevents mouseDown default, so blur shouldn't happen on keyboard clicks.
         // So this blur means clicking OUTSIDE.
         actions.closeKeyboard();
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onValueChange?.(e.target.value);
+        onChange?.(e);
     };
 
     return (
@@ -149,14 +150,14 @@ const TextInput: React.FC<TextInputProps> = ({
                 ${className}
             `}
             value={value}
-            onChange={onChange}
+            onChange={handleChange}
             onFocus={handleFocus}
             onBlur={handleBlur}
             onClick={handleClick}
             onKeyUp={syncCursor}
             disabled={disabled}
             placeholder={placeholder}
-            readOnly={false} // Maybe set to true on touch devices to prevent native KB? For now keep standard.
+            readOnly={false}
             autoComplete="off"
             {...props}
         />
