@@ -208,6 +208,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={val => handleNestedNumericChange('probe', 'feedRate', val)} unit="mm/min" />
                             </InputGroup>
 
+                            <div className="border-t border-white/10 pt-4 mt-4">
+                                <InputGroup label={t('settings.toolChangePolicy')}>
+                                    <div className="flex flex-col gap-2 w-full">
+                                        <select
+                                            value={localSettings.toolChangePolicy || 'native'}
+                                            onChange={e => handleNumericChange('toolChangePolicy', e.target.value)}
+                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                        >
+                                            <option value="native">{t('settings.toolChangeNative')}</option>
+                                            <option value="macro">{t('settings.toolChangeMacro')}</option>
+                                        </select>
+
+                                        {localSettings.toolChangePolicy === 'macro' && (
+                                            <div className="mt-2">
+                                                <label className="block text-xs font-bold text-text-secondary mb-1">{t('settings.toolChangeSelectMacro')}</label>
+                                                <select
+                                                    value={localSettings.toolChangeMacroId || ''}
+                                                    onChange={e => handleNumericChange('toolChangeMacroId', e.target.value)}
+                                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                                >
+                                                    <option value="">{t('common.select') || 'Select...'}</option>
+                                                    {useSettingsStore.getState().macros.map((m, i) => (
+                                                        <option key={i} value={m.name}>{m.name}</option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-[10px] text-text-secondary mt-1">
+                                                    Macro variable <code>{'{tool}'}</code> will be replaced with the tool number (e.g. from <code>T1</code>).
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </InputGroup>
+                            </div>
+
                         </div>
                         <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.customScripts')}</h3>

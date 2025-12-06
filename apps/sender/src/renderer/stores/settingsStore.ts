@@ -4,14 +4,14 @@ import { MachineSettings, Tool, Macro, GeneratorSettings, WebcamSettings } from 
 import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS, DEFAULT_WEBCAM_SETTINGS } from '@/constants';
 
 export interface ConnectionSettings {
-  type: 'usb' | 'tcp';
+  type: 'usb' | 'tcp' | 'simulator';
   tcpIp: string;
   tcpPort: number;
-  useSimulator: boolean;
 }
 
 interface SettingsState {
   connectionSettings: ConnectionSettings;
+  // ... rest of state
   jogStep: number;
   unit: 'mm' | 'in';
   isLightMode: boolean;
@@ -67,8 +67,7 @@ export const useSettingsStore = create<SettingsState>()(
       connectionSettings: {
         type: 'usb',
         tcpIp: '10.0.0.162',
-        tcpPort: 8889,
-        useSimulator: false
+        tcpPort: 8889
       },
       macros: DEFAULT_MACROS,
       machineSettings: DEFAULT_SETTINGS,
