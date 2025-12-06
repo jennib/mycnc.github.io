@@ -8,6 +8,7 @@ interface KeyboardState {
     label?: string;
     unit?: string;
     multiline?: boolean;
+    inputRect?: DOMRect | null; // Position of the input triggering the keyboard
     onChange: (value: string, cursorPosition?: number) => void;
     onClose: () => void;
 
@@ -19,6 +20,7 @@ interface KeyboardState {
             label?: string;
             unit?: string;
             multiline?: boolean;
+            inputRect?: DOMRect | null;
             onChange: (value: string, cursorPosition?: number) => void;
             onClose?: () => void;
         }) => void;
@@ -36,11 +38,12 @@ export const useKeyboardStore = create<KeyboardState>((set) => ({
     label: undefined,
     unit: undefined,
     multiline: false,
+    inputRect: null,
     onChange: () => { },
     onClose: () => { },
 
     actions: {
-        openKeyboard: ({ layout, value, cursorPosition, label, unit, multiline, onChange, onClose }) => set({
+        openKeyboard: ({ layout, value, cursorPosition, label, unit, multiline, inputRect, onChange, onClose }) => set({
             isOpen: true,
             layout,
             value: value ? value.toString() : '',
@@ -48,12 +51,13 @@ export const useKeyboardStore = create<KeyboardState>((set) => ({
             label,
             unit,
             multiline: multiline || false,
+            inputRect: inputRect || null,
             onChange,
             onClose: onClose || (() => { }),
         }),
         closeKeyboard: () => set((state) => {
             state.onClose();
-            return { isOpen: false };
+            return { isOpen: false, inputRect: null };
         }),
         setValue: (newValue, newCursorPosition) => set((state) => {
             const nextCursor = newCursorPosition ?? newValue.length;

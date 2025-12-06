@@ -59,6 +59,10 @@
         "customScripts": "Custom G-Code Scripts",
         "startupScript": "Startup Script (on connect)",
         "shutdownScript": "Shutdown Script (on disconnect)",
+        "toolChangePolicy": "Tool Change Action",
+        "toolChangeNative": "Default (Send M6)",
+        "toolChangeMacro": "Run Macro",
+        "toolChangeSelectMacro": "Select Macro",
         "configuration": "Configuration",
         "configDescription": "Export/Import all settings, macros, and tools.",
         "appConfiguration": "Application Settings",
@@ -227,7 +231,25 @@
         "cancel": "Cancel",
         "saveClose": "Save & Close",
         "empty": "Your tool library is empty.",
-        "deleteConfirm": "Are you sure you want to delete this tool?"
+        "deleteConfirm": "Are you sure you want to delete this tool?",
+        "type": "Tool Type",
+        "flutes": "Number of Flutes",
+        "cutDirection": "Cut Direction",
+        "types": {
+            "endmill": "End Mill",
+            "ballmill": "Ball Mill",
+            "bullhead": "Bull Head Mill",
+            "vbit30": "V-Bit 30°",
+            "vbit60": "V-Bit 60°",
+            "vbit90": "V-Bit 90°",
+            "surfacing": "Surfacing Bit",
+            "cornmill": "Corn Mill"
+        },
+        "directions": {
+            "up": "Up Cut",
+            "down": "Down Cut",
+            "compression": "Compression"
+        }
     },
     "webcam": {
         "title": "Webcam",

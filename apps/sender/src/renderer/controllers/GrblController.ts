@@ -258,6 +258,12 @@ export class GrblController implements Controller {
         this.sendRealtimeCommand('\x18');
     }
 
+    macros: import('@mycnc/shared').Macro[] = [];
+
+    setMacros(macros: import('@mycnc/shared').Macro[]) {
+        this.macros = macros;
+    }
+
     async sendGCode(lines: string[], options: { startLine?: number; isDryRun?: boolean } = {}) {
         if (this.isJobRunning) return;
         this.isJobRunning = true;
@@ -266,6 +272,7 @@ export class GrblController implements Controller {
         const { signal } = this.jobAbortController;
 
         const startLine = options.startLine || 0;
+        let lastToolNumber: number | null = null;
 
         // Notify start?
 
@@ -280,6 +287,55 @@ export class GrblController implements Controller {
             if (signal.aborted) break;
 
             const line = lines[i];
+
+            // Track Tool Number (Txx)
+            const tMatch = line.match(/T(\d+)/i);
+            if (tMatch) {
+                lastToolNumber = parseInt(tMatch[1], 10);
+            }
+
+            // M6 Interception
+            const m6Match = line.match(/(^|\s)(M6)(\s|$)/i);
+            if (m6Match && this.settings.toolChangePolicy === 'macro' && this.settings.toolChangeMacroId) {
+                const macro = this.macros.find(m => m.name === this.settings.toolChangeMacroId); // Using ID/Name? Assuming name for now based on MachineSettings change or ID?
+                // Wait, I added toolChangeMacroId. In App logic, macros have name but maybe no ID property?
+                // Checked types: Macro has name, description, commands. No ID. So `toolChangeMacroId` is likely the NAME.
+                // Let's assume toolChangeMacroId holds the macro NAME.
+
+                if (macro) {
+                    this.emitter.emit('data', { type: 'info', message: `Intercepting M6: Running Macro '${macro.name}' (Tool: ${lastToolNumber ?? 'Unknown'})` });
+
+                    for (const macroLine of macro.commands) {
+                        if (signal.aborted) break;
+                        // Variable Substitution
+                        let processedLine = macroLine;
+                        if (lastToolNumber !== null) {
+                            processedLine = processedLine.replace(/{tool}/g, lastToolNumber.toString());
+                        }
+
+                        try {
+                            await this.sendCommand(processedLine);
+                        } catch (error) {
+                            this.emitter.emit('error', `Macro error: ${error}`);
+                            this.stopJob();
+                            return; // Exit job
+                        }
+                    }
+
+                    // Skip sending the original M6 line
+                    this.emitter.emit('progress', {
+                        percentage: ((i + 1) / lines.length) * 100,
+                        linesSent: i + 1,
+                        totalLines: lines.length
+                    });
+                    // Yield to event loop
+                    if (i % 20 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                    continue;
+                }
+            }
+
 
             try {
                 // If dry run, maybe skip commands or just send them?

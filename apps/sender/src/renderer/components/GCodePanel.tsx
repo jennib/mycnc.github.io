@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, DragEvent, memo, Suspense } from "r
 import { useTranslation } from "react-i18next";
 
 import { JobStatus, MachineState, Tool, MachineSettings } from "@mycnc/shared";
+import TextAreaInput from './ui/TextAreaInput';
 import {
   Play,
   Pause,
@@ -774,6 +775,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             machineSettings={machineSettings}
             unit={unit}
             isLightMode={isLightMode}
+            TouchInputComponent={TextAreaInput}
           />
         )}
       </Suspense>

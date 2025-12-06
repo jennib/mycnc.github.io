@@ -65,6 +65,8 @@ export interface MachineSettings {
     spindle: { min: number; max: number; warmupDelay: number; };
     probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number; probeTravelDistance: number };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
+    toolChangePolicy?: 'native' | 'macro';
+    toolChangeMacroId?: string | null;
     playCompletionSound?: boolean;
     isConfigured?: boolean;
 }

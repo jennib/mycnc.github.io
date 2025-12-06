@@ -46,10 +46,16 @@ export interface MachineState {
     ov: number[];
 }
 
+export type ToolType = 'endmill' | 'ballmill' | 'bullhead' | 'vbit30' | 'vbit60' | 'vbit90' | 'surfacing' | 'cornmill';
+export type CutDirection = 'up' | 'down' | 'compression';
+
 export interface Tool {
     id: number;
     name: string;
     diameter: number | '';
+    type: ToolType;
+    flutes: number | '';
+    cutDirection: CutDirection;
 }
 
 export interface Macro {
@@ -65,6 +71,8 @@ export interface MachineSettings {
     spindle: { min: number; max: number; warmupDelay: number; };
     probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number; probeTravelDistance: number };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
+    toolChangePolicy?: 'native' | 'macro';
+    toolChangeMacroId?: string | null;
     isConfigured?: boolean;
 }
 

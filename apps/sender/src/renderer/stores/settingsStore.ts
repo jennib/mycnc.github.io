@@ -4,18 +4,19 @@ import { MachineSettings, Tool, Macro, GeneratorSettings, WebcamSettings } from 
 import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS, DEFAULT_WEBCAM_SETTINGS } from '@/constants';
 
 export interface ConnectionSettings {
-  type: 'usb' | 'tcp';
+  type: 'usb' | 'tcp' | 'simulator';
   tcpIp: string;
   tcpPort: number;
-  useSimulator: boolean;
 }
 
 interface SettingsState {
   connectionSettings: ConnectionSettings;
+  // ... rest of state
   jogStep: number;
   unit: 'mm' | 'in';
   isLightMode: boolean;
   playCompletionSound: boolean;
+  isVirtualKeyboardEnabled: boolean;
   macros: Macro[];
   machineSettings: MachineSettings;
   toolLibrary: Tool[];
@@ -27,6 +28,7 @@ interface SettingsState {
     setUnit: (unit: 'mm' | 'in') => void;
     setIsLightMode: (isLight: boolean) => void;
     setPlayCompletionSound: (play: boolean) => void;
+    setIsVirtualKeyboardEnabled: (enabled: boolean) => void;
     setMacros: (macros: Macro[] | ((prev: Macro[]) => Macro[])) => void;
     setMachineSettings: (settings: MachineSettings | ((prev: MachineSettings) => MachineSettings)) => void;
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
@@ -61,11 +63,11 @@ export const useSettingsStore = create<SettingsState>()(
       unit: 'mm',
       isLightMode: true,
       playCompletionSound: true,
+      isVirtualKeyboardEnabled: true,
       connectionSettings: {
         type: 'usb',
         tcpIp: '10.0.0.162',
-        tcpPort: 8889,
-        useSimulator: false
+        tcpPort: 8889
       },
       macros: DEFAULT_MACROS,
       machineSettings: DEFAULT_SETTINGS,
@@ -78,6 +80,7 @@ export const useSettingsStore = create<SettingsState>()(
         setUnit: (unit) => set({ unit: unit }),
         setIsLightMode: (isLight) => set({ isLightMode: isLight }),
         setPlayCompletionSound: (play) => set({ playCompletionSound: play }),
+        setIsVirtualKeyboardEnabled: (enabled) => set({ isVirtualKeyboardEnabled: enabled }),
         setMacros: (macros) => set((state) => ({ macros: typeof macros === 'function' ? macros(state.macros) : macros })),
         setMachineSettings: (settings) => set((state) => ({ machineSettings: typeof settings === 'function' ? settings(state.machineSettings) : settings })),
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
@@ -99,6 +102,7 @@ export const useSettingsStore = create<SettingsState>()(
           if (importedSettings.unit) newState.unit = importedSettings.unit;
           if (importedSettings.isLightMode !== undefined) newState.isLightMode = importedSettings.isLightMode;
           if (importedSettings.playCompletionSound !== undefined) newState.playCompletionSound = importedSettings.playCompletionSound;
+          if (importedSettings.isVirtualKeyboardEnabled !== undefined) newState.isVirtualKeyboardEnabled = importedSettings.isVirtualKeyboardEnabled;
 
           return newState;
         }),

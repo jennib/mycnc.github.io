@@ -26,8 +26,6 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     onDisconnect,
     isApiSupported,
     isSimulated,
-    useSimulator,
-    onSimulatorChange,
     isElectron,
     isConnecting,
 }) => {
@@ -38,8 +36,10 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     const handleConnect = () => {
         if (connectionType === 'usb') {
             onConnect({ type: 'usb' });
-        } else {
+        } else if (connectionType === 'tcp') {
             onConnect({ type: 'tcp', ip: tcpIp, port: tcpPort });
+        } else if (connectionType === 'simulator') {
+            onConnect({ type: 'simulator' });
         }
     };
 
@@ -51,25 +51,14 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                 : portInfo.portName;
         } else if (portInfo.type === 'tcp') {
             return `${t('connection.tcp')}: ${portInfo.portName}`;
+        } else if (portInfo.type === 'simulator') {
+            return t('connection.useSimulator');
         }
         return t('connection.unknownPort');
     };
 
     return (
         <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <input
-                    type="checkbox"
-                    id="simulator-checkbox"
-                    checked={useSimulator}
-                    onChange={(e) => onSimulatorChange(e.target.checked)}
-                    disabled={isConnected || isConnecting}
-                    className="h-4 w-4 rounded border-secondary text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
-                />
-                <label htmlFor="simulator-checkbox" className={`text-sm whitespace-nowrap ${isConnected || isConnecting ? 'text-text-secondary' : ''}`}>
-                    {t('connection.useSimulator')}
-                </label>
-            </div>
 
             {isElectron && (
                 <div className="flex items-center gap-4">
@@ -101,6 +90,21 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         />
                         <label htmlFor="tcp-connection" className={`text-sm ${isConnected || isConnecting ? 'text-text-secondary' : ''}`}>
                             {t('connection.tcp')}
+                        </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="radio"
+                            id="simulator-connection"
+                            name="connection-type"
+                            value="simulator"
+                            checked={connectionType === 'simulator'}
+                            onChange={() => settingsActions.setConnectionSettings({ type: 'simulator' })}
+                            disabled={isConnected || isConnecting}
+                            className="h-4 w-4 text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
+                        />
+                        <label htmlFor="simulator-connection" className={`text-sm ${isConnected || isConnecting ? 'text-text-secondary' : ''}`}>
+                            {t('connection.useSimulator')}
                         </label>
                     </div>
                 </div>
@@ -139,7 +143,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
             ) : (
                 <button
                     onClick={handleConnect}
-                    disabled={isConnecting || (!isApiSupported && connectionType === 'usb' && !useSimulator) || (connectionType === 'tcp' && (!tcpIp || !tcpPort))}
+                    disabled={isConnecting || (!isApiSupported && connectionType === 'usb') || (connectionType === 'tcp' && (!tcpIp || !tcpPort))}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-white font-semibold rounded-md hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors disabled:bg-secondary disabled:cursor-not-allowed whitespace-nowrap"
                 >
                     {isConnecting ? (

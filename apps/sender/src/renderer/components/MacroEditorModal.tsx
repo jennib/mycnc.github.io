@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, Trash2, X } from "@mycnc/shared";
 import { Macro } from '@/types';
+import TextInput from './ui/TextInput';
+import TextAreaInput from './ui/TextAreaInput';
 
 interface MacroEditorModalProps {
     isOpen: boolean;
@@ -75,36 +77,33 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                 <div className="p-6 space-y-4">
                     <div>
                         <label htmlFor="macro-name" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.name')}</label>
-                        <input
+                        <TextInput
                             id="macro-name"
-                            type="text"
                             value={name}
-                            onChange={e => setName(e.target.value)}
+                            onValueChange={setName}
                             placeholder={t('macro.namePlaceholder')}
-                            className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                            className="w-full"
                         />
                     </div>
                     <div>
                         <label htmlFor="macro-description" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.description')}</label>
-                        <input
+                        <TextInput
                             id="macro-description"
-                            type="text"
                             value={description}
-                            onChange={e => setDescription(e.target.value)}
+                            onValueChange={setDescription}
                             placeholder={t('macro.descriptionPlaceholder')}
-                            className="w-full bg-background border border-secondary rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                            className="w-full"
                         />
                     </div>
                     <div>
                         <label htmlFor="macro-commands" className="block text-sm font-medium text-text-secondary mb-1">{t('macro.commands')}</label>
-                        <textarea
-                            id="macro-commands"
+                        <TextAreaInput
                             value={commands}
-                            onChange={e => setCommands(e.target.value)}
+                            onChange={setCommands}
                             rows={8}
                             placeholder={t('macro.commandsPlaceholder')}
-                            className="w-full bg-background border border-secondary rounded-md py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                            spellCheck="false"
+                            className="w-full"
+                            spellCheck={false}
                         />
                         <p className="text-xs text-text-secondary mt-1">{t('macro.help')}</p>
                     </div>
