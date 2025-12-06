@@ -243,7 +243,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
     const [camera, setCamera] = useState({
         target: [0, 0, 0],
         distance: 100,
-        rotation: [0, Math.PI / 2] // Default to top-down view (Z-up system)
+        rotation: [-Math.PI / 2, Math.PI / 4] // Default to front-left view
     });
     const mouseState = useRef({ isDown: false, lastPos: { x: 0, y: 0 }, button: 0 });
     const workerRef = useRef<Worker | null>(null);
@@ -300,7 +300,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
         fitView: () => fitView(parsedGCode?.bounds),
         zoomIn: () => setCamera(c => ({ ...c, distance: c.distance / 1.5 })),
         zoomOut: () => setCamera(c => ({ ...c, distance: c.distance * 1.5 })),
-        resetView: () => fitView(parsedGCode?.bounds, [0, Math.PI / 2]),
+        resetView: () => fitView(parsedGCode?.bounds, [-Math.PI / 2, Math.PI / 4]),
     }));
 
     useEffect(() => {
@@ -327,7 +327,7 @@ const GCodeVisualizer = React.forwardRef<GCodeVisualizerHandle, GCodeVisualizerP
                     workAreaGridVertices, workAreaGridColors, workAreaBoundsVertices, workAreaBoundsColors, workAreaAxisVertices, workAreaAxisColors,
                     workAreaPlaneVertices, workAreaPlaneColors // New fields
                 });
-                fitView(parsedGCode.bounds, [0, Math.PI / 2]);
+                fitView(parsedGCode.bounds, [-Math.PI / 2, Math.PI / 4]);
             } else if (type === 'updatedColors' && gl && buffersRef.current) {
                 const { toolpathColorUpdates, toolCurrentPosition: newToolCurrentPosition } = event.data; // Only toolCurrentPosition is sent
                 // Apply partial color updates
