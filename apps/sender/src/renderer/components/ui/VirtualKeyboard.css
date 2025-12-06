@@ -1,0 +1,65 @@
+/* Glassmorphism overrides for react-simple-keyboard */
+.simple-keyboard {
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+}
+
+.simple-keyboard .hg-button {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 0.75rem !important;
+    /* rounded-xl */
+    color: #e5e7eb !important;
+    /* text-text-primary approx */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-weight: 700 !important;
+    height: 60px !important;
+    transition: all 0.1s ease !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.simple-keyboard .hg-button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(0) !important;
+}
+
+.simple-keyboard .hg-button:active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(0.95) !important;
+}
+
+.simple-keyboard .hg-button.hg-standardBtn {
+    /* Standard keys */
+}
+
+.simple-keyboard .hg-button.hg-functionBtn {
+    /* Function keys like shift, enter */
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Specific key styling */
+.simple-keyboard .hg-button[data-skbtn="{enter}"] {
+    background: #2563eb !important;
+    /* primary */
+    color: white !important;
+}
+
+.simple-keyboard .hg-button[data-skbtn="{bksp}"] {
+    /* backspace */
+}
+
+/* Numpad specific adjustments if needed */
+.hg-theme-default .hg-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.hg-theme-default .hg-row:last-child {
+    margin-bottom: 0;
+}
+
+.hg-button {
+    flex-grow: 1;
+}

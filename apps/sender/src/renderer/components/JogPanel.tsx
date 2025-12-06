@@ -27,6 +27,7 @@ import {
 import { MachineState, MachineSettings, JobStatus } from "@mycnc/shared";
 import { JogManager, JogAxis, JogDirection } from "../services/JogManager";
 import { useGamepad } from "../hooks/useGamepad";
+import NumberInput from "./ui/NumberInput";
 
 interface JogPanelProps {
   isConnected: boolean;
@@ -599,18 +600,17 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 </h4>
               </div>
               <div className="flex items-center gap-2">
-                <div className="relative w-24 flex-shrink-0">
-                  <input
-                    type="number"
+                <div className="relative w-32 flex-shrink-0">
+                  <NumberInput
                     value={spindleSpeed}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setSpindleSpeed(parseInt(e.target.value, 10))
-                    }
+                    onChange={(val) => setSpindleSpeed(parseInt(val, 10) || 0)}
                     disabled={isSpindleDisabled}
-                    className="w-full bg-secondary/50 border border-white/10 rounded-lg py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 font-mono text-right pr-8"
-                    aria-label="Spindle Speed in RPM"
+                    min={0}
+                    step={100}
+                    unit="RPM"
+                    label={t('jog.spindle.title')}
+                    className="w-full"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-secondary pointer-events-none">RPM</span>
                 </div>
                 <div className="flex gap-1 flex-grow justify-end">
                   <button

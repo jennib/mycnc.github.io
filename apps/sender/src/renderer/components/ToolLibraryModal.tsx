@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, X, Plus, Trash2, Pencil } from "@mycnc/shared";
 import { Tool } from '@/types';
+import TextInput from './ui/TextInput';
+import NumberInput from './ui/NumberInput';
 
 interface ToolLibraryModalProps {
     isOpen: boolean;
@@ -102,22 +104,21 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary mb-1">{t('toolLibrary.name')}</label>
-                                    <input
-                                        type="text"
-                                        placeholder='e.g., 1/4" 2-Flute Endmill'
+                                    <TextInput
                                         value={currentTool.name}
-                                        onChange={e => setCurrentTool(prev => ({ ...prev, name: e.target.value }))}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                        onValueChange={val => setCurrentTool(prev => ({ ...prev, name: val }))}
+                                        placeholder='e.g., 1/4" 2-Flute Endmill'
+                                        className="w-full"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-text-secondary mb-1">{t('toolLibrary.diameter')}</label>
-                                    <input
-                                        type="number"
+                                    <NumberInput
+                                        value={currentTool.diameter}
+                                        onChange={val => setCurrentTool(prev => ({ ...prev, diameter: val }))}
                                         placeholder="e.g., 6.35"
-                                        value={currentTool.diameter || ''}
-                                        onChange={e => setCurrentTool(prev => ({ ...prev, diameter: e.target.value }))}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                        unit="mm"
+                                        className="w-full"
                                     />
                                 </div>
                             </div>

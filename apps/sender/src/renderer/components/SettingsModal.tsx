@@ -4,6 +4,9 @@ import { Save, X, Upload, Download, Ruler, Settings } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
 import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
+import NumberInput from './ui/NumberInput';
+import TextAreaInput from './ui/TextAreaInput';
+
 interface InputGroupProps {
     label: string;
     children: React.ReactNode;
@@ -13,41 +16,6 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, children }) => (
     <div className="mb-4">
         <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>
         <div className="flex items-center gap-3">{children}</div>
-    </div>
-);
-
-interface NumberInputProps {
-    id: string;
-    value: string | number;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    unit?: string;
-}
-
-const NumberInput: React.FC<NumberInputProps> = ({ id, value, onChange, unit }) => (
-    <div className="relative flex-grow">
-        <input
-            id={id} type="number" value={value} onChange={onChange}
-            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
-        />
-        {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary bg-black/20 px-1.5 py-0.5 rounded">{unit}</span>}
-    </div>
-);
-
-interface ScriptInputProps {
-    label: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    placeholder: string;
-}
-
-const ScriptInput: React.FC<ScriptInputProps> = ({ label, value, onChange, placeholder }) => (
-    <div className="mb-4">
-        <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>
-        <textarea
-            value={value} onChange={onChange} rows={4} placeholder={placeholder}
-            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
-            spellCheck="false"
-        />
     </div>
 );
 
@@ -185,23 +153,29 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <InputGroup label={t('settings.workArea')}>
-                                <NumberInput id="work-x" value={localSettings.workArea.x} onChange={e => handleNestedNumericChange('workArea', 'x', e.target.value)} unit="X" />
-                                <NumberInput id="work-y" value={localSettings.workArea.y} onChange={e => handleNestedNumericChange('workArea', 'y', e.target.value)} unit="Y" />
-                                <NumberInput id="work-z" value={localSettings.workArea.z} onChange={e => handleNestedNumericChange('workArea', 'z', e.target.value)} unit="Z" />
-                                <button
-                                    onClick={() => setShowBuildAreaModal(true)}
-                                    className="ml-2 p-2 bg-secondary/50 text-text-primary rounded hover:bg-secondary border border-white/10"
-                                    title="Measure Build Area"
-                                >
-                                    <Ruler className="w-5 h-5" />
-                                </button>
+                                <div className="grid grid-cols-3 gap-2 w-full">
+                                    <NumberInput id="work-x" value={localSettings.workArea.x} onChange={val => handleNestedNumericChange('workArea', 'x', val)} unit="X" className="w-full" />
+                                    <NumberInput id="work-y" value={localSettings.workArea.y} onChange={val => handleNestedNumericChange('workArea', 'y', val)} unit="Y" className="w-full" />
+                                    <div className="flex gap-2">
+                                        <NumberInput id="work-z" value={localSettings.workArea.z} onChange={val => handleNestedNumericChange('workArea', 'z', val)} unit="Z" className="w-full" />
+                                        <button
+                                            onClick={() => setShowBuildAreaModal(true)}
+                                            className="p-2 bg-secondary/50 text-text-primary rounded hover:bg-secondary border border-white/10 flex-shrink-0"
+                                            title="Measure Build Area"
+                                        >
+                                            <Ruler className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
                             </InputGroup>
                             <InputGroup label={t('settings.jogFeedRate')}>
-                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={e => handleNumericChange('jogFeedRate', e.target.value)} />
+                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={val => handleNumericChange('jogFeedRate', val)} />
                             </InputGroup>
                             <InputGroup label={t('settings.spindleSpeed')}>
-                                <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={e => handleNestedNumericChange('spindle', 'min', e.target.value)} unit="Min" />
-                                <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={e => handleNestedNumericChange('spindle', 'max', e.target.value)} unit="Max" />
+                                <div className="grid grid-cols-2 gap-2 w-full">
+                                    <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={val => handleNestedNumericChange('spindle', 'min', val)} unit="Min" className="w-full" />
+                                    <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={val => handleNestedNumericChange('spindle', 'max', val)} unit="Max" className="w-full" />
+                                </div>
                             </InputGroup>
                             <InputGroup label={t('settings.controllerType')}>
                                 <select
@@ -220,26 +194,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 </select>
                             </InputGroup>
                             <InputGroup label={t('settings.spindleWarmup')}>
-                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={e => handleNestedNumericChange('spindle', 'warmupDelay', e.target.value)} unit="ms" />
+                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={val => handleNestedNumericChange('spindle', 'warmupDelay', val)} unit="ms" />
                             </InputGroup>
                             <InputGroup label={t('settings.probe')}>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-4 text-center text-text-secondary font-semibold">X</span>
-                                    <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={e => handleNestedNumericChange('probe', 'xOffset', e.target.value)} />
-                                    <span className="w-4 text-center text-text-secondary font-semibold">Y</span>
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={e => handleNestedNumericChange('probe', 'yOffset', e.target.value)} />
-                                    <span className="w-4 text-center text-text-secondary font-semibold">Z</span>
-                                    <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={e => handleNestedNumericChange('probe', 'zOffset', e.target.value)} />
+                                <div className="grid grid-cols-3 gap-2 w-full">
+                                    <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={val => handleNestedNumericChange('probe', 'xOffset', val)} unit="X" className="w-full" />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={val => handleNestedNumericChange('probe', 'yOffset', val)} unit="Y" className="w-full" />
+                                    <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={val => handleNestedNumericChange('probe', 'zOffset', val)} unit="Z" className="w-full" />
                                 </div>
                             </InputGroup>
                             <InputGroup label={t('settings.probeFeedRate')}>
-                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={e => handleNestedNumericChange('probe', 'feedRate', e.target.value)} unit="mm/min" />
+                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={val => handleNestedNumericChange('probe', 'feedRate', val)} unit="mm/min" />
                             </InputGroup>
+
                         </div>
                         <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.customScripts')}</h3>
-                            <ScriptInput label={t('settings.startupScript')} value={localSettings.scripts.startup} onChange={e => handleScriptChange('startup', e.target.value)} placeholder="e.g., G21 G90" />
-                            <ScriptInput label={t('settings.shutdownScript')} value={localSettings.scripts.shutdown} onChange={e => handleScriptChange('shutdown', e.target.value)} placeholder="e.g., M5 G0 X0 Y0" />
+                            <TextAreaInput label={t('settings.startupScript')} value={localSettings.scripts.startup} onChange={val => handleScriptChange('startup', val)} placeholder="e.g., G21 G90" />
+                            <TextAreaInput label={t('settings.shutdownScript')} value={localSettings.scripts.shutdown} onChange={val => handleScriptChange('shutdown', val)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
                     <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">

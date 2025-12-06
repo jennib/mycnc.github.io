@@ -17,6 +17,7 @@ import ToolLibraryModal from "./components/ToolLibraryModal";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
 import WebcamPeek from "./components/WebcamPeek";
+import VirtualKeyboard from "./components/ui/VirtualKeyboard";
 import SerialConnector from "./components/SerialConnector";
 import GCodePanel from "./components/GCodePanel";
 import { JobStatus, ConnectionOptions, Tool } from "./types";
@@ -338,6 +339,7 @@ const MainApp: React.FC = () => {
         notifications={notifications}
         onDismiss={() => { }}
       />
+      <VirtualKeyboard />
       <ContactModal
         isOpen={isContactModalOpen}
         onClose={uiActions.closeContactModal}
