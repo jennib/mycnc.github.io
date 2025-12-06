@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Power, PowerOff } from "@mycnc/shared";
 import { PortInfo, ConnectionOptions } from '@/types'; // Import PortInfo and ConnectionOptions
+import { useSettingsStore } from '../stores/settingsStore';
 
 interface SerialConnectorProps {
     isConnected: boolean;
@@ -29,9 +30,8 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
     isConnecting,
 }) => {
     const { t } = useTranslation();
-    const [tcpIp, setTcpIp] = useState('10.0.0.162');
-    const [tcpPort, setTcpPort] = useState(8889); // Default GRBL port
-    const [connectionType, setConnectionType] = useState<'usb' | 'tcp'>('usb');
+    const { connectionSettings, actions: settingsActions } = useSettingsStore();
+    const { tcpIp, tcpPort, type: connectionType } = connectionSettings;
 
     const handleConnect = () => {
         if (connectionType === 'usb') {
@@ -77,7 +77,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         name="connection-type"
                         value="usb"
                         checked={connectionType === 'usb'}
-                        onChange={() => setConnectionType('usb')}
+                        onChange={() => settingsActions.setConnectionSettings({ type: 'usb' })}
                         disabled={isConnected || isConnecting}
                         className="h-4 w-4 text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                     />
@@ -90,7 +90,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         name="connection-type"
                         value="tcp"
                         checked={connectionType === 'tcp'}
-                        onChange={() => setConnectionType('tcp')}
+                        onChange={() => settingsActions.setConnectionSettings({ type: 'tcp' })}
                         disabled={isConnected || isConnecting}
                         className="h-4 w-4 text-primary focus:ring-primary focus:ring-offset-background disabled:opacity-50"
                     />
@@ -106,7 +106,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         type="text"
                         placeholder={t('connection.ip')}
                         value={tcpIp}
-                        onChange={(e) => setTcpIp(e.target.value)}
+                        onChange={(e) => settingsActions.setConnectionSettings({ tcpIp: e.target.value })}
                         className="w-32 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
                         disabled={isConnected || isConnecting}
                     />
@@ -114,7 +114,7 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                         type="number"
                         placeholder={t('connection.port')}
                         value={tcpPort}
-                        onChange={(e) => setTcpPort(parseInt(e.target.value))}
+                        onChange={(e) => settingsActions.setConnectionSettings({ tcpPort: parseInt(e.target.value) || 0 })}
                         className="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm bg-background text-text-primary"
                         disabled={isConnected || isConnecting}
                     />

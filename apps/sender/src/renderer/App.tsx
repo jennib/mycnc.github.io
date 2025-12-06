@@ -137,6 +137,7 @@ const MainApp: React.FC = () => {
     machineSettings,
     toolLibrary,
     generatorSettings,
+    connectionSettings,
     actions: settingsActions,
   } = useSettingsStore((state) => state);
 
@@ -159,7 +160,7 @@ const MainApp: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSerialApiSupported, setIsSerialApiSupported] = useState(true);
-  const [useSimulator, setUseSimulator] = useState(false);
+  // useSimulator local state removed, using settingsStore.connectionSettings.useSimulator instead
   const [isMacroEditMode, setIsMacroEditMode] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -211,7 +212,7 @@ const MainApp: React.FC = () => {
   }, []);
 
   const handleConnect = (options: ConnectionOptions) => {
-    if (useSimulator) {
+    if (connectionSettings.useSimulator) {
       connectionActions.connect({ type: "simulator" }); // Always use simulator if toggled
     } else {
       connectionActions.connect(options);
@@ -425,7 +426,8 @@ const MainApp: React.FC = () => {
             webcamSettings: state.webcamSettings,
             jogStep: state.jogStep,
             unit: state.unit,
-            isLightMode: state.isLightMode
+            isLightMode: state.isLightMode,
+            connectionSettings: state.connectionSettings
           };
 
           const blob = new Blob([JSON.stringify(settingsToExport, null, 2)], { type: 'application/json' });
@@ -552,8 +554,8 @@ const MainApp: React.FC = () => {
             onDisconnect={handleDisconnect}
             isApiSupported={isSerialApiSupported}
             isSimulated={portInfo?.type === 'simulator'}
-            useSimulator={useSimulator}
-            onSimulatorChange={setUseSimulator}
+            useSimulator={connectionSettings.useSimulator}
+            onSimulatorChange={(use) => settingsActions.setConnectionSettings({ useSimulator: use })}
             isElectron={!!window.electronAPI?.isElectron}
           />
         </div>
@@ -593,7 +595,7 @@ const MainApp: React.FC = () => {
           </button>
         </div>
       )}
-      {!isSerialApiSupported && !useSimulator && (
+      {!isSerialApiSupported && !connectionSettings.useSimulator && (
         <div
           className="bg-yellow-500/10 border-l-4 border-yellow-500 text-yellow-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
           role="alert"
@@ -605,7 +607,7 @@ const MainApp: React.FC = () => {
           </div>
         </div>
       )}
-      {error && (isSerialApiSupported || useSimulator) && (
+      {error && (isSerialApiSupported || connectionSettings.useSimulator) && (
         <div
           className="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
           role="alert"
@@ -640,7 +642,7 @@ const MainApp: React.FC = () => {
             selectedToolId={selectedToolId}
             onToolSelect={setSelectedToolId}
             onOpenGenerator={uiActions.openGCodeModal}
-            isSimulated={useSimulator}
+            isSimulated={connectionSettings.useSimulator}
           />
         </div>
         <div className="h-[50vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">

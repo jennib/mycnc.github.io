@@ -3,7 +3,15 @@ import { persist } from 'zustand/middleware';
 import { MachineSettings, Tool, Macro, GeneratorSettings, WebcamSettings } from '@/types';
 import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS, DEFAULT_WEBCAM_SETTINGS } from '@/constants';
 
+export interface ConnectionSettings {
+  type: 'usb' | 'tcp';
+  tcpIp: string;
+  tcpPort: number;
+  useSimulator: boolean;
+}
+
 interface SettingsState {
+  connectionSettings: ConnectionSettings;
   jogStep: number;
   unit: 'mm' | 'in';
   isLightMode: boolean;
@@ -24,6 +32,7 @@ interface SettingsState {
     setToolLibrary: (library: Tool[] | ((prev: Tool[]) => Tool[])) => void;
     setGeneratorSettings: (settings: GeneratorSettings | ((prev: GeneratorSettings) => GeneratorSettings)) => void;
     setWebcamSettings: (settings: Partial<WebcamSettings>) => void;
+    setConnectionSettings: (settings: Partial<ConnectionSettings>) => void;
     setBuildAreaMeasurementDirections: (directions: { X: 1 | -1; Y: 1 | -1; Z: 1 | -1 }) => void;
     importSettings: (settings: Partial<SettingsState>) => void;
   };
@@ -52,6 +61,12 @@ export const useSettingsStore = create<SettingsState>()(
       unit: 'mm',
       isLightMode: true,
       playCompletionSound: true,
+      connectionSettings: {
+        type: 'usb',
+        tcpIp: '10.0.0.162',
+        tcpPort: 8889,
+        useSimulator: false
+      },
       macros: DEFAULT_MACROS,
       machineSettings: DEFAULT_SETTINGS,
       toolLibrary: DEFAULT_TOOLS,
@@ -68,12 +83,14 @@ export const useSettingsStore = create<SettingsState>()(
         setToolLibrary: (library) => set((state) => ({ toolLibrary: typeof library === 'function' ? library(state.toolLibrary) : library })),
         setGeneratorSettings: (settings) => set((state) => ({ generatorSettings: typeof settings === 'function' ? settings(state.generatorSettings) : settings })),
         setWebcamSettings: (settings) => set((state) => ({ webcamSettings: { ...state.webcamSettings, ...settings } })),
+        setConnectionSettings: (settings) => set((state) => ({ connectionSettings: { ...state.connectionSettings, ...settings } })),
         setBuildAreaMeasurementDirections: (directions) => set({ buildAreaMeasurementDirections: directions }),
         importSettings: (importedSettings) => set((state) => {
           const newState = { ...state };
           if (importedSettings.machineSettings) newState.machineSettings = deepMerge(state.machineSettings, importedSettings.machineSettings);
           if (importedSettings.generatorSettings) newState.generatorSettings = deepMerge(state.generatorSettings, importedSettings.generatorSettings);
           if (importedSettings.webcamSettings) newState.webcamSettings = { ...state.webcamSettings, ...importedSettings.webcamSettings };
+          if (importedSettings.connectionSettings) newState.connectionSettings = { ...state.connectionSettings, ...importedSettings.connectionSettings };
 
           // For arrays and primitives, we usually want to overwrite
           if (importedSettings.macros) newState.macros = importedSettings.macros;
@@ -101,6 +118,7 @@ export const useSettingsStore = create<SettingsState>()(
           machineSettings: deepMerge(currentState.machineSettings, state.machineSettings || {}),
           generatorSettings: deepMerge(currentState.generatorSettings, state.generatorSettings || {}),
           webcamSettings: { ...currentState.webcamSettings, ...(state.webcamSettings || {}) },
+          connectionSettings: { ...currentState.connectionSettings, ...(state.connectionSettings || {}) },
         };
       },
     }
