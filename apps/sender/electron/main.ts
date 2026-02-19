@@ -2,6 +2,11 @@ import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session, MenuItemCons
 import { autoUpdater } from "electron-updater";
 import path from "path";
 import net from "net";
+import os from "os";
+import http from "http";
+import express from "express";
+import { Server as SocketIOServer } from "socket.io";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -11,6 +16,109 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 let mainWindow: BrowserWindow;
 let tcpSocket: net.Socket | null = null;
 let manualUpdateCheck = false;
+
+// --- Remote Server Setup ---
+// Cache for application state to send to new clients
+let appState: Record<string, any> = {};
+
+const appServer = express();
+const httpServer = http.createServer(appServer);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  maxHttpBufferSize: 1e8 // 100 MB
+});
+
+const broadcast = (channel: string, ...args: any[]) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, ...args);
+  }
+  if (io) {
+    io.emit(channel, ...args);
+  }
+};
+
+const connectToTcp = (ip: string, port: number): Promise<boolean> => {
+  return new Promise((resolve, reject) => {
+    if (tcpSocket) {
+      if (!tcpSocket.destroyed && !tcpSocket.connecting) {
+        console.log("Using existing TCP connection.");
+        resolve(true);
+        return;
+      }
+      tcpSocket.destroy();
+      tcpSocket = null;
+    }
+
+    tcpSocket = new net.Socket();
+
+    const connectionTimeout = setTimeout(() => {
+      broadcast("tcp-error", {
+        message: "Connection timed out.",
+        code: "CONNECTION_TIMEOUT",
+      });
+      // Only reject if pending? Promise logic handles this safely usually (first call wins)
+      reject(new Error("Connection timed out."));
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    }, 5000);
+
+    tcpSocket.on("connect", () => {
+      clearTimeout(connectionTimeout);
+      console.log(`TCP Connected to ${ip}:${port}`);
+      resolve(true);
+    });
+
+    tcpSocket.on("data", (data) => {
+      broadcast("tcp-data", data.toString());
+    });
+
+    tcpSocket.on("error", (err) => {
+      clearTimeout(connectionTimeout);
+      console.error("TCP Socket Error:", err.message);
+      broadcast("tcp-error", {
+        message: err.message,
+        code: "TCP_SOCKET_ERROR",
+      });
+      reject(new Error(err.message));
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    });
+
+    tcpSocket.on("close", () => {
+      clearTimeout(connectionTimeout);
+      console.log("TCP Socket Closed");
+      broadcast("tcp-disconnect");
+      tcpSocket?.destroy();
+      tcpSocket = null;
+    });
+
+    tcpSocket.connect(port, ip);
+  });
+};
+
+const disconnectTcp = () => {
+  if (tcpSocket) {
+    tcpSocket.destroy();
+    tcpSocket = null;
+  }
+};
+
+const sendTcp = (data: string) => {
+  if (tcpSocket && !tcpSocket.destroyed) {
+    tcpSocket.write(data);
+  } else {
+    // Notify failure usually handled by frontend state or error
+    console.warn("Attempted to send data on non-existent socket");
+    broadcast("tcp-error", {
+      message: "Not connected to TCP device.",
+      code: "NOT_CONNECTED",
+    });
+  }
+};
+
 
 const createAboutWindow = () => {
   const aboutWindow = new BrowserWindow({
@@ -271,76 +379,29 @@ const createWindow = () => {
 
   // --- TCP Communication Handlers ---
   ipcMain.handle("connect-tcp", (event, ip: string, port: number) => {
-    return new Promise((resolve, reject) => {
-      if (tcpSocket) {
-        tcpSocket.destroy();
-        tcpSocket = null;
-      }
-
-      tcpSocket = new net.Socket();
-
-      const connectionTimeout = setTimeout(() => {
-        mainWindow.webContents.send("tcp-error", {
-          message: "Connection timed out.",
-          code: "CONNECTION_TIMEOUT",
-        });
-        reject(new Error("Connection timed out."));
-        tcpSocket?.destroy();
-        tcpSocket = null;
-      }, 5000);
-
-      tcpSocket.on("connect", () => {
-        clearTimeout(connectionTimeout);
-        console.log(`TCP Connected to ${ip}:${port}`);
-        resolve(true);
-      });
-
-      tcpSocket.on("data", (data) => {
-        mainWindow.webContents.send("tcp-data", data.toString());
-      });
-
-      tcpSocket.on("error", (err) => {
-        clearTimeout(connectionTimeout);
-        console.error("TCP Socket Error:", err.message);
-        mainWindow.webContents.send("tcp-error", {
-          message: err.message,
-          code: "TCP_SOCKET_ERROR",
-        });
-        reject(new Error(err.message));
-        tcpSocket?.destroy();
-        tcpSocket = null;
-      });
-
-      tcpSocket.on("close", () => {
-        clearTimeout(connectionTimeout);
-        console.log("TCP Socket Closed");
-        mainWindow.webContents.send("tcp-disconnect");
-        tcpSocket?.destroy();
-        tcpSocket = null;
-      });
-
-      tcpSocket.connect(port, ip);
-    });
+    return connectToTcp(ip, port);
   });
 
   ipcMain.on("send-tcp", (event, data: string) => {
-    if (tcpSocket && !tcpSocket.destroyed) {
-      tcpSocket.write(data); // Newline is now handled by the caller
-    } else {
-      console.warn(
-        "Attempted to send data on a non-existent or destroyed TCP socket."
-      );
-      mainWindow.webContents.send("tcp-error", {
-        message: "Not connected to TCP device.",
-        code: "NOT_CONNECTED",
-      });
-    }
+    sendTcp(data);
   });
   ipcMain.on("disconnect-tcp", () => {
-    if (tcpSocket) {
-      tcpSocket.destroy();
-      tcpSocket = null;
+    disconnectTcp();
+  });
+
+  // --- State Synchronization Handlers ---
+  ipcMain.on("state-update", (event, { storeName, state }) => {
+    // Update local cache
+    appState[storeName] = { ...appState[storeName], ...state };
+
+    // Broadcast to remote clients
+    if (io) {
+      io.emit("state-update", { storeName, state });
     }
+  });
+
+  ipcMain.handle("get-initial-state", () => {
+    return appState;
   });
 
   const handleSelectSerialPort = async (event, portList, webContents, callback) => {
@@ -456,6 +517,82 @@ const createWindow = () => {
 };
 
 console.log('Electron app object:', app);
+
+// Start the remote access server
+const PORT = 8080;
+// Configure Express
+if (process.env.VITE_DEV_SERVER_URL) {
+  // Proxy to Vite Dev Server
+  appServer.use('/', createProxyMiddleware({
+    target: process.env.VITE_DEV_SERVER_URL,
+    changeOrigin: true,
+    ws: true, // Proxy websockets
+    logLevel: 'silent'
+  }));
+} else {
+  // Serve static files
+  appServer.use(express.static(path.join(__dirname, '../renderer')));
+}
+
+io.on("connection", (socket) => {
+  console.log("New remote connection:", socket.id);
+
+  socket.on("connect-tcp", (ip, port, callback) => {
+    connectToTcp(ip, port)
+      .then(() => callback({ success: true }))
+      .catch((err) => callback({ success: false, error: err.message }));
+  });
+
+  socket.on("send-tcp", (data) => {
+    sendTcp(data);
+  });
+
+  socket.on("disconnect-tcp", () => {
+    disconnectTcp();
+  });
+
+  // --- State Synchronization ---
+  // Send current cached state to new client
+  socket.emit("initial-state", appState);
+
+  socket.on("state-update", ({ storeName, state }) => {
+    // Update local cache
+    appState[storeName] = { ...appState[storeName], ...state };
+
+    // Broadcast to other remote clients (excluding sender)
+    socket.broadcast.emit("state-update", { storeName, state });
+
+    // Send to main window
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("state-update", { storeName, state });
+    }
+  });
+
+  socket.on("state-action", (action) => {
+    // Forward actions from remote to main window to be executed
+    // (Optional: if we want remote to trigger complex logic in main window)
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("remote-action", action);
+    }
+  });
+});
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`Remote access server listening on http://0.0.0.0:${PORT}`);
+  const interfaces = os.networkInterfaces();
+  console.log("Available remote access URLs:");
+  Object.keys(interfaces).forEach((ifaceName) => {
+    const iface = interfaces[ifaceName];
+    if (iface) {
+      iface.forEach((address) => {
+        if (address.family === 'IPv4' && !address.internal) {
+          console.log(`  http://${address.address}:${PORT}`);
+        }
+      });
+    }
+  });
+});
+
 app.on("ready", createWindow);
 
 app.on("window-all-closed", () => {

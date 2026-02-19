@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { MachineSettings, Tool, Macro, GeneratorSettings, WebcamSettings } from '@/types';
+import { MachineSettings, Macro, GeneratorSettings, WebcamSettings } from '@/types';
+import { Tool } from '@mycnc/shared';
 import { DEFAULT_SETTINGS, DEFAULT_MACROS, DEFAULT_TOOLS, DEFAULT_GENERATOR_SETTINGS, DEFAULT_WEBCAM_SETTINGS } from '@/constants';
 
 export interface ConnectionSettings {

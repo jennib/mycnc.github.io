@@ -12,29 +12,54 @@ export function useJob() {
   const { gcodeLines, fileName, jobStatus, progress, timeEstimate, actions: jobActions } = useJobStore();
   const { isConnected } = useConnectionStore();
   const { machineSettings } = useSettingsStore();
-  const { actions: uiActions } = useUIStore();
+  const { isPreflightModalOpen, preflightWarnings, actions: uiActions } = useUIStore();
   const { actions: logActions } = useLogStore();
   const [jobStartOptions, setJobStartOptions] = useState({ startLine: 0, isDryRun: false });
-  const [preflightWarnings, setPreflightWarnings] = useState<any[]>([]);
 
   const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }) => {
+    // Check if Remote Client
+    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && action !== 'start') {
+      console.log(`Remote Client: Delegating ${action.toUpperCase()}_JOB to Host`);
+      let type = '';
+      if (action === 'pause') type = 'PAUSE_JOB';
+      else if (action === 'resume') type = 'RESUME_JOB';
+      else if (action === 'stop' || action === 'gracefulStop') type = 'STOP_JOB';
+
+      if (type) {
+        window.electronAPI.sendRemoteAction({ type });
+        return;
+      }
+    }
+
     const controller = useConnectionStore.getState().controller;
     if (!controller || !isConnected) return;
 
     switch (action) {
       case 'start':
+        console.log("Job Start requested. GCode lines:", gcodeLines.length);
         if (gcodeLines.length > 0) {
-          const warnings = await analyzeGCodeWithWorker(() => new AnalysisWorker(), gcodeLines, machineSettings);
-          setPreflightWarnings(warnings);
+          try {
+            console.log("Starting GCode analysis...");
+            const analysisPromise = analyzeGCodeWithWorker(() => new AnalysisWorker(), gcodeLines, machineSettings);
+            const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([{ type: 'warning', message: 'Analysis timed out. Network slow?' }]), 3000));
+            // Race analysis with timeout
+            const warnings = await Promise.race([analysisPromise, timeoutPromise]);
+
+            console.log("Analysis complete. Warnings:", warnings);
+            uiActions.setPreflightWarnings(warnings);
+          } catch (error) {
+            console.error("GCode analysis failed:", error);
+            uiActions.setPreflightWarnings([{ type: 'warning', message: 'Pre-flight analysis failed. Proceed with caution.' }]);
+          }
           setJobStartOptions({ startLine: options?.startLine ?? 0, isDryRun: false });
+          console.log("Opening preflight modal");
           uiActions.openPreflightModal();
+        } else {
+          console.warn("Cannot start: No GCode loaded.");
         }
         break;
       case 'pause':
         if (jobStatus === JobStatus.Running) {
-          // Spindle check logic would need to be in the controller or we access state directly
-          // For now, let's assume controller handles safety or we check machine state from store
-
           await controller.pause();
           jobActions.setJobStatus(JobStatus.Paused);
         }
@@ -57,8 +82,37 @@ export function useJob() {
   }, [isConnected, gcodeLines, machineSettings, jobStatus, uiActions, jobActions]);
 
   const handleStartJobConfirmed = useCallback((options: { isDryRun: boolean }) => {
+    // Check if Remote Client
+    if (window.electronAPI && !window.electronAPI.isElectron) {
+      console.log("Remote Client: Delegating Start Job to Host via Remote Action");
+      if (window.electronAPI.sendRemoteAction) {
+        window.electronAPI.sendRemoteAction({
+          type: 'START_JOB',
+          payload: { startLine: jobStartOptions.startLine, isDryRun: options.isDryRun }
+        });
+        uiActions.closePreflightModal();
+        return;
+      }
+    }
+
     const controller = useConnectionStore.getState().controller;
-    if (!controller || !isConnected || gcodeLines.length === 0) return;
+
+    // Debug logging
+    if (!controller) {
+      console.error("Start Job Failed: Controller is null.");
+      logActions.addLog({ type: 'error', message: "Cannot start job: Controller not found." });
+      return;
+    }
+    if (!isConnected) {
+      console.error("Start Job Failed: Not Connected.");
+      logActions.addLog({ type: 'error', message: "Cannot start job: Not connected." });
+      return;
+    }
+    if (gcodeLines.length === 0) {
+      console.error("Start Job Failed: No GCode.");
+      logActions.addLog({ type: 'error', message: "Cannot start job: No GCode loaded." });
+      return;
+    }
 
     const { startLine } = jobStartOptions;
     const { isDryRun } = options;
@@ -126,5 +180,6 @@ export function useJob() {
     preflightWarnings,
     handleJobControl,
     handleStartJobConfirmed,
+    // jobStartOptions already returned above? No, checked previous view_file, it was returned at line 144
   };
 }

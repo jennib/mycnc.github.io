@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from "@mycnc/shared";
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
@@ -17,6 +18,7 @@ import ReliefGenerator from './ReliefGenerator';
 import STLGenerator from './STLGenerator';
 import SVGGenerator from './SVGGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
+import * as THREE from 'three';
 
 interface TabProps {
     label: string;
@@ -159,6 +161,7 @@ interface GCodeGeneratorModalProps {
 
 const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClose, onLoadGCode, unit, settings, toolLibrary, selectedToolId, onToolSelect, generatorSettings, onSettingsChange }) => {
     const { t } = useTranslation();
+
     const [activeTab, setActiveTab] = useState(() => localStorage.getItem('generatorActiveTab') || 'surfacing');
     const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab);
 
@@ -170,6 +173,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const [isGenerating, setIsGenerating] = useState(false);
     const [viewBox, setViewBox] = useState('0 0 100 100');
     const [generationError, setGenerationError] = useState<string | null>(null);
+    const [generationProgress, setGenerationProgress] = useState<number | null>(null);
 
     // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
@@ -210,9 +214,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateDrillingCode = (machineSettings: MachineSettings) => {
         const drillParams = generatorSettings.drilling;
         const toolIndex = toolLibrary.findIndex(t => t.id === drillParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        // Returns error: null on missing tool so UI shows "Select Tool" prompt instead of "Generation Failed"
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { depth, peck, retract, feed, spindle, safeZ } = drillParams;
 
@@ -334,9 +339,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateProfileCode = (machineSettings: MachineSettings) => {
         const profileParams = generatorSettings.profile;
         const toolIndex = toolLibrary.findIndex(t => t.id === profileParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
         const toolRadius = toolDiameter / 2;
 
@@ -496,9 +501,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateSurfacingCode = (machineSettings: MachineSettings) => {
         const surfaceParams = generatorSettings.surfacing;
         const toolIndex = toolLibrary.findIndex(t => t.id === surfaceParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { width, length, depth, stepover, feed, spindle, safeZ, direction } = surfaceParams;
 
@@ -570,9 +575,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generatePocketCode = (machineSettings: MachineSettings) => {
         const pocketParams = generatorSettings.pocket;
         const toolIndex = toolLibrary.findIndex(t => t.id === pocketParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { shape, width, length, cornerRadius, diameter, depth, depthPerPass, stepover, feed, plungeFeed, spindle, safeZ } = pocketParams;
 
@@ -658,9 +663,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateBoreCode = (machineSettings: MachineSettings) => {
         const boreParams = generatorSettings.bore;
         const toolIndex = toolLibrary.findIndex(t => t.id === boreParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { centerX, centerY, holeDiameter, holeDepth, counterboreEnabled, cbDiameter, cbDepth, depthPerPass, feed, plungeFeed, spindle, safeZ } = boreParams;
 
@@ -796,9 +801,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateSlotCode = (machineSettings: MachineSettings) => {
         const slotParams = generatorSettings.slot;
         const toolIndex = toolLibrary.findIndex(t => t.id === slotParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
         const { type, slotWidth, depth, depthPerPass, feed, spindle, safeZ, startX, startY, endX, endY, centerX, centerY, radius, startAngle, endAngle } = slotParams;
@@ -935,9 +940,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateTextCode = (machineSettings: MachineSettings) => {
         const textParams = generatorSettings.text;
         const toolIndex = toolLibrary.findIndex(t => t.id === textParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { text, font, height, spacing, startX, startY, alignment, depth, feed, spindle, safeZ } = textParams;
 
@@ -1057,9 +1062,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateThreadMillingCode = (machineSettings: MachineSettings) => {
         const threadParams = generatorSettings.thread;
         const toolIndex = toolLibrary.findIndex(t => t.id === threadParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex] as Tool | undefined;
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
         const toolDiameter = (selectedTool.diameter === '' ? 0 : selectedTool.diameter);
 
         const { type, hand, feed, spindle, safeZ } = threadParams;
@@ -1167,13 +1172,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 const worker = new Worker(new URL('../workers/reliefWorker.ts', import.meta.url), { type: 'module' });
 
                 worker.onmessage = (e) => {
-                    const { type, code, paths, bounds, error } = e.data;
-                    if (type === 'success') {
+                    const { type, code, paths, bounds, error, progress } = e.data;
+                    if (type === 'progress') {
+                        setGenerationProgress(progress);
+                    } else if (type === 'success') {
                         resolve({ code, paths, bounds, error: null });
                     } else {
                         resolve({ error: error || 'Unknown worker error', code: [], paths: [], bounds: {} });
                     }
-                    worker.terminate();
+                    if (type !== 'progress') {
+                        worker.terminate();
+                    }
                 };
 
                 worker.onerror = (err) => {
@@ -1198,9 +1207,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const generateSVGCode = (machineSettings: MachineSettings) => {
         const svgParams = generatorSettings.svg;
         const toolIndex = toolLibrary.findIndex(t => t.id === svgParams.toolId);
-        if (toolIndex === -1) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} };
         const selectedTool = toolLibrary[toolIndex];
-        if (!selectedTool) return { error: t('generators.errors.selectTool'), code: [], paths: [], bounds: {} };
+        if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} };
 
         const { svgContent, scale, rotation, positionX, positionY, depth, feed, spindle, safeZ } = svgParams;
 
@@ -1420,109 +1429,156 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return { code: finalCode, paths: finalPaths, bounds: finalBounds, error: null };
     }, [arraySettings]);
 
+
+    // Helper to spawn worker
+    const runGCodeWorker = (type: string, params: any, toolLibrary: Tool[], machineSettings: MachineSettings, arraySettings: any) => {
+        const unit = settings.unit === 'Inches' ? 'in' : 'mm';
+        return new Promise<{ code: string[]; paths: any[]; bounds: any; error: string | null }>((resolve) => {
+            const worker = new Worker(new URL('../workers/gcodeWorker.ts', import.meta.url), { type: 'module' });
+            worker.onmessage = (e) => {
+                const { type: msgType, code, paths, bounds, error, progress } = e.data;
+                if (msgType === 'progress') {
+                    setGenerationProgress(progress);
+                } else if (msgType === 'success') {
+                    resolve({ code, paths, bounds, error: null });
+                } else {
+                    resolve({ error: error || 'Worker error', code: [], paths: [], bounds: {} });
+                }
+                if (msgType !== 'progress') {
+                    worker.terminate();
+                }
+            };
+            worker.onerror = (err) => {
+                console.error('Worker error:', err);
+                resolve({ error: 'Worker failed to execute', code: [], paths: [], bounds: {} });
+                worker.terminate();
+            };
+            worker.postMessage({
+                type,
+                params,
+                toolLibrary,
+                settings: machineSettings,
+                unit,
+                arraySettings
+            });
+        });
+    };
+
     const handleGenerate = useCallback(async () => {
-        setIsGenerating(true);
-        setGenerationError(null);
+        try {
+            setIsGenerating(true);
+            setGenerationError(null);
+            setGenerationProgress(0);
 
-        // Small delay to allow UI to update with loading state
-        await new Promise(resolve => setTimeout(resolve, 50));
+            // Small delay to allow UI to update with loading state
+            await new Promise(resolve => setTimeout(resolve, 50));
 
-        let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
+            let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
 
-        if (activeTab === 'surfacing') result = generateSurfacingCode(settings);
-        else if (activeTab === 'drilling') result = generateDrillingCode(settings);
-        else if (activeTab === 'bore') result = generateBoreCode(settings);
-        else if (activeTab === 'pocket') result = generatePocketCode(settings);
-        else if (activeTab === 'profile') result = generateProfileCode(settings);
-        else if (activeTab === 'slot') result = generateSlotCode(settings);
-        else if (activeTab === 'text') result = generateTextCode(settings);
-        else if (activeTab === 'thread') result = generateThreadMillingCode(settings);
-        else if (activeTab === 'svg') result = generateSVGCode(settings);
-        else if (activeTab === 'relief') result = await generateReliefCode(settings);
-        else if (activeTab === 'stl') {
-            const stlParams = generatorSettings.stl;
-            // Construct ReliefParams from STLParams
-            // We need the height map from the STL generator. 
-            // Since we don't have it in state here easily without lifting state up significantly,
-            // we can use a ref or a global/window variable as a temporary hack, 
-            // OR better: The STLGenerator should have updated a ref in this component via a callback.
-
-            // Let's assume we have the height map in a ref or state. 
-            // Actually, we haven't implemented the callback in GCodeGeneratorModal yet.
-            // Let's check if we can access the height map.
-
-            // For now, let's use the window object hack as mentioned in the plan/summary if needed, 
-            // but a cleaner way is to have a state for stlHeightMap.
-            const heightMapUrl = (window as any).currentStlHeightMap;
-
-            if (!heightMapUrl) {
-                result = { error: "No STL height map generated. Please wait for preview.", code: [], paths: [], bounds: {} };
-            } else {
-                const reliefParams: ReliefParams = {
-                    ...generatorSettings.relief, // Use defaults from relief for missing props
-                    operation: 'both', // Force both or let user choose? STL params has roughing/finishing
-                    width: stlParams.width,
-                    length: stlParams.length,
-                    maxDepth: stlParams.depth, // STL depth is positive size, Relief maxDepth is negative
-                    zSafe: stlParams.zSafe,
-                    keepAspectRatio: true,
-                    imageDataUrl: heightMapUrl,
-                    invert: false, // Height map is already correct (white=high)
-                    gamma: 1.0,
-                    contrast: 1.0,
-                    smoothing: 0,
-                    detail: 0,
-                    quality: 'medium',
-
-                    roughingEnabled: stlParams.roughingEnabled,
-                    roughingToolId: stlParams.roughingToolId,
-                    roughingStepdown: stlParams.roughingStepdown,
-                    roughingStepover: stlParams.roughingStepover,
-                    roughingStockToLeave: stlParams.roughingStockToLeave,
-                    roughingFeed: stlParams.roughingFeed,
-                    roughingSpindle: stlParams.roughingSpindle,
-
-                    finishingEnabled: true,
-                    finishingToolId: stlParams.toolId,
-                    finishingStepover: stlParams.stepover,
-                    finishingAngle: 0, // Default to X raster
-                    finishingFeed: stlParams.feedRate,
-                    finishingSpindle: stlParams.spindleSpeed,
-
-                    colorAdjustmentEnabled: false,
-                    adjustColorHigh: '#000000',
-                    adjustAmountHigh: 0,
-                    adjustToleranceHigh: 0,
-                    adjustColorLow: '#000000',
-                    adjustAmountLow: 0,
-                    adjustToleranceLow: 0,
-                };
-                // Fix maxDepth sign if needed. Relief expects negative? 
-                // In ReliefGenerator, maxDepth is usually negative. 
-                // STL size.z is positive. So we should probably negate it.
-                reliefParams.maxDepth = -Math.abs(Number(stlParams.depth));
-
-                result = await generateReliefCode(settings, reliefParams);
+            // Defensive check for missing settings
+            const currentSettings = generatorSettings[activeTab as keyof GeneratorSettings];
+            if (!currentSettings && activeTab !== 'stl' && activeTab !== 'relief' && activeTab !== 'svg') {
+                // stl, relief, svg handle their own logic or fallback
+                setIsGenerating(false);
+                return;
             }
-        }
 
-        if (result.error) {
-            setGenerationError(result.error);
-            setGeneratedGCode('');
-            setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } }); // Reset preview on error
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread'];
+
+            if (workerResultTypes.includes(activeTab)) {
+                result = await runGCodeWorker(activeTab, settings, toolLibrary, settings, arraySettings);
+            }
+            else if (activeTab === 'svg') result = generateSVGCode(settings);
+            else if (activeTab === 'relief') result = await generateReliefCode(settings);
+            else if (activeTab === 'stl') {
+                const stlParams = generatorSettings.stl;
+                if (!stlParams) throw new Error("STL settings are missing. Please reset defaults.");
+
+                // Construct ReliefParams from STLParams
+                const heightMapUrl = (window as any).currentStlHeightMap;
+
+                if (!heightMapUrl) {
+                    result = { error: "No STL height map generated. Please wait for preview.", code: [], paths: [], bounds: {} };
+                } else {
+                    const reliefParams: ReliefParams = {
+                        ...generatorSettings.relief, // Use defaults from relief for missing props
+                        operation: 'both', // Force both or let user choose? STL params has roughing/finishing
+                        width: stlParams.width,
+                        length: stlParams.length,
+                        maxDepth: -Math.abs(Number(stlParams.depth)), // Adjust depth sign
+                        zSafe: stlParams.zSafe,
+                        keepAspectRatio: true,
+                        imageDataUrl: heightMapUrl,
+                        invert: false, // Height map is already correct (white=high)
+                        gamma: 1.0,
+                        contrast: 1.0,
+                        smoothing: 0,
+                        detail: 0,
+                        quality: 'medium',
+
+                        roughingEnabled: stlParams.roughingEnabled,
+                        roughingToolId: stlParams.roughingToolId,
+                        roughingStepdown: stlParams.roughingStepdown,
+                        roughingStepover: stlParams.roughingStepover,
+                        roughingStockToLeave: stlParams.roughingStockToLeave,
+                        roughingFeed: stlParams.roughingFeed,
+                        roughingSpindle: stlParams.roughingSpindle,
+
+                        finishingEnabled: true,
+                        finishingToolId: stlParams.toolId,
+                        finishingStepover: stlParams.stepover,
+                        finishingAngle: 0, // Default to X raster
+                        finishingFeed: stlParams.feedRate,
+                        finishingSpindle: stlParams.spindleSpeed,
+
+                        colorAdjustmentEnabled: false,
+                        colorAdjustmentHigh: '#000000',
+                        colorAdjustmentAmountHigh: 0,
+                        colorAdjustmentToleranceHigh: 0,
+                        colorAdjustmentLow: '#000000',
+                        colorAdjustmentAmountLow: 0,
+                        colorAdjustmentToleranceLow: 0,
+                    };
+
+                    result = await generateReliefCode(settings, reliefParams);
+                }
+            }
+
+            if (result.error) {
+                setGenerationError(result.error);
+                setGeneratedGCode('');
+                setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } }); // Reset preview on error
+                setIsGenerating(false);
+                return;
+            }
+
+            // Only apply local array logic for non-worker types that support it
+            // Worker handles array logic internally for its supported types
+            const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab) && !workerResultTypes.includes(activeTab);
+            // Basically only SVG right now needs this if we assume worker handles the rest
+
+            if (showArray && arraySettings.isEnabled && result.code.length > 0) {
+                result = applyArrayPattern(result);
+            }
+
+            setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
+
+            // For relief/STL, the path count is massive (10k-100k+ lines) and rendering them as SVG 
+            // will freeze the browser main thread. We rely on the 3D preview in the generator component instead.
+            if (['relief', 'stl'].includes(activeTab)) {
+                setPreviewPaths({ paths: [], bounds: result.bounds || { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+            } else {
+                setPreviewPaths({ paths: result.paths || [], bounds: result.bounds || { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+            }
+
             setIsGenerating(false);
-            return;
-        }
 
-        const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab); // Disable array for relief too
-        if (showArray && arraySettings.isEnabled && result.code.length > 0) {
-            result = applyArrayPattern(result);
+        } catch (err: any) {
+            console.error("Generator execution error:", err);
+            setGenerationError(err.message || "An unexpected error occurred.");
+            setIsGenerating(false);
         }
-
-        setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
-        setPreviewPaths({ paths: result.paths, bounds: result.bounds });
-        setIsGenerating(false);
-    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateSurfacingCode, generateDrillingCode, generateBoreCode, generatePocketCode, generateProfileCode, generateSlotCode, generateTextCode, generateThreadMillingCode, generateReliefCode, generateSVGCode]);
+    }, [activeTab, generatorSettings, toolLibrary, arraySettings, applyArrayPattern, generateReliefCode, generateSVGCode, settings]);
 
     const handleGenerateRef = React.useRef(handleGenerate);
     useEffect(() => {
@@ -1581,16 +1637,42 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     }, [activeTab, onSettingsChange, onToolSelect]);
 
     const currentParams = useMemo(() => {
-        return generatorSettings[activeTab as keyof GeneratorSettings];
+        if (!generatorSettings || !activeTab) return null;
+        return generatorSettings[activeTab as keyof GeneratorSettings] || null;
     }, [activeTab, generatorSettings]);
 
-    // Effect to automatically trigger G-code generation when relevant parameters change
+    // Effect to automatically trigger G-code generation with debounce
+    // Effect to automatically trigger G-code generation with debounce
+    // DISABLED PER USER REQUEST - MANUAL GENERATION ONLY
+    /*
     useEffect(() => {
-        if (isOpen) {
-            // Use the ref to call the latest handleGenerate without creating an infinite loop
-            handleGenerateRef.current();
+        if (!isOpen) return;
+
+        // Skip generation if missing critical info for the active tab
+        const settings = generatorSettings[activeTab as keyof GeneratorSettings];
+        if (activeTab === 'relief') {
+            const reliefParams = settings as ReliefParams;
+            if (!reliefParams?.imageDataUrl) {
+                // Ensure we clear previous state if no image
+                setGeneratedGCode('');
+                setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+                return;
+            }
         }
+        if (activeTab !== 'relief' && activeTab !== 'stl' && activeTab !== 'svg' && (settings as any)?.toolId == null) {
+            // Missing tool, don't even try to generate, just clear result
+            setGeneratedGCode('');
+            setPreviewPaths({ paths: [], bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 } });
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            handleGenerateRef.current();
+        }, 800); // Debounce for 800ms to unblock UI while typing
+
+        return () => clearTimeout(timeoutId);
     }, [isOpen, generatorSettings, toolLibrary, arraySettings, activeTab]);
+    */
 
     // When the selected tool from outside changes (e.g. from auto-selection),
     // update the active tab's settings
@@ -1608,14 +1690,26 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         if (isGenerating) {
             return (
                 <div className="aspect-square w-full bg-secondary rounded flex items-center justify-center p-4 text-center">
-                    <div className="flex flex-col items-center gap-2 text-primary">
+                    <div className="flex flex-col items-center gap-2 text-primary w-full max-w-[200px]">
                         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                         <p className="font-bold animate-pulse">Generating G-Code...</p>
+                        {generationProgress !== null && (
+                            <div className="w-full flex flex-col gap-1">
+                                <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden border border-white/10">
+                                    <div
+                                        className="h-full bg-primary transition-all duration-300 ease-out"
+                                        style={{ width: `${generationProgress}%` }}
+                                    ></div>
+                                </div>
+                                <span className="text-xs font-mono">{generationProgress}%</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
         }
-        if (!currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null)) {
+        // Use loose equality (==) to catch null or undefined toolId
+        if (!currentParams || (activeTab !== 'relief' && (currentParams as any).toolId == null)) {
             return (
                 <div className="aspect-square w-full bg-secondary rounded flex items-center justify-center p-4 text-center text-text-secondary" >
                     Please select a tool to generate a preview.
@@ -1636,8 +1730,10 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         return <Preview paths={previewPaths.paths} viewBox={viewBox} machineSettings={settings} />;
     };
 
-    return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+    if (!isOpen) return null;
+
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[9000] flex items-center justify-center">
             <div className="bg-surface rounded-lg shadow-2xl w-full max-w-4xl border border-secondary transform transition-all max-h-[90vh] flex flex-col">
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">{t('generators.common.title')}</h2>
@@ -1663,7 +1759,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.tabs.svg')} isActive={activeTab === 'svg'} onClick={() => setActiveTab('svg')} />
                         </div>
                         <div className="py-4">
-                            {activeTab === 'surfacing' && (
+                            {activeTab === 'surfacing' && generatorSettings.surfacing && (
                                 <SurfacingGenerator
                                     params={generatorSettings.surfacing as SurfacingParams}
                                     onParamsChange={handleParamChange}
@@ -1674,7 +1770,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'drilling' && (
+                            {activeTab === 'drilling' && generatorSettings.drilling && (
                                 <DrillingGenerator
                                     params={generatorSettings.drilling as DrillingParams}
                                     onParamsChange={handleParamChange}
@@ -1685,7 +1781,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'bore' && (
+                            {activeTab === 'bore' && generatorSettings.bore && (
                                 <BoreGenerator
                                     params={generatorSettings.bore as BoreParams}
                                     onParamsChange={handleParamChange}
@@ -1696,7 +1792,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'pocket' && (
+                            {activeTab === 'pocket' && generatorSettings.pocket && (
                                 <PocketGenerator
                                     params={generatorSettings.pocket as PocketParams}
                                     onParamsChange={handleParamChange}
@@ -1707,7 +1803,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'profile' && (
+                            {activeTab === 'profile' && generatorSettings.profile && (
                                 <ProfileGenerator
                                     params={generatorSettings.profile as ProfileParams}
                                     onParamsChange={handleParamChange}
@@ -1719,7 +1815,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                 />
                             )}
 
-                            {activeTab === 'svg' && (
+                            {activeTab === 'svg' && generatorSettings.svg && (
                                 <SVGGenerator
                                     params={generatorSettings.svg}
                                     onParamsChange={handleParamChange}
@@ -1730,7 +1826,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'slot' && (
+                            {activeTab === 'slot' && generatorSettings.slot && (
                                 <SlotGenerator
                                     params={generatorSettings.slot as SlotParams}
                                     onParamsChange={handleParamChange}
@@ -1741,7 +1837,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'text' && (
+                            {activeTab === 'text' && generatorSettings.text && (
                                 <TextGenerator
                                     params={generatorSettings.text as TextParams}
                                     onParamsChange={handleParamChange}
@@ -1753,7 +1849,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'thread' && (
+                            {activeTab === 'thread' && generatorSettings.thread && (
                                 <ThreadMillingGenerator
                                     params={generatorSettings.thread as ThreadMillingParams}
                                     onParamsChange={handleParamChange}
@@ -1764,7 +1860,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'relief' && (
+                            {activeTab === 'relief' && generatorSettings.relief && (
                                 <ReliefGenerator
                                     params={generatorSettings.relief as ReliefParams}
                                     onParamsChange={handleParamChange}
@@ -1775,7 +1871,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     onToolSelect={onToolSelect}
                                 />
                             )}
-                            {activeTab === 'stl' && (
+                            {activeTab === 'stl' && generatorSettings.stl && (
                                 <STLGenerator
                                     params={generatorSettings.stl as STLParams}
                                     onParamsChange={handleParamChange}
@@ -1847,8 +1943,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                         {t('generators.relief.loadSender')}
                     </button>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>,
+        document.body
     );
 };
 

@@ -23,6 +23,7 @@ type UIState = {
   returnToWelcome: boolean;
   isWebcamPeekOpen: boolean;
   isGrblSettingsModalOpen: boolean;
+  preflightWarnings: { type: 'error' | 'warning'; message: string }[];
   actions: {
     openPreflightModal: () => void;
     closePreflightModal: () => void;
@@ -46,6 +47,7 @@ type UIState = {
     toggleWebcamPeek: () => void;
     openGrblSettingsModal: () => void;
     closeGrblSettingsModal: () => void;
+    setPreflightWarnings: (warnings: { type: 'error' | 'warning'; message: string }[]) => void;
   };
 };
 
@@ -70,6 +72,7 @@ export const useUIStore = create<UIState>((set) => ({
   returnToWelcome: false,
   isWebcamPeekOpen: false,
   isGrblSettingsModalOpen: false,
+  preflightWarnings: [],
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
     closePreflightModal: () => set({ isPreflightModalOpen: false }),
@@ -93,5 +96,6 @@ export const useUIStore = create<UIState>((set) => ({
     toggleWebcamPeek: () => set((state) => ({ isWebcamPeekOpen: !state.isWebcamPeekOpen })),
     openGrblSettingsModal: () => set({ isGrblSettingsModalOpen: true }),
     closeGrblSettingsModal: () => set({ isGrblSettingsModalOpen: false }),
+    setPreflightWarnings: (warnings) => set({ preflightWarnings: warnings }),
   },
 }));

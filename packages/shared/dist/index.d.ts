@@ -153,6 +153,8 @@ export declare const CrosshairY: default_2.FC<IconProps>;
 
 export declare const CrosshairZ: default_2.FC<IconProps>;
 
+export declare type CutDirection = 'up' | 'down' | 'compression';
+
 export declare const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings;
 
 export declare const DEFAULT_MACROS: Macro[];
@@ -219,6 +221,7 @@ declare interface GCodeEditorModalProps {
     machineSettings: MachineSettings;
     unit: 'mm' | 'in';
     isLightMode: boolean;
+    TouchInputComponent?: default_2.ComponentType<any>;
 }
 
 export declare const GCodeLine: default_2.FC<GCodeLineProps>;
@@ -278,6 +281,8 @@ export declare interface GeneratorSettings {
     text: TextParams;
     thread: ThreadMillingParams;
     relief: ReliefParams;
+    stl: STLParams;
+    svg: SVGParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
@@ -379,7 +384,11 @@ export declare interface MachineSettings {
         jobResume: string;
         jobStop: string;
     };
+    toolChangePolicy?: 'native' | 'macro';
+    toolChangeMacroId?: string | null;
     isConfigured?: boolean;
+    playCompletionSound?: boolean;
+    isVirtualKeyboardEnabled?: boolean;
 }
 
 export declare interface MachineState {
@@ -534,6 +543,12 @@ export declare interface ReliefParams {
     gamma: number;
     contrast: number;
     smoothing: number;
+    detail: number;
+    quality: 'low' | 'medium' | 'high';
+    colorAdjustmentEnabled: boolean;
+    colorAdjustmentHigh: number | string;
+    colorAdjustmentLow: number | string;
+    colorAdjustmentMid: number | string;
 }
 
 export { RotateCcw }
@@ -572,6 +587,40 @@ export declare interface SlotParams {
 
 export { Square }
 
+export declare interface STLParams {
+    file: File | null;
+    fileName: string;
+    width: number | string;
+    length: number | string;
+    depth: number | string;
+    zSafe: number | string;
+    margin: number;
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
+    toolId: number | null;
+    stepover: number | string;
+    feedRate: number | string;
+    spindleSpeed: number | string;
+    roughingEnabled: boolean;
+    roughingToolId: number | null;
+    roughingStepdown: number | string;
+    roughingStepover: number | string;
+    roughingStockToLeave: number | string;
+    roughingFeed: number | string;
+    roughingSpindle: number | string;
+    cutoutEnabled: boolean;
+    cutoutToolId: number | null;
+    cutoutDepth: number | string;
+    cutoutDepthPerPass: number | string;
+    cutoutStepIn: number | string;
+    cutoutXYPasses: number | string;
+    cutoutTabsEnabled: boolean;
+    cutoutTabWidth: number | string;
+    cutoutTabHeight: number | string;
+    cutoutTabCount: number | string;
+}
+
 export { Sun }
 
 export declare interface SurfacingParams {
@@ -586,6 +635,21 @@ export declare interface SurfacingParams {
     startY: number | '';
     toolId: number | null;
     direction: 'horizontal' | 'vertical';
+}
+
+export declare interface SVGParams {
+    file: File | null;
+    fileName: string;
+    svgContent: string;
+    scale: number | string;
+    rotation: number | string;
+    positionX: number | string;
+    positionY: number | string;
+    depth: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    toolId: number | null;
 }
 
 declare interface Tab {
@@ -653,7 +717,12 @@ export declare interface Tool {
     id: number;
     name: string;
     diameter: number | '';
+    type: ToolType;
+    flutes: number | '';
+    cutDirection: CutDirection;
 }
+
+export declare type ToolType = 'endmill' | 'ballmill' | 'bullhead' | 'vbit30' | 'vbit60' | 'vbit90' | 'surfacing' | 'cornmill';
 
 export { Trash2 }
 

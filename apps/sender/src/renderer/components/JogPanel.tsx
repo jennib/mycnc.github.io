@@ -51,7 +51,7 @@ interface JogPanelProps {
   isJogging: boolean;
   isMacroRunning: boolean;
   jogFeedRate: number;
-  jobStatus?: string; // Add jobStatus prop
+  jobStatus?: JobStatus; // Add jobStatus prop
 }
 
 interface JogButtonProps {
@@ -123,7 +123,7 @@ const JogButton: React.FC<JogButtonProps> = memo(({
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
       disabled={isDisabled}
-      className={`flex items-center justify-center py-3 bg-secondary/80 backdrop-blur-sm rounded-lg border border-white/10 hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-md ${flashingButton === id ? "ring-2 ring-white ring-inset bg-primary text-white" : "text-text-primary"
+      className={`flex items-center justify-center py-3 bg-primary rounded-lg border border-primary/20 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-primary/20 text-white glossy-button ${flashingButton === id ? "ring-2 ring-white ring-inset" : ""
         }`}
       title={title}
     >
@@ -518,7 +518,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                         disabled={isControlDisabled}
                         className={`flex-1 py-2 text-xs rounded-md transition-all relative font-mono ${jogStep === step
                           ? "bg-primary text-white font-bold shadow-md"
-                          : "bg-secondary/80 hover:bg-secondary text-text-secondary hover:text-text-primary"
+                          : "bg-primary/30 hover:bg-primary/40 text-text-secondary hover:text-text-primary"
                           } ${flashingButton === `step-${step}`
                             ? "ring-2 ring-white ring-inset"
                             : ""
@@ -701,7 +701,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("X")}
                   disabled={isProbeDisabled}
-                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
+                  className="p-3 bg-primary/30 text-text-primary font-semibold rounded-lg hover:bg-primary/40 border border-white/10 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.x')}
                 >
                   <ProbeX className="w-5 h-5" />
@@ -709,7 +709,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("Y")}
                   disabled={isProbeDisabled}
-                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
+                  className="p-3 bg-primary/30 text-text-primary font-semibold rounded-lg hover:bg-primary/40 border border-white/10 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.y')}
                 >
                   <ProbeY className="w-5 h-5" />
@@ -717,7 +717,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("Z")}
                   disabled={isProbeDisabled}
-                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center gap-1 transition-all hover:shadow-md active:scale-95"
+                  className="p-3 bg-primary/30 text-text-primary font-semibold rounded-lg hover:bg-primary/40 border border-white/10 disabled:opacity-50 flex items-center justify-center gap-1 transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.z')}
                 >
                   <Probe className="w-5 h-5" />
@@ -725,7 +725,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 <button
                   onClick={() => onProbe("XY")}
                   disabled={isProbeDisabled}
-                  className="p-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 border border-primary/30 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
+                  className="p-3 bg-primary/30 text-text-primary font-semibold rounded-lg hover:bg-primary/40 border border-white/10 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
                   title={t('jog.probe.xy')}
                 >
                   <ProbeXY className="w-5 h-5" />

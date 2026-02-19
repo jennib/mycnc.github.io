@@ -141,10 +141,10 @@ const TextAreaInput: React.FC<TextAreaInputProps> = ({
             onSelect={handleSelect}
             // onBlur={handleBlur} -> Let store handle closing via 'X' button or other focus events
             className={`
-                w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 
-                font-mono text-sm text-text-primary placeholder-white/20
+                w-full input-style rounded-lg py-2 px-3 
+                font-mono text-sm text-text-primary placeholder-text-secondary/50
                 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary 
-                shadow-inner transition-colors hover:border-white/20
+                shadow-inner transition-colors hover:border-primary/50
                 disabled:opacity-50 disabled:cursor-not-allowed
                 ${className}
             `}

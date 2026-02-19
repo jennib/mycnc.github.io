@@ -85,7 +85,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
             layout: 'numpad',
             value: String(value),
             cursorPosition: currentPos,
-            label: label || (unit ? `Value (${unit})` : 'Value'),
+            label: label || (unit ? `${unit}` : 'Value'),
             unit,
             inputRect: rect,
             onChange: (newValue, newCursor) => {
@@ -119,7 +119,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
     };
 
     return (
-        <div className={`flex items-stretch rounded-lg bg-black/20 border border-white/10 overflow-hidden shadow-inner ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+        <div className={`flex items-stretch rounded-lg input-style overflow-hidden shadow-inner ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <div className="relative flex-grow min-w-[60px]">
                 <input
                     ref={inputRef}

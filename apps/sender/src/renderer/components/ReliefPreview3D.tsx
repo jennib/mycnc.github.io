@@ -10,6 +10,7 @@ interface ReliefPreview3DProps {
     gamma: number;
     contrast: number;
     invert: boolean;
+    smoothing: number;
     spectrumGainEnabled: boolean;
     spectrumGainHigh: number;
     spectrumGainLow: number;

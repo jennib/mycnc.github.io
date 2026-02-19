@@ -28,4 +28,14 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openCameraWindow: (params: any) => ipcRenderer.send('open-camera-window', params),
   closeCameraWindow: () => ipcRenderer.send('close-camera-window'),
   onCameraWindowClosed: (callback: () => void) => ipcRenderer.on('camera-window-closed', callback),
+
+  // State Sync
+  sendStateUpdate: (storeName: string, state: any) => ipcRenderer.send('state-update', { storeName, state }),
+  getInitialState: () => ipcRenderer.invoke('get-initial-state'),
+  onStateUpdate: (callback: (update: { storeName: string, state: any }) => void) =>
+    ipcRenderer.on('state-update', (_event, update) => callback(update)),
+
+  // Remote Actions
+  sendRemoteAction: (action: any) => ipcRenderer.send('remote-action', action),
+  onRemoteAction: (callback: (action: any) => void) => ipcRenderer.on('remote-action', (_event, action) => callback(action)),
 });

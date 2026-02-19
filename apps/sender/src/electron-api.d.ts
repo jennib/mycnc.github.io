@@ -15,6 +15,15 @@ interface ElectronAPI {
     openCameraWindow: (params: { mode: 'local' | 'webrtc'; deviceId?: string; url?: string }) => void;
     closeCameraWindow: () => void;
     onCameraWindowClosed: (callback: () => void) => void;
+
+    // State Sync
+    sendStateUpdate: (storeName: string, state: any) => void;
+    getInitialState: () => Promise<any>;
+    onStateUpdate: (callback: (update: { storeName: string, state: any }) => void) => void;
+
+    // Remote Actions
+    sendRemoteAction?: (action: { type: string, payload?: any }) => void;
+    onRemoteAction?: (callback: (action: { type: string, payload?: any }) => void) => void;
 }
 
 // Augment the Window interface to include electronAPI

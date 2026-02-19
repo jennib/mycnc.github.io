@@ -143,9 +143,9 @@ const TextInput: React.FC<TextInputProps> = ({
             ref={inputRef}
             type="text"
             className={`
-                bg-black/20 border border-white/10 rounded-lg py-2 px-3 
+                input-style rounded-lg py-2 px-3 min-w-[80px] 
                 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary 
-                text-text-primary shadow-inner transition-colors hover:border-white/20
+                text-text-primary shadow-inner transition-colors hover:border-primary/50
                 disabled:opacity-50 disabled:cursor-not-allowed
                 ${className}
             `}

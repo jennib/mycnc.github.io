@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, X, Upload, Download, Ruler, Settings } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
-import { useSettingsStore } from '../stores/settingsStore';
+import { useSettingsStore, ConnectionSettings } from '../stores/settingsStore';
 import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
 import NumberInput from './ui/NumberInput';
 import TextAreaInput from './ui/TextAreaInput';
+import TextInput from './ui/TextInput';
 
 interface InputGroupProps {
     label: string;
@@ -23,9 +25,10 @@ const InputGroup: React.FC<InputGroupProps> = ({ label, children }) => (
 interface SettingsModalProps {
     isOpen: boolean;
     onCancel: () => void;
-    onSave: (settings: MachineSettings, generatorSettings: GeneratorSettings) => void;
     settings: MachineSettings;
     generatorSettings: GeneratorSettings;
+    connectionSettings: ConnectionSettings;
+    onSave: (settings: MachineSettings, generatorSettings: GeneratorSettings, connectionSettings: ConnectionSettings) => void;
     onResetDialogs: () => void;
     onExport: () => void;
     onImport: (imported: any) => void;
@@ -33,10 +36,11 @@ interface SettingsModalProps {
     onOpenGrblSettings: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings }) => {
     const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
+    const [localConnectionSettings, setLocalConnectionSettings] = useState<ConnectionSettings>(connectionSettings);
     const [showBuildAreaModal, setShowBuildAreaModal] = useState(false);
     const importFileRef = useRef<HTMLInputElement>(null);
 
@@ -44,8 +48,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         if (isOpen) {
             setLocalSettings(JSON.parse(JSON.stringify(settings)));
             setLocalGeneratorSettings(JSON.parse(JSON.stringify(generatorSettings)));
+            setLocalConnectionSettings(JSON.parse(JSON.stringify(connectionSettings)));
         }
-    }, [isOpen, settings, generatorSettings]);
+    }, [isOpen, settings, generatorSettings, connectionSettings]);
 
     if (!isOpen) return null;
 
@@ -101,8 +106,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         }
 
         settingsToSave.jogFeedRate = parseFloat(settingsToSave.jogFeedRate) || 0;
+        settingsToSave.isConfigured = true;
 
-        onSave(settingsToSave, localGeneratorSettings);
+        onSave(settingsToSave, localGeneratorSettings, localConnectionSettings);
         onCancel();
     };
 
@@ -138,9 +144,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         }));
     };
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[10000] flex items-center justify-center"
             aria-modal="true" role="dialog"
         >
             <div
@@ -154,28 +160,26 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
                             <InputGroup label={t('settings.workArea')}>
-                                <div className="grid grid-cols-3 gap-2 w-full">
-                                    <NumberInput id="work-x" value={localSettings.workArea.x} onChange={val => handleNestedNumericChange('workArea', 'x', val)} unit="X" className="w-full" />
-                                    <NumberInput id="work-y" value={localSettings.workArea.y} onChange={val => handleNestedNumericChange('workArea', 'y', val)} unit="Y" className="w-full" />
-                                    <div className="flex gap-2">
-                                        <NumberInput id="work-z" value={localSettings.workArea.z} onChange={val => handleNestedNumericChange('workArea', 'z', val)} unit="Z" className="w-full" />
-                                        <button
-                                            onClick={() => setShowBuildAreaModal(true)}
-                                            className="p-2 bg-secondary/50 text-text-primary rounded hover:bg-secondary border border-white/10 flex-shrink-0"
-                                            title="Measure Build Area"
-                                        >
-                                            <Ruler className="w-5 h-5" />
-                                        </button>
-                                    </div>
+                                <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 w-full">
+                                    <NumberInput id="work-x" value={localSettings.workArea.x} onChange={val => handleNestedNumericChange('workArea', 'x', val)} unit="X" label={`${t('settings.workArea')} (X)`} className="w-full" />
+                                    <NumberInput id="work-y" value={localSettings.workArea.y} onChange={val => handleNestedNumericChange('workArea', 'y', val)} unit="Y" label={`${t('settings.workArea')} (Y)`} className="w-full" />
+                                    <NumberInput id="work-z" value={localSettings.workArea.z} onChange={val => handleNestedNumericChange('workArea', 'z', val)} unit="Z" label={`${t('settings.workArea')} (Z)`} className="w-full" />
+                                    <button
+                                        onClick={() => setShowBuildAreaModal(true)}
+                                        className="p-2 bg-secondary/50 text-text-primary rounded hover:bg-secondary border border-white/10 flex-shrink-0"
+                                        title="Measure Build Area"
+                                    >
+                                        <Ruler className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </InputGroup>
                             <InputGroup label={t('settings.jogFeedRate')}>
-                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={val => handleNumericChange('jogFeedRate', val)} />
+                                <NumberInput id="jog-feed" value={localSettings.jogFeedRate} onChange={val => handleNumericChange('jogFeedRate', val)} label={t('settings.jogFeedRate')} />
                             </InputGroup>
                             <InputGroup label={t('settings.spindleSpeed')}>
                                 <div className="grid grid-cols-2 gap-2 w-full">
-                                    <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={val => handleNestedNumericChange('spindle', 'min', val)} unit="Min" className="w-full" />
-                                    <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={val => handleNestedNumericChange('spindle', 'max', val)} unit="Max" className="w-full" />
+                                    <NumberInput id="spindle-min" value={localSettings.spindle.min} onChange={val => handleNestedNumericChange('spindle', 'min', val)} unit="Min" label={`${t('settings.spindleSpeed')} (Min)`} className="w-full" />
+                                    <NumberInput id="spindle-max" value={localSettings.spindle.max} onChange={val => handleNestedNumericChange('spindle', 'max', val)} unit="Max" label={`${t('settings.spindleSpeed')} (Max)`} className="w-full" />
                                 </div>
                             </InputGroup>
                             <InputGroup label={t('settings.controllerType')}>
@@ -183,7 +187,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="controller-type"
                                     value={localSettings.controllerType}
                                     onChange={e => handleNumericChange('controllerType', e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
                                 >
                                     <option value="grbl">GRBL (Standard 3-axis CNC)</option>
                                     {/* <option value="fluidnc">FluidNC (WiFi-enabled GRBL)</option>
@@ -195,18 +199,41 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 </select>
                             </InputGroup>
                             <InputGroup label={t('settings.spindleWarmup')}>
-                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={val => handleNestedNumericChange('spindle', 'warmupDelay', val)} unit="ms" />
+                                <NumberInput id="spindle-warmup" value={localSettings.spindle.warmupDelay} onChange={val => handleNestedNumericChange('spindle', 'warmupDelay', val)} unit="ms" label={t('settings.spindleWarmup')} />
                             </InputGroup>
                             <InputGroup label={t('settings.probe')}>
                                 <div className="grid grid-cols-3 gap-2 w-full">
-                                    <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={val => handleNestedNumericChange('probe', 'xOffset', val)} unit="X" className="w-full" />
-                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={val => handleNestedNumericChange('probe', 'yOffset', val)} unit="Y" className="w-full" />
-                                    <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={val => handleNestedNumericChange('probe', 'zOffset', val)} unit="Z" className="w-full" />
+                                    <NumberInput id="probe-x" value={localSettings.probe.xOffset} onChange={val => handleNestedNumericChange('probe', 'xOffset', val)} unit="X" label={`${t('settings.probe')} (X)`} className="w-full" />
+                                    <NumberInput id="probe-y" value={localSettings.probe.yOffset} onChange={val => handleNestedNumericChange('probe', 'yOffset', val)} unit="Y" label={`${t('settings.probe')} (Y)`} className="w-full" />
+                                    <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={val => handleNestedNumericChange('probe', 'zOffset', val)} unit="Z" label={`${t('settings.probe')} (Z)`} className="w-full" />
                                 </div>
                             </InputGroup>
                             <InputGroup label={t('settings.probeFeedRate')}>
-                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={val => handleNestedNumericChange('probe', 'feedRate', val)} unit="mm/min" />
+                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={val => handleNestedNumericChange('probe', 'feedRate', val)} unit="mm/min" label={t('settings.probeFeedRate')} />
                             </InputGroup>
+
+                            <div className="border-t border-white/10 pt-4 mt-4">
+                                <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wider">{t('connection.tcp') || 'TCP Connection'}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputGroup label={t('connection.ip') || 'IP Address'}>
+                                        <TextInput
+                                            value={localConnectionSettings.tcpIp}
+                                            onValueChange={val => setLocalConnectionSettings(prev => ({ ...prev, tcpIp: val }))}
+                                            className="w-full font-mono"
+                                            layout="numpad"
+                                            label={t('connection.ip') || 'IP Address'}
+                                        />
+                                    </InputGroup>
+                                    <InputGroup label={t('connection.port') || 'Port'}>
+                                        <NumberInput
+                                            id="tcp-port"
+                                            value={localConnectionSettings.tcpPort}
+                                            onChange={val => setLocalConnectionSettings(prev => ({ ...prev, tcpPort: parseInt(val) || 0 }))}
+                                            label={t('connection.port') || 'Port'}
+                                        />
+                                    </InputGroup>
+                                </div>
+                            </div>
 
                             <div className="border-t border-white/10 pt-4 mt-4">
                                 <InputGroup label={t('settings.toolChangePolicy')}>
@@ -214,7 +241,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                         <select
                                             value={localSettings.toolChangePolicy || 'native'}
                                             onChange={e => handleNumericChange('toolChangePolicy', e.target.value)}
-                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                            className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
                                         >
                                             <option value="native">{t('settings.toolChangeNative')}</option>
                                             <option value="macro">{t('settings.toolChangeMacro')}</option>
@@ -226,7 +253,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                                 <select
                                                     value={localSettings.toolChangeMacroId || ''}
                                                     onChange={e => handleNumericChange('toolChangeMacroId', e.target.value)}
-                                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
                                                 >
                                                     <option value="">{t('common.select') || 'Select...'}</option>
                                                     {useSettingsStore.getState().macros.map((m, i) => (
@@ -280,7 +307,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                 <select
                                     value={i18n.language}
                                     onChange={(e) => i18n.changeLanguage(e.target.value)}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
                                 >
                                     <option value="en">English</option>
                                     <option value="es">Español</option>
@@ -300,7 +327,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="play-sound"
                                     checked={localSettings.playCompletionSound}
                                     onChange={(e) => setLocalSettings(prev => ({ ...prev, playCompletionSound: e.target.checked }))}
-                                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
+                                    className="w-5 h-5 rounded input-style text-primary focus:ring-primary transition-colors hover:border-white/20"
                                 />
                                 <label htmlFor="play-sound" className="text-sm font-medium text-text-primary">
                                     {t('settings.playCompletionSound', 'Play Completion Sound')}
@@ -312,7 +339,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="enable-osk"
                                     checked={useSettingsStore.getState().isVirtualKeyboardEnabled}
                                     onChange={(e) => useSettingsStore.getState().actions.setIsVirtualKeyboardEnabled(e.target.checked)}
-                                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
+                                    className="w-5 h-5 rounded input-style text-primary focus:ring-primary transition-colors hover:border-white/20"
                                 />
                                 <label htmlFor="enable-osk" className="text-sm font-medium text-text-primary">
                                     {t('settings.enableVirtualKeyboard', 'Enable On-Screen Keyboard')}
@@ -357,7 +384,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 onClose={() => setShowBuildAreaModal(false)}
                 onApply={handleApplyMeasurement}
             />
-        </div >
+        </div>,
+        document.body
     );
 };
 

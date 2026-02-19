@@ -12,7 +12,7 @@ interface RadioGroupProps {
 export const RadioGroup: React.FC<RadioGroupProps> = ({ label, options, selected, onChange }) => (
     <div className="mb-4">
         {label && <label className="block text-sm font-bold text-text-secondary mb-2">{label}</label>}
-        <div className="flex bg-black/20 rounded-lg p-1 border border-white/5">
+        <div className="flex input-style rounded-lg p-1">
             {options.map(opt => (
                 <button
                     key={opt.value}
@@ -52,7 +52,7 @@ export const Input: React.FC<InputProps> = ({ label, value, valueX, valueY, onCh
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-text-secondary">X</span>
                     <input
                         type="number" value={valueX} onChange={onChangeX}
-                        className="w-full bg-black/20 border border-white/10 rounded-lg py-2 pl-7 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                        className="w-full input-style rounded-lg py-2 pl-7 pr-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors"
                     />
                 </div>
                 <div className="relative flex-1">
@@ -67,9 +67,9 @@ export const Input: React.FC<InputProps> = ({ label, value, valueX, valueY, onCh
             <div className="relative">
                 <input
                     type={type} step={step} min={min} max={max} value={value} onChange={onChange}
-                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
+                    className="w-full input-style rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors"
                 />
-                {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary bg-black/20 px-1.5 py-0.5 rounded">{unit}</span>}
+                {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-text-secondary px-1.5 py-0.5 rounded">{unit}</span>}
             </div>
         )}
         {help && <p className="text-xs text-text-tertiary mt-1.5 leading-relaxed">{help}</p>}
@@ -84,7 +84,7 @@ interface CheckboxProps {
 
 export const Checkbox: React.FC<CheckboxProps> = ({ label, checked, onChange }) => (
     <label className="flex items-center gap-3 cursor-pointer group mb-4">
-        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${checked ? 'bg-primary border-primary' : 'bg-black/20 border-white/20 group-hover:border-white/40'}`}>
+        <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${checked ? 'bg-primary border border-primary' : 'input-style'}`}>
             {checked && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
         </div>
         <input
@@ -117,7 +117,7 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({ selectedId, onChange
                 <select
                     value={selectedId || ''}
                     onChange={e => onChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20 disabled:opacity-50"
+                    className="w-full input-style rounded-lg py-2 px-3 appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors disabled:opacity-50"
                     disabled={!toolLibrary || toolLibrary.length === 0}
                 >
                     <option value="">{toolLibrary && toolLibrary.length > 0 ? t('generators.shared.selectTool') : t('generators.shared.noTools')}</option>
@@ -178,7 +178,7 @@ export const ArrayControls: React.FC<ArrayControlsProps> = ({ settings, onChange
     };
 
     return (
-        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+        <div className="bg-black/5 dark:bg-black/20 p-4 rounded-xl border border-black/5 dark:border-white/5">
             <Checkbox
                 label={t('generators.array.enable')}
                 checked={settings.isEnabled}

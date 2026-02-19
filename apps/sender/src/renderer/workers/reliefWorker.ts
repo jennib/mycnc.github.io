@@ -172,7 +172,7 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
 
         const pixelWidth = canvas.width;
         const pixelHeight = canvas.height;
-        const numericMaxDepth = parseFloat(String(params.maxDepth));
+        const numericMaxDepth = -Math.abs(parseFloat(String(params.maxDepth)));
         const numericWidth = parseFloat(String(params.width));
         const numericLength = parseFloat(String(params.length));
         const numericZSafe = parseFloat(String(params.zSafe));
@@ -219,7 +219,8 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
 
         // --- Roughing ---
         if ((params.operation === 'both' || params.operation === 'roughing') && params.roughingEnabled) {
-            const tool = toolLibrary.find(t => t.id === params.roughingToolId);
+            const tool = toolLibrary.find(t => t.id == params.roughingToolId);
+            if (!tool) throw new Error('Roughing tool selected not found in library.');
             if (tool) {
                 const toolDia = parseFloat(String(tool.diameter || 0));
                 if (toolDia <= 0) throw new Error('Roughing tool diameter must be greater than 0');
@@ -236,10 +237,17 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                 if (stepoverDist <= 0) throw new Error('Invalid roughing stepover');
 
                 let currentZ = 0;
+                const totalDepth = Math.abs(numericMaxDepth + stock);
+                const startDepth = 0;
 
                 while (currentZ > numericMaxDepth + stock) {
                     currentZ -= stepdown;
                     if (currentZ < numericMaxDepth + stock) currentZ = numericMaxDepth + stock;
+
+                    // Report Progress
+                    const depthProgress = Math.min(1, Math.abs(currentZ) / totalDepth);
+                    const baseProgress = (params.operation === 'both') ? (depthProgress * 50) : (depthProgress * 100);
+                    self.postMessage({ type: 'progress', progress: Math.floor(baseProgress) } as any);
 
                     code.push(`(Roughing Level Z=${currentZ.toFixed(3)})`);
                     let y = 0;
@@ -277,7 +285,8 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
 
         // --- Finishing ---
         if ((params.operation === 'both' || params.operation === 'finishing') && params.finishingEnabled) {
-            const tool = toolLibrary.find(t => t.id === params.finishingToolId);
+            const tool = toolLibrary.find(t => t.id == params.finishingToolId);
+            if (!tool) throw new Error('Finishing tool selected not found in library.');
             if (tool) {
                 const toolDia = parseFloat(String(tool.diameter || 0));
                 if (toolDia <= 0) throw new Error('Finishing tool diameter must be greater than 0');
@@ -299,6 +308,11 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                     let y = 0;
                     let direction = 1;
                     while (y <= numericLength) {
+                        // Progress
+                        const lineProgress = y / numericLength;
+                        const baseProgress = (params.operation === 'both') ? (50 + lineProgress * 50) : (lineProgress * 100);
+                        self.postMessage({ type: 'progress', progress: Math.floor(baseProgress) } as any);
+
                         const yPct = 1 - (y / numericLength);
                         const startX = (direction === 1) ? 0 : numericWidth;
 
@@ -326,6 +340,11 @@ self.onmessage = async (e: MessageEvent<ReliefWorkerMessage>) => {
                     let x = 0;
                     let direction = 1;
                     while (x <= numericWidth) {
+                        // Progress
+                        const lineProgress = x / numericWidth;
+                        const baseProgress = (params.operation === 'both') ? (50 + lineProgress * 50) : (lineProgress * 100);
+                        self.postMessage({ type: 'progress', progress: Math.floor(baseProgress) } as any);
+
                         const xPct = x / numericWidth;
                         const startY = (direction === 1) ? 0 : numericLength;
 

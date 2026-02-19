@@ -88,11 +88,11 @@ const PositionDisplay: React.FC<PositionDisplayProps> = ({ title, pos, unit }) =
     return (
         <div className="flex items-center gap-3">
             <h4 className="text-sm font-bold text-text-secondary">{t(title === 'WPos' ? 'status.wpos' : 'status.mpos')}</h4>
-            <div className="flex gap-4 text-center font-mono bg-background px-2 py-0.5 rounded-md text-lg">
-                <div><span className="font-bold text-red-400">X </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.x)}</span></div>
-                <div><span className="font-bold text-green-400">Y </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.y)}</span></div>
-                <div><span className="font-bold text-blue-400">Z </span><span className="text-text-primary font-bold">{formatCoordinate(pos?.z)}</span></div>
-                <span className="text-sm text-text-secondary ml-1 self-center">{unit}</span>
+            <div className="flex gap-6 text-center font-dro px-4 py-1.5 rounded-lg text-2xl">
+                <div className="flex items-baseline gap-1"><span className="text-lg font-bold text-red-500 opacity-80">X</span><span className="text-text-primary font-bold tracking-widest">{formatCoordinate(pos?.x)}</span></div>
+                <div className="flex items-baseline gap-1"><span className="text-lg font-bold text-green-500 opacity-80">Y</span><span className="text-text-primary font-bold tracking-widest">{formatCoordinate(pos?.y)}</span></div>
+                <div className="flex items-baseline gap-1"><span className="text-lg font-bold text-blue-500 opacity-80">Z</span><span className="text-text-primary font-bold tracking-widest">{formatCoordinate(pos?.z)}</span></div>
+                <span className="text-sm text-text-secondary ml-1 self-center font-sans font-semibold opacity-60">{unit}</span>
             </div>
         </div>
     );

@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Info } from "@mycnc/shared";
 
@@ -21,9 +22,9 @@ const InfoModal: React.FC<InfoModalProps> = ({
         return null;
     }
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[10000] flex items-center justify-center"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
@@ -58,7 +59,8 @@ const InfoModal: React.FC<InfoModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

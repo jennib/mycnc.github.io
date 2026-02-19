@@ -1,6 +1,6 @@
 {
     "name": "mycnc-monorepo",
-    "private": true,
+    "private": true, 
     "workspaces": [
         "apps/*",
         "packages/*"

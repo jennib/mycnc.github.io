@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, X, Plus, Trash2, Pencil } from "@mycnc/shared";
-import { Tool, ToolType, CutDirection } from '@/types';
+import { Tool, ToolType, CutDirection } from '@mycnc/shared';
 import TextInput from './ui/TextInput';
 import NumberInput from './ui/NumberInput';
 
@@ -25,7 +26,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
     const { t } = useTranslation();
     const [localLibrary, setLocalLibrary] = useState<Tool[]>([]);
     const [isEditing, setIsEditing] = useState(false);
-    const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id' | 'diameter'> & { id: number | null, diameter: number | string, flutes: number | string }>(newToolInitialState);
+    const [currentTool, setCurrentTool] = useState<Omit<Tool, 'id' | 'diameter' | 'flutes'> & { id: number | null, diameter: number | string, flutes: number | string }>(newToolInitialState as any);
 
     useEffect(() => {
         if (isOpen) {
@@ -86,9 +87,9 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
         onCancel();
     };
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[10000] flex items-center justify-center"
             aria-modal="true" role="dialog"
         >
             <div
@@ -130,7 +131,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                     <select
                                         value={currentTool.type}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, type: e.target.value as ToolType }))}
-                                        className="w-full bg-background border border-secondary rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none"
+                                        className="w-full input-style rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none"
                                     >
                                         <option value="endmill">{t('toolLibrary.types.endmill')}</option>
                                         <option value="ballmill">{t('toolLibrary.types.ballmill')}</option>
@@ -168,7 +169,7 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                                     <select
                                         value={currentTool.cutDirection}
                                         onChange={e => setCurrentTool(prev => ({ ...prev, cutDirection: e.target.value as CutDirection }))}
-                                        className="w-full bg-background border border-secondary rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none"
+                                        className="w-full input-style rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none"
                                     >
                                         <option value="up">{t('toolLibrary.directions.up')}</option>
                                         <option value="down">{t('toolLibrary.directions.down')}</option>
@@ -213,7 +214,8 @@ const ToolLibraryModal: React.FC<ToolLibraryModalProps> = ({ isOpen, onCancel, o
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

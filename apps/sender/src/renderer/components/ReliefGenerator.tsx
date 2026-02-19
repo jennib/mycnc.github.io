@@ -149,7 +149,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                                     <select
                                         value={params.operation || 'both'}
                                         onChange={(e) => handleParamChange('operation', e.target.value)}
-                                        className="bg-background border border-secondary rounded p-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+                                        className="input-style rounded p-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
                                     >
                                         <option value="both">{t('generators.relief.both')}</option>
                                         <option value="roughing">{t('generators.relief.roughingOnly')}</option>
@@ -321,7 +321,7 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                 </div>
 
                 {viewMode === '2d' ? (
-                    <div className="border border-secondary rounded-md p-2 bg-black/20 flex justify-center">
+                    <div className="border border-secondary rounded-md p-2 bg-black/5 dark:bg-black/20 flex justify-center">
                         <canvas ref={canvasRef} className="max-w-full h-auto border border-secondary/50" />
                     </div>
                 ) : (
@@ -334,6 +334,9 @@ const ReliefGenerator: React.FC<ReliefGeneratorProps> = ({ params, onParamsChang
                         contrast={params.contrast}
                         invert={params.invert}
                         smoothing={params.smoothing || 0}
+                        spectrumGainEnabled={params.colorAdjustmentEnabled || false}
+                        spectrumGainHigh={Number(params.colorAdjustmentHigh) || 0}
+                        spectrumGainLow={Number(params.colorAdjustmentLow) || 0}
                     />
                 )}
             </div>

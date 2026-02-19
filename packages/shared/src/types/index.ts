@@ -74,6 +74,8 @@ export interface MachineSettings {
     toolChangePolicy?: 'native' | 'macro';
     toolChangeMacroId?: string | null;
     isConfigured?: boolean;
+    playCompletionSound?: boolean;
+    isVirtualKeyboardEnabled?: boolean;
 }
 
 
@@ -257,6 +259,61 @@ export interface ReliefParams {
     gamma: number;
     contrast: number;
     smoothing: number; // 0-10, default 0
+    detail: number;
+    quality: 'low' | 'medium' | 'high';
+    colorAdjustmentEnabled: boolean;
+    colorAdjustmentHigh: number | string;
+    colorAdjustmentLow: number | string;
+    colorAdjustmentMid: number | string;
+}
+
+export interface STLParams {
+    file: File | null;
+    fileName: string;
+    width: number | string;
+    length: number | string;
+    depth: number | string;
+    zSafe: number | string;
+    margin: number;
+    rotationX: number;
+    rotationY: number;
+    rotationZ: number;
+    toolId: number | null;
+    stepover: number | string;
+    feedRate: number | string;
+    spindleSpeed: number | string;
+    roughingEnabled: boolean;
+    roughingToolId: number | null;
+    roughingStepdown: number | string;
+    roughingStepover: number | string;
+    roughingStockToLeave: number | string;
+    roughingFeed: number | string;
+    roughingSpindle: number | string;
+    cutoutEnabled: boolean;
+    cutoutToolId: number | null;
+    cutoutDepth: number | string;
+    cutoutDepthPerPass: number | string;
+    cutoutStepIn: number | string;
+    cutoutXYPasses: number | string;
+    cutoutTabsEnabled: boolean;
+    cutoutTabWidth: number | string;
+    cutoutTabHeight: number | string;
+    cutoutTabCount: number | string;
+}
+
+export interface SVGParams {
+    file: File | null;
+    fileName: string;
+    svgContent: string;
+    scale: number | string;
+    rotation: number | string;
+    positionX: number | string;
+    positionY: number | string;
+    depth: number | string;
+    feed: number | string;
+    spindle: number | string;
+    safeZ: number | string;
+    toolId: number | null;
 }
 
 export interface GeneratorSettings {
@@ -269,6 +326,8 @@ export interface GeneratorSettings {
     text: TextParams;
     thread: ThreadMillingParams;
     relief: ReliefParams;
+    stl: STLParams;
+    svg: SVGParams;
 }
 
 export interface TimeEstimate {

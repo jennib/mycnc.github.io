@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { CheckCircle, X, AlertTriangle, Play } from "@mycnc/shared";
 import { Tool } from '@/types';
@@ -41,8 +42,8 @@ const PreflightChecklistModal: React.FC<PreflightChecklistModalProps> = ({ isOpe
         onConfirm({ isDryRun });
     };
 
-    return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[10000] flex items-center justify-center">
             <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all" onClick={e => e.stopPropagation()}>
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary flex items-center gap-3"><AlertTriangle className="w-8 h-8 text-accent-yellow" />{t('preflight.title')}</h2>
@@ -80,7 +81,8 @@ const PreflightChecklistModal: React.FC<PreflightChecklistModalProps> = ({ isOpe
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

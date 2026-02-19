@@ -1,4 +1,4 @@
-/* Glassmorphism overrides for react-simple-keyboard */
+/* High contrast overrides for react-simple-keyboard */
 .simple-keyboard {
     background-color: transparent !important;
     border-radius: 0 !important;
@@ -6,27 +6,27 @@
 }
 
 .simple-keyboard .hg-button {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-radius: 0.75rem !important;
-    /* rounded-xl */
-    color: #e5e7eb !important;
-    /* text-text-primary approx */
+    background: var(--color-surface) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0.5rem !important;
+    color: var(--color-text-primary) !important;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
     font-weight: 700 !important;
     height: 60px !important;
     transition: all 0.1s ease !important;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1) !important;
 }
 
 .simple-keyboard .hg-button:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    transform: translateY(0) !important;
+    background: var(--color-secondary) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
 }
 
 .simple-keyboard .hg-button:active {
-    background: rgba(255, 255, 255, 0.15) !important;
-    transform: scale(0.95) !important;
+    background: var(--color-secondary-focus) !important;
+    transform: translateY(1px) !important;
+    box-shadow: none !important;
 }
 
 .simple-keyboard .hg-button.hg-standardBtn {
@@ -35,14 +35,15 @@
 
 .simple-keyboard .hg-button.hg-functionBtn {
     /* Function keys like shift, enter */
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: var(--color-secondary) !important;
+    opacity: 0.9;
 }
 
 /* Specific key styling */
 .simple-keyboard .hg-button[data-skbtn="{enter}"] {
-    background: #2563eb !important;
-    /* primary */
+    background: var(--color-primary) !important;
     color: white !important;
+    border-color: var(--color-primary) !important;
 }
 
 .simple-keyboard .hg-button[data-skbtn="{bksp}"] {

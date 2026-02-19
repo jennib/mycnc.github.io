@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, Trash2, X } from "@mycnc/shared";
 import { Macro } from '@/types';
@@ -54,9 +55,9 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
         }
     };
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[10000] flex items-center justify-center"
             onClick={onCancel}
             aria-modal="true"
             role="dialog"
@@ -136,7 +137,8 @@ const MacroEditorModal: React.FC<MacroEditorModalProps> = ({ isOpen, onCancel, o
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

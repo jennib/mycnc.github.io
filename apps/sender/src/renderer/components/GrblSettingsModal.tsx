@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Download, Upload, AlertTriangle, CheckCircle, Save, RefreshCw } from "@mycnc/shared";
 import { useUIStore } from '../stores/uiStore';
@@ -208,9 +209,9 @@ const GrblSettingsModal: React.FC = () => {
         return acc;
     }, {} as Record<string, GrblSettingDefinition[]>);
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[60] flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[10000] flex items-center justify-center"
             aria-modal="true" role="dialog"
         >
             <div className="bg-surface backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-4xl border border-white/10 transform transition-all flex flex-col max-h-[90vh]">
@@ -264,7 +265,7 @@ const GrblSettingsModal: React.FC = () => {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-mono text-xs text-text-secondary bg-black/30 px-1.5 py-0.5 rounded">${setting.id}</span>
+                                                        <span className="font-mono text-xs text-text-secondary bg-secondary/20 px-1.5 py-0.5 rounded">${setting.id}</span>
                                                         <span className="font-semibold text-text-primary">{setting.name}</span>
                                                     </div>
                                                     <p className="text-xs text-text-secondary mt-1">{setting.description}</p>
@@ -277,7 +278,7 @@ const GrblSettingsModal: React.FC = () => {
                                                     <select
                                                         value={rawValue}
                                                         onChange={(e) => handleSettingChange(setting.id, e.target.value)}
-                                                        className={`w-full bg-black/20 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                        className={`w-full input-style rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? '!border-accent-yellow text-accent-yellow' : 'text-text-primary'}`}
                                                     >
                                                         {setting.options?.map(opt => (
                                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -294,7 +295,7 @@ const GrblSettingsModal: React.FC = () => {
                                                                         type="checkbox"
                                                                         checked={checked}
                                                                         onChange={(e) => handleBitmaskChange(setting.id, opt.value, e.target.checked)}
-                                                                        className="rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
+                                                                        className="rounded input-style text-primary focus:ring-primary transition-colors hover:border-white/20"
                                                                     />
                                                                     <span className={`text-sm ${checked ? 'text-text-primary' : 'text-text-secondary'}`}>{opt.label}</span>
                                                                 </label>
@@ -306,7 +307,7 @@ const GrblSettingsModal: React.FC = () => {
                                                         type="number"
                                                         value={rawValue}
                                                         onChange={(e) => handleSettingChange(setting.id, e.target.value)}
-                                                        className={`w-full bg-black/20 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? 'border-accent-yellow text-accent-yellow' : 'border-white/10 text-text-primary'}`}
+                                                        className={`w-full input-style rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary ${isModified ? '!border-accent-yellow text-accent-yellow' : 'text-text-primary'}`}
                                                         step={setting.type === 'float' ? "0.001" : "1"}
                                                     />
                                                 )}
@@ -372,7 +373,8 @@ const GrblSettingsModal: React.FC = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

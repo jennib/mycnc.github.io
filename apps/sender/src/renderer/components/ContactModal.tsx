@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Send } from "@mycnc/shared";
 
@@ -43,9 +44,9 @@ ${message}`
         onClose();
     };
 
-    return (
+    return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center"
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[10000] flex items-center justify-center"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
@@ -132,7 +133,8 @@ ${message}`
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -13,7 +13,8 @@
         "sendCommand": "Send Command",
         "cancel": "Cancel",
         "language": "Language",
-        "save": "Save"
+        "save": "Save",
+        "toggleTheme": "Toggle Theme"
     },
     "console": {
         "title": "Console",
@@ -54,7 +55,7 @@
         "spindleSpeed": "Spindle Speed Range (RPM)",
         "controllerType": "Controller Type",
         "spindleWarmup": "Spindle Warmup Delay (ms)",
-        "probe": "Probe (mm)",
+        "probe": "Probe Offset (mm)",
         "probeFeedRate": "Probe Feed Rate",
         "customScripts": "Custom G-Code Scripts",
         "startupScript": "Startup Script (on connect)",
@@ -80,6 +81,7 @@
         "importSuccess": "Settings imported successfully!",
         "importError": "Failed to import settings.",
         "playCompletionSound": "Play Completion Sound",
+        "enableVirtualKeyboard": "Enable On-screen Keyboard",
         "firmware": "Firmware"
     },
     "jog": {
@@ -209,11 +211,12 @@
         "wcs": "WCS"
     },
     "connection": {
+        "status": "Status",
         "notConnected": "Not Connected",
         "unknownPort": "Unknown Port",
-        "useSimulator": "Use Simulator",
+        "useSimulator": "Simulator",
         "usb": "USB",
-        "tcp": "TCP",
+        "tcp": "TCP Default",
         "ip": "IP Address",
         "port": "Port",
         "disconnect": "Disconnect",
@@ -260,7 +263,8 @@
         "webrtc": "WebRTC Stream",
         "mute": "Mute",
         "unmute": "Unmute",
-        "popout": "Popout Camera"
+        "popout": "Popout Camera",
+        "disabledMessage": "Camera is disabled"
     },
     "contact": {
         "title": "Contact Us",
@@ -576,5 +580,8 @@
         "backup": "Backup Settings",
         "restore": "Restore Settings",
         "currentSettings": "Current Settings"
+    },
+    "tools": {
+        "title": "Tool Library"
     }
 }

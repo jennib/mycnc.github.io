@@ -53,7 +53,7 @@ const SVGGenerator: React.FC<SVGGeneratorProps> = ({ params, onParamsChange, too
                 toolLibrary={toolLibrary}
             />
 
-            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+            <div className="bg-black/5 dark:bg-black/20 p-4 rounded-xl border border-black/5 dark:border-white/5">
                 <label className="block text-sm font-bold text-text-secondary mb-2">{t('generators.svg.file', 'SVG File')}</label>
                 {!params.fileName ? (
                     <div
@@ -71,7 +71,7 @@ const SVGGenerator: React.FC<SVGGeneratorProps> = ({ params, onParamsChange, too
                         />
                     </div>
                 ) : (
-                    <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg border border-white/10">
+                    <div className="flex items-center justify-between input-style p-3 rounded-lg">
                         <div className="flex items-center gap-3 overflow-hidden">
                             <div className="w-8 h-8 rounded bg-primary/20 flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-bold text-primary">SVG</span>
@@ -89,7 +89,7 @@ const SVGGenerator: React.FC<SVGGeneratorProps> = ({ params, onParamsChange, too
             </div>
 
             {params.svgContent && (
-                <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-4 animate-in slide-in-from-top-2">
+                <div className="bg-black/5 dark:bg-black/20 p-4 rounded-xl border border-black/5 dark:border-white/5 space-y-4 animate-in slide-in-from-top-2">
                     <div className="grid grid-cols-2 gap-4">
                         <Input
                             label={t('generators.svg.scale', 'Scale')}

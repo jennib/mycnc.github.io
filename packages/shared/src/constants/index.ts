@@ -68,10 +68,10 @@ export const DEFAULT_MACROS: Macro[] = [
 ];
 
 export const DEFAULT_TOOLS: Tool[] = [
-    { id: 1, name: '1/8" Flat Endmill', diameter: 3.175 },
-    { id: 2, name: '1/4" Flat Endmill', diameter: 6.35 },
-    { id: 3, name: '60 Degree V-Bit', diameter: 12.7 },
-    { id: 4, name: '90 Degree V-Bit', diameter: 12.7 },
+    { id: 1, name: '1/8" Flat Endmill', diameter: 3.175, type: 'endmill', flutes: 2, cutDirection: 'up' },
+    { id: 2, name: '1/4" Flat Endmill', diameter: 6.35, type: 'endmill', flutes: 2, cutDirection: 'up' },
+    { id: 3, name: '60 Degree V-Bit', diameter: 12.7, type: 'vbit60', flutes: 2, cutDirection: 'up' },
+    { id: 4, name: '90 Degree V-Bit', diameter: 12.7, type: 'vbit90', flutes: 2, cutDirection: 'up' },
 ];
 
 export const DEFAULT_SETTINGS: MachineSettings = {
@@ -99,7 +99,9 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
     slot: { type: 'straight', slotWidth: 6, depth: -5, depthPerPass: 2, feed: 400, spindle: 8000, safeZ: 5, startX: 10, startY: 10, endX: 90, endY: 20, centerX: 50, centerY: 50, radius: 40, startAngle: 45, endAngle: 135, toolId: null },
     text: { text: 'HELLO', font: 'Sans-serif Stick', height: 10, spacing: 2, startX: 10, startY: 10, alignment: 'left', depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null },
     thread: { type: 'internal', hand: 'right', diameter: 10, pitch: 1, depth: 10, feed: 200, spindle: 10000, safeZ: 5, toolId: null },
-    relief: { imageDataUrl: null, invert: false, width: 100, length: 100, maxDepth: -5, zSafe: 5, roughingEnabled: true, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, finishingEnabled: true, finishingToolId: null, finishingStepover: 10, finishingAngle: 0, finishingFeed: 1000, finishingSpindle: 10000, operation: 'both', keepAspectRatio: true, gamma: 1.0, contrast: 1.0, smoothing: 0 },
+    relief: { imageDataUrl: null, invert: false, width: 100, length: 100, maxDepth: -5, zSafe: 5, roughingEnabled: true, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, finishingEnabled: true, finishingToolId: null, finishingStepover: 10, finishingAngle: 0, finishingFeed: 1000, finishingSpindle: 10000, operation: 'both', keepAspectRatio: true, gamma: 1.0, contrast: 1.0, smoothing: 0, detail: 0, quality: 'medium' },
+    stl: { file: null, fileName: '', width: 100, length: 100, depth: 10, zSafe: 5, margin: 2, rotationX: 0, rotationY: 0, rotationZ: 0, toolId: null, stepover: 40, feedRate: 800, spindleSpeed: 8000, roughingEnabled: true, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, cutoutEnabled: false, cutoutToolId: null, cutoutDepth: 18, cutoutDepthPerPass: 3, cutoutStepIn: 1, cutoutXYPasses: 1, cutoutTabsEnabled: true, cutoutTabWidth: 6, cutoutTabHeight: 3, cutoutTabCount: 4 },
+    svg: { file: null, fileName: '', svgContent: '', scale: 1, rotation: 0, positionX: 0, positionY: 0, depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null },
 };
 
 export const GRBL_REALTIME_COMMANDS = {

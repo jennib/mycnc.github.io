@@ -73,9 +73,10 @@
         "resetDialogs": "Dialoge zurücksetzen",
         "contact": "Kontaktieren Sie uns",
         "save": "Einstellungen speichern",
-        "importSuccess": "Settings imported successfully!",
-        "importError": "Failed to import settings.",
-        "playCompletionSound": "Play Completion Sound",
+        "importSuccess": "Einstellungen erfolgreich importiert!",
+        "importError": "Fehler beim Importieren der Einstellungen.",
+        "playCompletionSound": "Abschluss-Ton abspielen",
+        "enableVirtualKeyboard": "Bildschirmtastatur aktivieren",
         "firmware": "Firmware"
     },
     "jog": {
@@ -205,9 +206,10 @@
         "wcs": "WCS"
     },
     "connection": {
+        "status": "Status",
         "notConnected": "Nicht verbunden",
         "unknownPort": "Unbekannter Port",
-        "useSimulator": "Simulator verwenden",
+        "useSimulator": "Simulator",
         "usb": "USB",
         "tcp": "TCP",
         "ip": "IP-Adresse",

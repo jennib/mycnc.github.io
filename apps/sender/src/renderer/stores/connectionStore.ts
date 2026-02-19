@@ -91,9 +91,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         addLog({ type: 'error', message: `Failed to connect: ${errorMessage}` });
         set({ isConnecting: false });
 
-        // Import dynamically to avoid circular dependency if needed, or just use the store
-        const { openInfoModal } = require('./uiStore').useUIStore.getState().actions;
-        openInfoModal('Connection Failed', errorMessage);
+        // Use dynamic import for uiStore to avoid circular dependency issues and 'require' issues in ESM/Vite
+        import('./uiStore').then(({ useUIStore }) => {
+          const { openInfoModal } = useUIStore.getState().actions;
+          openInfoModal('Connection Failed', errorMessage as string); // Ensure it's a string
+        });
       }
     },
     disconnect: async () => {
