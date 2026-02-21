@@ -743,21 +743,59 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               label: t('gcode.view.list'),
               icon: <FileText className="w-4 h-4" />,
               content: (
-                <div className="h-full relative">
+                <div className="h-full flex flex-col relative">
+                  {gcodeLines.length > 0 && !isJobActive && (
+                    <div className="flex-shrink-0 p-2 bg-surface/50 border-b border-white/5 flex items-center gap-2 backdrop-blur-sm z-10">
+                      <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">{t('gcode.view.jumpToLine', 'Jump to line:')}</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max={gcodeLines.length}
+                        className="w-24 bg-background/80 border border-white/10 rounded px-2 py-1 text-sm text-text-primary focus:outline-none focus:border-primary font-mono"
+                        placeholder="1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const line = parseInt((e.target as HTMLInputElement).value);
+                            if (!isNaN(line) && line > 0 && line <= gcodeLines.length) {
+                              if (scrollContainerRef.current) {
+                                scrollContainerRef.current.scrollTop = (line - 1) * itemHeight;
+                              }
+                              setScrubberLine(line - 1);
+                            }
+                          }
+                        }}
+                      />
+                      <button
+                        className="px-3 py-1 bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider rounded border border-primary/30 hover:bg-primary/30 transition-colors"
+                        onClick={(e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          const line = parseInt(input.value);
+                          if (!isNaN(line) && line > 0 && line <= gcodeLines.length) {
+                            if (scrollContainerRef.current) {
+                              scrollContainerRef.current.scrollTop = (line - 1) * itemHeight;
+                            }
+                            setScrubberLine(line - 1);
+                          }
+                        }}
+                      >
+                        {t('gcode.view.go', 'Go')}
+                      </button>
+                    </div>
+                  )}
                   {gcodeLines.length > 0 ? (
                     <div
-                      className="h-full overflow-y-auto custom-scrollbar relative bg-background/30"
+                      className="flex-grow overflow-y-auto custom-scrollbar relative bg-background/30"
                       onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}
                       ref={scrollContainerRef}
                     >
-                      <div style={{ height: `${totalLines * 24}px`, position: 'relative' }}>
-                        <div style={{ position: 'absolute', top: `${startIndex * 24}px`, left: 0, right: 0 }}>
+                      <div style={{ height: `${totalLines * itemHeight}px`, position: 'relative' }}>
+                        <div style={{ position: 'absolute', top: `${startIndex * itemHeight}px`, left: 0, right: 0 }}>
                           {gcodeLines.slice(startIndex, endIndex).map((line, index) => {
                             const lineNumber = startIndex + index + 1;
                             const isCurrent = lineNumber === (isJobActive ? currentLine + 1 : scrubberLine + 1);
                             const isExecuted = lineNumber < (isJobActive ? currentLine + 1 : scrubberLine + 1);
                             return (
-                              <div key={lineNumber} style={{ height: '24px' }}>
+                              <div key={lineNumber} style={{ height: `${itemHeight}px` }}>
                                 <GCodeLine
                                   line={line}
                                   lineNumber={lineNumber}
@@ -776,7 +814,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-secondary">
+                    <div className="flex flex-col items-center justify-center flex-grow text-text-secondary">
                       <FileText className="w-16 h-16 mb-4 opacity-20" />
                       <p className="font-medium">{t('gcode.status.noFile')}</p>
                     </div>

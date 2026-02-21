@@ -4,11 +4,8 @@ import 'react-simple-keyboard/build/css/index.css';
 import './VirtualKeyboard.css';
 import { useKeyboardStore } from '../../stores/keyboardStore';
 import { X, GripHorizontal } from "@mycnc/shared";
-<<<<<<< HEAD
 import KeyboardLayouts from "simple-keyboard-layouts";
 import { useTranslation } from 'react-i18next';
-=======
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
 
 // Define custom key display/labels
 const display = {
@@ -35,7 +32,6 @@ const numpadLayout = {
 
 const VirtualKeyboard: React.FC = () => {
     const { isOpen, layout, value, cursorPosition, label, multiline, inputRect, actions } = useKeyboardStore();
-<<<<<<< HEAD
     const { i18n } = useTranslation();
     const keyboard = useRef<any>(null);
     const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
@@ -68,12 +64,6 @@ const VirtualKeyboard: React.FC = () => {
         // Ensure we always return a valid layout object, falling back to english
         return (matchedLayout as any)?.layout || keyboardLayouts.get("english")?.layout || { default: ["q w e r t y u i o p", "a s d f g h j k l", "z x c v b n m"] };
     }, [layout, i18n.language, keyboardLayouts]);
-
-=======
-    const keyboard = useRef<any>(null);
-    const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
-    const dragRef = useRef<{ startX: number, startY: number, startLeft: number, startTop: number } | null>(null);
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
 
     // Sync external value changes to valid properties
     useEffect(() => {
@@ -109,7 +99,6 @@ const VirtualKeyboard: React.FC = () => {
         if (isOpen) {
             const windowHeight = window.innerHeight;
             const windowWidth = window.innerWidth;
-<<<<<<< HEAD
             const keyboardWidth = layout === 'numpad' ? 350 : 850; // Approx width + padding
             const keyboardHeight = 320; // Approx height with header
 
@@ -134,20 +123,6 @@ const VirtualKeyboard: React.FC = () => {
                         document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 }, 100);
-=======
-            const keyboardWidth = layout === 'numpad' ? 332 : 832; // Approx width + padding
-            const keyboardHeight = 300; // Approx height
-
-            let newX = (windowWidth / 2) - (keyboardWidth / 2);
-            let newY = windowHeight - keyboardHeight - 40; // Default bottom
-
-            if (inputRect) {
-                const inputBottom = inputRect.bottom;
-                // If input is in the bottom half of the screen, show keyboard at the top
-                if (inputBottom > windowHeight / 2) {
-                    newY = 40; // Top
-                }
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
             }
             setPosition({ x: newX, y: newY });
         }
@@ -157,10 +132,6 @@ const VirtualKeyboard: React.FC = () => {
     // Drag Handlers
     const handleMouseDown = (e: React.MouseEvent) => {
         if (!position) return;
-<<<<<<< HEAD
-=======
-        // Only allow drag on header/grip area? No, the whole header is nice.
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
         e.preventDefault();
 
         dragRef.current = {
@@ -234,7 +205,6 @@ const VirtualKeyboard: React.FC = () => {
 
     if (!isOpen) return null;
 
-<<<<<<< HEAD
     const currentPos = position || { x: window.innerWidth / 2 - 400, y: window.innerHeight - 300 };
 
     return (
@@ -299,66 +269,6 @@ const VirtualKeyboard: React.FC = () => {
                             preventMouseDownDefault={true}
                         />
                     </div>
-=======
-    // Use state position if available, else standard fallback (shouldn't really happen due to useEffect)
-    const currentPos = position || { x: window.innerWidth / 2 - 400, y: window.innerHeight - 300 };
-
-    // Map store layout to simple-keyboard layout configurations
-    const activeLayout = layout === 'numpad' ? 'numpad' : 'default';
-
-    return (
-        <div
-            className="fixed z-[100] bg-surface border border-white/10 shadow-2xl rounded-2xl p-4 transition-opacity duration-150 ease-out"
-            style={{
-                left: currentPos.x,
-                top: currentPos.y,
-                // Remove transform centering because we are positioning top-left explicitly
-                opacity: position ? 1 : 0
-            }}
-        >
-            <div className={`flex flex-col gap-4 ${layout === 'numpad' ? 'w-[300px]' : 'w-[800px]'}`}>
-                {/* Header / Toolbar - Draggable */}
-                <div
-                    className="flex items-center justify-between bg-black/40 p-2 rounded-xl border border-white/10 mb-2 cursor-move active:cursor-grabbing select-none"
-                    onMouseDown={handleMouseDown}
-                >
-                    <div className="flex items-center gap-2 text-text-secondary w-16">
-                        <GripHorizontal className="w-5 h-5 opacity-50" />
-                    </div>
-
-                    {label && <span className="text-sm font-bold text-text-secondary uppercase tracking-wider pointer-events-none">{label}</span>}
-
-                    <div className="flex justify-end w-16">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); actions.closeKeyboard(); }}
-                            className="p-2 hover:bg-white/10 rounded-lg text-text-secondary cursor-pointer"
-                            onMouseDown={(e) => e.stopPropagation()} // Prevent drag when clicking close
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="w-full">
-                    <Keyboard
-                        keyboardRef={r => (keyboard.current = r)}
-                        layout={customLayouts}
-                        layoutName={activeLayout}
-                        onChange={onChange}
-                        onKeyPress={onKeyPress}
-                        theme={`hg-theme-default ${layout === 'numpad' ? 'hg-layout-numpad' : ''} glass-keyboard`}
-                        display={{
-                            "{bksp}": "⌫",
-                            "{enter}": multiline ? "↵" : "Done",
-                            "{shift}": "⇧",
-                            "{tab}": "Tab",
-                            "{lock}": "Caps",
-                            "{space}": " ",
-                            "{check}": "✓"
-                        }}
-                        preventMouseDownDefault={true}
-                    />
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
                 </div>
             </div>
         </>

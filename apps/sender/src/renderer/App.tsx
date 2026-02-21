@@ -270,7 +270,6 @@ const MainApp: React.FC = () => {
   }, [machineSettings, macros, isConnected]); // Run when settings change or when connected (new controller created)
 
   const handleConnect = (options: ConnectionOptions) => {
-<<<<<<< HEAD
     // Check if Remote Client
     if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction) {
       console.log("Remote Client: Delegating Connect to Host");
@@ -281,8 +280,7 @@ const MainApp: React.FC = () => {
       return;
     }
 
-=======
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
+
     // If connection type is simulator in settings, override options type
     if (connectionSettings.type === 'simulator') {
       connectionActions.connect({ type: "simulator" });
@@ -291,7 +289,6 @@ const MainApp: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   const handleDisconnect = () => {
     // Check if Remote Client
     if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction) {
@@ -390,6 +387,7 @@ const MainApp: React.FC = () => {
             onDisconnect={handleDisconnect}
             isApiSupported={isSerialApiSupported}
             isSimulated={connectionSettings.type === 'simulator'}
+            isElectron={!!window.electronAPI?.isElectron}
           />
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
             <button
@@ -429,22 +427,6 @@ const MainApp: React.FC = () => {
           </div>
         </div>
       </header>
-=======
-  // ... existing code ...
-
-  <SerialConnector
-    isConnected={isConnected}
-    isConnecting={isConnecting}
-    portInfo={portInfo}
-    onConnect={handleConnect}
-    onDisconnect={handleDisconnect}
-    isApiSupported={isSerialApiSupported}
-    isSimulated={portInfo?.type === 'simulator'}
-    isElectron={!!window.electronAPI?.isElectron}
-  />
-        </div >
-      </header >
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
 
       <StatusBar
         isConnected={isConnected}
@@ -452,8 +434,6 @@ const MainApp: React.FC = () => {
         unit={unit}
       />
       <WebcamPeek />
-
-<<<<<<< HEAD
       {
         alarmInfo && (
           <div
@@ -738,173 +718,6 @@ const MainApp: React.FC = () => {
         onDismiss={(id) => setNotifications((prev) => prev.filter((n) => n.id !== id))}
       />
       <VirtualKeyboard />
-=======
-{
-  alarmInfo && (
-    <div
-      className="bg-red-500/10 border-l-4 border-red-500 text-red-400 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
-      role="alert"
-    >
-      <OctagonAlert className="h-6 w-6 mr-4 flex-shrink-0 mt-1" />
-      <div className="flex-grow">
-        <h3 className="font-bold text-lg">{`Machine Alarm: ${alarmInfo.name}`}</h3>
-        <p className="text-sm opacity-90">{alarmInfo.desc}</p>
-        <p className="text-sm mt-2">
-          <strong className="text-red-300">Resolution: </strong>
-          {alarmInfo.resolution}
-        </p>
-      </div>
-      <button
-        id="unlock-button"
-        title="Unlock Machine (Hotkey: x)"
-        onClick={() => handleManualCommand("$X")}
-        className={`ml-4 flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-background transition-all duration-200 shadow-lg ${flashingButton === "unlock-button"
-          ? "ring-4 ring-white ring-inset"
-          : ""
-          }`}
-      >
-        <Unlock className="w-5 h-5" /> Unlock ($X)
-      </button>
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
-    </div>
-  )
-}
-{
-  !isSerialApiSupported && !connectionSettings.useSimulator && (
-    <div
-      className="bg-yellow-500/10 border-l-4 border-yellow-500 text-yellow-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
-      role="alert"
-    >
-      <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
-      <div>
-        <p className="font-bold">Browser Not Supported</p>
-        <p>This web browser does not support serial connections. You can still use the simulator. Or use a compatible browser like Chrome or Edge to connect to your machine.</p>
-      </div>
-    </div>
-  )
-}
-{
-  error && (isSerialApiSupported || connectionSettings.useSimulator) && (
-    <div
-      className="bg-red-500/10 border-l-4 border-red-500 text-red-500 p-4 m-4 flex items-start rounded-r-lg backdrop-blur-sm"
-      role="alert"
-    >
-      <AlertTriangle className="h-6 w-6 mr-3 flex-shrink-0" />
-      <p>{error}</p>
-      <button onClick={() => setError(null)} className="ml-auto font-bold hover:text-red-400 transition-colors">
-        X
-      </button>
-    </div>
-  )
-}
-
-<main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
-  <div className="h-[40vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
-    <GCodePanel
-      onFileLoad={jobActions.loadFile}
-      fileName={fileName}
-      gcodeLines={gcodeLines}
-      onJobControl={handleJobControl}
-      jobStatus={jobStatus}
-      progress={progress}
-      isConnected={isConnected}
-      unit={unit}
-      onGCodeChange={jobActions.updateGCode}
-      onClearFile={jobActions.clearFile}
-      machineState={machineState}
-      onFeedOverride={handleFeedOverride}
-      onSpindleOverride={handleSpindleOverride}
-      timeEstimate={timeEstimate}
-      machineSettings={machineSettings}
-      toolLibrary={toolLibrary}
-      selectedToolId={selectedToolId}
-      onToolSelect={setSelectedToolId}
-      onOpenGenerator={uiActions.openGCodeModal}
-      isSimulated={connectionSettings.useSimulator}
-    />
-  </div>
-  <div className="h-[50vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
-    <Tabs
-      defaultTab="controls"
-      tabs={[
-        {
-          id: "controls",
-          label: t('jog.title'),
-          icon: <Move className="w-4 h-4" />,
-          content: (
-            <div className="h-full overflow-auto p-2 flex flex-col gap-2">
-              <JogPanel
-                isConnected={isConnected}
-                machineState={machineState}
-                machineSettings={machineSettings}
-                isHomed={isHomedSinceConnect}
-                onJog={handleJog}
-                onHome={() => handleHome("all")}
-                onSetZero={handleSetZero}
-                onSpindleCommand={handleSpindleCommand}
-                onProbe={handleProbe}
-                onSendCommand={handleManualCommand}
-                jogStep={jogStep}
-                onStepChange={settingsActions.setJogStep}
-                flashingButton={flashingButton}
-                onFlash={handleFlash}
-                unit={unit}
-                onUnitChange={handleUnitChange}
-                isJobActive={isJobActive}
-                isJogging={isJogging}
-                isMacroRunning={isMacroRunning}
-                onJogStop={handleJogStop}
-                jogFeedRate={machineSettings.jogFeedRate}
-                jobStatus={jobStatus}
-              />
-              <MacrosPanel
-                macros={macros}
-                onRunMacro={handleRunMacro}
-                onOpenEditor={uiActions.openMacroEditor}
-                onImportMacros={settingsActions.setMacros}
-                isEditMode={isMacroEditMode}
-                onToggleEditMode={() => setIsMacroEditMode((prev) => !prev)}
-                disabled={isJobActive}
-              />
-            </div>
-          ),
-        },
-        {
-          id: "webcam",
-          label: t('webcam.title'),
-          icon: <Camera className="w-4 h-4" />,
-          content: (
-            <div className="h-full overflow-auto p-2">
-              <WebcamPanel />
-            </div>
-          ),
-        },
-        {
-          id: "console",
-          label: t('console.title'),
-          icon: <Terminal className="w-4 h-4" />,
-          content: (
-            <div className="h-full">
-              <Console
-                logs={logs}
-                onSendCommand={handleManualCommand}
-                onClearLogs={logActions.clearLogs}
-                isConnected={isConnected}
-                isJobActive={isJobActive}
-                isMacroRunning={isMacroRunning}
-                isLightMode={isLightMode}
-                isVerbose={isVerbose}
-                onVerboseChange={logActions.setIsVerbose}
-                isLogEnabled={isLogEnabled}
-                onLogEnabledChange={logActions.setIsLogEnabled}
-              />
-            </div>
-          ),
-        },
-      ]}
-    />
-  </div>
-</main>
 
     </div >
   );

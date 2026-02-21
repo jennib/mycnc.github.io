@@ -3,11 +3,7 @@ import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Save, X, Upload, Download, Ruler, Settings } from "@mycnc/shared";
 import { MachineSettings, GeneratorSettings } from '@/types';
-<<<<<<< HEAD
 import { useSettingsStore, ConnectionSettings } from '../stores/settingsStore';
-=======
-import { useSettingsStore } from '../stores/settingsStore';
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
 import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 
 import NumberInput from './ui/NumberInput';
@@ -217,7 +213,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </InputGroup>
 
                             <div className="border-t border-white/10 pt-4 mt-4">
-<<<<<<< HEAD
                                 <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wider">{t('connection.tcp') || 'TCP Connection'}</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputGroup label={t('connection.ip') || 'IP Address'}>
@@ -241,18 +236,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </div>
 
                             <div className="border-t border-white/10 pt-4 mt-4">
-=======
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
                                 <InputGroup label={t('settings.toolChangePolicy')}>
                                     <div className="flex flex-col gap-2 w-full">
                                         <select
                                             value={localSettings.toolChangePolicy || 'native'}
                                             onChange={e => handleNumericChange('toolChangePolicy', e.target.value)}
-<<<<<<< HEAD
                                             className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
-=======
-                                            className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
                                         >
                                             <option value="native">{t('settings.toolChangeNative')}</option>
                                             <option value="macro">{t('settings.toolChangeMacro')}</option>
@@ -264,11 +253,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                                 <select
                                                     value={localSettings.toolChangeMacroId || ''}
                                                     onChange={e => handleNumericChange('toolChangeMacroId', e.target.value)}
-<<<<<<< HEAD
                                                     className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
-=======
-                                                    className="w-full bg-black/20 border border-white/10 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-text-primary shadow-inner transition-colors hover:border-white/20"
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
                                                 >
                                                     <option value="">{t('common.select') || 'Select...'}</option>
                                                     {useSettingsStore.getState().macros.map((m, i) => (
@@ -354,11 +339,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     id="enable-osk"
                                     checked={useSettingsStore.getState().isVirtualKeyboardEnabled}
                                     onChange={(e) => useSettingsStore.getState().actions.setIsVirtualKeyboardEnabled(e.target.checked)}
-<<<<<<< HEAD
-                                    className="w-5 h-5 rounded input-style text-primary focus:ring-primary transition-colors hover:border-white/20"
-=======
-                                    className="w-5 h-5 rounded border-white/10 bg-black/20 text-primary focus:ring-primary transition-colors hover:border-white/20"
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
+                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
                                 />
                                 <label htmlFor="enable-osk" className="text-sm font-medium text-text-primary">
                                     {t('settings.enableVirtualKeyboard', 'Enable On-Screen Keyboard')}
@@ -403,12 +384,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 onClose={() => setShowBuildAreaModal(false)}
                 onApply={handleApplyMeasurement}
             />
-<<<<<<< HEAD
         </div>,
         document.body
-=======
-        </div >
->>>>>>> 95e3bdc63ae52018225e20462ed3256d0231bb5b
     );
 };
 
