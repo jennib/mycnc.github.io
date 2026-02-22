@@ -49,6 +49,9 @@
 - **Languages:** English, Spanish, French, German, Chinese, Hindi, Bengali, Japanese, Ukrainian, and Punjabi.
 - **Webcam:** Integrated camera view.
 
+### Plugins & Integrations
+- **Fusion 360 Add-in:** Send your G-code setups and operations directly from Fusion 360 to the mycnc.app Desktop client via Remote TCP/IP with one click!
+
 ---
 
 ## Getting Started
