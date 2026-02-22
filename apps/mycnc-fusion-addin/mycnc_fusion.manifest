@@ -1,0 +1,13 @@
+{
+	"autodeskProduct":	"Fusion",
+	"type":	"addin",
+	"id":	"e6b014a5-f867-4fe0-94a2-19e0811e582a",
+	"author":	"MyCNC",
+	"description":	{
+		"":	"MyCNC plugin for Fusion 360"
+	},
+	"version":	"1.0",
+	"runOnStartup":	false,
+	"supportedOS":	"windows|mac",
+	"editEnabled":	true
+}

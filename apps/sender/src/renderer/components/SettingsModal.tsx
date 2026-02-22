@@ -345,6 +345,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     {t('settings.enableVirtualKeyboard', 'Enable On-Screen Keyboard')}
                                 </label>
                             </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="allow-remote-files"
+                                    checked={useSettingsStore.getState().allowRemoteFiles}
+                                    onChange={(e) => useSettingsStore.getState().actions.setAllowRemoteFiles(e.target.checked)}
+                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                                />
+                                <label htmlFor="allow-remote-files" className="text-sm font-medium text-text-primary">
+                                    {t('settings.allowRemoteFiles', 'Receive files over Remote TCP/IP')}
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">

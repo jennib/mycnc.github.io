@@ -53,11 +53,19 @@
     <img src="mycnclogo.png" alt="myCNC Logo">
     <h1>myCNC.app</h1>
     <p id="version">Version ...</p>
+    <p id="ip" style="padding-top: 5px; color: #666; font-size: 0.9em; display: none;">Local IP: ...</p>
     <script>
         const params = new URLSearchParams(window.location.search);
         const version = params.get('version');
         if (version) {
             document.getElementById('version').textContent = 'Version ' + version;
+        }
+        
+        const ip = params.get('ip');
+        if (ip) {
+            const ipEl = document.getElementById('ip');
+            ipEl.textContent = 'Remote IP/URL: ' + ip + ':8080';
+            ipEl.style.display = 'block';
         }
     </script>
     <p>Copyright © 2025 Tutti Studios</p>

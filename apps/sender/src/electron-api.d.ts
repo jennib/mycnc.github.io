@@ -24,6 +24,10 @@ interface ElectronAPI {
     // Remote Actions
     sendRemoteAction?: (action: { type: string, payload?: any }) => void;
     onRemoteAction?: (callback: (action: { type: string, payload?: any }) => void) => void;
+
+    // Startup file
+    getStartupFile?: () => Promise<{ name: string; content: string } | null>;
+    onLoadRemoteFile?: (callback: (file: { name: string; content: string }) => void) => void;
 }
 
 // Augment the Window interface to include electronAPI

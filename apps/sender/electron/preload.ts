@@ -38,4 +38,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // Remote Actions
   sendRemoteAction: (action: any) => ipcRenderer.send('remote-action', action),
   onRemoteAction: (callback: (action: any) => void) => ipcRenderer.on('remote-action', (_event, action) => callback(action)),
+
+  // Startup File
+  getStartupFile: () => ipcRenderer.invoke('get-startup-file'),
+  onLoadRemoteFile: (callback: (file: { name: string, content: string }) => void) =>
+    ipcRenderer.on('load-remote-file', (_event, file) => callback(file)),
 });
