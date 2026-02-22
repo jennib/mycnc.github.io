@@ -7,6 +7,7 @@ import http from "http";
 import express from "express";
 import { Server as SocketIOServer } from "socket.io";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import fs from "fs";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -139,12 +140,27 @@ const createAboutWindow = () => {
   aboutWindow.setMenu(null);
 
   const version = app.getVersion();
+
+  // Find local network IP
+  const interfaces = os.networkInterfaces();
+  let localIp = 'Unknown';
+  for (const ifaceName of Object.keys(interfaces)) {
+    const iface = interfaces[ifaceName] || [];
+    for (const address of iface) {
+      if (address.family === 'IPv4' && !address.internal) {
+        localIp = address.address;
+        break;
+      }
+    }
+  }
+
   if (process.env.VITE_DEV_SERVER_URL) {
     const aboutUrl = new URL("about.html", process.env.VITE_DEV_SERVER_URL);
     aboutUrl.searchParams.set("version", version);
+    aboutUrl.searchParams.set("ip", localIp);
     aboutWindow.loadURL(aboutUrl.href);
   } else {
-    aboutWindow.loadFile(path.join(__dirname, "../renderer/about.html"), { query: { version } });
+    aboutWindow.loadFile(path.join(__dirname, "../renderer/about.html"), { query: { version, ip: localIp } });
   }
 
   aboutWindow.once("ready-to-show", () => {
@@ -516,11 +532,48 @@ const createWindow = () => {
   }
 };
 
+let startupFile: string | null = null;
+const args = process.argv.slice(1);
+for (const arg of args) {
+  if (arg.endsWith('.nc') || arg.endsWith('.gcode') || arg.endsWith('.tap') || arg.endsWith('.txt')) {
+    if (fs.existsSync(arg)) {
+      startupFile = arg;
+      break;
+    }
+  }
+}
+
+ipcMain.handle("get-startup-file", () => {
+  if (startupFile) {
+    try {
+      const content = fs.readFileSync(startupFile, 'utf-8');
+      // Clear it so we don't load it twice
+      const fileToLoad = startupFile;
+      startupFile = null;
+      return { name: path.basename(fileToLoad), content };
+    } catch (e) {
+      console.error("Failed to read startup file:", e);
+    }
+  }
+  return null;
+});
+
 console.log('Electron app object:', app);
 
 // Start the remote access server
 const PORT = 8080;
 // Configure Express
+appServer.use(express.json({ limit: '100mb' }));
+appServer.post('/api/upload', (req: express.Request, res: express.Response) => {
+  const { name, content } = req.body;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("load-remote-file", { name, content });
+    res.json({ success: true });
+  } else {
+    res.status(500).json({ error: 'Main window not ready' });
+  }
+});
+
 if (process.env.VITE_DEV_SERVER_URL) {
   // Proxy to Vite Dev Server
   appServer.use('/', createProxyMiddleware({

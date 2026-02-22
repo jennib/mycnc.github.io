@@ -23,6 +23,7 @@ import { Dock } from 'lucide-react';
 import { Download } from 'lucide-react';
 import { Eye } from 'lucide-react';
 import { FileText } from 'lucide-react';
+import { FolderOpen } from 'lucide-react';
 import { GripHorizontal } from 'lucide-react';
 import { Hand } from 'lucide-react';
 import { Home } from 'lucide-react';
@@ -198,6 +199,8 @@ export declare const estimateGCodeTime: (gcodeLines: string[]) => TimeEstimate_2
 export { Eye }
 
 export { FileText }
+
+export { FolderOpen }
 
 export declare interface GCodeAnalysisState {
     spindle: 'M3' | 'M4' | 'M5';

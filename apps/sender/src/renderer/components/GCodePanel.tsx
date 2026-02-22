@@ -36,6 +36,7 @@ import { useSettingsStore } from "../stores/settingsStore";
 
 import { GCodeVisualizer, GCodeEditorModal } from "@mycnc/shared";
 import GCodeVisualizerWorker from '../workers/gcodeVisualizerWorker?worker';
+import { useLibraryStore } from "../stores/libraryStore";
 
 interface OverrideControlProps {
   label: string;
@@ -242,6 +243,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
   const [isAdvancedEditorOpen, setIsAdvancedEditorOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const isLightMode = useSettingsStore((state) => state.isLightMode);
+  const libraryActions = useLibraryStore((state) => state.actions);
 
   const [hoveredLineIndex, setHoveredLineIndex] = useState<number | null>(null);
   const [scrubberLine, setScrubberLine] = useState(0); // New state for the scrubber
@@ -292,8 +294,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        const content = e.target?.result;
+        const content = e.target?.result as string;
         onFileLoad(content, file.name);
+        libraryActions.addJob(file.name, content);
       };
       reader.readAsText(file);
     }
@@ -359,7 +362,9 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     ) {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        onFileLoad(ev.target?.result as string, file.name);
+        const content = ev.target?.result as string;
+        onFileLoad(content, file.name);
+        libraryActions.addJob(file.name, content);
       };
       reader.readAsText(file);
 

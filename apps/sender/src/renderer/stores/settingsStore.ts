@@ -12,7 +12,7 @@ export interface ConnectionSettings {
 
 interface SettingsState {
   connectionSettings: ConnectionSettings;
-  // ... rest of state
+  allowRemoteFiles: boolean;
   jogStep: number;
   unit: 'mm' | 'in';
   isLightMode: boolean;
@@ -25,6 +25,7 @@ interface SettingsState {
   webcamSettings: WebcamSettings;
   buildAreaMeasurementDirections: { X: 1 | -1; Y: 1 | -1; Z: 1 | -1 };
   actions: {
+    setAllowRemoteFiles: (allow: boolean) => void;
     setJogStep: (step: number) => void;
     setUnit: (unit: 'mm' | 'in') => void;
     setIsLightMode: (isLight: boolean) => void;
@@ -60,6 +61,7 @@ const deepMerge = (current: any, persisted: any): any => {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
+      allowRemoteFiles: true,
       jogStep: 1,
       unit: 'mm',
       isLightMode: true,
@@ -77,6 +79,7 @@ export const useSettingsStore = create<SettingsState>()(
       webcamSettings: DEFAULT_WEBCAM_SETTINGS,
       buildAreaMeasurementDirections: { X: 1, Y: 1, Z: 1 },
       actions: {
+        setAllowRemoteFiles: (allow) => set({ allowRemoteFiles: allow }),
         setJogStep: (step) => set({ jogStep: step }),
         setUnit: (unit) => set({ unit: unit }),
         setIsLightMode: (isLight) => set({ isLightMode: isLight }),

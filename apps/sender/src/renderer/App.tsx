@@ -14,6 +14,7 @@ import MacroEditorModal from "./components/MacroEditorModal";
 import SettingsModal from "./components/SettingsModal";
 import GrblSettingsModal from "./components/GrblSettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
+import LibraryPanel from "./components/LibraryPanel";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
 import WebcamPeek from "./components/WebcamPeek";
@@ -36,6 +37,7 @@ import {
   Camera,
   Zap,
   Terminal,
+  FolderOpen,
   GRBL_REALTIME_COMMANDS,
 } from "@mycnc/shared";
 import { Analytics } from "@vercel/analytics/react";
@@ -181,6 +183,29 @@ const MainApp: React.FC = () => {
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
   }, []);
+
+  // Check for startup file from Electron when app loads
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.getStartupFile) {
+      window.electronAPI.getStartupFile().then((file) => {
+        if (file) {
+          jobActions.loadFile(file.content, file.name);
+          console.log(`Loaded startup file: ${file.name}`);
+        }
+      }).catch(err => console.error("Error loading startup file:", err));
+    }
+
+    if (window.electronAPI && window.electronAPI.onLoadRemoteFile) {
+      window.electronAPI.onLoadRemoteFile((file) => {
+        if (useSettingsStore.getState().allowRemoteFiles && file) {
+          jobActions.loadFile(file.content, file.name);
+          console.log(`Loaded remote file over API: ${file.name}`);
+        } else {
+          console.log(`Ignored remote file over API (allowRemoteFiles=false): ${file?.name}`);
+        }
+      });
+    }
+  }, [jobActions]);
 
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.onRemoteAction) {
@@ -592,6 +617,16 @@ const MainApp: React.FC = () => {
                       isLogEnabled={isLogEnabled}
                       onLogEnabledChange={logActions.setIsLogEnabled}
                     />
+                  </div>
+                ),
+              },
+              {
+                id: "library",
+                label: "Library",
+                icon: <FolderOpen className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-hidden p-2">
+                    <LibraryPanel />
                   </div>
                 ),
               },
