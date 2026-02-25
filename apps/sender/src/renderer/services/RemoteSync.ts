@@ -107,6 +107,10 @@ class RemoteSyncService {
     }
 
     private lastStates: Record<string, any> = {};
+    private pendingUpdates: Record<string, any> = {};
+    private throttleTimers: Record<string, any> = {};
+    private lastSendTimes: Record<string, number> = {};
+    private readonly THROTTLE_MS = 66; // ~15Hz
 
     private sendUpdate(storeName: string, state: any) {
         if (!window.electronAPI || !window.electronAPI.sendStateUpdate) return;
@@ -120,9 +124,39 @@ class RemoteSyncService {
         if (this.lastStates[storeName] === serialized) {
             return;
         }
-        this.lastStates[storeName] = serialized;
 
-        window.electronAPI.sendStateUpdate(storeName, sanitizedState);
+        this.pendingUpdates[storeName] = { sanitizedState, serialized };
+
+        const now = Date.now();
+        const lastSendTime = this.lastSendTimes[storeName] || 0;
+        const timeSinceLast = now - lastSendTime;
+
+        if (timeSinceLast >= this.THROTTLE_MS) {
+            // Can send immediately (leading edge)
+            if (this.throttleTimers[storeName]) {
+                clearTimeout(this.throttleTimers[storeName]);
+                this.throttleTimers[storeName] = null;
+            }
+            this.executeSendUpdate(storeName);
+        } else if (!this.throttleTimers[storeName]) {
+            // Schedule the trailing edge update
+            this.throttleTimers[storeName] = setTimeout(() => {
+                this.throttleTimers[storeName] = null;
+                this.executeSendUpdate(storeName);
+            }, this.THROTTLE_MS - timeSinceLast);
+        }
+    }
+
+    private executeSendUpdate(storeName: string) {
+        if (!window.electronAPI || !window.electronAPI.sendStateUpdate) return;
+
+        const pending = this.pendingUpdates[storeName];
+        if (!pending) return;
+
+        this.lastStates[storeName] = pending.serialized;
+        this.lastSendTimes[storeName] = Date.now();
+
+        window.electronAPI.sendStateUpdate(storeName, pending.sanitizedState);
     }
 
     private initClient() {

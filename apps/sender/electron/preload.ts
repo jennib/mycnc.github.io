@@ -43,4 +43,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getStartupFile: () => ipcRenderer.invoke('get-startup-file'),
   onLoadRemoteFile: (callback: (file: { name: string, content: string }) => void) =>
     ipcRenderer.on('load-remote-file', (_event, file) => callback(file)),
+
+  // Serial Port Auto-Detect
+  setAutoSelectIndex: (index: number) => ipcRenderer.invoke('set-auto-select-index', index),
 });

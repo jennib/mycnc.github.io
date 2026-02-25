@@ -133,6 +133,22 @@ const SerialConnector: React.FC<SerialConnectorProps> = ({
                 </div>
             )}
 
+            {!isConnected && connectionType === 'usb' && isElectron && (
+                <button
+                    onClick={() => {
+                        import('../stores/connectionStore').then(({ useConnectionStore }) => {
+                            useConnectionStore.getState().actions.autoDetect();
+                        });
+                    }}
+                    disabled={isConnecting}
+                    className="flex items-center gap-2 px-4 py-2 bg-secondary text-text-primary font-bold rounded-lg hover:bg-secondary/80 transition-all duration-300 active:scale-95 shadow-lg shadow-black/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    title="Automatically scan USB ports for a GRBL controller"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-xs uppercase tracking-wider">{t('connection.autoDetect', 'Auto-Detect')}</span>
+                </button>
+            )}
+
             {isConnected ? (
                 <button
                     onClick={onDisconnect}

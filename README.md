@@ -22,7 +22,38 @@ This repository contains multiple interconnected applications and packages:
 - **Visualization**: Interactive 3D rendering of toolpaths, stock material, and dynamic chip spawning during cutting simulation.
 - **Remote Operations**: Support for remote job control and monitoring across a local network.
 - **Job Documentation**: Tracking of recent jobs and file library management.
+- **Plugin System**: Extend functionality by writing custom JavaScript/Node.js plugins that hook into real-time application state.
 - **Extensibility**: Built with modern web technologies (TypeScript, React, XState, Zustand), making the interface highly customizable and the architecture easy to extend.
+
+## Creating a Plugin
+
+mycnc.app supports a lightweight plugin architecture that allows you to execute custom code in the Node.js Main Process whenever the application state changes (e.g., job completion, machine connection, UI updates).
+
+1. **Locate the Plugins Directory:** Open `mycnc.app`, go to the **Help** menu, and click **Open Plugins Folder**. This opens the `plugins` folder inside your user data directory.
+2. **Create a Plugin File:** Create a new file with a `.js` or `.cjs` extension in this folder (e.g., `my-custom-integration.js`).
+3. **Write the Plugin Logic:** Export an object with a `name` and an `onStateUpdate(storeName, state)` async function. The application will pass the name of the Zustand store and its current state every time it updates.
+
+**Example Plugin (`discord-webhook.js`):**
+
+```javascript
+module.exports = {
+    name: 'Discord Webhook Notification',
+    onStateUpdate: async (storeName, state) => {
+        // Listen for the jobStore to signal a completed job
+        if (storeName === 'jobStore' && state.jobStatus === 'complete') {
+            console.log('[Plugin] Job completed! Sending Discord webhook...');
+            
+            fetch('https://discord.com/api/webhooks/YOUR_WEBHOOK_URL', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: "CNC Job has finished successfully!" })
+            }).catch(console.error);
+        }
+    }
+};
+```
+
+4. **Restart:** Restart the application for it to load your new plugin. You should see `Loaded plugin: Discord Webhook Notification` in the terminal or logs.
 
 ## Development Setup
 

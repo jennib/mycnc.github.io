@@ -377,37 +377,47 @@ self.onmessage = (event) => {
         axisVertices.push(...zLabel);
         axisColors.push(...Array(6).fill(blue).flat());
 
+        const toolpathVerticesArray = new Float32Array(toolpathVertices);
+        const gridVerticesArray = new Float32Array(gridVertices);
+        const gridColorsArray = new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat());
+        const boundsVerticesArray = new Float32Array(boundsVertices);
+        const boundsColorsArray = new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat());
+        const axisVerticesArray = new Float32Array(axisVertices);
+        const axisColorsArray = new Float32Array(axisColors);
+        const planeVerticesArray = new Float32Array(planeVertices);
+        const planeColorsArray = new Float32Array(planeColors);
+
         (self as any).postMessage({
             type: 'processedGCode',
             parsedGCode: parsedGCode,
-            toolpathVertices: new Float32Array(toolpathVertices),
+            toolpathVertices: toolpathVerticesArray,
             toolpathColors: initialToolpathColors,
             toolpathSegmentMetadata: _toolpathSegmentMetadata,
-            toolModelInitialVertices: toolModelInitialVertices, // New field for initial geometry
-            toolModelInitialColors: toolModelInitialColors,     // New field for initial geometry
-            toolCurrentPosition: toolCurrentPosition,           // New field for current position
-            workAreaGridVertices: new Float32Array(gridVertices),
-            workAreaGridColors: new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat()),
-            workAreaBoundsVertices: new Float32Array(boundsVertices),
-            workAreaBoundsColors: new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat()),
-            workAreaAxisVertices: new Float32Array(axisVertices),
-            workAreaAxisColors: new Float32Array(axisColors),
-            workAreaPlaneVertices: new Float32Array(planeVertices),
-            workAreaPlaneColors: new Float32Array(planeColors),
+            toolModelInitialVertices: toolModelInitialVertices,
+            toolModelInitialColors: toolModelInitialColors,
+            toolCurrentPosition: toolCurrentPosition,
+            workAreaGridVertices: gridVerticesArray,
+            workAreaGridColors: gridColorsArray,
+            workAreaBoundsVertices: boundsVerticesArray,
+            workAreaBoundsColors: boundsColorsArray,
+            workAreaAxisVertices: axisVerticesArray,
+            workAreaAxisColors: axisColorsArray,
+            workAreaPlaneVertices: planeVerticesArray,
+            workAreaPlaneColors: planeColorsArray,
         }, [
-            new Float32Array(toolpathVertices).buffer,
+            toolpathVerticesArray.buffer,
             initialToolpathColors.buffer,
-            toolModelInitialVertices ? toolModelInitialVertices.buffer : null, // Transfer initial geometry
-            toolModelInitialColors ? toolModelInitialColors.buffer : null,     // Transfer initial geometry
-            new Float32Array(gridVertices).buffer,
-            new Float32Array(Array(gridVertices.length / 3).fill(gridColor).flat()).buffer,
-            new Float32Array(boundsVertices).buffer,
-            new Float32Array(Array(boundsVertices.length / 3).fill(boundsColor).flat()).buffer,
-            new Float32Array(axisVertices).buffer,
-            new Float32Array(axisColors).buffer,
-            new Float32Array(planeVertices).buffer,
-            new Float32Array(planeColors).buffer
-        ].filter(Boolean) as Transferable[]); // Filter out nulls for toolModel buffers
+            toolModelInitialVertices ? toolModelInitialVertices.buffer : null,
+            toolModelInitialColors ? toolModelInitialColors.buffer : null,
+            gridVerticesArray.buffer,
+            gridColorsArray.buffer,
+            boundsVerticesArray.buffer,
+            boundsColorsArray.buffer,
+            axisVerticesArray.buffer,
+            axisColorsArray.buffer,
+            planeVerticesArray.buffer,
+            planeColorsArray.buffer
+        ].filter(Boolean) as Transferable[]);
     } else if (type === 'updateColors') {
         if (!_segments || _segments.length === 0 || !_toolpathSegmentMetadata || _toolpathSegmentMetadata.length === 0) return;
 

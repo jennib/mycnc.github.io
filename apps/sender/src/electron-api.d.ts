@@ -28,6 +28,9 @@ interface ElectronAPI {
     // Startup file
     getStartupFile?: () => Promise<{ name: string; content: string } | null>;
     onLoadRemoteFile?: (callback: (file: { name: string; content: string }) => void) => void;
+
+    // Serial Port Auto-Detect
+    setAutoSelectIndex?: (index: number) => Promise<void>;
 }
 
 // Augment the Window interface to include electronAPI

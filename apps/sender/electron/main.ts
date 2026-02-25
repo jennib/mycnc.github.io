@@ -4,6 +4,7 @@ import path from "path";
 import net from "net";
 import os from "os";
 import http from "http";
+// @ts-ignore
 import express from "express";
 import { Server as SocketIOServer } from "socket.io";
 import { createProxyMiddleware } from "http-proxy-middleware";
@@ -21,6 +22,69 @@ let manualUpdateCheck = false;
 // --- Remote Server Setup ---
 // Cache for application state to send to new clients
 let appState: Record<string, any> = {};
+
+// --- Plugin System ---
+const plugins: any[] = [];
+let pluginsDir = '';
+
+const loadPlugins = async () => {
+  pluginsDir = path.join(app.getPath('userData'), 'plugins');
+  if (!fs.existsSync(pluginsDir)) {
+    fs.mkdirSync(pluginsDir, { recursive: true });
+
+    // Write an example plugin
+    const examplePath = path.join(pluginsDir, 'example-discord-webhook.js.disabled');
+    const exampleContent = `// Rename this file to .js to enable it.
+// This plugin listens for Job Completion events from mycnc.app and can act accordingly.
+
+module.exports = {
+    name: 'Discord Webhook Notification',
+    onStateUpdate: async (storeName, state) => {
+        // We look for job completion from the jobStore
+        if (storeName === 'jobStore' && state.jobStatus === 'complete') {
+            console.log('[Plugin] Job completed! Sending imaginary Discord webhook...');
+            
+            // Example of what a real payload might look like:
+            // fetch('https://discord.com/api/webhooks/...', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ content: "CNC Job has finished successfully!" })
+            // }).catch(console.error);
+        }
+    }
+};
+`;
+    fs.writeFileSync(examplePath, exampleContent);
+  }
+
+  const files = fs.readdirSync(pluginsDir);
+  for (const file of files) {
+    if (file.endsWith('.js') || file.endsWith('.cjs')) {
+      try {
+        const filePath = path.join(pluginsDir, file);
+        const pluginUrl = require('url').pathToFileURL(filePath).href;
+        const imported = await import(pluginUrl);
+        const pluginInstance = imported.default || imported;
+        if (pluginInstance && typeof pluginInstance.onStateUpdate === 'function') {
+          plugins.push(pluginInstance);
+          console.log(`Loaded plugin: ${pluginInstance.name || file}`);
+        }
+      } catch (err) {
+        console.error(`Failed to load plugin ${file}:`, err);
+      }
+    }
+  }
+};
+
+const notifyPlugins = (storeName: string, state: any) => {
+  plugins.forEach(plugin => {
+    try {
+      plugin.onStateUpdate(storeName, state);
+    } catch (err) {
+      console.error(`Plugin ${plugin.name || 'unknown'} error:`, err);
+    }
+  });
+};
 
 const appServer = express();
 const httpServer = http.createServer(appServer);
@@ -68,7 +132,7 @@ const connectToTcp = (ip: string, port: number): Promise<boolean> => {
 
     tcpSocket.on("connect", () => {
       clearTimeout(connectionTimeout);
-      console.log(`TCP Connected to ${ip}:${port}`);
+      console.log(`TCP Connected to ${ip}: ${port}`);
       resolve(true);
     });
 
@@ -207,7 +271,7 @@ const createWindow = () => {
     dialog.showMessageBox(mainWindow, {
       type: 'info',
       title: 'Update Available',
-      message: `A new version (${info.version}) is available. Do you want to download it now?`,
+      message: `A new version(${info.version}) is available.Do you want to download it now ? `,
       buttons: ['Yes', 'No']
     }).then((result) => {
       if (result.response === 0) { // 'Yes' button
@@ -296,7 +360,7 @@ const createWindow = () => {
     });
 
     const query = new URLSearchParams(params).toString();
-    const hash = `#/camera-popout?${query}`;
+    const hash = `# / camera - popout ? ${query}`;
 
     if (process.env.VITE_DEV_SERVER_URL) {
       cameraWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}${hash}`);
@@ -379,6 +443,16 @@ const createWindow = () => {
           },
         },
         {
+          label: "Open Plugins Folder",
+          click: async () => {
+            const tempPluginsDir = path.join(app.getPath('userData'), 'plugins');
+            if (!fs.existsSync(tempPluginsDir)) {
+              fs.mkdirSync(tempPluginsDir, { recursive: true });
+            }
+            await shell.openPath(tempPluginsDir);
+          },
+        },
+        {
           label: "View on GitHub",
           click: async () => {
             await shell.openExternal(
@@ -410,6 +484,8 @@ const createWindow = () => {
     // Update local cache
     appState[storeName] = { ...appState[storeName], ...state };
 
+    notifyPlugins(storeName, state);
+
     // Broadcast to remote clients
     if (io) {
       io.emit("state-update", { storeName, state });
@@ -420,11 +496,27 @@ const createWindow = () => {
     return appState;
   });
 
-  const handleSelectSerialPort = async (event, portList, webContents, callback) => {
+  let autoSelectIndex = -1;
+
+  ipcMain.handle("set-auto-select-index", (event, index) => {
+    autoSelectIndex = index;
+  });
+
+  const handleSelectSerialPort = async (event: any, portList: any[], webContents: any, callback: any) => {
     // Re-register the handler for the next time, as `once` makes it a single-use handler.
     webContents.session.once('select-serial-port', handleSelectSerialPort);
 
     event.preventDefault();
+
+    if (autoSelectIndex >= 0) {
+      if (portList && portList.length > 0 && autoSelectIndex < portList.length) {
+        callback(portList[autoSelectIndex].portId);
+      } else {
+        callback("");
+      }
+      return;
+    }
+
     if (portList && portList.length > 0) {
       try {
         const { response } = await dialog.showMessageBox(mainWindow, {
@@ -484,7 +576,7 @@ const createWindow = () => {
       return callback(true);
     }
     // Handle individual camera/microphone requests if they come separately
-    if (permission === 'camera' || permission === 'microphone') {
+    if ((permission as string) === 'camera' || (permission as string) === 'microphone') {
 
       return callback(true);
     }
@@ -509,7 +601,7 @@ const createWindow = () => {
 
     if (isDevelopment) {
       // Relaxed CSP for development
-      csp = `default-src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
+      csp = `default -src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
     } else {
       // Stricter CSP for production
       csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:;`;
@@ -580,8 +672,7 @@ if (process.env.VITE_DEV_SERVER_URL) {
     target: process.env.VITE_DEV_SERVER_URL,
     changeOrigin: true,
     ws: true, // Proxy websockets
-    logLevel: 'silent'
-  }));
+  } as any));
 } else {
   // Serve static files
   appServer.use(express.static(path.join(__dirname, '../renderer')));
@@ -611,6 +702,8 @@ io.on("connection", (socket) => {
   socket.on("state-update", ({ storeName, state }) => {
     // Update local cache
     appState[storeName] = { ...appState[storeName], ...state };
+
+    notifyPlugins(storeName, state);
 
     // Broadcast to other remote clients (excluding sender)
     socket.broadcast.emit("state-update", { storeName, state });
@@ -646,7 +739,10 @@ httpServer.listen(PORT, '0.0.0.0', () => {
   });
 });
 
-app.on("ready", createWindow);
+app.on("ready", async () => {
+  await loadPlugins();
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
