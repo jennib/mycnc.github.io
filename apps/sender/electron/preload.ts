@@ -46,4 +46,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // Serial Port Auto-Detect
   setAutoSelectIndex: (index: number) => ipcRenderer.invoke('set-auto-select-index', index),
+
+  // Plugins
+  getPlugins: () => ipcRenderer.invoke("get-plugins"),
+  togglePlugin: (filename: string, enable: boolean) => ipcRenderer.invoke("toggle-plugin", filename, enable),
+  deletePlugin: (filename: string) => ipcRenderer.invoke("delete-plugin", filename),
+  openPluginsFolder: () => ipcRenderer.invoke("open-plugins-folder"),
 });

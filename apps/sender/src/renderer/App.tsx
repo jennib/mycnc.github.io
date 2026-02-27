@@ -50,6 +50,8 @@ import ErrorBoundary from "./ErrorBoundary";
 import UnsupportedBrowser from "./components/UnsupportedBrowser";
 import SpindleConfirmationModal from "./components/SpindleConfirmationModal";
 import InfoModal from "./components/InfoModal";
+import PluginManagerModal from "./components/PluginManagerModal";
+import StockAlignmentWizard from "./components/StockAlignmentWizard/StockAlignmentWizard";
 import { GRBL_ALARM_CODES } from "@mycnc/shared";
 import { useUIStore } from "./stores/uiStore";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -135,6 +137,7 @@ const MainApp: React.FC = () => {
     infoModalTitle,
     infoModalMessage,
     isGrblSettingsModalOpen,
+    isPluginManagerModalOpen,
     returnToWelcome,
     actions: uiActions,
   } = useUIStore((state) => state);
@@ -698,9 +701,20 @@ const MainApp: React.FC = () => {
         onImport={settingsActions.importSettings}
         onContactClick={uiActions.openContactModal}
         onOpenGrblSettings={uiActions.openGrblSettingsModal}
+        onOpenPluginManager={() => {
+          uiActions.closeSettingsModal();
+          uiActions.openPluginManagerModal();
+        }}
       />
 
       <GrblSettingsModal />
+
+      <PluginManagerModal
+        isOpen={isPluginManagerModalOpen}
+        onClose={uiActions.closePluginManagerModal}
+      />
+
+      <StockAlignmentWizard />
 
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}

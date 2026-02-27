@@ -23,6 +23,8 @@ type UIState = {
   returnToWelcome: boolean;
   isWebcamPeekOpen: boolean;
   isGrblSettingsModalOpen: boolean;
+  isPluginManagerModalOpen: boolean;
+  isStockAlignmentWizardOpen: boolean;
   preflightWarnings: { type: 'error' | 'warning'; message: string }[];
   actions: {
     openPreflightModal: () => void;
@@ -48,6 +50,10 @@ type UIState = {
     openGrblSettingsModal: () => void;
     closeGrblSettingsModal: () => void;
     setPreflightWarnings: (warnings: { type: 'error' | 'warning'; message: string }[]) => void;
+    openPluginManagerModal: () => void;
+    closePluginManagerModal: () => void;
+    openStockAlignmentWizard: () => void;
+    closeStockAlignmentWizard: () => void;
   };
 };
 
@@ -72,6 +78,8 @@ export const useUIStore = create<UIState>((set) => ({
   returnToWelcome: false,
   isWebcamPeekOpen: false,
   isGrblSettingsModalOpen: false,
+  isPluginManagerModalOpen: false,
+  isStockAlignmentWizardOpen: false,
   preflightWarnings: [],
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
@@ -97,5 +105,9 @@ export const useUIStore = create<UIState>((set) => ({
     openGrblSettingsModal: () => set({ isGrblSettingsModalOpen: true }),
     closeGrblSettingsModal: () => set({ isGrblSettingsModalOpen: false }),
     setPreflightWarnings: (warnings) => set({ preflightWarnings: warnings }),
+    openPluginManagerModal: () => set({ isPluginManagerModalOpen: true }),
+    closePluginManagerModal: () => set({ isPluginManagerModalOpen: false }),
+    openStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: true }),
+    closeStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: false }),
   },
 }));

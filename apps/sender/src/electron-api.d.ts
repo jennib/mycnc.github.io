@@ -31,6 +31,12 @@ interface ElectronAPI {
 
     // Serial Port Auto-Detect
     setAutoSelectIndex?: (index: number) => Promise<void>;
+
+    // Plugins
+    getPlugins?: () => Promise<{ filename: string; name: string; isEnabled: boolean; }[]>;
+    togglePlugin?: (filename: string, enable: boolean) => Promise<boolean>;
+    deletePlugin?: (filename: string) => Promise<boolean>;
+    openPluginsFolder?: () => Promise<void>;
 }
 
 // Augment the Window interface to include electronAPI

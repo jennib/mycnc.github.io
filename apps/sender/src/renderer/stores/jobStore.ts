@@ -13,12 +13,14 @@ interface JobState {
   jobStatus: JobStatus;
   progress: number;
   timeEstimate: TimeEstimate;
+  stockRotationAngle: number;
   actions: {
     loadFile: (content: string, name: string) => void;
     updateGCode: (content: string) => void;
     clearFile: () => void;
     setJobStatus: (status: JobStatus) => void;
     setProgress: (progress: number) => void;
+    setStockRotationAngle: (angle: number) => void;
   };
 }
 
@@ -28,6 +30,7 @@ const initialState = {
   jobStatus: JobStatus.Idle,
   progress: 0,
   timeEstimate: { totalSeconds: 0, cumulativeSeconds: [] },
+  stockRotationAngle: 0,
 };
 
 const cleanGCode = (content: string): string[] => {
@@ -50,6 +53,7 @@ export const useJobStore = create<JobState>((set) => ({
         jobStatus: JobStatus.Idle,
         progress: 0,
         timeEstimate: estimateGCodeTime(lines),
+        stockRotationAngle: 0, // Reset when compiling a new job
       });
     },
     updateGCode: (content) => {
@@ -65,5 +69,6 @@ export const useJobStore = create<JobState>((set) => ({
     clearFile: () => set(initialState),
     setJobStatus: (status) => set({ jobStatus: status }),
     setProgress: (progress) => set({ progress }),
+    setStockRotationAngle: (angle) => set({ stockRotationAngle: angle }),
   },
 }));
