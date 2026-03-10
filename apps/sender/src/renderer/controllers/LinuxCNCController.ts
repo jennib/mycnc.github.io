@@ -37,6 +37,7 @@ export class LinuxCNCController implements Controller {
         wpos: { x: 0, y: 0, z: 0 },
         mpos: { x: 0, y: 0, z: 0 },
         wco: { x: 0, y: 0, z: 0 },
+        wcs: 'G54',
         spindle: { state: 'off', speed: 0 },
         ov: [100, 100, 100],
     };
@@ -85,6 +86,7 @@ export class LinuxCNCController implements Controller {
                 wpos: { x: 0, y: 0, z: 0 },
                 mpos: { x: 0, y: 0, z: 0 },
                 wco: { x: 0, y: 0, z: 0 },
+                wcs: 'G54',
                 spindle: { state: 'off', speed: 0 },
                 ov: [100, 100, 100],
             };

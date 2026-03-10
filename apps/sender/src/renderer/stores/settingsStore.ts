@@ -8,6 +8,7 @@ export interface ConnectionSettings {
   type: 'usb' | 'tcp' | 'simulator';
   tcpIp: string;
   tcpPort: number;
+  baudRate?: number;
 }
 
 interface SettingsState {

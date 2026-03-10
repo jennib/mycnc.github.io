@@ -28,7 +28,10 @@ export type {
     GeneratorSettings,
     TimeEstimate,
     WebcamSettings,
-    GCodePoint
+    GCodePoint,
+    DrawerParams,
+    BoundingBox,
+    ToolpathSegmentMetadata
 } from './types';
 export {
     DEFAULT_WEBCAM_SETTINGS,

@@ -101,6 +101,15 @@ export declare interface BoreParams {
     toolId: number | null;
 }
 
+export declare interface BoundingBox {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    minZ: number;
+    maxZ: number;
+}
+
 export { Camera }
 
 export { CameraOff }
@@ -169,6 +178,28 @@ export declare const DEFAULT_WEBCAM_SETTINGS: WebcamSettings;
 export { Dock }
 
 export { Download }
+
+export declare interface DrawerParams {
+    joineryType: 'finger' | 'butt';
+    bottomType?: 'flat' | 'groove' | 'rabbet';
+    bottomChannelDepth?: number | '';
+    bottomWoodThickness?: number | '';
+    bottomZClearance?: number | '';
+    cornerClearance?: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    partToGenerate: 'all' | 'front' | 'back' | 'left' | 'right' | 'bottom';
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    woodThickness: number | '';
+    fingerWidth: number | '';
+    tolerance: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
 
 export declare interface DrillingParams {
     drillType: 'single' | 'rect' | 'circ';
@@ -286,6 +317,7 @@ export declare interface GeneratorSettings {
     relief: ReliefParams;
     stl: STLParams;
     svg: SVGParams;
+    drawer: DrawerParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
@@ -725,6 +757,13 @@ export declare interface Tool {
     cutDirection: CutDirection;
 }
 
+export declare interface ToolpathSegmentMetadata {
+    startVertexIndex: number;
+    vertexCount: number;
+    boundingBox: BoundingBox;
+    gcodeSegmentIndex: number;
+}
+
 export declare type ToolType = 'endmill' | 'ballmill' | 'bullhead' | 'vbit30' | 'vbit60' | 'vbit90' | 'surfacing' | 'cornmill';
 
 export { Trash2 }
@@ -744,6 +783,9 @@ export declare interface WebcamSettings {
     selectedAudioDeviceId: string;
     volume: number;
     isMuted: boolean;
+    mode?: 'local' | 'webrtc' | string;
+    webRTCUrl?: string;
+    webRTCAutoConnect?: boolean;
 }
 
 export { X }

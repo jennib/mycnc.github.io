@@ -731,6 +731,18 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <ProbeXY className="w-5 h-5" />
                 </button>
               </div>
+              <button
+                onClick={() => {
+                  // Need to dynamically import or just use store outside, but we can just require uiStore
+                  import('../stores/uiStore').then(({ useUIStore }) => {
+                    useUIStore.getState().actions.openStockAlignmentWizard();
+                  });
+                }}
+                disabled={isProbeDisabled}
+                className="mt-2 w-full p-2 bg-accent-cyan/20 text-accent-cyan font-semibold rounded-lg hover:bg-accent-cyan/30 border border-accent-cyan/50 disabled:opacity-50 flex items-center justify-center gap-2 transition-all text-sm"
+              >
+                <RotateCw className="w-4 h-4" /> Stock Alignment Wizard
+              </button>
             </div>
 
             {/* Units Controls */}

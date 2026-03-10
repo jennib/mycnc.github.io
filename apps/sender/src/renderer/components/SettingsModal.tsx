@@ -34,9 +34,10 @@ interface SettingsModalProps {
     onImport: (imported: any) => void;
     onContactClick: () => void;
     onOpenGrblSettings: () => void;
+    onOpenPluginManager: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings, onOpenPluginManager }) => {
     const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
@@ -290,6 +291,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.appConfigDescription', 'Export/Import all settings, macros, and tools.')}</p>
                             <div className="flex gap-2">
+                                <button type="button" onClick={onOpenPluginManager} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
+                                    <Settings className="w-4 h-4" />Plugins
+                                </button>
                                 <input type="file" ref={importFileRef} className="hidden" accept=".json" onChange={handleFileImport} />
                                 <button onClick={() => importFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-secondary/50 text-text-primary text-sm font-semibold rounded-lg hover:bg-secondary border border-white/10 transition-all shadow-sm active:scale-95">
                                     <Upload className="w-4 h-4" />{t('settings.import')}

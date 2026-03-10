@@ -22,7 +22,8 @@ import type {
     GeneratorSettings,
     TimeEstimate,
     WebcamSettings,
-    GCodePoint
+    GCodePoint,
+    DrawerParams
 } from '@mycnc/shared';
 import { JobStatus } from '@mycnc/shared';
 
@@ -50,7 +51,8 @@ export type {
     GeneratorSettings,
     TimeEstimate,
     WebcamSettings,
-    GCodePoint
+    GCodePoint,
+    DrawerParams
 };
 
 export interface BoundingBox {
