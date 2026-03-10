@@ -297,6 +297,27 @@ export interface DadoRabbetParams {
     toolId: number | null;
 }
 
+export interface DecorativeJoineryParams {
+    type: 'dovetail_inlay' | 'puzzle' | 'wave' | 'blind_mortise';
+    length: number | '';
+    width: number | '';
+    depth: number | '';
+    repeatCount: number | '';
+    pitch: number | '';
+    tolerance: number | '';
+    inset: number | ''; // Distance from the edge for blind joints
+    part: 'socket' | 'pin' | 'both';
+    orientation: 'horizontal' | 'vertical';
+    offsetX: number | '';
+    offsetY: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export interface DrawerParams {
     joineryType: 'finger' | 'butt';
     bottomType?: 'flat' | 'groove' | 'rabbet';
@@ -383,6 +404,7 @@ export interface GeneratorSettings {
     drawer: DrawerParams;
     mortisetenon: MortiseTenonParams;
     dadorabbet: DadoRabbetParams;
+    decorative: DecorativeJoineryParams;
 }
 
 export interface TimeEstimate {

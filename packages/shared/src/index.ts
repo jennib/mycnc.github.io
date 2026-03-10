@@ -32,6 +32,7 @@ export type {
     DrawerParams,
     MortiseTenonParams,
     DadoRabbetParams,
+    DecorativeJoineryParams,
     BoundingBox,
     ToolpathSegmentMetadata
 } from './types';

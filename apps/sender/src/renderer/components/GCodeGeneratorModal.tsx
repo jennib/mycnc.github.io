@@ -21,6 +21,7 @@ import SVGGenerator from './SVGGenerator';
 import DrawerGenerator from './DrawerGenerator';
 import MortiseTenonGenerator from './MortiseTenonGenerator';
 import DadoRabbetGenerator from './DadoRabbetGenerator';
+import DecorativeJoineryGenerator from './DecorativeJoineryGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1489,7 +1490,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative'];
 
             if (workerResultTypes.includes(activeTab)) {
                 result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
@@ -1604,7 +1605,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation', 'part'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1764,6 +1765,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.drawer.title')} isActive={activeTab === 'drawer'} onClick={() => setActiveTab('drawer')} />
                             <Tab label={t('generators.mortiseTenon.title')} isActive={activeTab === 'mortisetenon'} onClick={() => setActiveTab('mortisetenon')} />
                             <Tab label={t('generators.dadoRabbet.title')} isActive={activeTab === 'dadorabbet'} onClick={() => setActiveTab('dadorabbet')} />
+                            <Tab label={t('generators.decorative.title')} isActive={activeTab === 'decorative'} onClick={() => setActiveTab('decorative')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1917,6 +1919,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'dadorabbet' && (
                                 <DadoRabbetGenerator
                                     params={generatorSettings.dadorabbet || DEFAULT_GENERATOR_SETTINGS.dadorabbet}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'decorative' && (
+                                <DecorativeJoineryGenerator
+                                    params={generatorSettings.decorative || DEFAULT_GENERATOR_SETTINGS.decorative}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}

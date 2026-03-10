@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.34] - 2026-03-10
+
+### Fixed
+- **Web Serial Connectivity**: Restored ability to trigger the browser's serial port picker by fixing Electron shim delegation.
+- **Remote vs Standalone Logic**: Improved detection of active remote sessions to ensure local hardware access works correctly when running as a standalone web app.
+
 ## [1.0.33] - 2026-03-10
 
 ### Added

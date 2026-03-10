@@ -18,7 +18,7 @@ export function useJob() {
 
   const handleJobControl = useCallback(async (action: 'start' | 'pause' | 'resume' | 'stop' | 'gracefulStop', options?: { startLine?: number }) => {
     // Check if Remote Client
-    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && action !== 'start') {
+    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && window.electronAPI.isRemoteConnected?.() && action !== 'start') {
       console.log(`Remote Client: Delegating ${action.toUpperCase()}_JOB to Host`);
       let type = '';
       if (action === 'pause') type = 'PAUSE_JOB';
@@ -83,7 +83,7 @@ export function useJob() {
 
   const handleStartJobConfirmed = useCallback((options: { isDryRun: boolean }) => {
     // Check if Remote Client
-    if (window.electronAPI && !window.electronAPI.isElectron) {
+    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && window.electronAPI.isRemoteConnected?.()) {
       console.log("Remote Client: Delegating Start Job to Host via Remote Action");
       if (window.electronAPI.sendRemoteAction) {
         window.electronAPI.sendRemoteAction({

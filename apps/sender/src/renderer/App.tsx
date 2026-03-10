@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import MobileLanding from "./components/MobileLanding";
@@ -299,7 +299,7 @@ const MainApp: React.FC = () => {
 
   const handleConnect = (options: ConnectionOptions) => {
     // Check if Remote Client
-    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction) {
+    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && window.electronAPI.isRemoteConnected?.()) {
       console.log("Remote Client: Delegating Connect to Host");
       window.electronAPI.sendRemoteAction({
         type: 'CONNECT',
@@ -319,7 +319,7 @@ const MainApp: React.FC = () => {
 
   const handleDisconnect = () => {
     // Check if Remote Client
-    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction) {
+    if (window.electronAPI && !window.electronAPI.isElectron && window.electronAPI.sendRemoteAction && window.electronAPI.isRemoteConnected?.()) {
       console.log("Remote Client: Delegating Disconnect to Host");
       window.electronAPI.sendRemoteAction({
         type: 'DISCONNECT'

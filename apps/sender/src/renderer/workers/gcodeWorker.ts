@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -68,6 +68,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 break;
             case 'dadorabbet':
                 result = generateDadoRabbetCode(settings, params as DadoRabbetParams, toolLibrary, unit);
+                break;
+            case 'decorative':
+                result = generateDecorativeJoineryCode(settings, params as DecorativeJoineryParams, toolLibrary, unit);
                 break;
         }
 
@@ -1644,6 +1647,226 @@ const generateDadoRabbetCode = (machineSettings: MachineSettings, params: DadoRa
     code.push(`M5`);
 
     if (bounds.minX === Infinity) bounds = { minX: 0, maxX: length, minY: 0, maxY: width };
+
+    return { code, paths, bounds, error: null };
+};
+
+const generateDecorativeJoineryCode = (machineSettings: MachineSettings, params: DecorativeJoineryParams, toolLibrary: Tool[], unit: string) => {
+    let bounds: Bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const code: string[] = [];
+    const paths: PreviewPath[] = [];
+
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: "No tool selected", code, paths, bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: "No tool selected", code, paths, bounds };
+
+    const length = parseFloat(String(params.length));
+    const patternWidth = parseFloat(String(params.width));
+    const depth = parseFloat(String(params.depth));
+    const repeatCount = parseInt(String(params.repeatCount));
+    const pitch = parseFloat(String(params.pitch));
+    const tolerance = parseFloat(String(params.tolerance || 0));
+    const inset = parseFloat(String(params.inset || 0));
+    const offsetX = parseFloat(String(params.offsetX || 0));
+    const offsetY = parseFloat(String(params.offsetY || 0));
+    
+    const feed = parseFloat(String(params.feed));
+    const plunge = parseFloat(String(params.plungeFeed));
+    const spindle = parseFloat(String(params.spindle));
+    const safeZ = parseFloat(String(params.safeZ));
+    const dpp = parseFloat(String(params.depthPerPass));
+    const toolDiam = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
+    const R = toolDiam / 2;
+
+    if (isNaN(length) || isNaN(patternWidth) || isNaN(depth) || length <= 0 || repeatCount <= 0) {
+        return { error: "Invalid dimensions or repeat count.", code, paths, bounds };
+    }
+
+    code.push(`(--- Native Interlocking Joinery ---)`);
+    code.push(`(Type: ${params.type}, Part: ${params.part})`);
+    code.push(`G21 G90`);
+    code.push(`M3 S${spindle}`);
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+
+    const updateBounds = (x: number, y: number) => {
+        if (x < bounds.minX) bounds.minX = x;
+        if (x > bounds.maxX) bounds.maxX = x;
+        if (y < bounds.minY) bounds.minY = y;
+        if (y > bounds.maxY) bounds.maxY = y;
+    };
+
+    // Helper to generate a single repeat of the pattern
+    const getPatternProfile = (t: number): { x: number, y: number } => {
+        // t goes from 0 to 1 for one full repeat
+        let x = t * pitch;
+        let y = 0;
+
+        if (params.type === 'wave') {
+            y = Math.sin(t * Math.PI * 2) * (patternWidth / 2);
+        } else if (params.type === 'puzzle') {
+            if (t < 0.25) {
+                y = 0;
+            } else if (t < 0.75) {
+                const innerT = (t - 0.25) / 0.5;
+                const angle = innerT * Math.PI;
+                x = 0.25 * pitch + (0.5 * pitch) / 2 + Math.cos(angle - Math.PI) * (0.5 * pitch / 2);
+                y = Math.sin(angle) * patternWidth;
+            } else {
+                y = 0;
+            }
+        } else if (params.type === 'dovetail_inlay') {
+             if (t < 0.2) {
+                 y = 0;
+             } else if (t < 0.4) {
+                 const innerT = (t - 0.2) / 0.2;
+                 y = innerT * patternWidth;
+             } else if (t < 0.6) {
+                 y = patternWidth;
+             } else if (t < 0.8) {
+                 const innerT = (t - 0.6) / 0.2;
+                 y = (1 - innerT) * patternWidth;
+             } else {
+                 y = 0;
+             }
+        } else if (params.type === 'blind_mortise') {
+            // Rectangular pattern: 0.25 low, 0.5 high, 0.25 low
+            if (t < 0.25 || t > 0.75) {
+                y = 0;
+            } else {
+                y = patternWidth;
+            }
+        }
+        return { x, y };
+    };
+
+    const generatePart = (partType: 'socket' | 'pin', partOffset: { x: number, y: number }) => {
+        const totalPasses = Math.ceil(depth / dpp);
+        const isSocket = partType === 'socket';
+        
+        // Offset for tool radius and tolerance
+        const gap = isSocket ? (tolerance / 2) : (-tolerance / 2);
+        
+        if (params.type === 'blind_mortise' && isSocket) {
+            // For blind mortises, we cut distinct rectangular pockets
+            const mortiseLength = pitch * 0.5; // Half of pitch is the mortise
+            
+            for (let pass = 1; pass <= totalPasses; pass++) {
+                const currentZ = Math.max(-pass * dpp, -depth);
+                const isLastPass = pass === totalPasses;
+                code.push(`(Pass ${pass})`);
+
+                for (let r = 0; r < repeatCount; r++) {
+                    const startX = offsetX + partOffset.x + r * pitch + pitch * 0.25 - gap;
+                    const startY = offsetY + partOffset.y + inset - gap;
+                    const endX = startX + mortiseLength + 2 * gap;
+                    const endY = startY + patternWidth + 2 * gap;
+                    
+                    // Simple pocketing routine: spiral or concentric for the rectangle
+                    const innerR = Math.max(0, (patternWidth + 2 * gap) / 2 - R);
+                    const innerL = Math.max(0, (mortiseLength + 2 * gap) / 2 - R);
+                    
+                    // Center of mortise
+                    const cx = startX + (mortiseLength + 2 * gap) / 2;
+                    const cy = startY + (patternWidth + 2 * gap) / 2;
+
+                    code.push(`G0 X${cx.toFixed(3)} Y${cy.toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    
+                    // If narrow, just do a line
+                    if (innerR < 0.1 && innerL < 0.1) {
+                        code.push(`G1 X${startX.toFixed(3)} Y${(startY + endY) / 2} F${feed}`);
+                        code.push(`G1 X${endX.toFixed(3)} Y${(startY + endY) / 2}`);
+                    } else {
+                        // Standard box pocket (one pass for now as it's typically small)
+                        code.push(`G1 X${(startX + R).toFixed(3)} Y${(startY + R).toFixed(3)} F${feed}`);
+                        code.push(`G1 X${(endX - R).toFixed(3)}`);
+                        code.push(`G1 Y${(endY - R).toFixed(3)}`);
+                        code.push(`G1 X${(startX + R).toFixed(3)}`);
+                        code.push(`G1 Y${(startY + R).toFixed(3)}`);
+                    }
+                    
+                    if (isLastPass) {
+                        paths.push({ 
+                            d: `M ${startX.toFixed(3)} ${startY.toFixed(3)} L ${endX.toFixed(3)} ${startY.toFixed(3)} L ${endX.toFixed(3)} ${endY.toFixed(3)} L ${startX.toFixed(3)} ${endY.toFixed(3)} Z`,
+                            stroke: 'var(--color-accent-red)',
+                            fill: 'var(--color-accent-red-muted)'
+                        });
+                    }
+                    updateBounds(startX, startY);
+                    updateBounds(endX, endY);
+                }
+                code.push(`G0 Z${safeZ.toFixed(3)}`);
+            }
+            return;
+        }
+
+        // For Pin/Tenon or other shapes, we use a profile path
+        const points: { x: number, y: number }[] = [];
+        const segments = 50; 
+        
+        for (let r = 0; r < repeatCount; r++) {
+            for (let s = 0; s < segments; s++) {
+                const { x, y } = getPatternProfile(s / segments);
+                points.push({ x: x + r * pitch, y: y + (isSocket ? inset : 0) });
+            }
+        }
+        const last = getPatternProfile(1);
+        points.push({ x: last.x + (repeatCount - 1) * pitch, y: last.y + (isSocket ? inset : 0) });
+
+        const transformedPoints = points.map(p => {
+            let tx, ty;
+            if (params.orientation === 'horizontal') {
+                tx = p.x + offsetX + partOffset.x;
+                ty = p.y + offsetY + partOffset.y;
+            } else {
+                tx = p.y + offsetX + partOffset.x;
+                ty = p.x + offsetY + partOffset.y;
+            }
+            return { x: tx, y: ty };
+        });
+
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            const currentZ = Math.max(-pass * dpp, -depth);
+            const isLastPass = pass === totalPasses;
+            let pathD = "";
+
+            code.push(`G0 X${transformedPoints[0].x.toFixed(3)} Y${transformedPoints[0].y.toFixed(3)}`);
+            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+
+            transformedPoints.forEach((p, idx) => {
+                code.push(`G1 X${p.x.toFixed(3)} Y${p.y.toFixed(3)} F${feed}`);
+                updateBounds(p.x, p.y);
+                if (isLastPass) {
+                    if (idx === 0) pathD += `M ${p.x.toFixed(3)} ${p.y.toFixed(3)} `;
+                    else pathD += `L ${p.x.toFixed(3)} ${p.y.toFixed(3)} `;
+                }
+            });
+
+            if (isLastPass && pathD) {
+                paths.push({ d: pathD, stroke: isSocket ? 'var(--color-accent-red)' : 'var(--color-accent-blue)' });
+            }
+
+            code.push(`G0 Z${safeZ.toFixed(3)}`);
+        }
+    };
+
+    if (params.part === 'socket' || params.part === 'both') {
+        generatePart('socket', { x: 0, y: 0 });
+    }
+    if (params.part === 'pin' || params.part === 'both') {
+        // Offset pin part for "both" mode to avoid overlap
+        const layoutOffset = params.part === 'both' ? (patternWidth * 2 + 10) : 0;
+        generatePart('pin', { 
+            x: params.orientation === 'horizontal' ? 0 : layoutOffset, 
+            y: params.orientation === 'horizontal' ? layoutOffset : 0 
+        });
+    }
+
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+    code.push(`M5`);
+
+    if (bounds.minX === Infinity) bounds = { minX: 0, maxX: length, minY: 0, maxY: patternWidth };
 
     return { code, paths, bounds, error: null };
 };

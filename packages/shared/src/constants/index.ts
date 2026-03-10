@@ -105,6 +105,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
     drawer: { joineryType: 'finger', partToGenerate: 'all', width: 200, height: 100, depth: 300, woodThickness: 15, fingerWidth: 20, tolerance: 0.1, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null, bottomType: 'flat', bottomChannelDepth: 5, bottomWoodThickness: 5, bottomZClearance: 10, cornerClearance: 'dogbone' },
     mortisetenon: { partToGenerate: 'both', width: 50, height: 20, depth: 10, tolerance: 0.1, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
     dadorabbet: { type: 'dado', orientation: 'horizontal', width: 15, length: 100, depth: 5, offsetX: 0, offsetY: 0, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
+    decorative: { type: 'puzzle', length: 100, width: 20, depth: 5, repeatCount: 4, pitch: 25, tolerance: 0.1, inset: 10, part: 'both', orientation: 'horizontal', offsetX: 0, offsetY: 0, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
 };
 
 export const GRBL_REALTIME_COMMANDS = {

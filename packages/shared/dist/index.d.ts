@@ -181,6 +181,27 @@ export declare interface DadoRabbetParams {
     toolId: number | null;
 }
 
+export declare interface DecorativeJoineryParams {
+    type: 'dovetail_inlay' | 'puzzle' | 'wave' | 'blind_mortise';
+    length: number | '';
+    width: number | '';
+    depth: number | '';
+    repeatCount: number | '';
+    pitch: number | '';
+    tolerance: number | '';
+    inset: number | '';
+    part: 'socket' | 'pin' | 'both';
+    orientation: 'horizontal' | 'vertical';
+    offsetX: number | '';
+    offsetY: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export declare const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings;
 
 export declare const DEFAULT_MACROS: Macro[];
@@ -336,6 +357,7 @@ export declare interface GeneratorSettings {
     drawer: DrawerParams;
     mortisetenon: MortiseTenonParams;
     dadorabbet: DadoRabbetParams;
+    decorative: DecorativeJoineryParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;

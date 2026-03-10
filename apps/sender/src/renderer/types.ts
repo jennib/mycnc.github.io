@@ -25,7 +25,8 @@ import type {
     GCodePoint,
     DrawerParams,
     MortiseTenonParams,
-    DadoRabbetParams
+    DadoRabbetParams,
+    DecorativeJoineryParams
 } from '@mycnc/shared';
 import { JobStatus } from '@mycnc/shared';
 
@@ -56,7 +57,8 @@ export type {
     GCodePoint,
     DrawerParams,
     MortiseTenonParams,
-    DadoRabbetParams
+    DadoRabbetParams,
+    DecorativeJoineryParams
 };
 
 export interface BoundingBox {

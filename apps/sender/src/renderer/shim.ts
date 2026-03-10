@@ -139,5 +139,9 @@ if (!win.electronAPI) {
                 socket.on("remote-action", callback);
             }
         },
+
+        isRemoteConnected: () => {
+            return socket?.connected || false;
+        }
     };
 }
