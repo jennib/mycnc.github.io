@@ -267,6 +267,28 @@ export interface ReliefParams {
     colorAdjustmentMid: number | string;
 }
 
+export interface DrawerParams {
+    joineryType: 'finger' | 'butt';
+    bottomType?: 'flat' | 'groove' | 'rabbet';
+    bottomChannelDepth?: number | '';
+    bottomWoodThickness?: number | '';
+    bottomZClearance?: number | '';
+    cornerClearance?: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    partToGenerate: 'all' | 'front' | 'back' | 'left' | 'right' | 'bottom';
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    woodThickness: number | '';
+    fingerWidth: number | '';
+    tolerance: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export interface STLParams {
     file: File | null;
     fileName: string;
@@ -328,6 +350,7 @@ export interface GeneratorSettings {
     relief: ReliefParams;
     stl: STLParams;
     svg: SVGParams;
+    drawer: DrawerParams;
 }
 
 export interface TimeEstimate {
@@ -340,6 +363,9 @@ export interface WebcamSettings {
     selectedAudioDeviceId: string;
     volume: number;
     isMuted: boolean;
+    mode?: 'local' | 'webrtc' | string;
+    webRTCUrl?: string;
+    webRTCAutoConnect?: boolean;
 }
 
 export interface BoundingBox {

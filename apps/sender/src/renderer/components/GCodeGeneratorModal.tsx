@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from "@mycnc/shared";
+import { DEFAULT_GENERATOR_SETTINGS } from '@/constants';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS, CharacterStroke, CharacterOutline } from '@/services/cncFonts.js';
 import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams, STLParams } from '@/types';
@@ -17,6 +18,7 @@ import TextGenerator from './TextGenerator';
 import ReliefGenerator from './ReliefGenerator';
 import STLGenerator from './STLGenerator';
 import SVGGenerator from './SVGGenerator';
+import DrawerGenerator from './DrawerGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1432,7 +1434,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
     // Helper to spawn worker
     const runGCodeWorker = (type: string, params: any, toolLibrary: Tool[], machineSettings: MachineSettings, arraySettings: any) => {
-        const unit = settings.unit === 'Inches' ? 'in' : 'mm';
+        const workerUnit = unit;
         return new Promise<{ code: string[]; paths: any[]; bounds: any; error: string | null }>((resolve) => {
             const worker = new Worker(new URL('../workers/gcodeWorker.ts', import.meta.url), { type: 'module' });
             worker.onmessage = (e) => {
@@ -1458,7 +1460,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 params,
                 toolLibrary,
                 settings: machineSettings,
-                unit,
+                unit: workerUnit,
                 arraySettings
             });
         });
@@ -1476,17 +1478,19 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             let result: { code: string[]; paths: any[]; bounds: any; error: string | null; } = { code: [], paths: [], bounds: {}, error: "Unknown operation" };
 
             // Defensive check for missing settings
-            const currentSettings = generatorSettings[activeTab as keyof GeneratorSettings];
+            const currentSettings = activeTab === 'drawer'
+                ? (generatorSettings.drawer || DEFAULT_GENERATOR_SETTINGS.drawer)
+                : generatorSettings[activeTab as keyof GeneratorSettings];
             if (!currentSettings && activeTab !== 'stl' && activeTab !== 'relief' && activeTab !== 'svg') {
                 // stl, relief, svg handle their own logic or fallback
                 setIsGenerating(false);
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer'];
 
             if (workerResultTypes.includes(activeTab)) {
-                result = await runGCodeWorker(activeTab, settings, toolLibrary, settings, arraySettings);
+                result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
             }
             else if (activeTab === 'svg') result = generateSVGCode(settings);
             else if (activeTab === 'relief') result = await generateReliefCode(settings);
@@ -1533,11 +1537,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
                         colorAdjustmentEnabled: false,
                         colorAdjustmentHigh: '#000000',
-                        colorAdjustmentAmountHigh: 0,
-                        colorAdjustmentToleranceHigh: 0,
                         colorAdjustmentLow: '#000000',
-                        colorAdjustmentAmountLow: 0,
-                        colorAdjustmentToleranceLow: 0,
+                        colorAdjustmentMid: '#000000',
                     };
 
                     result = await generateReliefCode(settings, reliefParams);
@@ -1601,7 +1602,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1618,7 +1619,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange((prevSettings) => ({
             ...prevSettings,
-            [tabKey]: { ...prevSettings[tabKey], [field]: parsedValue }
+            [tabKey]: { ...(prevSettings[tabKey] || DEFAULT_GENERATOR_SETTINGS[tabKey]), [field]: parsedValue }
         }));
     }, [activeTab, onSettingsChange]);
 
@@ -1632,7 +1633,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         const tabKey = activeTab as keyof GeneratorSettings;
         onSettingsChange((prevSettings) => ({
             ...prevSettings,
-            [tabKey]: { ...prevSettings[tabKey], toolId: toolId }
+            [tabKey]: { ...(prevSettings[tabKey] || DEFAULT_GENERATOR_SETTINGS[tabKey]), toolId: toolId }
         }));
     }, [activeTab, onSettingsChange, onToolSelect]);
 
@@ -1757,6 +1758,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">{t('generators.common.textEngraving')}</div>
                             <Tab label={t('generators.tabs.text')} isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                             <Tab label={t('generators.tabs.svg')} isActive={activeTab === 'svg'} onClick={() => setActiveTab('svg')} />
+                            <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Projects</div>
+                            <Tab label="Drawer" isActive={activeTab === 'drawer'} onClick={() => setActiveTab('drawer')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1883,6 +1886,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                         // Trigger generation now that we have the map
                                         handleGenerateRef.current();
                                     }}
+                                />
+                            )}
+                            {activeTab === 'drawer' && (
+                                <DrawerGenerator
+                                    params={generatorSettings.drawer || DEFAULT_GENERATOR_SETTINGS.drawer}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                         </div>
