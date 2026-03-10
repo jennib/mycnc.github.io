@@ -318,6 +318,7 @@ export declare interface GeneratorSettings {
     stl: STLParams;
     svg: SVGParams;
     drawer: DrawerParams;
+    mortisetenon: MortiseTenonParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
@@ -453,6 +454,20 @@ export { Minimize }
 export { Minus }
 
 export { Moon }
+
+declare interface MortiseTenonParams {
+    partToGenerate: 'mortise' | 'tenon' | 'both';
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    tolerance: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
 
 export { Move }
 

@@ -19,6 +19,7 @@ import ReliefGenerator from './ReliefGenerator';
 import STLGenerator from './STLGenerator';
 import SVGGenerator from './SVGGenerator';
 import DrawerGenerator from './DrawerGenerator';
+import MortiseTenonGenerator from './MortiseTenonGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1760,6 +1761,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.tabs.svg')} isActive={activeTab === 'svg'} onClick={() => setActiveTab('svg')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Projects</div>
                             <Tab label="Drawer" isActive={activeTab === 'drawer'} onClick={() => setActiveTab('drawer')} />
+                            <Tab label="Mortise & Tenon" isActive={activeTab === 'mortisetenon'} onClick={() => setActiveTab('mortisetenon')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1891,6 +1893,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'drawer' && (
                                 <DrawerGenerator
                                     params={generatorSettings.drawer || DEFAULT_GENERATOR_SETTINGS.drawer}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'mortisetenon' && (
+                                <MortiseTenonGenerator
+                                    params={generatorSettings.mortisetenon || DEFAULT_GENERATOR_SETTINGS.mortisetenon}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}
