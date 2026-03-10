@@ -281,6 +281,22 @@ export interface MortiseTenonParams {
     toolId: number | null;
 }
 
+export interface DadoRabbetParams {
+    type: 'dado' | 'rabbet';
+    orientation: 'horizontal' | 'vertical';
+    width: number | '';
+    length: number | '';
+    depth: number | '';
+    offsetX: number | '';
+    offsetY: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export interface DrawerParams {
     joineryType: 'finger' | 'butt';
     bottomType?: 'flat' | 'groove' | 'rabbet';
@@ -366,6 +382,7 @@ export interface GeneratorSettings {
     svg: SVGParams;
     drawer: DrawerParams;
     mortisetenon: MortiseTenonParams;
+    dadorabbet: DadoRabbetParams;
 }
 
 export interface TimeEstimate {

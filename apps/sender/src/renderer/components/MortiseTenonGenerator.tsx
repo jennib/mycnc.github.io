@@ -25,29 +25,29 @@ const MortiseTenonGenerator: React.FC<MortiseTenonGeneratorProps> = ({ params, o
             <hr className='border-secondary' />
 
             <RadioGroup
-                label={'Part to Generate'}
+                label={t('generators.mortiseTenon.partToGenerate')}
                 options={[
-                    { value: 'mortise', label: 'Mortise (Slot)' },
-                    { value: 'tenon', label: 'Tenon (Tab)' },
-                    { value: 'both', label: 'Both' }
+                    { value: 'mortise', label: t('generators.mortiseTenon.mortise') },
+                    { value: 'tenon', label: t('generators.mortiseTenon.tenon') },
+                    { value: 'both', label: t('generators.mortiseTenon.both') }
                 ]}
                 selected={params.partToGenerate}
                 onChange={val => handleParamChange('partToGenerate', val)}
             />
 
             <div className='grid grid-cols-2 gap-4'>
-                <Input label={'Mortise / Tenon Width'} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
-                <Input label={'Mortise / Tenon Length'} value={params.height} onChange={e => handleParamChange('height', e.target.value)} unit={unit} />
-                <Input label={'Depth (Tenon Height)'} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} />
-                <Input label={'Joint Tolerance'} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
+                <Input label={t('generators.mortiseTenon.width')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
+                <Input label={t('generators.mortiseTenon.length')} value={params.height} onChange={e => handleParamChange('height', e.target.value)} unit={unit} />
+                <Input label={t('generators.mortiseTenon.depth')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} />
+                <Input label={t('generators.mortiseTenon.tolerance')} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
             </div>
 
             <hr className='border-secondary' />
             <SpindleAndFeedControls
                 params={params}
-                settings={settings}
                 unit={unit}
-                onChange={handleParamChange}
+                onParamChange={handleParamChange}
+                plunge
             />
         </div>
     );

@@ -30,6 +30,8 @@ export type {
     WebcamSettings,
     GCodePoint,
     DrawerParams,
+    MortiseTenonParams,
+    DadoRabbetParams,
     BoundingBox,
     ToolpathSegmentMetadata
 } from './types';

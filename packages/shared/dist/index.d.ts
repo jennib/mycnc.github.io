@@ -165,6 +165,22 @@ export declare const CrosshairZ: default_2.FC<IconProps>;
 
 export declare type CutDirection = 'up' | 'down' | 'compression';
 
+export declare interface DadoRabbetParams {
+    type: 'dado' | 'rabbet';
+    orientation: 'horizontal' | 'vertical';
+    width: number | '';
+    length: number | '';
+    depth: number | '';
+    offsetX: number | '';
+    offsetY: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export declare const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings;
 
 export declare const DEFAULT_MACROS: Macro[];
@@ -319,6 +335,7 @@ export declare interface GeneratorSettings {
     svg: SVGParams;
     drawer: DrawerParams;
     mortisetenon: MortiseTenonParams;
+    dadorabbet: DadoRabbetParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
@@ -455,7 +472,7 @@ export { Minus }
 
 export { Moon }
 
-declare interface MortiseTenonParams {
+export declare interface MortiseTenonParams {
     partToGenerate: 'mortise' | 'tenon' | 'both';
     width: number | '';
     height: number | '';

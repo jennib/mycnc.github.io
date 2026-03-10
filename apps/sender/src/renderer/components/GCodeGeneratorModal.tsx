@@ -20,6 +20,7 @@ import STLGenerator from './STLGenerator';
 import SVGGenerator from './SVGGenerator';
 import DrawerGenerator from './DrawerGenerator';
 import MortiseTenonGenerator from './MortiseTenonGenerator';
+import DadoRabbetGenerator from './DadoRabbetGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1488,7 +1489,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet'];
 
             if (workerResultTypes.includes(activeTab)) {
                 result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
@@ -1603,7 +1604,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1760,8 +1761,9 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.tabs.text')} isActive={activeTab === 'text'} onClick={() => setActiveTab('text')} />
                             <Tab label={t('generators.tabs.svg')} isActive={activeTab === 'svg'} onClick={() => setActiveTab('svg')} />
                             <div className="w-full text-xs text-text-secondary uppercase tracking-wider mt-2">Projects</div>
-                            <Tab label="Drawer" isActive={activeTab === 'drawer'} onClick={() => setActiveTab('drawer')} />
-                            <Tab label="Mortise & Tenon" isActive={activeTab === 'mortisetenon'} onClick={() => setActiveTab('mortisetenon')} />
+                            <Tab label={t('generators.drawer.title')} isActive={activeTab === 'drawer'} onClick={() => setActiveTab('drawer')} />
+                            <Tab label={t('generators.mortiseTenon.title')} isActive={activeTab === 'mortisetenon'} onClick={() => setActiveTab('mortisetenon')} />
+                            <Tab label={t('generators.dadoRabbet.title')} isActive={activeTab === 'dadorabbet'} onClick={() => setActiveTab('dadorabbet')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1904,6 +1906,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'mortisetenon' && (
                                 <MortiseTenonGenerator
                                     params={generatorSettings.mortisetenon || DEFAULT_GENERATOR_SETTINGS.mortisetenon}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'dadorabbet' && (
+                                <DadoRabbetGenerator
+                                    params={generatorSettings.dadorabbet || DEFAULT_GENERATOR_SETTINGS.dadorabbet}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}

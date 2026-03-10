@@ -23,7 +23,9 @@ import type {
     TimeEstimate,
     WebcamSettings,
     GCodePoint,
-    DrawerParams
+    DrawerParams,
+    MortiseTenonParams,
+    DadoRabbetParams
 } from '@mycnc/shared';
 import { JobStatus } from '@mycnc/shared';
 
@@ -52,7 +54,9 @@ export type {
     TimeEstimate,
     WebcamSettings,
     GCodePoint,
-    DrawerParams
+    DrawerParams,
+    MortiseTenonParams,
+    DadoRabbetParams
 };
 
 export interface BoundingBox {

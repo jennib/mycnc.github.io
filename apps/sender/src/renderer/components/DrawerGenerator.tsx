@@ -24,17 +24,17 @@ const DrawerGenerator: React.FC<DrawerGeneratorProps> = ({ params, onParamsChang
             <ToolSelector selectedId={params.toolId} onChange={(id) => handleParamChange('toolId', id)} unit={unit} toolLibrary={toolLibrary} />
             <hr className='border-secondary' />
             <div className='grid grid-cols-2 gap-4'>
-                <Input label={'Drawer Width (W)'} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
-                <Input label={'Drawer Height (H)'} value={params.height} onChange={e => handleParamChange('height', e.target.value)} unit={unit} />
-                <Input label={'Drawer Depth (D)'} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} />
-                <Input label={'Wood Thickness'} value={params.woodThickness} onChange={e => handleParamChange('woodThickness', e.target.value)} unit={unit} />
+                <Input label={t('generators.drawer.width')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
+                <Input label={t('generators.drawer.height')} value={params.height} onChange={e => handleParamChange('height', e.target.value)} unit={unit} />
+                <Input label={t('generators.drawer.depth')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} />
+                <Input label={t('generators.drawer.woodThickness')} value={params.woodThickness} onChange={e => handleParamChange('woodThickness', e.target.value)} unit={unit} />
             </div>
 
             <RadioGroup
-                label={'Joinery Type'}
+                label={t('generators.drawer.joineryType')}
                 options={[
-                    { value: 'finger', label: 'Finger Joint' },
-                    { value: 'butt', label: 'Butt Joint' }
+                    { value: 'finger', label: t('generators.drawer.fingerJoint') },
+                    { value: 'butt', label: t('generators.drawer.buttJoint') }
                 ]}
                 selected={params.joineryType}
                 onChange={val => handleParamChange('joineryType', val)}
@@ -42,19 +42,19 @@ const DrawerGenerator: React.FC<DrawerGeneratorProps> = ({ params, onParamsChang
 
             {params.joineryType === 'finger' && (
                 <div className='grid grid-cols-2 gap-4'>
-                    <Input label={'Finger Width'} value={params.fingerWidth} onChange={e => handleParamChange('fingerWidth', e.target.value)} unit={unit} />
-                    <Input label={'Joint Tolerance'} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drawer.fingerWidth')} value={params.fingerWidth} onChange={e => handleParamChange('fingerWidth', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drawer.tolerance')} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
                 </div>
             )}
 
             {params.joineryType === 'finger' && (
                 <RadioGroup
-                    label={'Corner Clearance'}
+                    label={t('generators.drawer.cornerClearance')}
                     options={[
-                        { value: 'none', label: 'None (Leaves Round Fillets)' },
-                        { value: 'dogbone', label: 'Dogbone (Clears Corners)' },
-                        { value: 'finger_cutout', label: 'Finger Cutout (Stepped Tip)' },
-                        { value: 't_bone', label: 'T-Bone (Clears Corners Sideways)' }
+                        { value: 'none', label: t('generators.drawer.none') },
+                        { value: 'dogbone', label: t('generators.drawer.dogbone') },
+                        { value: 'finger_cutout', label: t('generators.drawer.fingerCutout') },
+                        { value: 't_bone', label: t('generators.drawer.tBone') }
                     ]}
                     selected={params.cornerClearance || 'dogbone'}
                     onChange={val => handleParamChange('cornerClearance', val)}
@@ -64,11 +64,11 @@ const DrawerGenerator: React.FC<DrawerGeneratorProps> = ({ params, onParamsChang
             <hr className='border-secondary' />
 
             <RadioGroup
-                label={'Bottom Joint Type'}
+                label={t('generators.drawer.bottomJointType')}
                 options={[
-                    { value: 'flat', label: 'Flat (No Groove)' },
-                    { value: 'groove', label: 'Groove' },
-                    { value: 'rabbet', label: 'Rabbet' }
+                    { value: 'flat', label: t('generators.drawer.flat') },
+                    { value: 'groove', label: t('generators.drawer.groove') },
+                    { value: 'rabbet', label: t('generators.drawer.rabbet') }
                 ]}
                 selected={params.bottomType || 'flat'}
                 onChange={val => handleParamChange('bottomType', val)}
@@ -76,23 +76,23 @@ const DrawerGenerator: React.FC<DrawerGeneratorProps> = ({ params, onParamsChang
 
             {params.bottomType && params.bottomType !== 'flat' && (
                 <div className='grid grid-cols-2 gap-4'>
-                    <Input label={'Bottom Wood Thickness (Y)'} value={params.bottomWoodThickness} onChange={e => handleParamChange('bottomWoodThickness', e.target.value)} unit={unit} />
-                    <Input label={'Channel Depth (Z)'} value={params.bottomChannelDepth} onChange={e => handleParamChange('bottomChannelDepth', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drawer.bottomWoodThickness')} value={params.bottomWoodThickness} onChange={e => handleParamChange('bottomWoodThickness', e.target.value)} unit={unit} />
+                    <Input label={t('generators.drawer.channelDepth')} value={params.bottomChannelDepth} onChange={e => handleParamChange('bottomChannelDepth', e.target.value)} unit={unit} />
                     {params.bottomType === 'groove' && (
-                        <Input label={'Z Clearance (Offset from bottom)'} value={params.bottomZClearance} onChange={e => handleParamChange('bottomZClearance', e.target.value)} unit={unit} />
+                        <Input label={t('generators.drawer.zClearance')} value={params.bottomZClearance} onChange={e => handleParamChange('bottomZClearance', e.target.value)} unit={unit} />
                     )}
                 </div>
             )}
 
             <RadioGroup
-                label={'Part to Generate'}
+                label={t('generators.drawer.partToGenerate')}
                 options={[
-                    { value: 'all', label: 'All Parts' },
-                    { value: 'front', label: 'Front' },
-                    { value: 'back', label: 'Back' },
-                    { value: 'left', label: 'Left Side' },
-                    { value: 'right', label: 'Right Side' },
-                    { value: 'bottom', label: 'Bottom' }
+                    { value: 'all', label: t('generators.drawer.all') },
+                    { value: 'front', label: t('generators.drawer.front') },
+                    { value: 'back', label: t('generators.drawer.back') },
+                    { value: 'left', label: t('generators.drawer.left') },
+                    { value: 'right', label: t('generators.drawer.right') },
+                    { value: 'bottom', label: t('generators.drawer.bottom') }
                 ]}
                 selected={params.partToGenerate}
                 onChange={val => handleParamChange('partToGenerate', val)}
@@ -101,8 +101,8 @@ const DrawerGenerator: React.FC<DrawerGeneratorProps> = ({ params, onParamsChang
             <hr className='border-secondary' />
 
             <div className='grid grid-cols-2 gap-4'>
-                <Input label={'Depth Per Pass'} value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
-                <Input label={'Plunge Feed'} value={params.plungeFeed} onChange={e => handleParamChange('plungeFeed', e.target.value)} unit={`${unit}/min`} />
+                <Input label={t('generators.drawer.depthPerPass')} value={params.depthPerPass} onChange={e => handleParamChange('depthPerPass', e.target.value)} unit={unit} />
+                <Input label={t('generators.drawer.plungeFeed')} value={params.plungeFeed} onChange={e => handleParamChange('plungeFeed', e.target.value)} unit={`${unit}/min`} />
             </div>
 
             <SpindleAndFeedControls params={params} onParamChange={handleParamChange} unit={unit} />

@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -65,6 +65,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 break;
             case 'mortisetenon':
                 result = generateMortiseTenonCode(settings, params as MortiseTenonParams, toolLibrary, unit);
+                break;
+            case 'dadorabbet':
+                result = generateDadoRabbetCode(settings, params as DadoRabbetParams, toolLibrary, unit);
                 break;
         }
 
@@ -1072,7 +1075,10 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
     if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} as Bounds };
     const toolDiameter = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
 
-    const { width, height, depth, woodThickness, joineryType, cornerClearance, depthPerPass, feed, plungeFeed, spindle, safeZ } = drawerParams;
+    const {
+        width, height, depth, woodThickness, joineryType, cornerClearance,
+        depthPerPass, feed, plungeFeed, spindle, safeZ, partToGenerate = 'all'
+    } = drawerParams;
 
     const numericWidth = parseFloat(String(width));
     const numericHeight = parseFloat(String(height));
@@ -1093,185 +1099,244 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
         `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
         `(Width: ${numericWidth}, Height: ${numericHeight}, Depth: ${numericDepth})`,
         `(Joinery: ${joineryType}, Corner Clearance: ${cornerClearance})`,
+        `(Part: ${partToGenerate})`,
         `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ.toFixed(3)}`
     ];
 
     const paths: PreviewPath[] = [];
-    const bounds = { minX: 0, maxX: numericWidth, minY: 0, maxY: numericHeight };
+    const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
 
     const R = toolDiameter / 2;
-    const W = numericWidth;
-    const H = numericHeight;
     const WT = numericWoodThickness;
     const feedRate = numericFeed;
     const plunge = numericPlungeFeed;
 
-    code.push(`(--- Cutting Drawer Panels ---)`);
-    code.push(`G0 X0 Y0`);
+    const addPanel = (pW: number, pH: number, startWithPin: boolean, label: string, offsetX: number, offsetY: number) => {
+        code.push(`(--- Cutting ${label} Panel ---)`);
 
-    if (joineryType === 'finger') {
-        const fingerWidthParam = parseFloat(String(drawerParams.fingerWidth));
-        const fingers = Math.max(1, Math.round(H / fingerWidthParam));
-        const fW = H / fingers;
+        if (joineryType === 'finger') {
+            const fingerWidthParam = parseFloat(String(drawerParams.fingerWidth));
+            const fingers = Math.max(1, Math.round(pH / fingerWidthParam));
+            const fW = pH / fingers;
 
-        let pathD = "";
-        let isFirstPoint = true;
+            const zPasses: number[] = [];
+            let curZ = 0;
+            const stepZBoundary = -(R + 0.5);
+            while (curZ > -numericWoodThickness) {
+                let nextZ = curZ - numericDepthPerPass;
+                if (cornerClearance === 'finger_cutout' && curZ > stepZBoundary && nextZ < stepZBoundary) {
+                    nextZ = stepZBoundary;
+                }
+                if (nextZ < -numericWoodThickness) nextZ = -numericWoodThickness;
+                zPasses.push(nextZ);
+                curZ = nextZ;
+            }
 
-        const addPoint = (x: number, y: number, isRapid: boolean = false, gcodePush: boolean = true) => {
-            if (gcodePush) {
-                code.push(`G${isRapid ? '0' : '1'} X${x.toFixed(3)} Y${y.toFixed(3)}${isRapid ? '' : ` F${feedRate}`}`);
-            }
-            if (isFirstPoint) {
-                pathD += `M ${x.toFixed(3)} ${y.toFixed(3)}`;
-                isFirstPoint = false;
-            } else {
-                pathD += ` L ${x.toFixed(3)} ${y.toFixed(3)}`;
-            }
-            bounds.minX = Math.min(bounds.minX, x);
-            bounds.maxX = Math.max(bounds.maxX, x);
-            bounds.minY = Math.min(bounds.minY, y);
-            bounds.maxY = Math.max(bounds.maxY, y);
-        };
+            for (let pass = 0; pass < zPasses.length; pass++) {
+                const currentZ = zPasses[pass];
+                const isLastPass = pass === zPasses.length - 1;
+                let pathD = "";
+                let isFirstPoint = true;
 
-        const zPasses: number[] = [];
-        let curZ = 0;
-        const stepZBoundary = -(R + 0.5);
-        while (curZ > -numericWoodThickness) {
-            let nextZ = curZ - numericDepthPerPass;
-            if (cornerClearance === 'finger_cutout' && curZ > stepZBoundary && nextZ < stepZBoundary) {
-                nextZ = stepZBoundary;
+                const addPt = (x: number, y: number, isRapid: boolean = false) => {
+                    const absX = x + offsetX;
+                    const absY = y + offsetY;
+                    code.push(`G${isRapid ? '0' : '1'} X${absX.toFixed(3)} Y${absY.toFixed(3)}${isRapid ? '' : ` F${feedRate}`}`);
+                    if (isFirstPoint) {
+                        pathD += `M ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                        isFirstPoint = false;
+                    } else {
+                        pathD += ` L ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                    }
+                    bounds.minX = Math.min(bounds.minX, absX);
+                    bounds.maxX = Math.max(bounds.maxX, absX);
+                    bounds.minY = Math.min(bounds.minY, absY);
+                    bounds.maxY = Math.max(bounds.maxY, absY);
+                };
+
+                const getBoundaryY = (idx: number, isLeft: boolean) => {
+                    let y = isLeft ? (pH - idx * fW) : (idx * fW);
+                    if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
+                        if (idx !== 0 && idx !== fingers) {
+                            const pinIsAbove = startWithPin ? (idx - 1) % 2 === 0 : (idx - 1) % 2 !== 0;
+                            const stepAmount = Math.min(R + 0.5, fW / 3);
+                            if (isLeft) {
+                                y += pinIsAbove ? stepAmount : -stepAmount;
+                            } else {
+                                y += pinIsAbove ? -stepAmount : stepAmount;
+                            }
+                        }
+                    }
+                    return y;
+                };
+
+                addPt(-R, pH + R, true);
+                code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+
+                // Left Edge (going down)
+                for (let i = 0; i < fingers; i++) {
+                    const isPin = startWithPin ? (i % 2 === 0) : (i % 2 !== 0);
+                    const yTop = getBoundaryY(i, true);
+                    const yBot = getBoundaryY(i + 1, true);
+
+                    if (isPin) {
+                        addPt(-R, yBot);
+                    } else {
+                        addPt(-R, yTop - R);
+                        addPt(WT - R, yTop - R);
+                        if (cornerClearance === 'dogbone') {
+                            addPt(WT - R * 0.707, yTop - R * 0.707);
+                            addPt(WT - R, yTop - R);
+                        } else if (cornerClearance === 't_bone') {
+                            addPt(WT - R, yTop);
+                            addPt(WT - R, yTop - R);
+                        }
+                        addPt(WT - R, yBot + R);
+                        if (cornerClearance === 'dogbone') {
+                            addPt(WT - R * 0.707, yBot + R * 0.707);
+                            addPt(WT - R, yBot + R);
+                        } else if (cornerClearance === 't_bone') {
+                            addPt(WT - R, yBot);
+                            addPt(WT - R, yBot + R);
+                        }
+                        addPt(-R, yBot + R);
+                        addPt(-R, yBot);
+                    }
+                }
+
+                // Bottom Edge
+                addPt(pW + R, -R);
+
+                // Right Edge (going up)
+                for (let i = 0; i < fingers; i++) {
+                    const isPin = startWithPin ? (i % 2 === 0) : (i % 2 !== 0);
+                    const yBot = getBoundaryY(i, false);
+                    const yTop = getBoundaryY(i + 1, false);
+
+                    if (isPin) {
+                        addPt(pW + R, yTop);
+                    } else {
+                        addPt(pW + R, yBot + R);
+                        addPt(pW - WT + R, yBot + R);
+                        if (cornerClearance === 'dogbone') {
+                            addPt(pW - WT + R * 0.707, yBot + R * 0.707);
+                            addPt(pW - WT + R, yBot + R);
+                        } else if (cornerClearance === 't_bone') {
+                            addPt(pW - WT + R, yBot);
+                            addPt(pW - WT + R, yBot + R);
+                        }
+                        addPt(pW - WT + R, yTop - R);
+                        if (cornerClearance === 'dogbone') {
+                            addPt(pW - WT + R * 0.707, yTop - R * 0.707);
+                            addPt(pW - WT + R, yTop - R);
+                        } else if (cornerClearance === 't_bone') {
+                            addPt(pW - WT + R, yTop);
+                            addPt(pW - WT + R, yTop - R);
+                        }
+                        addPt(pW + R, yTop - R);
+                        addPt(pW + R, yTop);
+                    }
+                }
+
+                // Top Edge
+                addPt(-R, pH + R);
+
+                if (isLastPass) {
+                    paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+                } else if (cornerClearance === 'finger_cutout' && currentZ === stepZBoundary) {
+                    paths.push({ d: pathD, stroke: 'var(--color-accent-blue)', strokeDasharray: '4' });
+                }
             }
-            if (nextZ < -numericWoodThickness) {
-                nextZ = -numericWoodThickness;
+            code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        } else {
+            // Butt joint placeholder
+            const totalPasses = Math.ceil(WT / numericDepthPerPass);
+            for (let pass = 1; pass <= totalPasses; pass++) {
+                const cz = Math.max(-pass * numericDepthPerPass, -WT);
+                let isFirstPoint = true;
+                let pathD = "";
+                const addPt = (x: number, y: number, isRapid: boolean = false) => {
+                    const absX = x + offsetX;
+                    const absY = y + offsetY;
+                    code.push(`G${isRapid ? '0' : '1'} X${absX.toFixed(3)} Y${absY.toFixed(3)}${isRapid ? '' : ` F${feedRate}`}`);
+                    if (isFirstPoint) {
+                        pathD += `M ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                        isFirstPoint = false;
+                    } else {
+                        pathD += ` L ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                    }
+                    bounds.minX = Math.min(bounds.minX, absX);
+                    bounds.maxX = Math.max(bounds.maxX, absX);
+                    bounds.minY = Math.min(bounds.minY, absY);
+                    bounds.maxY = Math.max(bounds.maxY, absY);
+                };
+
+                addPt(-R, -R, true);
+                code.push(`G1 Z${cz.toFixed(3)} F${plunge}`);
+                addPt(pW + R, -R);
+                addPt(pW + R, pH + R);
+                addPt(-R, pH + R);
+                addPt(-R, -R);
+                if (pass === totalPasses) {
+                    paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+                }
             }
-            zPasses.push(nextZ);
-            curZ = nextZ;
+            code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
         }
+    };
 
-        for (let pass = 0; pass < zPasses.length; pass++) {
-            const currentZ = zPasses[pass];
-            const isLastPass = pass === zPasses.length - 1;
-
-            const getBoundaryYLeft = (idx: number) => {
-                let y = H - idx * fW;
-                if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
-                    if (idx !== 0 && idx !== fingers) {
-                        const pinIsAbove = (idx - 1) % 2 === 0;
-                        const stepAmount = Math.min(R + 0.5, fW / 3);
-                        y += pinIsAbove ? stepAmount : -stepAmount;
-                    }
+    const addBottomPanel = (offX: number, offY: number) => {
+        code.push(`(--- Cutting Bottom Panel ---)`);
+        const bW = numericWidth - WT;
+        const bD = numericDepth - WT;
+        const totalPasses = Math.ceil(WT / numericDepthPerPass);
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            const cz = Math.max(-pass * numericDepthPerPass, -WT);
+            let isFirstPoint = true;
+            let pathD = "";
+            const addPt = (x: number, y: number, isRapid: boolean = false) => {
+                const absX = x + offX;
+                const absY = y + offY;
+                code.push(`G${isRapid ? '0' : '1'} X${absX.toFixed(3)} Y${absY.toFixed(3)}${isRapid ? '' : ` F${feedRate}`}`);
+                if (isFirstPoint) {
+                    pathD += `M ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                    isFirstPoint = false;
+                } else {
+                    pathD += ` L ${absX.toFixed(3)} ${absY.toFixed(3)}`;
                 }
-                return y;
+                bounds.minX = Math.min(bounds.minX, absX);
+                bounds.maxX = Math.max(bounds.maxX, absX);
+                bounds.minY = Math.min(bounds.minY, absY);
+                bounds.maxY = Math.max(bounds.maxY, absY);
             };
 
-            const getBoundaryYRight = (idx: number) => {
-                let y = idx * fW;
-                if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
-                    if (idx !== 0 && idx !== fingers) {
-                        const pinIsBelow = (idx - 1) % 2 === 0;
-                        const stepAmount = Math.min(R + 0.5, fW / 3);
-                        y += pinIsBelow ? -stepAmount : stepAmount;
-                    }
-                }
-                return y;
-            };
-
-            isFirstPoint = true;
-            if (isLastPass) pathD = "";
-
-            addPoint(-R, H + R, true);
-            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
-
-            // Left Edge (going down)
-            for (let i = 0; i < fingers; i++) {
-                const isPin = i % 2 === 0;
-                const yTop = getBoundaryYLeft(i);
-                const yBot = getBoundaryYLeft(i + 1);
-
-                if (isPin) {
-                    addPoint(-R, yBot);
-                } else {
-                    addPoint(-R, yTop - R);
-                    addPoint(WT - R, yTop - R);
-                    if (cornerClearance === 'dogbone') {
-                        addPoint(WT - R * 0.707, yTop - R * 0.707);
-                        addPoint(WT - R, yTop - R);
-                    } else if (cornerClearance === 't_bone') {
-                        addPoint(WT - R, yTop);
-                        addPoint(WT - R, yTop - R);
-                    }
-                    addPoint(WT - R, yBot + R);
-                    if (cornerClearance === 'dogbone') {
-                        addPoint(WT - R * 0.707, yBot + R * 0.707);
-                        addPoint(WT - R, yBot + R);
-                    } else if (cornerClearance === 't_bone') {
-                        addPoint(WT - R, yBot);
-                        addPoint(WT - R, yBot + R);
-                    }
-                    addPoint(-R, yBot + R);
-                    addPoint(-R, yBot);
-                }
-            }
-
-            // Bottom Edge (going right)
-            addPoint(W + R, -R);
-
-            // Right Edge (going up)
-            for (let i = 0; i < fingers; i++) {
-                const isPin = i % 2 === 0;
-                const yBot = getBoundaryYRight(i);
-                const yTop = getBoundaryYRight(i + 1);
-
-                if (isPin) {
-                    addPoint(W + R, yTop);
-                } else {
-                    addPoint(W + R, yBot + R);
-                    addPoint(W - WT + R, yBot + R);
-                    if (cornerClearance === 'dogbone') {
-                        addPoint(W - WT + R * 0.707, yBot + R * 0.707);
-                        addPoint(W - WT + R, yBot + R);
-                    } else if (cornerClearance === 't_bone') {
-                        addPoint(W - WT + R, yBot);
-                        addPoint(W - WT + R, yBot + R);
-                    }
-                    addPoint(W - WT + R, yTop - R);
-                    if (cornerClearance === 'dogbone') {
-                        addPoint(W - WT + R * 0.707, yTop - R * 0.707);
-                        addPoint(W - WT + R, yTop - R);
-                    } else if (cornerClearance === 't_bone') {
-                        addPoint(W - WT + R, yTop);
-                        addPoint(W - WT + R, yTop - R);
-                    }
-                    addPoint(W + R, yTop - R);
-                    addPoint(W + R, yTop);
-                }
-            }
-
-            // Top Edge (going left)
-            addPoint(-R, H + R);
-
-            if (isLastPass) {
+            addPt(-R, -R, true);
+            code.push(`G1 Z${cz.toFixed(3)} F${plunge}`);
+            addPt(bW + R, -R);
+            addPt(bW + R, bD + R);
+            addPt(-R, bD + R);
+            addPt(-R, -R);
+            if (pass === totalPasses) {
                 paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
-            } else if (cornerClearance === 'finger_cutout' && currentZ === stepZBoundary) {
-                paths.push({ d: pathD, stroke: 'var(--color-accent-blue)', strokeDasharray: '4' });
             }
         }
-
-        // Retract at the end
         code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
-    } else {
-        // butt joint placeholder path
-        const d = `M 0 0 L ${numericWidth} 0 L ${numericWidth} ${numericHeight} L 0 ${numericHeight} Z`;
-        paths.push({ d, stroke: 'var(--color-accent-yellow)' });
-        code.push(`G1 X${numericWidth.toFixed(3)} Y0 F${numericFeed} `);
-        code.push(`G1 X${numericWidth.toFixed(3)} Y${numericHeight.toFixed(3)} F${numericFeed} `);
-        code.push(`G1 X0 Y${numericHeight.toFixed(3)} F${numericFeed} `);
-        code.push(`G1 X0 Y0 F${numericFeed} `);
-        code.push(`G0 Z${numericSafeZ.toFixed(3)} `);
     }
 
-    code.push(`G0 Z${numericSafeZ.toFixed(3)} `);
+    const spacing = toolDiameter * 3;
+    if (partToGenerate === 'all' || partToGenerate === 'front') addPanel(numericWidth, numericHeight, false, "Front", 0, 0);
+    if (partToGenerate === 'all' || partToGenerate === 'back') addPanel(numericWidth, numericHeight, false, "Back", (partToGenerate === 'all' ? numericWidth + spacing : 0), 0);
+    if (partToGenerate === 'all' || partToGenerate === 'left') addPanel(numericDepth, numericHeight, true, "Left Side", 0, (partToGenerate === 'all' ? numericHeight + spacing : 0));
+    if (partToGenerate === 'all' || partToGenerate === 'right') addPanel(numericDepth, numericHeight, true, "Right Side", (partToGenerate === 'all' ? numericWidth + spacing : 0), (partToGenerate === 'all' ? numericHeight + spacing : 0));
+    if (partToGenerate === 'all' || partToGenerate === 'bottom') addBottomPanel(0, (partToGenerate === 'all' ? (numericHeight + spacing) * 2 : 0));
+
+    code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
     code.push(`M5`);
+
+    if (bounds.minX === Infinity) bounds.minX = 0;
+    if (bounds.maxX === -Infinity) bounds.maxX = numericWidth;
+    if (bounds.minY === Infinity) bounds.minY = 0;
+    if (bounds.maxY === -Infinity) bounds.maxY = numericHeight;
 
     return { code, paths, bounds, error: null };
 };
@@ -1457,6 +1522,128 @@ const generateMortiseTenonCode = (
 
     code.push(`G0 Z${safeZ.toFixed(3)}`);
     code.push(`M5`);
+
+    return { code, paths, bounds, error: null };
+};
+
+const generateDadoRabbetCode = (machineSettings: MachineSettings, params: DadoRabbetParams, toolLibrary: Tool[], unit: string) => {
+    let bounds: Bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const code: string[] = [];
+    const paths: PreviewPath[] = [];
+
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: "No tool selected", code, paths, bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: "No tool selected", code, paths, bounds };
+
+    const width = parseFloat(String(params.width));
+    const length = parseFloat(String(params.length));
+    const depth = parseFloat(String(params.depth));
+    const offsetX = parseFloat(String(params.offsetX || 0));
+    const offsetY = parseFloat(String(params.offsetY || 0));
+    const feed = parseFloat(String(params.feed));
+    const plunge = parseFloat(String(params.plungeFeed));
+    const spindle = parseFloat(String(params.spindle));
+    const safeZ = parseFloat(String(params.safeZ));
+    const dpp = parseFloat(String(params.depthPerPass));
+    const toolDiam = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
+    const R = toolDiam / 2;
+
+    if (isNaN(width) || isNaN(length) || isNaN(depth) || width <= 0 || length <= 0) {
+        return { error: "Width and Length must be positive numbers.", code, paths, bounds };
+    }
+
+    code.push(`(--- Dado & Rabbet Generator ---)`);
+    code.push(`(Tool: ${selectedTool.name} - Ø${toolDiam}${unit})`);
+    code.push(`G21 G90`);
+    code.push(`M3 S${spindle}`);
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+
+    const updateBounds = (x: number, y: number) => {
+        if (x < bounds.minX) bounds.minX = x;
+        if (x > bounds.maxX) bounds.maxX = x;
+        if (y < bounds.minY) bounds.minY = y;
+        if (y > bounds.maxY) bounds.maxY = y;
+    };
+
+    const totalPasses = Math.ceil(depth / dpp);
+    const stepover = toolDiam * 0.4; // 40% stepover
+
+    for (let pass = 1; pass <= totalPasses; pass++) {
+        const currentZ = Math.max(-pass * dpp, -depth);
+        const isLastPass = pass === totalPasses;
+        let pathD = "";
+
+        // Calculate movements based on orientation
+        // We pocket the width by doing multiple linear passes if toolDiam < width
+        const numPockets = Math.max(1, Math.ceil((width - toolDiam) / stepover) + 1);
+        const actualStepover = numPockets > 1 ? (width - toolDiam) / (numPockets - 1) : 0;
+
+        for (let i = 0; i < numPockets; i++) {
+            const wOffset = -width / 2 + R + i * actualStepover;
+            
+            let xStart, yStart, xEnd, yEnd;
+            if (params.orientation === 'horizontal') {
+                // Length is along X, Width is along Y
+                xStart = offsetX;
+                yStart = offsetY + wOffset;
+                xEnd = offsetX + length;
+                yEnd = offsetY + wOffset;
+            } else {
+                // Length is along Y, Width is along X
+                xStart = offsetX + wOffset;
+                yStart = offsetY;
+                xEnd = offsetX + wOffset;
+                yEnd = offsetY + length;
+            }
+
+            // Move to start of this pass (X, Y)
+            if (i === 0) {
+                code.push(`G0 X${xStart.toFixed(3)} Y${yStart.toFixed(3)}`);
+                code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+            } else {
+                // Zig-zag behavior
+                if (i % 2 === 0) {
+                    code.push(`G1 X${xStart.toFixed(3)} Y${yStart.toFixed(3)} F${feed}`);
+                } else {
+                    code.push(`G1 X${xEnd.toFixed(3)} Y${yEnd.toFixed(3)} F${feed}`);
+                }
+            }
+
+            // Draw line
+            if (i % 2 === 0) {
+                code.push(`G1 X${xEnd.toFixed(3)} Y${yEnd.toFixed(3)} F${feed}`);
+                updateBounds(xStart, yStart);
+                updateBounds(xEnd, yEnd);
+                if (isLastPass) {
+                    if (pathD === "") pathD += `M ${xStart.toFixed(3)} ${yStart.toFixed(3)} `;
+                    pathD += `L ${xEnd.toFixed(3)} ${yEnd.toFixed(3)} `;
+                }
+            } else {
+                code.push(`G1 X${xStart.toFixed(3)} Y${yStart.toFixed(3)} F${feed}`);
+                updateBounds(xEnd, yEnd);
+                updateBounds(xStart, yStart);
+                if (isLastPass) {
+                    if (pathD === "") pathD += `M ${xEnd.toFixed(3)} ${yEnd.toFixed(3)} `;
+                    pathD += `L ${xStart.toFixed(3)} ${yStart.toFixed(3)} `;
+                }
+            }
+        }
+
+        if (isLastPass && pathD) {
+            paths.push({ d: pathD, stroke: 'var(--color-accent-blue)' });
+        }
+        
+        // Retract slightly between depth passes
+        if (pass < totalPasses) {
+            code.push(`G0 Z${(currentZ + 1).toFixed(3)}`);
+        }
+    }
+
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+    code.push(`M5`);
+
+    if (bounds.minX === Infinity) bounds = { minX: 0, maxX: length, minY: 0, maxY: width };
 
     return { code, paths, bounds, error: null };
 };
