@@ -267,6 +267,20 @@ export interface ReliefParams {
     colorAdjustmentMid: number | string;
 }
 
+export interface MortiseTenonParams {
+    partToGenerate: 'mortise' | 'tenon' | 'both';
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    tolerance: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export interface DrawerParams {
     joineryType: 'finger' | 'butt';
     bottomType?: 'flat' | 'groove' | 'rabbet';
@@ -351,6 +365,7 @@ export interface GeneratorSettings {
     stl: STLParams;
     svg: SVGParams;
     drawer: DrawerParams;
+    mortisetenon: MortiseTenonParams;
 }
 
 export interface TimeEstimate {

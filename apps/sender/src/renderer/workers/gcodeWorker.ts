@@ -1,5 +1,4 @@
-
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -22,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -63,6 +62,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 break;
             case 'drawer':
                 result = generateDrawerCode(settings, params as DrawerParams, toolLibrary, unit);
+                break;
+            case 'mortisetenon':
+                result = generateMortiseTenonCode(settings, params as MortiseTenonParams, toolLibrary, unit);
                 break;
         }
 
@@ -1269,6 +1271,191 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
     }
 
     code.push(`G0 Z${numericSafeZ.toFixed(3)} `);
+    code.push(`M5`);
+
+    return { code, paths, bounds, error: null };
+};
+
+const generateMortiseTenonCode = (
+    machineSettings: MachineSettings,
+    params: MortiseTenonParams,
+    toolLibrary: Tool[],
+    unit: string
+) => {
+    let bounds: Bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const code: string[] = [];
+    const paths: PreviewPath[] = [];
+
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: "No tool selected", code, paths, bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: "No tool selected", code, paths, bounds };
+
+    const W = parseFloat(String(params.width));
+    const L = parseFloat(String(params.height));
+    const D = parseFloat(String(params.depth));
+    const M_TOL = parseFloat(String(params.tolerance || 0));
+
+    const feed = parseFloat(String(params.feed));
+    const plunge = parseFloat(String(params.plungeFeed));
+    const spindle = parseFloat(String(params.spindle));
+    const safeZ = parseFloat(String(params.safeZ));
+    const dpp = parseFloat(String(params.depthPerPass));
+    const toolDiam = parseFloat(String(selectedTool.diameter));
+    const R = toolDiam / 2;
+
+    if (isNaN(W) || isNaN(L) || isNaN(D) || W <= toolDiam || L <= toolDiam) {
+        return { error: "Mortise width/height must be strictly greater than tool diameter.", code, paths, bounds };
+    }
+
+    code.push(`(--- Mortise & Tenon Generator ---)`);
+    code.push(`(Tool: ${selectedTool.name} - Ø${toolDiam}mm)`);
+    code.push(`G21 G90`);
+    code.push(`M3 S${spindle}`);
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+
+    const updateBounds = (x: number, y: number) => {
+        if (x < bounds.minX) bounds.minX = x;
+        if (x > bounds.maxX) bounds.maxX = x;
+        if (y < bounds.minY) bounds.minY = y;
+        if (y > bounds.maxY) bounds.maxY = y;
+    };
+
+    const addMortise = (offsetX: number, offsetY: number) => {
+        code.push(`(--- Cutting Mortise at X:${offsetX}, Y:${offsetY} ---)`);
+        const stepover = toolDiam * 0.4;
+
+        const mw = W + M_TOL;
+        const ml = L + M_TOL;
+        const totalPasses = Math.ceil(D / dpp);
+        let currentZ = 0;
+
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            currentZ = Math.max(currentZ - dpp, -D);
+            const isLastPass = pass === totalPasses;
+
+            const maxPx = mw / 2 - R;
+            const maxPy = ml / 2 - R;
+
+            if (maxPx < 0 || maxPy < 0) continue;
+
+            const numSpirals = Math.ceil(Math.max(maxPx, maxPy) / stepover);
+
+            let pathD = "";
+            const addPt = (x: number, y: number) => {
+                updateBounds(offsetX + x, offsetY + y);
+                code.push(`G1 X${(offsetX + x).toFixed(3)} Y${(offsetY + y).toFixed(3)} F${feed}`);
+                if (isLastPass) {
+                    if (pathD === "") pathD += `M ${(offsetX + x).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                    else pathD += `L ${(offsetX + x).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                }
+            };
+
+            for (let step = 0; step <= numSpirals; step++) {
+                const r = (numSpirals - step) * stepover;
+                const px = Math.max(0, maxPx - r);
+                const py = Math.max(0, maxPy - r);
+
+                if (step === 0) {
+                    code.push(`G0 X${(offsetX - px).toFixed(3)} Y${(offsetY - py).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                }
+
+                if (px <= 0.001 && py <= 0.001) {
+                    addPt(0, 0);
+                } else if (px <= 0.001) {
+                    addPt(0, -py);
+                    addPt(0, py);
+                } else if (py <= 0.001) {
+                    addPt(-px, 0);
+                    addPt(px, 0);
+                } else {
+                    addPt(-px, -py);
+                    addPt(px, -py);
+                    addPt(px, py);
+                    addPt(-px, py);
+                    addPt(-px, -py); // close loop
+                }
+            }
+
+            if (isLastPass && pathD) {
+                paths.push({ d: pathD, stroke: 'var(--color-accent-blue)' });
+            }
+        }
+        code.push(`G0 Z${safeZ.toFixed(3)}`);
+    };
+
+    const addTenon = (offsetX: number, offsetY: number) => {
+        code.push(`(--- Cutting Tenon at X:${offsetX}, Y:${offsetY} ---)`);
+        const tw = W - M_TOL;
+        const tl = L - M_TOL;
+
+        const cx = tw / 2 - R;
+        const cy = tl / 2 - R;
+
+        const totalPasses = Math.ceil(D / dpp);
+        let currentZ = 0;
+
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            currentZ = Math.max(currentZ - dpp, -D);
+            const isLastPass = pass === totalPasses;
+
+            // Retract & Plunge to start point
+            if (pass === 1) code.push(`G0 Z${safeZ.toFixed(3)}`);
+            code.push(`G0 X${(offsetX + 0).toFixed(3)} Y${(offsetY + cy + 2 * R).toFixed(3)}`);
+            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+
+            let pathD = `M ${(offsetX + 0).toFixed(3)} ${(offsetY + cy + 2 * R).toFixed(3)} `;
+
+            const addLine = (x: number, y: number) => {
+                updateBounds(offsetX + x, offsetY + y);
+                code.push(`G1 X${(offsetX + x).toFixed(3)} Y${(offsetY + y).toFixed(3)} F${feed}`);
+                if (isLastPass) pathD += `L ${(offsetX + x).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+            };
+
+            addLine(cx, cy + 2 * R);
+
+            code.push(`G2 X${(offsetX + cx + 2 * R).toFixed(3)} Y${(offsetY + cy).toFixed(3)} I0 J${(-2 * R).toFixed(3)} F${feed}`);
+            if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX + cx + 2 * R).toFixed(3)} ${(offsetY + cy).toFixed(3)} `;
+            updateBounds(offsetX + cx + 2 * R, offsetY + cy);
+
+            addLine(cx + 2 * R, -cy);
+
+            code.push(`G2 X${(offsetX + cx).toFixed(3)} Y${(offsetY - cy - 2 * R).toFixed(3)} I${(-2 * R).toFixed(3)} J0 F${feed}`);
+            if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX + cx).toFixed(3)} ${(offsetY - cy - 2 * R).toFixed(3)} `;
+            updateBounds(offsetX + cx, offsetY - cy - 2 * R);
+
+            addLine(-cx, -cy - 2 * R);
+
+            code.push(`G2 X${(offsetX - cx - 2 * R).toFixed(3)} Y${(offsetY - cy).toFixed(3)} I0 J${(2 * R).toFixed(3)} F${feed}`);
+            if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX - cx - 2 * R).toFixed(3)} ${(offsetY - cy).toFixed(3)} `;
+            updateBounds(offsetX - cx - 2 * R, offsetY - cy);
+
+            addLine(-cx - 2 * R, cy);
+
+            code.push(`G2 X${(offsetX - cx).toFixed(3)} Y${(offsetY + cy + 2 * R).toFixed(3)} I${(2 * R).toFixed(3)} J0 F${feed}`);
+            if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX - cx).toFixed(3)} ${(offsetY + cy + 2 * R).toFixed(3)} `;
+            updateBounds(offsetX - cx, offsetY + cy + 2 * R);
+
+            addLine(0, cy + 2 * R);
+
+            if (isLastPass && pathD) {
+                paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+            }
+        }
+    };
+
+    if (params.partToGenerate === 'both') {
+        const spacing = Math.max(W / 2 + toolDiam * 2, L / 2 + toolDiam * 2);
+        addMortise(-spacing, 0);
+        addTenon(spacing, 0);
+    } else if (params.partToGenerate === 'mortise') {
+        addMortise(0, 0);
+    } else if (params.partToGenerate === 'tenon') {
+        addTenon(0, 0);
+    }
+
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
     code.push(`M5`);
 
     return { code, paths, bounds, error: null };

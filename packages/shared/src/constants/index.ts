@@ -103,6 +103,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
     stl: { file: null, fileName: '', width: 100, length: 100, depth: 10, zSafe: 5, margin: 2, rotationX: 0, rotationY: 0, rotationZ: 0, toolId: null, stepover: 40, feedRate: 800, spindleSpeed: 8000, roughingEnabled: true, roughingToolId: null, roughingStepdown: 2, roughingStepover: 40, roughingStockToLeave: 0.5, roughingFeed: 800, roughingSpindle: 8000, cutoutEnabled: false, cutoutToolId: null, cutoutDepth: 18, cutoutDepthPerPass: 3, cutoutStepIn: 1, cutoutXYPasses: 1, cutoutTabsEnabled: true, cutoutTabWidth: 6, cutoutTabHeight: 3, cutoutTabCount: 4 },
     svg: { file: null, fileName: '', svgContent: '', scale: 1, rotation: 0, positionX: 0, positionY: 0, depth: -0.5, feed: 300, spindle: 10000, safeZ: 5, toolId: null },
     drawer: { joineryType: 'finger', partToGenerate: 'all', width: 200, height: 100, depth: 300, woodThickness: 15, fingerWidth: 20, tolerance: 0.1, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null, bottomType: 'flat', bottomChannelDepth: 5, bottomWoodThickness: 5, bottomZClearance: 10, cornerClearance: 'dogbone' },
+    mortisetenon: { partToGenerate: 'both', width: 50, height: 10, depth: 20, tolerance: 0.1, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
 };
 
 export const GRBL_REALTIME_COMMANDS = {
