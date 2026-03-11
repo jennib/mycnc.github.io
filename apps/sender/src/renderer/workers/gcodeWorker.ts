@@ -1990,7 +1990,6 @@ const generateCabinetCode = (machineSettings: MachineSettings, params: CabinetPa
     } = {}) => {
         code.push(`(--- Cutting ${label} ---)`);
         const totalPasses = Math.ceil(woodThickness / dpp);
-        const joinery = params.joineryType === 'joinery';
         const fWidth = parseFloat(String(params.fingerWidth)) || 50;
         const cornerType = params.cornerClearance || 'none';
         const stepZBoundary = -Math.max(R, 3);
