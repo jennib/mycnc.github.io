@@ -110,6 +110,32 @@ export declare interface BoundingBox {
     maxZ: number;
 }
 
+export declare interface CabinetParams {
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    woodThickness: number | '';
+    backThickness: number | '';
+    hasToeKick: boolean;
+    toeKickHeight: number | '';
+    toeKickDepth: number | '';
+    configuration: 'shelves' | 'drawers' | 'doors' | 'appliance' | 'empty';
+    numShelves: number | '';
+    shelfThickness: number | '';
+    numDrawers: number | '';
+    joineryType: 'butt' | 'pocket' | 'joinery';
+    cornerClearance?: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    fingerWidth?: number | '';
+    tolerance?: number | '';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+    partToGenerate: 'all' | 'sides' | 'top' | 'bottom' | 'back' | 'shelves' | 'toe_kick' | 'doors' | 'drawers';
+}
+
 export { Camera }
 
 export { CameraOff }
@@ -358,6 +384,7 @@ export declare interface GeneratorSettings {
     mortisetenon: MortiseTenonParams;
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
+    cabinet: CabinetParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;

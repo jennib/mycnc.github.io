@@ -5,7 +5,7 @@ import { X, Save, Zap, ZoomIn, ZoomOut, Maximize, AlertTriangle } from "@mycnc/s
 import { DEFAULT_GENERATOR_SETTINGS } from '@/constants';
 import { RadioGroup, Input, SpindleAndFeedControls, ArrayControls } from './SharedControls';
 import { FONTS, CharacterStroke, CharacterOutline } from '@/services/cncFonts.js';
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams, STLParams } from '@/types';
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, ReliefParams, STLParams, CabinetParams } from '@/types';
 import SlotGenerator from './SlotGenerator';
 import SurfacingGenerator from './SurfacingGenerator';
 import DrillingGenerator from './DrillingGenerator';
@@ -22,6 +22,7 @@ import DrawerGenerator from './DrawerGenerator';
 import MortiseTenonGenerator from './MortiseTenonGenerator';
 import DadoRabbetGenerator from './DadoRabbetGenerator';
 import DecorativeJoineryGenerator from './DecorativeJoineryGenerator';
+import CabinetGenerator from './CabinetGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -168,7 +169,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const { t } = useTranslation();
 
     const [activeTab, setActiveTab] = useState(() => localStorage.getItem('generatorActiveTab') || 'surfacing');
-    const showArray = !['surfacing', 'drilling', 'relief'].includes(activeTab);
+    const showArray = !['surfacing', 'drilling', 'relief', 'cabinet'].includes(activeTab);
 
     useEffect(() => {
         localStorage.setItem('generatorActiveTab', activeTab);
@@ -1490,7 +1491,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative', 'cabinet'];
 
             if (workerResultTypes.includes(activeTab)) {
                 result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
@@ -1605,7 +1606,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation', 'part'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation', 'part', 'hasToeKick', 'configuration'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1766,6 +1767,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.mortiseTenon.title')} isActive={activeTab === 'mortisetenon'} onClick={() => setActiveTab('mortisetenon')} />
                             <Tab label={t('generators.dadoRabbet.title')} isActive={activeTab === 'dadorabbet'} onClick={() => setActiveTab('dadorabbet')} />
                             <Tab label={t('generators.decorative.title')} isActive={activeTab === 'decorative'} onClick={() => setActiveTab('decorative')} />
+                            <Tab label={t('generators.cabinet.title')} isActive={activeTab === 'cabinet'} onClick={() => setActiveTab('cabinet')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1930,6 +1932,17 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             {activeTab === 'decorative' && (
                                 <DecorativeJoineryGenerator
                                     params={generatorSettings.decorative || DEFAULT_GENERATOR_SETTINGS.decorative}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'cabinet' && (
+                                <CabinetGenerator
+                                    params={generatorSettings.cabinet || DEFAULT_GENERATOR_SETTINGS.cabinet}
                                     onParamsChange={handleParamChange}
                                     toolLibrary={toolLibrary}
                                     unit={unit}

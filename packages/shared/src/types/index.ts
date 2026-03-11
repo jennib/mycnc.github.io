@@ -389,6 +389,42 @@ export interface SVGParams {
     toolId: number | null;
 }
 
+export interface CabinetParams {
+    width: number | '';
+    height: number | '';
+    depth: number | '';
+    woodThickness: number | '';
+    backThickness: number | '';
+    
+    // Toe Kick
+    hasToeKick: boolean;
+    toeKickHeight: number | '';
+    toeKickDepth: number | '';
+    
+    // Layout / Content
+    configuration: 'shelves' | 'drawers' | 'doors' | 'appliance' | 'empty';
+    numShelves: number | '';
+    shelfThickness: number | '';
+    numDrawers: number | '';
+    
+    // Joinery
+    joineryType: 'butt' | 'pocket' | 'joinery';
+    cornerClearance?: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    fingerWidth?: number | '';
+    tolerance?: number | '';
+    
+    // Machining
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+    
+    // Part selection
+    partToGenerate: 'all' | 'sides' | 'top' | 'bottom' | 'back' | 'shelves' | 'toe_kick' | 'doors' | 'drawers';
+}
+
 export interface GeneratorSettings {
     surfacing: SurfacingParams;
     drilling: DrillingParams;
@@ -405,6 +441,7 @@ export interface GeneratorSettings {
     mortisetenon: MortiseTenonParams;
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
+    cabinet: CabinetParams;
 }
 
 export interface TimeEstimate {

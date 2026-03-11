@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -71,6 +71,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 break;
             case 'decorative':
                 result = generateDecorativeJoineryCode(settings, params as DecorativeJoineryParams, toolLibrary, unit);
+                break;
+            case 'cabinet':
+                result = generateCabinetCode(settings, params as CabinetParams, toolLibrary, unit);
                 break;
         }
 
@@ -1079,7 +1082,7 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
     const toolDiameter = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
 
     const {
-        width, height, depth, woodThickness, joineryType, cornerClearance,
+        width, height, depth, woodThickness, joineryType, cornerClearance, tolerance,
         depthPerPass, feed, plungeFeed, spindle, safeZ, partToGenerate = 'all'
     } = drawerParams;
 
@@ -1092,6 +1095,7 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
     const numericPlungeFeed = parseFloat(String(plungeFeed));
     const numericSpindle = parseFloat(String(spindle));
     const numericSafeZ = parseFloat(String(safeZ));
+    const numericTolerance = parseFloat(String(tolerance)) || 0;
 
     if ([numericWidth, numericHeight, numericDepth, numericWoodThickness, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
         return { error: 'Fill required drawer fields', code: [], paths: [], bounds: {} as Bounds };
@@ -1124,7 +1128,7 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
 
             const zPasses: number[] = [];
             let curZ = 0;
-            const stepZBoundary = -(R + 0.5);
+            const stepZBoundary = -Math.max(R, 3); // Step for the first 3-R mm
             while (curZ > -numericWoodThickness) {
                 let nextZ = curZ - numericDepthPerPass;
                 if (cornerClearance === 'finger_cutout' && curZ > stepZBoundary && nextZ < stepZBoundary) {
@@ -1159,15 +1163,30 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
 
                 const getBoundaryY = (idx: number, isLeft: boolean) => {
                     let y = isLeft ? (pH - idx * fW) : (idx * fW);
+                    
+                    // Tolerance adjustment (idx 0 and fingers are fixed board edges)
+                    if (idx > 0 && idx < fingers) {
+                        const pinIsPrev = ((idx - 1) % 2 === 0) === startWithPin;
+                        const tOffset = numericTolerance / 2;
+                        if (isLeft) {
+                            // y = pH - (idx*fW). To move y UP (towards prev pin), we must decrease idx*fW.
+                            y += pinIsPrev ? tOffset : -tOffset;
+                        } else {
+                            // y = idx*fW. To move y DOWN (towards prev pin), we must decrease idx*fW.
+                            y += pinIsPrev ? -tOffset : tOffset;
+                        }
+                    }
+
                     if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
-                        if (idx !== 0 && idx !== fingers) {
-                            const pinIsAbove = startWithPin ? (idx - 1) % 2 === 0 : (idx - 1) % 2 !== 0;
-                            const stepAmount = Math.min(R + 0.5, fW / 3);
-                            if (isLeft) {
-                                y += pinIsAbove ? stepAmount : -stepAmount;
-                            } else {
-                                y += pinIsAbove ? -stepAmount : stepAmount;
-                            }
+                        const isPinAbove = idx > 0 && ((idx - 1) % 2 === 0) === startWithPin;
+                        const isPinBelow = idx < fingers && (idx % 2 === 0) === startWithPin;
+                        const step = Math.min(R, fW / 4);
+                        if (isLeft) {
+                            if (isPinAbove) y += step;
+                            if (isPinBelow) y -= step;
+                        } else {
+                            if (isPinAbove) y -= step;
+                            if (isPinBelow) y += step;
                         }
                     }
                     return y;
@@ -1185,28 +1204,55 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
                     if (isPin) {
                         addPt(-R, yBot);
                     } else {
+                        const stepActiveTop = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i > 0;
+                        const stepActiveBot = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i < fingers - 1;
+                        
+                        // X depth adjustment for steps
+                        const stepXDepth = WT - R;
+                        const baseDepthTop = stepActiveTop ? WT - R * 0.75 : stepXDepth;
+                        const baseDepthBot = stepActiveBot ? WT - R * 0.75 : stepXDepth;
+                        
                         addPt(-R, yTop - R);
-                        addPt(WT - R, yTop - R);
+                        addPt(baseDepthTop, yTop - R);
+                        
                         if (cornerClearance === 'dogbone') {
                             addPt(WT - R * 0.707, yTop - R * 0.707);
                             addPt(WT - R, yTop - R);
                         } else if (cornerClearance === 't_bone') {
                             addPt(WT - R, yTop);
                             addPt(WT - R, yTop - R);
+                        } else if (cornerClearance === 'finger_cutout' && currentZ < stepZBoundary) {
+                            addPt(WT - R * 0.5, yTop - R * 0.5);
+                            addPt(WT - R, yTop - R);
                         }
-                        addPt(WT - R, yBot + R);
+                        
+                        if (stepActiveTop && !stepActiveBot) {
+                             addPt(baseDepthTop, yBot + R); // Connect to bot without stepping
+                        } else if (!stepActiveTop && stepActiveBot) {
+                             addPt(baseDepthBot, yTop - R); 
+                             addPt(baseDepthBot, yBot + R);
+                        } else {
+                             addPt(baseDepthBot, yBot + R);
+                        }
+                        
                         if (cornerClearance === 'dogbone') {
                             addPt(WT - R * 0.707, yBot + R * 0.707);
                             addPt(WT - R, yBot + R);
                         } else if (cornerClearance === 't_bone') {
                             addPt(WT - R, yBot);
                             addPt(WT - R, yBot + R);
+                        } else if (cornerClearance === 'finger_cutout' && currentZ < stepZBoundary) {
+                            addPt(WT - R * 0.5, yBot + R * 0.5);
+                            addPt(WT - R, yBot + R);
                         }
+                        
                         addPt(-R, yBot + R);
                         addPt(-R, yBot);
                     }
                 }
 
+                // Corner: Bottom-Left
+                addPt(-R, -R);
                 // Bottom Edge
                 addPt(pW + R, -R);
 
@@ -1219,34 +1265,60 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
                     if (isPin) {
                         addPt(pW + R, yTop);
                     } else {
+                        const stepActiveBot = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i > 0;
+                        const stepActiveTop = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i < fingers - 1;
+
+                        const stepXDepth = pW - WT + R;
+                        const baseDepthBot = stepActiveBot ? pW - WT + R * 0.75 : stepXDepth;
+                        const baseDepthTop = stepActiveTop ? pW - WT + R * 0.75 : stepXDepth;
+
                         addPt(pW + R, yBot + R);
-                        addPt(pW - WT + R, yBot + R);
+                        addPt(baseDepthBot, yBot + R);
+                        
                         if (cornerClearance === 'dogbone') {
                             addPt(pW - WT + R * 0.707, yBot + R * 0.707);
                             addPt(pW - WT + R, yBot + R);
                         } else if (cornerClearance === 't_bone') {
                             addPt(pW - WT + R, yBot);
                             addPt(pW - WT + R, yBot + R);
+                        } else if (cornerClearance === 'finger_cutout' && currentZ < stepZBoundary) {
+                            addPt(pW - WT + R * 0.5, yBot + R * 0.5);
+                            addPt(pW - WT + R, yBot + R);
                         }
-                        addPt(pW - WT + R, yTop - R);
+                        
+                        if (stepActiveBot && !stepActiveTop) {
+                            addPt(baseDepthBot, yTop - R);
+                        } else if (!stepActiveBot && stepActiveTop) {
+                            addPt(baseDepthTop, yBot + R);
+                            addPt(baseDepthTop, yTop - R);
+                        } else {
+                            addPt(baseDepthTop, yTop - R);
+                        }
+                        
                         if (cornerClearance === 'dogbone') {
                             addPt(pW - WT + R * 0.707, yTop - R * 0.707);
                             addPt(pW - WT + R, yTop - R);
                         } else if (cornerClearance === 't_bone') {
                             addPt(pW - WT + R, yTop);
                             addPt(pW - WT + R, yTop - R);
+                        } else if (cornerClearance === 'finger_cutout' && currentZ < stepZBoundary) {
+                            addPt(pW - WT + R * 0.5, yTop - R * 0.5);
+                            addPt(pW - WT + R, yTop - R);
                         }
+                        
                         addPt(pW + R, yTop - R);
                         addPt(pW + R, yTop);
                     }
                 }
 
+                // Corner: Top-Right
+                addPt(pW + R, pH + R);
                 // Top Edge
                 addPt(-R, pH + R);
 
                 if (isLastPass) {
                     paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
-                } else if (cornerClearance === 'finger_cutout' && currentZ === stepZBoundary) {
+                } else if (cornerClearance === 'finger_cutout' && Math.abs(currentZ - stepZBoundary) < 0.01) {
                     paths.push({ d: pathD, stroke: 'var(--color-accent-blue)', strokeDasharray: '4' });
                 }
             }
@@ -1868,5 +1940,342 @@ const generateDecorativeJoineryCode = (machineSettings: MachineSettings, params:
 
     if (bounds.minX === Infinity) bounds = { minX: 0, maxX: length, minY: 0, maxY: patternWidth };
 
+    return { code, paths, bounds, error: null };
+};
+
+const generateCabinetCode = (machineSettings: MachineSettings, params: CabinetParams, toolLibrary: Tool[], unit: string) => {
+    let bounds: Bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const code: string[] = [];
+    const paths: PreviewPath[] = [];
+
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: "No tool selected", code, paths, bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: "No tool selected", code, paths, bounds };
+
+    // Numerical conversions
+    const width = parseFloat(String(params.width));
+    const height = parseFloat(String(params.height));
+    const depth = parseFloat(String(params.depth));
+    const woodThickness = parseFloat(String(params.woodThickness));
+    const backThickness = parseFloat(String(params.backThickness));
+    const feed = parseFloat(String(params.feed));
+    const plunge = parseFloat(String(params.plungeFeed));
+    const spindle = parseFloat(String(params.spindle));
+    const safeZ = parseFloat(String(params.safeZ));
+    const dpp = parseFloat(String(params.depthPerPass));
+    const toolDiam = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
+    const R = toolDiam / 2;
+
+    if ([width, height, depth, woodThickness].some(isNaN)) {
+        return { error: "Width, Height, Depth, and Wood Thickness are required.", code, paths, bounds };
+    }
+
+    code.push(`(--- Cabinet Generator ---)`);
+    code.push(`(Dimensions: ${width}x${height}x${depth}, Joinery: ${params.joineryType})`);
+    code.push(`G21 G90`);
+    code.push(`M3 S${spindle}`);
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+
+    const updateBounds = (x: number, y: number) => {
+        if (x < bounds.minX) bounds.minX = x;
+        if (x > bounds.maxX) bounds.maxX = x;
+        if (y < bounds.minY) bounds.minY = y;
+        if (y > bounds.maxY) bounds.maxY = y;
+    };
+
+    const addPart = (pW: number, pH: number, label: string, offsetX: number, offsetY: number, options: { 
+        notch?: { w: number, h: number },
+        fingers?: { top?: boolean, bottom?: boolean, left?: boolean, right?: boolean, startWithPin?: boolean }
+    } = {}) => {
+        code.push(`(--- Cutting ${label} ---)`);
+        const totalPasses = Math.ceil(woodThickness / dpp);
+        const joinery = params.joineryType === 'joinery';
+        const fWidth = parseFloat(String(params.fingerWidth)) || 50;
+        const cornerType = params.cornerClearance || 'none';
+        const stepZBoundary = -Math.max(R, 3);
+        
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            const cz = Math.max(-pass * dpp, -woodThickness);
+            let isFirstPoint = true;
+            let pathD = "";
+            
+            const addPt = (x: number, y: number, isRapid: boolean = false) => {
+                const absX = x + offsetX;
+                const absY = y + offsetY;
+                code.push(`G${isRapid ? '0' : '1'} X${absX.toFixed(3)} Y${absY.toFixed(3)}${isRapid ? '' : ` F${feed}`}`);
+                if (isFirstPoint) {
+                    pathD += `M ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                    isFirstPoint = false;
+                } else {
+                    pathD += ` L ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                }
+                updateBounds(absX, absY);
+            };
+
+            const applyCC = (x: number, y: number, vx: number, vy: number) => {
+                if (cornerType === 'none') return;
+                if (cornerType === 'finger_cutout' && cz < stepZBoundary) return;
+
+                if (cornerType === 'dogbone' || cornerType === 'finger_cutout') {
+                    const angle = 45 * (Math.PI / 180);
+                    const dx = vx * Math.cos(angle) - vy * Math.sin(angle);
+                    const dy = vx * Math.sin(angle) + vy * Math.cos(angle);
+                    addPt(x + dx * R * 0.5, y + dy * R * 0.5);
+                    addPt(x, y);
+                } else if (cornerType === 't_bone') {
+                    addPt(x + vx * R, y + vy * R);
+                    addPt(x, y);
+                }
+            };
+
+            const getBoundary = (idx: number, total: number, fingersTotal: number, fW: number, isStartEdge: boolean, isVertical: boolean, isPin: boolean) => {
+                let pos = idx * fW;
+
+                // Tolerance adjustment (idx 0 and fingersTotal are board corners)
+                if (idx > 0 && idx < fingersTotal) {
+                    const tOffset = (parseFloat(String(params.tolerance)) || 0) / 2;
+                    const pinIsPrev = ((idx - 1) % 2 === 0) === options.fingers?.startWithPin;
+                    // pos = idx*fW. To move pos towards prev pin (closer to 0), we subtract tOffset.
+                    pos += pinIsPrev ? -tOffset : tOffset;
+                }
+
+                if (cornerType === 'finger_cutout' && cz >= stepZBoundary) {
+                    const step = Math.min(R, fW / 4);
+                    const pinAbove = idx > 0 && (idx - 1) % 2 === (options.fingers?.startWithPin ? 0 : 1);
+                    const pinBelow = idx < fingersTotal && idx % 2 === (options.fingers?.startWithPin ? 0 : 1);
+                    
+                    if (isStartEdge) {
+                        if (pinAbove) pos += step;
+                        if (pinBelow) pos -= step;
+                    } else {
+                        if (pinAbove) pos -= step;
+                        if (pinBelow) pos += step;
+                    }
+                }
+                return pos;
+            };
+
+            const cutEdge = (len: number, hasFingers: boolean, isVertical: boolean, isStartEdge: boolean) => {
+                if (!hasFingers) {
+                    if (isVertical) {
+                        addPt(isStartEdge ? -R : pW + R, isStartEdge ? len + R : -R);
+                    } else {
+                        addPt(isStartEdge ? len + R : -R, isStartEdge ? -R : pH + R);
+                    }
+                    return;
+                }
+
+                const fingersCount = Math.max(1, Math.round(len / fWidth));
+                const fW = len / fingersCount;
+                const startPin = options.fingers?.startWithPin || false;
+
+                for (let i = 0; i < fingersCount; i++) {
+                    const isPin = startPin ? (i % 2 === 0) : (i % 2 !== 0);
+                    const p1 = getBoundary(i, len, fingersCount, fW, isStartEdge, isVertical, isPin);
+                    const p2 = getBoundary(i + 1, len, fingersCount, fW, isStartEdge, isVertical, isPin);
+
+                    if (isVertical) {
+                        const xBase = isStartEdge ? -R : pW + R;
+                        const xDeep = isStartEdge ? woodThickness - R : pW - woodThickness + R;
+                        const y1 = isStartEdge ? len - p1 : p1;
+                        const y2 = isStartEdge ? len - p2 : p2;
+
+                        if (isPin) {
+                            addPt(xBase, y2);
+                        } else {
+                            addPt(xBase, y1 - (isStartEdge ? -R : R));
+                            addPt(xDeep, y1 - (isStartEdge ? -R : R));
+                            applyCC(xDeep, y1, isStartEdge ? -1 : 1, isStartEdge ? 1 : -1);
+                            addPt(xDeep, y2 + (isStartEdge ? -R : R));
+                            applyCC(xDeep, y2, isStartEdge ? -1 : 1, isStartEdge ? -1 : 1);
+                            addPt(xBase, y2 + (isStartEdge ? -R : R));
+                            addPt(xBase, y2);
+                        }
+                    } else {
+                        const yBase = isStartEdge ? -R : pH + R;
+                        const yDeep = isStartEdge ? woodThickness - R : pH - woodThickness + R;
+                        const x1 = isStartEdge ? p1 : len - p1;
+                        const x2 = isStartEdge ? p2 : len - p2;
+
+                        if (isPin) {
+                            addPt(x2, yBase);
+                        } else {
+                            addPt(x1 + (isStartEdge ? -R : R), yBase);
+                            addPt(x1 + (isStartEdge ? -R : R), yDeep);
+                            applyCC(x1, yDeep, isStartEdge ? 1 : -1, isStartEdge ? -1 : 1);
+                            addPt(x2 - (isStartEdge ? -R : R), yDeep);
+                            applyCC(x2, yDeep, isStartEdge ? -1 : 1, isStartEdge ? -1 : 1);
+                            addPt(x2 - (isStartEdge ? -R : R), yBase);
+                            addPt(x2, yBase);
+                        }
+                    }
+                }
+            };
+
+            // Start point (bottom-left)
+            addPt(-R, -R, true);
+            code.push(`G1 Z${cz.toFixed(3)} F${plunge}`);
+
+            if (options.notch) {
+                // Simplified notch with fingers not supported for now to skip complexity
+                addPt(options.notch.w - R, -R);
+                applyCC(options.notch.w - R, options.notch.h - R, -1, 1);
+                addPt(options.notch.w - R, options.notch.h - R);
+                addPt(pW + R, options.notch.h - R);
+                addPt(pW + R, pH + R);
+                addPt(-R, pH + R);
+                addPt(-R, -R);
+            } else {
+                cutEdge(pW, !!options.fingers?.bottom, false, true);  // Bottom
+                cutEdge(pH, !!options.fingers?.right, true, false);  // Right
+                cutEdge(pW, !!options.fingers?.top, false, false);   // Top
+                cutEdge(pH, !!options.fingers?.left, true, true);    // Left
+                addPt(-R, -R);
+            }
+
+            if (pass === totalPasses) {
+                paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+            }
+        }
+        code.push(`G0 Z${safeZ.toFixed(3)}`);
+    };
+
+    const spacing = toolDiam * 3;
+    let currentX = 0;
+    let currentY = 0;
+
+    const toeKickH = params.hasToeKick ? parseFloat(String(params.toeKickHeight)) || 0 : 0;
+    const toeKickD = params.hasToeKick ? parseFloat(String(params.toeKickDepth)) || 0 : 0;
+    const isJoinery = params.joineryType === 'joinery';
+
+    // SIDES
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'sides') {
+        const sideH = height;
+        const sideD = depth;
+        // Left Side
+        addPart(sideD, sideH, "Left Side", currentX, currentY, {
+            notch: params.hasToeKick ? { w: toeKickD, h: toeKickH } : undefined,
+            fingers: isJoinery ? { top: true, bottom: !params.hasToeKick, right: true, startWithPin: true } : undefined
+        });
+        currentX += sideD + spacing;
+        // Right Side
+        addPart(sideD, sideH, "Right Side", currentX, currentY, {
+            notch: params.hasToeKick ? { w: toeKickD, h: toeKickH } : undefined,
+            fingers: isJoinery ? { top: true, bottom: !params.hasToeKick, right: true, startWithPin: true } : undefined
+        });
+        currentX += sideD + spacing;
+    }
+
+    // BOTTOM
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'bottom') {
+        const bottomW = width - 2 * woodThickness;
+        const bottomD = depth - (params.hasToeKick ? toeKickD : 0);
+        addPart(bottomW, bottomD, "Bottom Panel", currentX, currentY, {
+            fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+        });
+        currentX += bottomW + spacing;
+    }
+
+    // TOP (Stretchers/Cleats)
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'top') {
+        const stretcherW = width - 2 * woodThickness;
+        const stretcherD = 100; // 100mm standard
+        addPart(stretcherW, stretcherD, "Front Top Stretcher", currentX, currentY, {
+            fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+        });
+        currentY += stretcherD + spacing;
+        addPart(stretcherW, stretcherD, "Rear Top Stretcher", currentX, currentY, {
+            fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+        });
+        currentY += stretcherD + spacing;
+        
+        // Additional stretchers for drawers
+        if (params.configuration === 'drawers') {
+            const numDrawers = parseInt(String(params.numDrawers)) || 1;
+            for (let i = 0; i < numDrawers - 1; i++) {
+                addPart(stretcherW, stretcherD, `Mid Stretcher ${i+1}`, currentX, currentY, {
+                    fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+                });
+                currentY += stretcherD + spacing;
+            }
+        }
+        currentX += stretcherW + spacing;
+        currentY = 0;
+    }
+
+    // BACK (Nailers/Rails)
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'back') {
+        const nailerW = width - 2 * woodThickness;
+        const nailerH = 100;
+        addPart(nailerW, nailerH, "Top Back Nailer", currentX, currentY, {
+            fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+        });
+        currentY += nailerH + spacing;
+        addPart(nailerW, nailerH, "Bottom Back Nailer", currentX, currentY, {
+            fingers: isJoinery ? { left: true, right: true, startWithPin: false } : undefined
+        });
+        currentX += nailerW + spacing;
+        currentY = 0;
+    }
+
+    // SHELVES
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'shelves') {
+        // Show shelves for these configurations
+        const showShelves = ['shelves', 'appliance', 'doors'].includes(params.configuration);
+        if (showShelves) {
+            const numShelves = Math.max(0, parseInt(String(params.numShelves)) || 0);
+            const shelfW = width - 2 * woodThickness - 1; // 1mm clearance
+            const shelfD = depth - backThickness - 10;
+            
+            for (let i = 0; i < numShelves; i++) {
+                 addPart(shelfW, shelfD, `Shelf ${i+1}`, currentX, currentY);
+                 currentY += shelfD + spacing;
+                 // If height gets too large, move to next column
+                 if (currentY + shelfD > height * 2) {
+                     currentX += shelfW + spacing;
+                     currentY = 0;
+                 }
+            }
+            if (numShelves > 0) currentX += shelfW + spacing;
+        }
+    }
+
+    // DOORS / DRAWER FRONTS
+    if (params.partToGenerate === 'all' || params.partToGenerate === 'doors' || params.partToGenerate === 'drawers') {
+        const gap = 3; // 3mm gap
+        const availableH = height - toeKickH - gap;
+        const availableW = width - 2 * gap;
+
+        if (params.configuration === 'doors') {
+            const numDoors = width > 450 ? 2 : 1;
+            const doorW = (availableW - (numDoors === 2 ? gap : 0)) / numDoors;
+            const doorH = availableH;
+            
+            for (let i = 0; i < numDoors; i++) {
+                addPart(doorW, doorH, `Door ${i+1}`, currentX, currentY);
+                currentY += doorH + spacing;
+            }
+            currentX += doorW + spacing;
+            currentY = 0;
+        }
+
+        if (params.configuration === 'drawers') {
+            const numDrawers = parseInt(String(params.numDrawers)) || 1;
+            const drawerFrontH = (availableH - (numDrawers - 1) * gap) / numDrawers;
+            const drawerFrontW = availableW;
+            
+            for (let i = 0; i < numDrawers; i++) {
+                addPart(drawerFrontW, drawerFrontH, `Drawer Front ${i+1}`, currentX, currentY);
+                currentY += drawerFrontH + spacing;
+            }
+            currentX += drawerFrontW + spacing;
+            currentY = 0;
+        }
+    }
+
+    code.push(`M5`);
+    if (bounds.minX === Infinity) bounds = { minX: 0, maxX: width, minY: 0, maxY: height };
+    
     return { code, paths, bounds, error: null };
 };
