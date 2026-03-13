@@ -36,9 +36,9 @@ export class JogManager {
     private bufferedCommands: number = 0;
 
     // Configuration
-    private readonly CONTINUOUS_JOG_INTERVAL = 100; // ms between continuous jog commands
-    private readonly CONTINUOUS_JOG_DISTANCE = 1; // mm per continuous jog step
-    private readonly HOLD_THRESHOLD = 150; // ms to distinguish tap from hold
+    private readonly CONTINUOUS_JOG_INTERVAL = 300; // ms between "keep-alive" continuous jog commands
+    private readonly CONTINUOUS_JOG_DISTANCE = 100; // mm per continuous jog move (large enough for smoothness, small enough for safety)
+    private readonly HOLD_THRESHOLD = 250; // ms to distinguish tap from hold (slightly longer for reliability)
 
     // Tap detection
     private tapStartTime: number = 0;
@@ -139,9 +139,12 @@ export class JogManager {
      * Start continuous jogging (sends small incremental jogs repeatedly)
      */
     private startContinuousJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
-        // If already jogging this direction, just update the feed rate
+        // If already jogging this direction, just update if feed rate changed significantly
         if (this.continuousJogState?.axis === axis && this.continuousJogState?.direction === direction) {
-            this.continuousJogState.feedRate = feedRate;
+            if (Math.abs(this.continuousJogState.feedRate - feedRate) > 10) {
+                this.continuousJogState.feedRate = feedRate;
+                this.sendContinuousJogStep();
+            }
             return;
         }
 
