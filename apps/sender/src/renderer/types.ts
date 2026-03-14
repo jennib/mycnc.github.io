@@ -27,7 +27,8 @@ import type {
     MortiseTenonParams,
     DadoRabbetParams,
     DecorativeJoineryParams,
-    CabinetParams
+    CabinetParams,
+    BoxJointParams
 } from '@mycnc/shared';
 import { JobStatus } from '@mycnc/shared';
 
@@ -60,7 +61,8 @@ export type {
     MortiseTenonParams,
     DadoRabbetParams,
     DecorativeJoineryParams,
-    CabinetParams
+    CabinetParams,
+    BoxJointParams
 };
 
 export interface BoundingBox {

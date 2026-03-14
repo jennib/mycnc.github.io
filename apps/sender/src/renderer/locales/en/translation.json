@@ -503,7 +503,9 @@
             "spindleSpeed": "Spindle Speed",
             "plungeRate": "Plunge Rate",
             "safeZ": "Safe Z",
-            "safeZHelp": "Rapid height above stock"
+            "safeZHelp": "Rapid height above stock",
+            "cabinet": "Cabinet",
+            "boxjoint": "Box Joint"
         },
         "array": {
             "enable": "Enable Array Pattern",
@@ -639,6 +641,26 @@
             "shelvesLabel": "Shelves",
             "doorsLabel": "Doors",
             "drawerFrontsLabel": "Drawer Fronts",
+            "depthPerPass": "Depth Per Pass",
+            "plungeFeed": "Plunge Feed"
+        },
+        "boxjoint": {
+            "title": "Box Joint Generator",
+            "boardWidth": "Board Width (W)",
+            "jointLength": "Joint Length (L)",
+            "boardThickness": "Board Thickness (D)",
+            "fingerWidth": "Finger Width",
+            "tolerance": "Joint Tolerance",
+            "cornerClearance": "Corner Clearance",
+            "none": "None",
+            "dogbone": "Dogbone",
+            "fingerCutout": "Finger Cutout",
+            "tBone": "T-Bone",
+            "partToGenerate": "Part to Generate",
+            "both": "Both Boards (Layout)",
+            "boardA": "Board A",
+            "boardB": "Board B",
+            "jointOnly": "Cut Only Joint Edge",
             "depthPerPass": "Depth Per Pass",
             "plungeFeed": "Plunge Feed"
         }

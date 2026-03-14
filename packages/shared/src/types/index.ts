@@ -319,6 +319,23 @@ export interface DecorativeJoineryParams {
     toolId: number | null;
 }
 
+export interface BoxJointParams {
+    width: number | '';
+    length: number | ''; // length is the board dimension along the joints
+    depth: number | ''; // wood thickness
+    fingerWidth: number | '';
+    tolerance: number | '';
+    partToGenerate: 'A' | 'B' | 'both';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    cornerClearance: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    toolId: number | null;
+    jointOnly: boolean;
+}
+
 export interface DrawerParams {
     joineryType: 'finger' | 'butt';
     bottomType?: 'flat' | 'groove' | 'rabbet';
@@ -443,6 +460,7 @@ export interface GeneratorSettings {
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
     cabinet: CabinetParams;
+    boxjoint: BoxJointParams;
 }
 
 export interface TimeEstimate {

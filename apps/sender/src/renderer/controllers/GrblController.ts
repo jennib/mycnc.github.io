@@ -70,14 +70,17 @@ export class GrblController implements Controller {
                 ov: [100, 100, 100],
             };
 
-            // Add a short delay to allow the serial port to initialize fully
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Add a delay for real serial ports, but less for simulator
+            const initDelay = options.type === 'simulator' ? 100 : 1000;
+            await new Promise(resolve => setTimeout(resolve, initDelay));
 
             // GRBL Handshake: Send a soft-reset to get the welcome message
             await new Promise<void>((resolve, reject) => {
+                const timeoutDuration = options.type === 'simulator' ? 2000 : 5000; // Longer for real hardware
                 const timeout = setTimeout(() => {
-                    reject(new Error("Connection timed out. No GRBL welcome message received."));
-                }, 2500); // 2.5 second timeout
+                    this.off('data', dataListener);
+                    reject(new Error(`Connection timed out. No GRBL welcome message received after ${timeoutDuration}ms.`));
+                }, timeoutDuration);
 
                 const dataListener = (data: any) => {
                     const payload = typeof data === 'string' ? data : data?.message;
@@ -89,7 +92,7 @@ export class GrblController implements Controller {
                 };
                 this.on('data', dataListener);
 
-                // Send soft-reset character (Ctrl-X)
+                // Send soft-reset character (Ctrl-X) to trigger the welcome message
                 this.sendRealtimeCommand('\x18');
             });
 
@@ -97,14 +100,18 @@ export class GrblController implements Controller {
 
             this.emitter.emit('state', { type: 'connect', data: portInfo });
 
+            if (this.statusInterval) clearInterval(this.statusInterval);
             this.statusInterval = window.setInterval(() => this.requestStatusUpdate(), this.normalPollingRate);
             this.isPollingInAlarmState = false;
 
             // Request initial parser state (for WCS)
-            this.sendRealtimeCommand('$G');
+            this.sendCommand('$G').catch(err => console.error('Initial parser state request failed:', err));
 
         } catch (error) {
             this.isHandshakeInProgress = false;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.emitter.emit('error', `Connection failed during handshake: ${errorMessage}`);
+            
             if (this.serialService.isConnected) {
                 await this.disconnect();
             }
@@ -149,6 +156,13 @@ export class GrblController implements Controller {
                 };
 
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
+
+                // If machine enters alarm state, clear any pending command promises
+                if (this.lastStatus.status === 'Alarm' && this.linePromiseReject) {
+                    this.linePromiseReject(new Error('Machine entered Alarm state.'));
+                    this.linePromiseResolve = null;
+                    this.linePromiseReject = null;
+                }
             }
         } else if (trimmedValue.startsWith('[GC:') && trimmedValue.endsWith(']')) {
             const parserState = parseGrblParserState(trimmedValue);
@@ -169,6 +183,13 @@ export class GrblController implements Controller {
                 };
                 this.emitter.emit('state', { type: 'state', data: this.lastStatus });
                 this.emitter.emit('data', { type: 'received', message: trimmedValue });
+
+                // Clear command lock on alarm
+                if (this.linePromiseReject) {
+                    this.linePromiseReject(new Error('Alarm state detected: ' + trimmedValue));
+                    this.linePromiseResolve = null;
+                    this.linePromiseReject = null;
+                }
             } else if (trimmedValue.startsWith('error:')) {
                 if (this.linePromiseReject) {
                     this.linePromiseReject(new Error(trimmedValue));
@@ -235,7 +256,7 @@ export class GrblController implements Controller {
         this.pollCount++;
         if (this.pollCount % 2 === 0) {
             if (!this.linePromiseResolve) {
-                this.serialService.send('$G\n').catch(err => {
+                this.sendCommand('$G').catch(err => {
                     console.error('Failed to poll parser state:', err);
                 });
             }

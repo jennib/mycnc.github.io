@@ -114,6 +114,23 @@ export declare interface BoundingBox {
     maxZ: number;
 }
 
+declare interface BoxJointParams {
+    width: number | '';
+    length: number | '';
+    depth: number | '';
+    fingerWidth: number | '';
+    tolerance: number | '';
+    partToGenerate: 'A' | 'B' | 'both';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    cornerClearance: 'none' | 'dogbone' | 'finger_cutout' | 't_bone';
+    toolId: number | null;
+    jointOnly: boolean;
+}
+
 export declare interface CabinetParams {
     width: number | '';
     height: number | '';
@@ -391,6 +408,7 @@ export declare interface GeneratorSettings {
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
     cabinet: CabinetParams;
+    boxjoint: BoxJointParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;

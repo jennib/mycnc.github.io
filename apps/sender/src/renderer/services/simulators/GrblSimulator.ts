@@ -168,6 +168,12 @@ export class GrblSimulator implements Simulator {
             const x = getParam(upperCmd, 'X') || 0;
             const y = getParam(upperCmd, 'Y') || 0;
             const z = getParam(upperCmd, 'Z') || 0;
+            const f = getParam(upperCmd, 'F') || 1000;
+
+            // Calculate duration based on distance and feed rate (F is units/min)
+            const distance = Math.sqrt(x * x + y * y + z * z);
+            const duration = (distance / f) * 60 * 1000;
+            const moveTime = Math.max(duration, 50); // Minimum 50ms for visibility
 
             // Simulate movement
             setTimeout(() => {
@@ -176,7 +182,7 @@ export class GrblSimulator implements Simulator {
                 this.state.mpos.z += z;
                 this.updateWPos();
                 this.state.status = 'Idle';
-            }, 200);
+            }, moveTime);
 
             this.emitData('ok\r\n');
             return;
@@ -186,11 +192,21 @@ export class GrblSimulator implements Simulator {
             const x = getParam(upperCmd, 'X');
             const y = getParam(upperCmd, 'Y');
             const z = getParam(upperCmd, 'Z');
+            const f = getParam(upperCmd, 'F') || 1000;
+
+            const dx = x !== null ? (this.positioningMode === 'incremental' ? x : x + this.state.wco.x - this.state.mpos.x) : 0;
+            const dy = y !== null ? (this.positioningMode === 'incremental' ? y : y + this.state.wco.y - this.state.mpos.y) : 0;
+            const dz = z !== null ? (this.positioningMode === 'incremental' ? z : z + this.state.wco.z - this.state.mpos.z) : 0;
+
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const isRapid = upperCmd.startsWith('G0');
+            const effectiveFeed = isRapid ? 5000 : f; // Rapids are faster
+            const duration = (distance / effectiveFeed) * 60 * 1000;
+            const moveTime = Math.max(duration, 10);
 
             // Set status to Run during movement
             this.state.status = 'Run';
 
-            // Simulate movement time (e.g., 10ms)
             setTimeout(() => {
                 if (this.positioningMode === 'incremental') {
                     if (x !== null) this.state.mpos.x += x;
@@ -202,18 +218,9 @@ export class GrblSimulator implements Simulator {
                     if (z !== null) this.state.mpos.z = z + this.state.wco.z;
                 }
                 this.updateWPos();
-
-                // Return to Idle after move (unless another move comes in immediately? 
-                // Real GRBL stays in Run if buffer has moves. 
-                // But here we process one by one with a delay. 
-                // Ideally we should check if more commands are pending, but for this simple simulator, 
-                // setting back to Idle might cause flickering 'Run' -> 'Idle' -> 'Run'.
-                // However, the user complained it *doesn't* show running.
-                // So setting it to Run is the first step.
                 this.state.status = 'Idle';
-
                 this.emitData('ok\r\n');
-            }, 10);
+            }, moveTime);
             return;
         }
 

@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams, BoxJointParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet' | 'boxjoint';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -75,6 +75,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             case 'cabinet':
                 result = generateCabinetCode(settings, params as CabinetParams, toolLibrary, unit);
                 break;
+            case 'boxjoint':
+                result = generateBoxJointCode(settings, params as BoxJointParams, toolLibrary, unit);
+                break;
         }
 
         if (result.error) {
@@ -91,6 +94,202 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     } catch (err: any) {
         self.postMessage({ type: 'error', error: err.message || "Worker error" });
     }
+};
+
+const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJointParams, toolLibrary: Tool[], unit: string) => {
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} as Bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: null, code: [], paths: [], bounds: {} as Bounds };
+    const toolDiameter = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
+
+    const {
+        width, length, depth, fingerWidth, tolerance,
+        depthPerPass, feed, plungeFeed, spindle, safeZ, partToGenerate = 'both', cornerClearance, jointOnly
+    } = params;
+
+    const numericWidth = parseFloat(String(width));
+    const numericLength = parseFloat(String(length));
+    const numericDepth = parseFloat(String(depth));
+    const numericFingerWidth = parseFloat(String(fingerWidth));
+    const numericTolerance = parseFloat(String(tolerance)) || 0;
+    const numericDepthPerPass = parseFloat(String(depthPerPass));
+    const numericFeed = parseFloat(String(feed));
+    const numericPlungeFeed = parseFloat(String(plungeFeed));
+    const numericSpindle = parseFloat(String(spindle));
+    const numericSafeZ = parseFloat(String(safeZ));
+
+    if ([numericWidth, numericLength, numericDepth, numericFingerWidth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
+        return { error: 'Fill required fields', code: [], paths: [], bounds: {} as Bounds };
+    }
+
+    const code = [
+        `(--- Box Joint Generator ---)`,
+        `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
+        `(Length: ${numericLength}, Depth (Thickness): ${numericDepth}, Finger Width: ${numericFingerWidth})`,
+        `(Part: ${partToGenerate})`,
+        `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ.toFixed(3)}`
+    ];
+
+    const paths: PreviewPath[] = [];
+    const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+    const R = toolDiameter / 2;
+    const WT = numericDepth;
+    const feedRate = numericFeed;
+    const plunge = numericPlungeFeed;
+
+    const addPanel = (pW: number, pH: number, startWithPin: boolean, label: string, offsetX: number, offsetY: number) => {
+        code.push(`(--- Cutting Board ${label} ---)`);
+
+        const fingers = Math.max(1, Math.round(pH / numericFingerWidth));
+        const fW = pH / fingers;
+
+        const zPasses: number[] = [];
+        let curZ = 0;
+        const stepZBoundary = -Math.max(R, 3);
+        while (curZ > -WT) {
+            let nextZ = curZ - numericDepthPerPass;
+            if (cornerClearance === 'finger_cutout' && curZ > stepZBoundary && nextZ < stepZBoundary) {
+                nextZ = stepZBoundary;
+            }
+            if (nextZ < -WT) nextZ = -WT;
+            zPasses.push(nextZ);
+            curZ = nextZ;
+        }
+
+        for (let pass = 0; pass < zPasses.length; pass++) {
+            const currentZ = zPasses[pass];
+            const isLastPass = pass === zPasses.length - 1;
+            let pathD = "";
+            let isFirstPoint = true;
+
+            const addPt = (x: number, y: number, isRapid: boolean = false) => {
+                const absX = x + offsetX;
+                const absY = y + offsetY;
+                code.push(`G${isRapid ? '0' : '1'} X${absX.toFixed(3)} Y${absY.toFixed(3)}${isRapid ? '' : ` F${feedRate}`}`);
+                if (isFirstPoint) {
+                    pathD += `M ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                    isFirstPoint = false;
+                } else {
+                    pathD += ` L ${absX.toFixed(3)} ${absY.toFixed(3)}`;
+                }
+                bounds.minX = Math.min(bounds.minX, absX);
+                bounds.maxX = Math.max(bounds.maxX, absX);
+                bounds.minY = Math.min(bounds.minY, absY);
+                bounds.maxY = Math.max(bounds.maxY, absY);
+            };
+
+            const getBoundaryY = (idx: number, isLeft: boolean) => {
+                let y = isLeft ? (pH - idx * fW) : (idx * fW);
+                if (idx > 0 && idx < fingers) {
+                    const pinIsPrev = ((idx - 1) % 2 === 0) === startWithPin;
+                    const tOffset = numericTolerance / 2;
+                    if (isLeft) {
+                        y += pinIsPrev ? tOffset : -tOffset;
+                    } else {
+                        y += pinIsPrev ? -tOffset : tOffset;
+                    }
+                }
+
+                if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
+                    const isPinAbove = idx > 0 && ((idx - 1) % 2 === 0) === startWithPin;
+                    const isPinBelow = idx < fingers && (idx % 2 === 0) === startWithPin;
+                    const step = Math.min(R, fW / 4);
+                    if (isLeft) {
+                        if (isPinAbove) y += step;
+                        if (isPinBelow) y -= step;
+                    } else {
+                        if (isPinAbove) y -= step;
+                        if (isPinBelow) y += step;
+                    }
+                }
+                return y;
+            };
+
+            const applyCC = (x: number, y: number, vx: number, vy: number) => {
+                if (cornerClearance === 'none') return;
+                if (cornerClearance === 'finger_cutout' && currentZ < stepZBoundary) {
+                     addPt(x + vx * R * 0.5, y + vy * R * 0.5);
+                     addPt(x, y);
+                     return;
+                }
+                if (cornerClearance === 'dogbone') {
+                    const angle = 45 * (Math.PI / 180);
+                    const dx = vx * Math.cos(angle) - vy * Math.sin(angle);
+                    const dy = vx * Math.sin(angle) + vy * Math.cos(angle);
+                    addPt(x + dx * R * 0.5, y + dy * R * 0.5);
+                    addPt(x, y);
+                } else if (cornerClearance === 't_bone') {
+                    addPt(x + vx * R, y + vy * R);
+                    addPt(x, y);
+                }
+            };
+
+            addPt(-R, pH + R, true);
+            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+
+            // Left Edge (fingers side)
+            for (let i = 0; i < fingers; i++) {
+                const isPin = startWithPin ? (i % 2 === 0) : (i % 2 !== 0);
+                const yTop = getBoundaryY(i, true);
+                const yBot = getBoundaryY(i + 1, true);
+
+                if (isPin) {
+                    addPt(-R, yBot);
+                } else {
+                    const stepActiveTop = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i > 0;
+                    const stepActiveBot = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i < fingers - 1;
+                    const baseDepthTop = stepActiveTop ? WT - R * 0.75 : WT - R;
+                    const baseDepthBot = stepActiveBot ? WT - R * 0.75 : WT - R;
+
+                    addPt(-R, yTop - R);
+                    addPt(baseDepthTop, yTop - R);
+                    applyCC(WT - R, yTop - R, 1, 1);
+                    
+                    addPt(baseDepthBot, yBot + R);
+                    applyCC(WT - R, yBot + R, 1, -1);
+                    
+                    addPt(-R, yBot + R);
+                    addPt(-R, yBot);
+                }
+            }
+
+            // Outline around the rest of the board - skip if jointOnly is true
+            if (!jointOnly) {
+                addPt(-R, -R);
+                addPt(pW + R, -R);
+                addPt(pW + R, pH + R);
+                addPt(-R, pH + R);
+            }
+
+            if (isLastPass) {
+                paths.push({ d: pathD, stroke: 'var(--color-accent-yellow)' });
+            }
+        }
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+    };
+
+    const spacing = toolDiameter * 4;
+    if (partToGenerate === 'A' || partToGenerate === 'both') {
+        addPanel(numericWidth, numericLength, true, "A", 0, 0);
+    }
+    if (partToGenerate === 'B' || partToGenerate === 'both') {
+        const offset = (partToGenerate === 'both') ? (numericWidth + spacing) : 0;
+        addPanel(numericWidth, numericLength, false, "B", offset, 0);
+    }
+
+    code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+    code.push(`M5`);
+
+    if (bounds.minX === Infinity) {
+        bounds.minX = 0;
+        bounds.maxX = numericWidth;
+        bounds.minY = 0;
+        bounds.maxY = numericLength;
+    }
+
+    return { code, paths, bounds, error: null };
 };
 
 // --- Generator Functions (Pasted and Adapted) ---

@@ -107,6 +107,7 @@ export const DEFAULT_GENERATOR_SETTINGS: GeneratorSettings = {
     dadorabbet: { type: 'dado', orientation: 'horizontal', width: 15, length: 100, depth: 5, offsetX: 0, offsetY: 0, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
     decorative: { type: 'puzzle', length: 100, width: 20, depth: 5, repeatCount: 4, pitch: 25, tolerance: 0.1, inset: 10, part: 'both', orientation: 'horizontal', offsetX: 0, offsetY: 0, feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, toolId: null },
     cabinet: { width: 600, height: 720, depth: 560, woodThickness: 18, backThickness: 6, hasToeKick: true, toeKickHeight: 100, toeKickDepth: 50, configuration: 'shelves', numShelves: 2, shelfThickness: 18, numDrawers: 0, joineryType: 'butt', cornerClearance: 'none', fingerWidth: 50, tolerance: 0.1, feed: 1200, plungeFeed: 300, spindle: 12000, safeZ: 5, depthPerPass: 4, toolId: null, partToGenerate: 'all' },
+    boxjoint: { width: 100, length: 100, depth: 15, fingerWidth: 20, tolerance: 0.1, partToGenerate: 'both', feed: 800, plungeFeed: 200, spindle: 10000, safeZ: 5, depthPerPass: 3, cornerClearance: 'dogbone', toolId: null, jointOnly: false },
 };
 
 export const GRBL_REALTIME_COMMANDS = {
