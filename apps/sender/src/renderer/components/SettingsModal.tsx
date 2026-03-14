@@ -9,6 +9,7 @@ import BuildAreaMeasurementModal from './BuildAreaMeasurementModal';
 import NumberInput from './ui/NumberInput';
 import TextAreaInput from './ui/TextAreaInput';
 import TextInput from './ui/TextInput';
+import Switch from './Switch';
 
 interface InputGroupProps {
     label: string;
@@ -28,7 +29,10 @@ interface SettingsModalProps {
     settings: MachineSettings;
     generatorSettings: GeneratorSettings;
     connectionSettings: ConnectionSettings;
-    onSave: (settings: MachineSettings, generatorSettings: GeneratorSettings, connectionSettings: ConnectionSettings) => void;
+    isVirtualKeyboardEnabled: boolean;
+    allowRemoteFiles: boolean;
+    playCompletionSound: boolean;
+    onSave: (settings: MachineSettings, generatorSettings: GeneratorSettings, connectionSettings: ConnectionSettings, isVirtualKeyboardEnabled: boolean, allowRemoteFiles: boolean, playCompletionSound: boolean) => void;
     onResetDialogs: () => void;
     onExport: () => void;
     onImport: (imported: any) => void;
@@ -37,11 +41,14 @@ interface SettingsModalProps {
     onOpenPluginManager: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings, onOpenPluginManager }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, isVirtualKeyboardEnabled, allowRemoteFiles, playCompletionSound, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings, onOpenPluginManager }) => {
     const { t, i18n } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const [localConnectionSettings, setLocalConnectionSettings] = useState<ConnectionSettings>(connectionSettings);
+    const [localIsVirtualKeyboardEnabled, setLocalIsVirtualKeyboardEnabled] = useState<boolean>(isVirtualKeyboardEnabled);
+    const [localAllowRemoteFiles, setLocalAllowRemoteFiles] = useState<boolean>(allowRemoteFiles);
+    const [localPlayCompletionSound, setLocalPlayCompletionSound] = useState<boolean>(playCompletionSound);
     const [showBuildAreaModal, setShowBuildAreaModal] = useState(false);
     const importFileRef = useRef<HTMLInputElement>(null);
 
@@ -50,8 +57,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
             setLocalSettings(JSON.parse(JSON.stringify(settings)));
             setLocalGeneratorSettings(JSON.parse(JSON.stringify(generatorSettings)));
             setLocalConnectionSettings(JSON.parse(JSON.stringify(connectionSettings)));
+            setLocalIsVirtualKeyboardEnabled(isVirtualKeyboardEnabled);
+            setLocalAllowRemoteFiles(allowRemoteFiles);
+            setLocalPlayCompletionSound(playCompletionSound);
         }
-    }, [isOpen, settings, generatorSettings, connectionSettings]);
+    }, [isOpen, settings, generatorSettings, connectionSettings, isVirtualKeyboardEnabled, allowRemoteFiles, playCompletionSound]);
 
     if (!isOpen) return null;
 
@@ -109,7 +119,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         settingsToSave.jogFeedRate = parseFloat(settingsToSave.jogFeedRate) || 0;
         settingsToSave.isConfigured = true;
 
-        onSave(settingsToSave, localGeneratorSettings, localConnectionSettings);
+        onSave(settingsToSave, localGeneratorSettings, localConnectionSettings, localIsVirtualKeyboardEnabled, localAllowRemoteFiles, localPlayCompletionSound);
         onCancel();
     };
 
@@ -147,11 +157,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
 
     return ReactDOM.createPortal(
         <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[10000] flex items-center justify-center"
+            className="fixed inset-0 bg-background/90 z-[10000] flex items-center justify-center"
             aria-modal="true" role="dialog"
         >
             <div
-                className="bg-surface backdrop-blur-xl rounded-xl shadow-2xl w-full max-w-2xl border border-white/10 transform transition-all max-h-[90vh] flex flex-col"
+                className="bg-surface rounded-xl shadow-2xl w-full max-w-2xl border border-white/10 transform transition-all max-h-[90vh] flex flex-col"
             >
                 <div className="p-6 border-b border-white/10 flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold text-text-primary">{t('settings.title')}</h2>
@@ -159,7 +169,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                 </div>
                 <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                        <div className="space-y-4 bg-background p-4 rounded-xl border border-white/10 shadow-md">
                             <InputGroup label={t('settings.workArea')}>
                                 <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 w-full">
                                     <NumberInput id="work-x" value={localSettings.workArea.x} onChange={val => handleNestedNumericChange('workArea', 'x', val)} unit="X" label={`${t('settings.workArea')} (X)`} className="w-full" />
@@ -271,13 +281,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </div>
 
                         </div>
-                        <div className="space-y-4 bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                        <div className="space-y-4 bg-background p-4 rounded-xl border border-white/10 shadow-md">
                             <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.customScripts')}</h3>
                             <TextAreaInput label={t('settings.startupScript')} value={localSettings.scripts.startup} onChange={val => handleScriptChange('startup', val)} placeholder="e.g., G21 G90" />
                             <TextAreaInput label={t('settings.shutdownScript')} value={localSettings.scripts.shutdown} onChange={val => handleScriptChange('shutdown', val)} placeholder="e.g., M5 G0 X0 Y0" />
                         </div>
                     </div>
-                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                    <div className="bg-background p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.machineConfiguration', 'Machine Firmware')}</h3>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.machineConfigDescription', 'Manage your GRBL firmware settings ($$ commands).')}</p>
@@ -286,7 +296,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </button>
                         </div>
                     </div>
-                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                    <div className="bg-background p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.appConfiguration', 'Application Settings')}</h3>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.appConfigDescription', 'Export/Import all settings, macros, and tools.')}</p>
@@ -304,7 +314,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                             </div>
                         </div>
                     </div>
-                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                    <div className="bg-background p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.interface')}</h3>
                         <div className="space-y-4">
                             <InputGroup label={t('common.language')}>
@@ -325,45 +335,41 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <option value="pa">ਪੰਜਾਬੀ</option>
                                 </select>
                             </InputGroup>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="play-sound"
-                                    checked={localSettings.playCompletionSound}
-                                    onChange={(e) => setLocalSettings(prev => ({ ...prev, playCompletionSound: e.target.checked }))}
-                                    className="w-5 h-5 rounded input-style text-primary focus:ring-primary transition-colors hover:border-white/20"
-                                />
-                                <label htmlFor="play-sound" className="text-sm font-medium text-text-primary">
+                        <div className="grid grid-cols-1 gap-2">
+                            <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface/50 border border-white/5">
+                                <label htmlFor="completion-sound" className="text-sm font-medium text-text-primary cursor-pointer select-none">
                                     {t('settings.playCompletionSound', 'Play Completion Sound')}
                                 </label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="enable-osk"
-                                    checked={useSettingsStore.getState().isVirtualKeyboardEnabled}
-                                    onChange={(e) => useSettingsStore.getState().actions.setIsVirtualKeyboardEnabled(e.target.checked)}
-                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                                <Switch
+                                    isOn={localPlayCompletionSound}
+                                    handleToggle={() => setLocalPlayCompletionSound(!localPlayCompletionSound)}
+                                    id="completion-sound"
                                 />
-                                <label htmlFor="enable-osk" className="text-sm font-medium text-text-primary">
+                            </div>
+                            <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface/50 border border-white/5">
+                                <label htmlFor="enable-osk" className="text-sm font-medium text-text-primary cursor-pointer select-none">
                                     {t('settings.enableVirtualKeyboard', 'Enable On-Screen Keyboard')}
                                 </label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="allow-remote-files"
-                                    checked={useSettingsStore.getState().allowRemoteFiles}
-                                    onChange={(e) => useSettingsStore.getState().actions.setAllowRemoteFiles(e.target.checked)}
-                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
+                                <Switch
+                                    isOn={localIsVirtualKeyboardEnabled}
+                                    handleToggle={() => setLocalIsVirtualKeyboardEnabled(!localIsVirtualKeyboardEnabled)}
+                                    id="enable-osk"
                                 />
-                                <label htmlFor="allow-remote-files" className="text-sm font-medium text-text-primary">
-                                    {t('settings.allowRemoteFiles', 'Receive files over Remote TCP/IP')}
+                            </div>
+                            <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface/50 border border-white/5">
+                                <label htmlFor="remote-files" className="text-sm font-medium text-text-primary cursor-pointer select-none">
+                                    {t('settings.receiveFilesRemote', 'Receive files over Remote TCP/IP')}
                                 </label>
+                                <Switch
+                                    isOn={localAllowRemoteFiles}
+                                    handleToggle={() => setLocalAllowRemoteFiles(!localAllowRemoteFiles)}
+                                    id="remote-files"
+                                />
                             </div>
                         </div>
+                        </div>
                     </div>
-                    <div className="bg-background/60 p-4 rounded-xl border border-white/10 shadow-md">
+                    <div className="bg-background p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.dialogs')}</h3>
                         <div className="flex items-center justify-between">
                             <p className="text-sm text-text-secondary">{t('settings.resetDialogsDesc')}</p>
@@ -373,9 +379,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                         </div>
                     </div>
                 </div>
-                <div className="bg-background/30 px-6 py-4 flex justify-between items-center rounded-b-xl flex-shrink-0 border-t border-white/10">
+                <div className="bg-surface px-6 py-4 flex justify-between items-center rounded-b-xl flex-shrink-0 border-t border-white/10">
                     <div className="flex items-center gap-4 text-xs text-text-secondary">
-                        <span>&copy; {new Date().getFullYear()} mycnc.app v{window.electronAPI ? '1.0.21' : '1.0.21'}</span>
+                        <span>&copy; {new Date().getFullYear()} mycnc.app v{window.electronAPI ? '1.0.36' : '1.0.36'}</span>
                         <button type="button" onClick={() => {
                             onCancel(); // Close settings modal first
                             onContactClick(); // Then open contact modal

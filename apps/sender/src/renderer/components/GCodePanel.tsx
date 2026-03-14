@@ -163,7 +163,7 @@ const OverrideControl: React.FC<OverrideControlProps> = ({
           onMouseUp={handleSliderCommit}
           onTouchStart={() => setIsDragging(true)}
           onTouchEnd={handleSliderCommit}
-          className="w-full h-1.5 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary hover:accent-primary-focus transition-all"
+          className="w-full h-1.5 bg-gradient-to-r from-secondary via-primary to-secondary rounded-lg appearance-none cursor-pointer accent-primary hover:accent-primary-focus transition-all shadow-inner shadow-black/20"
         />
       </div>
     </div>
@@ -408,10 +408,20 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
       );
     }
     return (
-      <div className="flex flex-col items-center justify-center h-full text-text-secondary">
-        <FileText className="w-16 h-16 mb-4 opacity-20" />
-        <p className="font-medium">{t('gcode.status.noFile')}</p>
-        <p className="text-sm opacity-70">{t('gcode.status.loadInstruction')}</p>
+      <div className="flex flex-col items-center justify-center h-full text-text-secondary p-8 text-center">
+        <div className="flex flex-col items-center">
+          <div className="p-6 bg-secondary/20 rounded-full mb-6">
+            <FileText className="w-16 h-16 opacity-20" />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary mb-2">{t('gcode.status.noFile')}</h3>
+          <p className="text-sm opacity-50 max-w-xs">{t('gcode.status.loadInstruction')}</p>
+          <button 
+            onClick={handleUploadClick}
+            className="mt-8 px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-focus transition-all shadow-lg active:scale-95"
+          >
+            {t('gcode.actions.load')}
+          </button>
+        </div>
       </div>
     );
   };
@@ -489,60 +499,6 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         <Play className="w-6 h-6" />
       </button>
     );
-
-    if (jobStatus === JobStatus.Running) {
-      return (
-        <>
-          <button
-            key="pause"
-            onClick={() => onJobControl("pause")}
-            disabled={isHoming}
-            className="flex items-center justify-center gap-2 p-3 bg-accent-yellow text-white font-bold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-yellow-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
-            title="Pause Job"
-          >
-            <Pause className="w-6 h-6" />
-          </button>
-          <div className="relative col-span-2">
-            <button
-              key="stop"
-              onClick={() => onJobControl("stop")}
-              disabled={isHoming}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
-              title="Stop Job"
-            >
-              <Square className="w-6 h-6" />
-            </button>
-          </div>
-        </>
-      );
-    }
-
-    if (jobStatus === JobStatus.Paused) {
-      return (
-        <>
-          <button
-            key="resume"
-            onClick={() => onJobControl("resume")}
-            disabled={isHoming}
-            className="flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
-            title="Resume Job"
-          >
-            <Play className="w-6 h-6" />
-          </button>
-          <div className="col-span-2">
-            <button
-              key="stop"
-              onClick={() => onJobControl("stop")}
-              disabled={isHoming}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
-              title="Stop Job"
-            >
-              <Square className="w-6 h-6" />
-            </button>
-          </div>
-        </>
-      );
-    }
 
     return null;
   };

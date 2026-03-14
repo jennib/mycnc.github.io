@@ -45,7 +45,7 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({
 
     return ReactDOM.createPortal(
         <div className="fixed top-0 left-0 w-screen h-screen bg-background/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all">
+            <div className="bg-surface rounded-lg shadow-2xl w-full max-w-2xl border border-secondary transform transition-all overflow-hidden">
                 <div className="p-6 border-b border-secondary flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-text-primary">{t('welcome.title')}</h2>
                     <div className="flex items-center gap-4">

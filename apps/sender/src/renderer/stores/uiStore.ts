@@ -25,6 +25,7 @@ type UIState = {
   isGrblSettingsModalOpen: boolean;
   isPluginManagerModalOpen: boolean;
   isStockAlignmentWizardOpen: boolean;
+  isCalculatorModalOpen: boolean;
   preflightWarnings: { type: 'error' | 'warning'; message: string }[];
   actions: {
     openPreflightModal: () => void;
@@ -54,6 +55,8 @@ type UIState = {
     closePluginManagerModal: () => void;
     openStockAlignmentWizard: () => void;
     closeStockAlignmentWizard: () => void;
+    openCalculatorModal: () => void;
+    closeCalculatorModal: () => void;
   };
 };
 
@@ -80,6 +83,7 @@ export const useUIStore = create<UIState>((set) => ({
   isGrblSettingsModalOpen: false,
   isPluginManagerModalOpen: false,
   isStockAlignmentWizardOpen: false,
+  isCalculatorModalOpen: false,
   preflightWarnings: [],
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
@@ -109,5 +113,7 @@ export const useUIStore = create<UIState>((set) => ({
     closePluginManagerModal: () => set({ isPluginManagerModalOpen: false }),
     openStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: true }),
     closeStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: false }),
+    openCalculatorModal: () => set({ isCalculatorModalOpen: true }),
+    closeCalculatorModal: () => set({ isCalculatorModalOpen: false }),
   },
 }));

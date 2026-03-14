@@ -14,6 +14,7 @@ import MacroEditorModal from "./components/MacroEditorModal";
 import SettingsModal from "./components/SettingsModal";
 import GrblSettingsModal from "./components/GrblSettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
+import CalculatorModal from "./components/CalculatorModal";
 import LibraryPanel from "./components/LibraryPanel";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
@@ -38,6 +39,7 @@ import {
   Zap,
   Terminal,
   FolderOpen,
+  Calculator,
   GRBL_REALTIME_COMMANDS,
 } from "@mycnc/shared";
 import { Analytics } from "@vercel/analytics/react";
@@ -138,6 +140,7 @@ const MainApp: React.FC = () => {
     infoModalMessage,
     isGrblSettingsModalOpen,
     isPluginManagerModalOpen,
+    isCalculatorModalOpen,
     returnToWelcome,
     actions: uiActions,
   } = useUIStore((state) => state);
@@ -403,7 +406,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background text-text-primary overflow-hidden font-sans">
-      <header className="bg-surface/95 backdrop-blur-md border-b border-white/10 px-4 py-2 flex items-center justify-between shadow-lg z-10 flex-shrink-0">
+      <header className="bg-surface border-b border-white/5 px-4 py-2 flex items-center justify-between shadow-md z-10 flex-shrink-0">
         <Logo className="h-8 w-auto" />
         <div className="flex items-center gap-6">
           <ConnectionSelector />
@@ -424,6 +427,13 @@ const MainApp: React.FC = () => {
               title={t('tools.title')}
             >
               <BookOpen className="w-5 h-5" />
+            </button>
+            <button
+              onClick={uiActions.openCalculatorModal}
+              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              title={t('calculator.title', 'Calculator')}
+            >
+              <Calculator className="w-5 h-5" />
             </button>
             <button
               onClick={uiActions.openSettingsModal}
@@ -520,8 +530,8 @@ const MainApp: React.FC = () => {
         )
       }
 
-      <main className="flex-grow p-2 grid grid-cols-1 lg:grid-cols-2 gap-2 min-h-0 overflow-y-auto lg:overflow-hidden">
-        <div className="h-[40vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
+      <main className="flex-grow p-4 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden relative">
+        <div className="h-[40vh] lg:h-full bg-surface rounded-lg border border-white/5 overflow-hidden shadow-md">
           <GCodePanel
             onFileLoad={jobActions.loadFile}
             fileName={fileName}
@@ -545,7 +555,7 @@ const MainApp: React.FC = () => {
             isSimulated={connectionSettings.type === 'simulator'}
           />
         </div>
-        <div className="h-[50vh] lg:h-full bg-surface/95 rounded-xl border border-white/10 border-t-white/20 overflow-hidden shadow-2xl">
+        <div className="h-[50vh] lg:h-full bg-surface rounded-lg border border-white/5 overflow-hidden shadow-md">
           <Tabs
             defaultTab="controls"
             tabs={[
@@ -685,14 +695,20 @@ const MainApp: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onCancel={uiActions.closeSettingsModal}
-        onSave={(settings, genSettings, connSettings) => {
+        onSave={(settings, genSettings, connSettings, oskEnabled, allowRemote, playSound) => {
           settingsActions.setMachineSettings(settings);
           settingsActions.setGeneratorSettings(genSettings);
           settingsActions.setConnectionSettings(connSettings);
+          settingsActions.setIsVirtualKeyboardEnabled(oskEnabled);
+          settingsActions.setAllowRemoteFiles(allowRemote);
+          settingsActions.setPlayCompletionSound(playSound);
         }}
         settings={machineSettings}
         generatorSettings={generatorSettings}
         connectionSettings={connectionSettings}
+        isVirtualKeyboardEnabled={useSettingsStore.getState().isVirtualKeyboardEnabled}
+        allowRemoteFiles={useSettingsStore.getState().allowRemoteFiles}
+        playCompletionSound={useSettingsStore.getState().playCompletionSound}
         onResetDialogs={() => {
           localStorage.removeItem('cnc-app-welcome-dismissed');
           localStorage.removeItem('cnc-app-skip-preflight');
@@ -726,6 +742,11 @@ const MainApp: React.FC = () => {
       <ContactModal
         isOpen={isContactModalOpen}
         onClose={uiActions.closeContactModal}
+      />
+
+      <CalculatorModal
+        isOpen={isCalculatorModalOpen}
+        onClose={uiActions.closeCalculatorModal}
       />
 
       <GCodeGeneratorModal

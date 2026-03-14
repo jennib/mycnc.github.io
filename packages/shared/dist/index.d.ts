@@ -2,8 +2,10 @@ import { AlertTriangle } from 'lucide-react';
 import { ArrowDown } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 import { ArrowUp } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 import { Camera } from 'lucide-react';
 import { CameraOff } from 'lucide-react';
 import { Check } from 'lucide-react';
@@ -80,6 +82,8 @@ export { ArrowLeft }
 
 export { ArrowRight }
 
+export { ArrowRightLeft }
+
 export { ArrowUp }
 
 export { BookOpen }
@@ -135,6 +139,8 @@ export declare interface CabinetParams {
     toolId: number | null;
     partToGenerate: 'all' | 'sides' | 'top' | 'bottom' | 'back' | 'shelves' | 'toe_kick' | 'doors' | 'drawers';
 }
+
+export { Calculator }
 
 export { Camera }
 

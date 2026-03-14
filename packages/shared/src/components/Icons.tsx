@@ -1,7 +1,9 @@
 import {
     Power,
     PowerOff,
+    Calculator,
     Radio,
+    ArrowRightLeft,
     Play,
     Pause,
     Square,
@@ -78,7 +80,9 @@ import React from 'react';
 export {
     Power,
     PowerOff,
+    Calculator,
     Radio,
+    ArrowRightLeft,
     Play,
     Pause,
     Square,

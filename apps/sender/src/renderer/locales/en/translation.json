@@ -709,5 +709,10 @@
     },
     "tools": {
         "title": "Tool Library"
+    },
+    "calculator": {
+        "title": "Calculator & Converter",
+        "tab_calc": "Calculator",
+        "tab_conv": "Unit Converter"
     }
 }

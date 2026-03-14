@@ -67,7 +67,7 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
     };
 
     return (
-        <div className="bg-surface rounded-lg shadow-lg p-2">
+        <div className="bg-surface rounded-lg border border-secondary p-3 mt-2 shadow-md">
             <div
                 onClick={() => setIsCollapsed(p => !p)}
                 className="flex items-center justify-between cursor-pointer"
@@ -131,17 +131,17 @@ const MacrosPanel: React.FC<MacrosPanelProps> = ({ macros, onRunMacro, onOpenEdi
                                 key={index}
                                 onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleButtonClick(e, index)}
                                 disabled={disabled && !isEditMode}
-                                className="relative p-3 bg-secondary rounded-md text-sm font-semibold hover:bg-secondary-focus focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed text-left group"
+                                className="relative p-3 bg-white/5 border border-white/10 rounded-lg text-sm font-semibold hover:bg-white/10 hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed text-left group transition-all"
                                 title={isEditMode ? t('macros.editTooltip', { name: macro.name }) : (macro.description || macro.commands.join('; '))}
                             >
                                 <div className="flex flex-col">
-                                    <span>{macro.name}</span>
+                                    <span className="text-text-primary group-hover:text-primary transition-colors">{macro.name}</span>
                                     {macro.description && (
-                                        <span className="text-xs text-text-secondary font-normal truncate">{macro.description}</span>
+                                        <span className="text-xs text-text-secondary font-normal truncate opacity-60">{macro.description}</span>
                                     )}
                                 </div>
                                 {isEditMode && (
-                                    <div className="absolute top-1 right-1 p-1 rounded-full bg-primary/50 hover:bg-primary">
+                                    <div className="absolute top-1 right-1 p-1 rounded-full bg-primary/20 hover:bg-primary transition-colors">
                                         <Pencil className="w-3 h-3 text-white" />
                                     </div>
                                 )}
