@@ -35,6 +35,17 @@ const MortiseTenonGenerator: React.FC<MortiseTenonGeneratorProps> = ({ params, o
                 onChange={val => handleParamChange('partToGenerate', val)}
             />
 
+            <RadioGroup
+                label={t('generators.mortiseTenon.jointType')}
+                options={[
+                    { value: 'standard', label: t('generators.mortiseTenon.standard') },
+                    { value: 'tbone', label: t('generators.mortiseTenon.tbone') },
+                    { value: 'dogbone', label: t('generators.mortiseTenon.dogbone') }
+                ]}
+                selected={params.jointType}
+                onChange={val => handleParamChange('jointType', val)}
+            />
+
             <div className='grid grid-cols-2 gap-4'>
                 <Input label={t('generators.mortiseTenon.width')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
                 <Input label={t('generators.mortiseTenon.length')} value={params.height} onChange={e => handleParamChange('height', e.target.value)} unit={unit} />

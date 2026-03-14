@@ -525,7 +525,11 @@
             "width": "Mortise / Tenon Width",
             "length": "Mortise / Tenon Length",
             "depth": "Depth (Tenon Height)",
-            "tolerance": "Joint Tolerance"
+            "tolerance": "Joint Tolerance",
+            "jointType": "Joint Style",
+            "standard": "Standard (Filleted)",
+            "tbone": "T-Bone",
+            "dogbone": "Dogbone"
         },
         "drawer": {
             "title": "Drawer Generator",

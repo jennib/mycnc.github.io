@@ -269,6 +269,7 @@ export interface ReliefParams {
 
 export interface MortiseTenonParams {
     partToGenerate: 'mortise' | 'tenon' | 'both';
+    jointType: 'standard' | 'tbone' | 'dogbone';
     width: number | '';
     height: number | '';
     depth: number | '';

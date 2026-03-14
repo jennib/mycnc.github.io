@@ -1491,6 +1491,30 @@ const generateMortiseTenonCode = (
                 }
             };
 
+            const addCornerRelief = (px: number, py: number) => {
+                const jointType = params.jointType;
+                if (!jointType || jointType === 'standard') return;
+
+                const signX = px >= 0 ? 1 : -1;
+                const signY = py >= 0 ? 1 : -1;
+
+                if (jointType === 'dogbone') {
+                    const angle = Math.atan2(signY, signX);
+                    const dist = toolDiam * 0.7; // Clear corner diagonally
+                    addPt(px + Math.cos(angle) * dist, py + Math.sin(angle) * dist);
+                    addPt(px, py);
+                } else if (jointType === 'tbone') {
+                    // T-bone: extend the cut along the long axis to clear the short side corner
+                    if (W >= L) {
+                        addPt(px + signX * toolDiam * 0.6, py);
+                        addPt(px, py);
+                    } else {
+                        addPt(px, py + signY * toolDiam * 0.6);
+                        addPt(px, py);
+                    }
+                }
+            };
+
             for (let step = 0; step <= numSpirals; step++) {
                 const r = (numSpirals - step) * stepover;
                 const px = Math.max(0, maxPx - r);
@@ -1505,15 +1529,23 @@ const generateMortiseTenonCode = (
                     addPt(0, 0);
                 } else if (px <= 0.001) {
                     addPt(0, -py);
+                    if (step === numSpirals) addCornerRelief(0, -py);
                     addPt(0, py);
+                    if (step === numSpirals) addCornerRelief(0, py);
                 } else if (py <= 0.001) {
                     addPt(-px, 0);
+                    if (step === numSpirals) addCornerRelief(-px, 0);
                     addPt(px, 0);
+                    if (step === numSpirals) addCornerRelief(px, 0);
                 } else {
                     addPt(-px, -py);
+                    if (step === numSpirals) addCornerRelief(-px, -py);
                     addPt(px, -py);
+                    if (step === numSpirals) addCornerRelief(px, -py);
                     addPt(px, py);
+                    if (step === numSpirals) addCornerRelief(px, py);
                     addPt(-px, py);
+                    if (step === numSpirals) addCornerRelief(-px, py);
                     addPt(-px, -py); // close loop
                 }
             }
@@ -1553,29 +1585,60 @@ const generateMortiseTenonCode = (
                 if (isLastPass) pathD += `L ${(offsetX + x).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
             };
 
+            const addTenonRelief = (px: number, py: number) => {
+                const jointType = params.jointType;
+                if (!jointType || jointType === 'standard') return;
+
+                const signX = px >= 0 ? 1 : -1;
+                const signY = py >= 0 ? 1 : -1;
+
+                if (jointType === 'dogbone') {
+                    const angle = Math.atan2(signY, signX);
+                    const dist = toolDiam * 0.7;
+                    addLine(px + Math.cos(angle) * dist, py + Math.sin(angle) * dist);
+                    addLine(px, py);
+                } else if (jointType === 'tbone') {
+                    if (W >= L) {
+                        addLine(px + signX * toolDiam * 0.6, py);
+                        addLine(px, py);
+                    } else {
+                        addLine(px, py + signY * toolDiam * 0.6);
+                        addLine(px, py);
+                    }
+                }
+            };
+
             addLine(cx, cy + 2 * R);
+            addTenonRelief(cx, cy + 2 * R);
 
             code.push(`G2 X${(offsetX + cx + 2 * R).toFixed(3)} Y${(offsetY + cy).toFixed(3)} I0 J${(-2 * R).toFixed(3)} F${feed}`);
             if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX + cx + 2 * R).toFixed(3)} ${(offsetY + cy).toFixed(3)} `;
             updateBounds(offsetX + cx + 2 * R, offsetY + cy);
+            addTenonRelief(cx + 2 * R, cy);
 
             addLine(cx + 2 * R, -cy);
+            addTenonRelief(cx + 2 * R, -cy);
 
             code.push(`G2 X${(offsetX + cx).toFixed(3)} Y${(offsetY - cy - 2 * R).toFixed(3)} I${(-2 * R).toFixed(3)} J0 F${feed}`);
             if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX + cx).toFixed(3)} ${(offsetY - cy - 2 * R).toFixed(3)} `;
             updateBounds(offsetX + cx, offsetY - cy - 2 * R);
+            addTenonRelief(cx, -cy - 2 * R);
 
             addLine(-cx, -cy - 2 * R);
+            addTenonRelief(-cx, -cy - 2 * R);
 
             code.push(`G2 X${(offsetX - cx - 2 * R).toFixed(3)} Y${(offsetY - cy).toFixed(3)} I0 J${(2 * R).toFixed(3)} F${feed}`);
             if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX - cx - 2 * R).toFixed(3)} ${(offsetY - cy).toFixed(3)} `;
             updateBounds(offsetX - cx - 2 * R, offsetY - cy);
+            addTenonRelief(-cx - 2 * R, -cy);
 
             addLine(-cx - 2 * R, cy);
+            addTenonRelief(-cx - 2 * R, cy);
 
             code.push(`G2 X${(offsetX - cx).toFixed(3)} Y${(offsetY + cy + 2 * R).toFixed(3)} I${(2 * R).toFixed(3)} J0 F${feed}`);
             if (isLastPass) pathD += `A ${2 * R} ${2 * R} 0 0 1 ${(offsetX - cx).toFixed(3)} ${(offsetY + cy + 2 * R).toFixed(3)} `;
             updateBounds(offsetX - cx, offsetY + cy + 2 * R);
+            addTenonRelief(-cx, cy + 2 * R);
 
             addLine(0, cy + 2 * R);
 
