@@ -118,8 +118,10 @@ declare interface BoxJointParams {
     width: number | '';
     length: number | '';
     depth: number | '';
-    numberOfFingers: number | '';
+    fingerWidth: number | '';
+    numberOfFingers?: number | '';
     tolerance: number | '';
+    fingerStickOut?: number | '';
     partToGenerate: 'A' | 'B' | 'both';
     feed: number | '';
     plungeFeed: number | '';
@@ -499,8 +501,14 @@ export declare interface MachineSettings {
         xOffset: number;
         yOffset: number;
         zOffset: number;
-        feedRate: number;
+        fastFeedRate: number;
+        slowFeedRate: number;
         probeTravelDistance: number;
+        retractDistance: number;
+        blockWidthX: number;
+        blockWidthY: number;
+        blockHeight: number;
+        bitDiameter: number;
     };
     scripts: {
         startup: string;
@@ -529,6 +537,7 @@ export declare interface MachineState {
         speed: number;
     };
     ov: number[];
+    pins?: string;
 }
 
 export declare interface Macro {
@@ -631,6 +640,8 @@ export declare const Probe: default_2.FC<IconProps>;
 export declare const ProbeX: default_2.FC<IconProps>;
 
 export declare const ProbeXY: default_2.FC<IconProps>;
+
+export declare const ProbeXYZ: default_2.FC<IconProps>;
 
 export declare const ProbeY: default_2.FC<IconProps>;
 

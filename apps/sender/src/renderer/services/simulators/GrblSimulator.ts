@@ -24,6 +24,7 @@ export class GrblSimulator implements Simulator {
         wcs: 'G54',
         spindle: { state: 'off', speed: 0 },
         ov: [100, 100, 100],
+        pins: '',
     };
 
     private positioningMode: 'absolute' | 'incremental' = 'absolute';
@@ -99,7 +100,10 @@ export class GrblSimulator implements Simulator {
 
         const a = accessoryState ? `|A:${accessoryState}` : '';
 
-        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}|${ov}${a}>`;
+        // Pin State (Pn)
+        const pn = s.pins ? `|Pn:${s.pins}` : '';
+
+        const statusString = `<${s.status}|${mpos}|${wpos}|${fs}|${wco}|${ov}${a}${pn}>`;
         this.emitData(statusString + '\r\n');
     }
 
@@ -296,6 +300,18 @@ export class GrblSimulator implements Simulator {
             setTimeout(() => {
                 this.emitData('ok\r\n');
             }, p * 1000);
+            return;
+        }
+
+        // Support ;PROBE_ON and ;PROBE_OFF for testing
+        if (upperCmd === ';PROBE_ON') {
+            this.state.pins = 'P';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';PROBE_OFF') {
+            this.state.pins = '';
+            this.emitData('ok\r\n');
             return;
         }
 

@@ -13,6 +13,7 @@ import {
   ProbeX,
   ProbeY,
   ProbeXY,
+  ProbeXYZ,
   Home,
   HomeX,
   HomeY,
@@ -40,6 +41,7 @@ interface JogPanelProps {
   onSetZero: (axes: "all" | "x" | "y" | "z" | "xy") => void;
   onSpindleCommand: (command: "cw" | "ccw" | "off", speed: number) => void;
   onProbe: (axes: string) => void;
+  onXYZProbe: () => void;
   onSendCommand: (command: string) => void;
   jogStep: number;
   onStepChange: (step: number) => void;
@@ -152,6 +154,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     onSetZero,
     onSpindleCommand,
     onProbe,
+    onXYZProbe,
     jogStep,
     onStepChange,
     flashingButton,
@@ -737,6 +740,14 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   title={t('jog.probe.xy')}
                 >
                   <ProbeXY className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => onXYZProbe()}
+                  disabled={isProbeDisabled}
+                  className="p-3 bg-primary/30 text-text-primary font-semibold rounded-lg hover:bg-primary/40 border border-white/5 disabled:opacity-50 flex items-center justify-center transition-all hover:shadow-md active:scale-95"
+                  title={t('jog.probe.xyz')}
+                >
+                  <ProbeXYZ className="w-5 h-5" />
                 </button>
               </div>
               <button

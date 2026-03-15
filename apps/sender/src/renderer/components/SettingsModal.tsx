@@ -102,7 +102,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
         const numericFields: Record<string, string[]> = {
             workArea: ['x', 'y', 'z'],
             spindle: ['min', 'max', 'warmupDelay'],
-            probe: ['xOffset', 'yOffset', 'zOffset', 'feedRate']
+            probe: ['xOffset', 'yOffset', 'zOffset', 'fastFeedRate', 'slowFeedRate', 'retractDistance', 'probeTravelDistance', 'blockWidthX', 'blockWidthY', 'blockHeight', 'bitDiameter']
         };
 
         // Iterate and parse string inputs back to numbers
@@ -219,9 +219,42 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                                     <NumberInput id="probe-z" value={localSettings.probe.zOffset} onChange={val => handleNestedNumericChange('probe', 'zOffset', val)} unit="Z" label={`${t('settings.probe')} (Z)`} className="w-full" />
                                 </div>
                             </InputGroup>
-                            <InputGroup label={t('settings.probeFeedRate')}>
-                                <NumberInput id="probe-feed" value={localSettings.probe.feedRate} onChange={val => handleNestedNumericChange('probe', 'feedRate', val)} unit="mm/min" label={t('settings.probeFeedRate')} />
-                            </InputGroup>
+                            <div className="grid grid-cols-2 gap-4">
+                                <InputGroup label={t('settings.fastProbeFeedRate')}>
+                                    <NumberInput id="probe-fast-feed" value={localSettings.probe.fastFeedRate} onChange={val => handleNestedNumericChange('probe', 'fastFeedRate', val)} unit="mm/min" label={t('settings.fastProbeFeedRate')} />
+                                </InputGroup>
+                                <InputGroup label={t('settings.slowProbeFeedRate')}>
+                                    <NumberInput id="probe-slow-feed" value={localSettings.probe.slowFeedRate} onChange={val => handleNestedNumericChange('probe', 'slowFeedRate', val)} unit="mm/min" label={t('settings.slowProbeFeedRate')} />
+                                </InputGroup>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <InputGroup label={t('settings.probeRetractDistance')}>
+                                    <NumberInput id="probe-retract" value={localSettings.probe.retractDistance} onChange={val => handleNestedNumericChange('probe', 'retractDistance', val)} unit="mm" label={t('settings.probeRetractDistance')} />
+                                </InputGroup>
+                                <InputGroup label={t('settings.probeTravelDistance')}>
+                                    <NumberInput id="probe-travel" value={localSettings.probe.probeTravelDistance} onChange={val => handleNestedNumericChange('probe', 'probeTravelDistance', val)} unit="mm" label={t('settings.probeTravelDistance')} />
+                                </InputGroup>
+                            </div>
+
+                            <div className="border-t border-white/10 pt-4 mt-4">
+                                <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wider">{t('settings.xyzProbeBlock') || 'XYZ Probe Block'}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputGroup label={t('settings.blockWidthX')}>
+                                        <NumberInput id="probe-block-x" value={localSettings.probe.blockWidthX} onChange={val => handleNestedNumericChange('probe', 'blockWidthX', val)} unit="mm" label={t('settings.blockWidthX')} />
+                                    </InputGroup>
+                                    <InputGroup label={t('settings.blockWidthY')}>
+                                        <NumberInput id="probe-block-y" value={localSettings.probe.blockWidthY} onChange={val => handleNestedNumericChange('probe', 'blockWidthY', val)} unit="mm" label={t('settings.blockWidthY')} />
+                                    </InputGroup>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputGroup label={t('settings.blockHeight')}>
+                                        <NumberInput id="probe-block-z" value={localSettings.probe.blockHeight} onChange={val => handleNestedNumericChange('probe', 'blockHeight', val)} unit="mm" label={t('settings.blockHeight')} />
+                                    </InputGroup>
+                                    <InputGroup label={t('settings.bitDiameter')}>
+                                        <NumberInput id="probe-bit-dia" value={localSettings.probe.bitDiameter} onChange={val => handleNestedNumericChange('probe', 'bitDiameter', val)} unit="mm" label={t('settings.bitDiameter')} />
+                                    </InputGroup>
+                                </div>
+                            </div>
 
                             <div className="border-t border-white/10 pt-4 mt-4">
                                 <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wider">{t('connection.tcp') || 'TCP Connection'}</h3>

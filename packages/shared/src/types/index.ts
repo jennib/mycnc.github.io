@@ -44,6 +44,7 @@ export interface MachineState {
     wcs: string; // Added wcs (e.g., G54)
     spindle: { state: 'cw' | 'ccw' | 'off'; speed: number }; // Changed to 'cw' | 'ccw' | 'off'
     ov: number[];
+    pins?: string;
 }
 
 export type ToolType = 'endmill' | 'ballmill' | 'bullhead' | 'vbit30' | 'vbit60' | 'vbit90' | 'surfacing' | 'cornmill';
@@ -69,7 +70,7 @@ export interface MachineSettings {
     workArea: { x: number; y: number; z: number };
     jogFeedRate: number;
     spindle: { min: number; max: number; warmupDelay: number; };
-    probe: { xOffset: number; yOffset: number; zOffset: number; feedRate: number; probeTravelDistance: number };
+    probe: { xOffset: number; yOffset: number; zOffset: number; fastFeedRate: number; slowFeedRate: number; probeTravelDistance: number; retractDistance: number; blockWidthX: number; blockWidthY: number; blockHeight: number; bitDiameter: number };
     scripts: { startup: string; toolChange: string; shutdown: string; jobPause: string; jobResume: string; jobStop: string; };
     toolChangePolicy?: 'native' | 'macro';
     toolChangeMacroId?: string | null;
@@ -323,9 +324,10 @@ export interface BoxJointParams {
     width: number | '';
     length: number | ''; // length is the board dimension along the joints
     depth: number | ''; // wood thickness
-    numberOfFingers: number | '';
+    fingerWidth: number | '';
+    numberOfFingers?: number | '';
     tolerance: number | '';
-    fingerStickOut: number | '';
+    fingerStickOut?: number | '';
     partToGenerate: 'A' | 'B' | 'both';
     feed: number | '';
     plungeFeed: number | '';

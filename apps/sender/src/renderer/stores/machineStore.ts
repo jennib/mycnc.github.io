@@ -3,6 +3,7 @@ import { MachineState } from '@/types';
 import { useConnectionStore } from './connectionStore';
 import { useSettingsStore } from './settingsStore';
 import { useLogStore } from './logStore';
+import { useUIStore } from './uiStore';
 import { GRBL_REALTIME_COMMANDS } from '@/constants';
 
 // GRBL Alarm codes and messages
@@ -39,6 +40,9 @@ interface MachineStoreState {
     handleSetZero: (axes: 'all' | 'x' | 'y' | 'z' | 'xy') => void;
     handleSpindleCommand: (command: 'cw' | 'ccw' | 'off', speed: number) => void;
     handleProbe: (axes: string) => void;
+    _executeProbe: (axes: string, diameter: number) => void;
+    handleXYZProbe: () => void;
+    _executeXYZProbe: (diameter: number) => void;
     handleJog: (axis: string, direction: number, step: number, feedRate?: number) => void;
     handleJogStop: () => void;
     handleRunMacro: (commands: string[]) => Promise<void>;
@@ -52,7 +56,6 @@ const initialState = {
   isJogging: false,
   isHomedSinceConnect: false,
   isMacroRunning: false,
-  wcs: 'G54',
 };
 
 export const useMachineStore = create<MachineStoreState>((set, get) => ({
@@ -64,7 +67,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
 
       // Detect successful homing cycle completion
       if (
-        (prevState?.status === 'Home' || prevState?.status === 'Homing') &&
+        prevState?.status === 'Home' &&
         state?.status === 'Idle'
       ) {
         set({ isHomedSinceConnect: true });
@@ -110,7 +113,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
         z: 'G10 L20 P0 Z0',
         xy: 'G10 L20 P0 X0 Y0',
       };
-      const command = commandMap[axes];
+      const command = commandMap[axes as keyof typeof commandMap];
       if (command) {
         connectionActions.sendLine(command);
       }
@@ -131,45 +134,163 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       }
     },
 
-    handleProbe: (axes) => {
+    handleProbe: async (axes) => {
+      const { machineSettings } = useSettingsStore.getState();
+      const uiActions = useUIStore.getState().actions;
+      uiActions.openProbeVerificationModal({
+        status: 'idle',
+        showToolDiameter: true,
+        initialToolDiameter: machineSettings.probe?.bitDiameter || 3.175,
+        onConfirm: (diameter) => {
+          console.log('Probe verification confirmed/skipped for axes:', axes, 'with diameter:', diameter);
+          get().actions._executeProbe(axes, diameter);
+        },
+        onCancel: () => {
+          useConnectionStore.getState().actions.stop();
+          uiActions.updateProbeVerificationModalStatus('failed', 'Probing cancelled by user.');
+        }
+      });
+    },
+
+    _executeProbe: async (axes: string, diameter: number) => {
+      console.log('Entering _executeProbe with axes:', axes, 'diameter:', diameter);
       const { actions: logActions } = useLogStore.getState();
       const { machineSettings } = useSettingsStore.getState();
       const { actions: connectionActions } = useConnectionStore.getState();
+      const uiActions = useUIStore.getState().actions;
 
-      logActions.addLog({ type: 'info', message: `Probing axes: ${axes}` });
-      const { probe } = machineSettings;
-      if (!probe || !probe.feedRate || !probe.probeTravelDistance) {
-        logActions.addLog({
-          type: 'error',
-          message: 'Probe settings are not configured.',
-        });
+      try {
+        uiActions.updateProbeVerificationModalStatus('probing', `Probing axes: ${axes}...`);
+        logActions.addLog({ type: 'info', message: `Probing axes: ${axes}` });
+        const { probe } = machineSettings;
+        if (!probe || !probe.fastFeedRate || !probe.slowFeedRate || !probe.probeTravelDistance || !probe.retractDistance) {
+          throw new Error('Probe settings are incomplete. Please check the settings panel.');
+        }
 
-        import('./uiStore').then(({ useUIStore }) => {
-          useUIStore.getState().actions.openInfoModal(
-            'Probe Settings Missing',
-            'Please configure probe settings (Feed Rate and Travel Distance) in the Machine Settings before probing.'
-          );
-        });
-        return;
+        const { fastFeedRate, slowFeedRate, probeTravelDistance, retractDistance } = probe;
+
+        let probeCommand = '';
+        let retractCommand = '';
+        
+        if (axes.includes('X')) {
+          probeCommand += `X${probeTravelDistance} `;
+          retractCommand += `X-${retractDistance} `;
+        }
+        if (axes.includes('Y')) {
+          probeCommand += `Y${probeTravelDistance} `;
+          retractCommand += `Y-${retractDistance} `;
+        }
+        if (axes.includes('Z')) {
+          probeCommand += `Z-${probeTravelDistance} `;
+          retractCommand += `Z${retractDistance} `;
+        }
+
+        if (probeCommand) {
+          // 1. Fast Probe
+          const fastGcode = `G91 G38.2 ${probeCommand.trim()} F${fastFeedRate}`;
+          logActions.addLog({ type: 'info', message: `Stage 1: Fast Probe (${fastGcode})` });
+          await connectionActions.sendLine(fastGcode);
+
+          // 2. Retract
+          const retractGcode = `G91 G0 ${retractCommand.trim()}`;
+          logActions.addLog({ type: 'info', message: `Stage 2: Retract (${retractGcode})` });
+          await connectionActions.sendLine(retractGcode);
+          connectionActions.sendLine('G90'); // Back to absolute
+
+          // 3. Slow Probe
+          const slowGcode = `G91 G38.2 ${probeCommand.trim()} F${slowFeedRate}`;
+          logActions.addLog({ type: 'info', message: `Stage 3: Slow Probe (${slowGcode})` });
+          await connectionActions.sendLine(slowGcode);
+          
+          logActions.addLog({ type: 'info', message: 'Two-stage probing sequence complete.' });
+          uiActions.updateProbeVerificationModalStatus('success', `Probing axes ${axes} completed successfully.`);
+        }
+      } catch (error: any) {
+        logActions.addLog({ type: 'error', message: `Probing failed: ${error.message || error}` });
+        uiActions.updateProbeVerificationModalStatus('failed', `Probing failed: ${error.message || 'Unknown error'}`);
       }
+    },
 
-      const { feedRate, probeTravelDistance } = probe;
+    handleXYZProbe: async () => {
+      const { machineSettings } = useSettingsStore.getState();
+      const uiActions = useUIStore.getState().actions;
+      uiActions.openProbeVerificationModal({
+        status: 'idle',
+        showToolDiameter: true,
+        initialToolDiameter: machineSettings.probe?.bitDiameter || 3.175,
+        onConfirm: (diameter) => {
+          console.log('XYZ Probe verification confirmed/skipped with diameter:', diameter);
+          get().actions._executeXYZProbe(diameter);
+        },
+        onCancel: () => {
+          useConnectionStore.getState().actions.stop();
+          uiActions.updateProbeVerificationModalStatus('failed', 'XYZ Probing cancelled by user.');
+        }
+      });
+    },
 
-      let command = '';
-      if (axes.includes('X')) {
-        command += `X${probeTravelDistance} `;
-      }
-      if (axes.includes('Y')) {
-        command += `Y${probeTravelDistance} `;
-      }
-      if (axes.includes('Z')) {
-        command += `Z-${probeTravelDistance} `;
-      }
+    _executeXYZProbe: async (diameter: number) => {
+      console.log('Entering _executeXYZProbe with diameter:', diameter);
+      const { actions: logActions } = useLogStore.getState();
+      const { machineSettings } = useSettingsStore.getState();
+      const { actions: connectionActions } = useConnectionStore.getState();
+      const uiActions = useUIStore.getState().actions;
 
-      if (command) {
-        const gcode = `G38.2 ${command.trim()} F${feedRate}`;
-        logActions.addLog({ type: 'info', message: `Sending probe command: ${gcode}` });
-        connectionActions.sendLine(gcode);
+      try {
+        uiActions.updateProbeVerificationModalStatus('probing', 'Starting XYZ Corner Probing sequence...');
+        logActions.addLog({ type: 'info', message: 'Starting XYZ Corner Probing sequence' });
+        const { probe } = machineSettings;
+        
+        if (!probe || !probe.fastFeedRate || !probe.slowFeedRate || !probe.probeTravelDistance || !probe.retractDistance || !probe.blockWidthX || !probe.blockWidthY || !probe.blockHeight) {
+          throw new Error('Probe settings are incomplete. Please check all XYZ parameters in the settings panel.');
+        }
+
+        const { fastFeedRate, slowFeedRate, probeTravelDistance, retractDistance, blockWidthX, blockWidthY, blockHeight } = probe;
+        const bitRadius = diameter / 2;
+
+        // 1. PROBE Z
+        uiActions.updateProbeVerificationModalStatus('probing', 'Step 1/3: Probing Z axis...');
+        logActions.addLog({ type: 'info', message: 'Step 1: Probing Z' });
+        await connectionActions.sendLine(`G38.2 Z-${probeTravelDistance} F${fastFeedRate}`);
+        await connectionActions.sendLine(`G91 G0 Z${retractDistance}`);
+        await connectionActions.sendLine(`G38.2 Z-${retractDistance * 2} F${slowFeedRate}`);
+        await connectionActions.sendLine(`G10 L20 P0 Z${blockHeight}`);
+        await connectionActions.sendLine(`G91 G0 Z${retractDistance * 2}`);
+        await connectionActions.sendLine('G90');
+
+        // 2. PROBE X
+        uiActions.updateProbeVerificationModalStatus('probing', 'Step 2/3: Probing X axis...');
+        logActions.addLog({ type: 'info', message: 'Step 2: Probing X' });
+        await connectionActions.sendLine(`G91 G0 X-${blockWidthX}`);
+        await connectionActions.sendLine(`G91 G0 Z-${blockHeight + retractDistance}`);
+        await connectionActions.sendLine(`G38.2 X${blockWidthX} F${fastFeedRate}`);
+        await connectionActions.sendLine(`G91 G0 X-${retractDistance}`);
+        await connectionActions.sendLine(`G38.2 X${retractDistance * 2} F${slowFeedRate}`);
+        await connectionActions.sendLine(`G10 L20 P0 X-${bitRadius}`);
+        await connectionActions.sendLine(`G91 G0 X-${retractDistance}`);
+        await connectionActions.sendLine(`G91 G0 Z${blockHeight + retractDistance}`);
+        await connectionActions.sendLine('G90');
+
+        // 3. PROBE Y
+        uiActions.updateProbeVerificationModalStatus('probing', 'Step 3/3: Probing Y axis...');
+        logActions.addLog({ type: 'info', message: 'Step 3: Probing Y' });
+        await connectionActions.sendLine(`G91 G0 Y-${blockWidthY}`);
+        await connectionActions.sendLine(`G91 G0 X${retractDistance + bitRadius + 5}`);
+        await connectionActions.sendLine(`G91 G0 Z-${blockHeight + retractDistance}`);
+        await connectionActions.sendLine(`G38.2 Y${blockWidthY} F${fastFeedRate}`);
+        await connectionActions.sendLine(`G91 G0 Y-${retractDistance}`);
+        await connectionActions.sendLine(`G38.2 Y${retractDistance * 2} F${slowFeedRate}`);
+        await connectionActions.sendLine(`G10 L20 P0 Y-${bitRadius}`);
+        await connectionActions.sendLine(`G91 G0 Y-${retractDistance}`);
+        await connectionActions.sendLine(`G91 G0 Z${blockHeight + retractDistance}`);
+        
+        await connectionActions.sendLine('G90');
+        logActions.addLog({ type: 'info', message: 'XYZ Corner Probing sequence complete.' });
+        uiActions.updateProbeVerificationModalStatus('success', 'XYZ Corner Probing completed successfully.');
+      } catch (error: any) {
+        logActions.addLog({ type: 'error', message: `XYZ Probing failed: ${error.message || error}` });
+        uiActions.updateProbeVerificationModalStatus('failed', `XYZ Probing failed: ${error.message || 'Unknown error'}`);
+        await connectionActions.sendLine('G90');
       }
     },
 

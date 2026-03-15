@@ -6,6 +6,17 @@ type SpindleModalArgs = {
   message: string;
 };
 
+type ProbeVerificationModalArgs = {
+  onConfirm: (diameter: number) => void;
+  onCancel?: () => void;
+  title?: string;
+  message?: string;
+  showToolDiameter?: boolean;
+  initialToolDiameter?: number;
+  status: 'idle' | 'probing' | 'success' | 'failed';
+  statusMessage?: string;
+};
+
 type UIState = {
   isPreflightModalOpen: boolean;
   isWelcomeModalOpen: boolean;
@@ -26,6 +37,8 @@ type UIState = {
   isPluginManagerModalOpen: boolean;
   isStockAlignmentWizardOpen: boolean;
   isCalculatorModalOpen: boolean;
+  isProbeVerificationModalOpen: boolean;
+  probeVerificationModalArgs: ProbeVerificationModalArgs;
   preflightWarnings: { type: 'error' | 'warning'; message: string }[];
   actions: {
     openPreflightModal: () => void;
@@ -57,6 +70,9 @@ type UIState = {
     closeStockAlignmentWizard: () => void;
     openCalculatorModal: () => void;
     closeCalculatorModal: () => void;
+    openProbeVerificationModal: (args: ProbeVerificationModalArgs) => void;
+    closeProbeVerificationModal: () => void;
+    updateProbeVerificationModalStatus: (status: 'idle' | 'probing' | 'success' | 'failed', message?: string) => void;
   };
 };
 
@@ -84,6 +100,10 @@ export const useUIStore = create<UIState>((set) => ({
   isPluginManagerModalOpen: false,
   isStockAlignmentWizardOpen: false,
   isCalculatorModalOpen: false,
+  isProbeVerificationModalOpen: false,
+  probeVerificationModalArgs: {
+    onConfirm: () => { },
+  },
   preflightWarnings: [],
   actions: {
     openPreflightModal: () => set({ isPreflightModalOpen: true }),
@@ -115,5 +135,14 @@ export const useUIStore = create<UIState>((set) => ({
     closeStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: false }),
     openCalculatorModal: () => set({ isCalculatorModalOpen: true }),
     closeCalculatorModal: () => set({ isCalculatorModalOpen: false }),
+    openProbeVerificationModal: (args) => set({ isProbeVerificationModalOpen: true, probeVerificationModalArgs: args }),
+    closeProbeVerificationModal: () => set({ isProbeVerificationModalOpen: false }),
+    updateProbeVerificationModalStatus: (status, message) => set((state) => ({
+      probeVerificationModalArgs: {
+        ...state.probeVerificationModalArgs,
+        status,
+        statusMessage: message,
+      },
+    })),
   },
 }));

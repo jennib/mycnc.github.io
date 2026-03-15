@@ -192,6 +192,19 @@ export const ProbeXY: React.FC<IconProps> = (props) => (
     </svg>
 );
 
+export const ProbeXYZ: React.FC<IconProps> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M21 3v18" />
+        <path d="M3 21h18" />
+        <path d="M3 3v18" />
+        <path d="M12 12 18 18" />
+        <path d="m14 18 4 4-4-4" />
+        <circle cx="20" cy="20" r="2" />
+        <path d="M12 12V6" />
+        <path d="m10 8 2-2 2 2" />
+    </svg>
+);
+
 export const HomeX: React.FC<IconProps> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
         <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" transform="translate(0, 0) scale(0.8)" />

@@ -104,6 +104,8 @@ export function parseGrblStatus(statusStr: string, lastStatus: MachineState): Pa
                 if (ovParts.length === 3) {
                     parsed.ov = ovParts.map((p: string) => parseInt(p, 10)) as [number, number, number];
                 }
+            } else if (part.startsWith('Pn:')) {
+                parsed.pins = part.substring(3);
             }
         }
 

@@ -57,7 +57,15 @@
         "controllerType": "Controller Type",
         "spindleWarmup": "Spindle Warmup Delay (ms)",
         "probe": "Probe Offset (mm)",
-        "probeFeedRate": "Probe Feed Rate",
+        "xyzProbeBlock": "XYZ Probe Block Settings",
+        "blockWidthX": "Block Width (X Axis)",
+        "blockWidthY": "Block Width (Y Axis)",
+        "blockHeight": "Block Height (Z Axis)",
+        "bitDiameter": "Probe Bit Diameter",
+        "fastProbeFeedRate": "Fast Probe Feed Rate",
+        "slowProbeFeedRate": "Slow Probe Feed Rate",
+        "probeRetractDistance": "Probe Retract Distance",
+        "probeTravelDistance": "Max Probe Travel",
         "customScripts": "Custom G-Code Scripts",
         "startupScript": "Startup Script (on connect)",
         "shutdownScript": "Shutdown Script (on disconnect)",
@@ -119,7 +127,8 @@
             "x": "Probe X",
             "y": "Probe Y",
             "z": "Probe Z",
-            "xy": "Probe XY"
+            "xy": "Probe XY",
+            "xyz": "Probe XYZ Corner"
         },
         "spindle": {
             "title": "Spindle Control",
@@ -741,5 +750,21 @@
         "title": "Calculator & Converter",
         "tab_calc": "Calculator",
         "tab_conv": "Unit Converter"
+    },
+    "probeVerification": {
+        "title": "Probe Safety Verification",
+        "message": "Please touch the probe to the tool or workpiece to verify the connection is working.",
+        "statusWaiting": "WAITING FOR TRIGGER",
+        "statusTriggered": "PROBE TRIGGERED",
+        "toolDiameterLabel": "Tool Diameter (mm)",
+        "skip": "Skip Test",
+        "startProbing": "Start Probing",
+        "probingTitle": "Probing in Progress...",
+        "probingMessage": "The machine is currently performing the probing sequence. Please stand by.",
+        "successTitle": "Probing Successful",
+        "successMessage": "Probing completed successfully.",
+        "failedTitle": "Probing Failed",
+        "failedMessage": "An error occurred during probing.",
+        "cancelProbing": "Cancel Probing"
     }
 }

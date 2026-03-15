@@ -51,6 +51,7 @@ import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
 import UnsupportedBrowser from "./components/UnsupportedBrowser";
 import SpindleConfirmationModal from "./components/SpindleConfirmationModal";
+import ProbeVerificationModal from "./components/ProbeVerificationModal";
 import InfoModal from "./components/InfoModal";
 import PluginManagerModal from "./components/PluginManagerModal";
 import StockAlignmentWizard from "./components/StockAlignmentWizard/StockAlignmentWizard";
@@ -95,6 +96,7 @@ const MainApp: React.FC = () => {
     (state) => state.actions.handleSpindleCommand
   );
   const handleProbe = useMachineStore((state) => state.actions.handleProbe);
+  const handleXYZProbe = useMachineStore((state) => state.actions.handleXYZProbe);
   const handleJog = useMachineStore((state) => state.actions.handleJog);
   const handleJogStop = useMachineStore((state) => state.actions.handleJogStop);
   const handleRunMacro = useMachineStore(
@@ -141,6 +143,8 @@ const MainApp: React.FC = () => {
     isGrblSettingsModalOpen,
     isPluginManagerModalOpen,
     isCalculatorModalOpen,
+    isProbeVerificationModalOpen,
+    probeVerificationModalArgs,
     returnToWelcome,
     actions: uiActions,
   } = useUIStore((state) => state);
@@ -575,6 +579,7 @@ const MainApp: React.FC = () => {
                       onSetZero={handleSetZero}
                       onSpindleCommand={handleSpindleCommand}
                       onProbe={handleProbe}
+                      onXYZProbe={handleXYZProbe}
                       onSendCommand={handleManualCommand}
                       jogStep={jogStep}
                       onStepChange={settingsActions.setJogStep}
@@ -774,6 +779,22 @@ const MainApp: React.FC = () => {
         }}
         title={spindleModalArgs.title}
         message={spindleModalArgs.message}
+      />
+      <ProbeVerificationModal
+        isOpen={isProbeVerificationModalOpen}
+        onClose={uiActions.closeProbeVerificationModal}
+        onConfirm={(diameter) => {
+          probeVerificationModalArgs.onConfirm(diameter);
+        }}
+        onCancel={() => {
+          probeVerificationModalArgs.onCancel?.();
+        }}
+        title={probeVerificationModalArgs.title}
+        message={probeVerificationModalArgs.message}
+        showToolDiameter={probeVerificationModalArgs.showToolDiameter}
+        initialToolDiameter={probeVerificationModalArgs.initialToolDiameter}
+        status={probeVerificationModalArgs.status}
+        statusMessage={probeVerificationModalArgs.statusMessage}
       />
 
       <InfoModal

@@ -79,7 +79,7 @@ export const DEFAULT_SETTINGS: MachineSettings = {
     workArea: { x: 300, y: 300, z: 80 },
     jogFeedRate: 1000,
     spindle: { min: 0, max: 12000, warmupDelay: 0 },
-    probe: { xOffset: 3.0, yOffset: 3.0, zOffset: 15.0, feedRate: 25, probeTravelDistance: 20 },
+    probe: { xOffset: 3.0, yOffset: 3.0, zOffset: 15.0, fastFeedRate: 100, slowFeedRate: 25, probeTravelDistance: 20, retractDistance: 2.0, blockWidthX: 20.0, blockWidthY: 20.0, blockHeight: 10.0, bitDiameter: 3.175 },
     scripts: {
         startup: ['G21', 'G90'].join('\n'), // Set units to mm, absolute positioning
         toolChange: ['M5', 'G0 Z10'].join('\n'), // Stop spindle, raise Z
