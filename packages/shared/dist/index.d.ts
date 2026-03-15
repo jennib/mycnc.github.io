@@ -410,6 +410,7 @@ export declare interface GeneratorSettings {
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
     cabinet: CabinetParams;
+    halfLap: HalfLapParams;
     boxjoint: BoxJointParams;
 }
 
@@ -453,6 +454,20 @@ export declare const GRBL_REALTIME_COMMANDS: {
 };
 
 export { GripHorizontal }
+
+export declare interface HalfLapParams {
+    width: number | '';
+    thickness: number | '';
+    lapLength: number | '';
+    jointType: 'standard' | 'mitered';
+    partToGenerate: 'A' | 'B' | 'both';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
 
 export { Hand }
 

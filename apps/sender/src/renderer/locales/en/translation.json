@@ -310,6 +310,7 @@
             "stl": "STL Slice",
             "text": "Text",
             "svg": "SVG",
+            "halfLap": "Half Lap",
             "safeZ": "Safe Z",
             "feedRate": "Feed Rate",
             "spindleSpeed": "Spindle Speed",
@@ -679,6 +680,23 @@
             "jointOnly": "Cut Only Joint Edge",
             "depthPerPass": "Depth Per Pass",
             "plungeFeed": "Plunge Feed"
+        },
+        "halfLap": {
+            "title": "Half Lap Joinery",
+            "jointType": "Joint Type",
+            "standard": "Standard Half Lap",
+            "mitered": "Mitered Half Lap",
+            "partToGenerate": "Part to Generate",
+            "both": "Both Pieces (Layout)",
+            "pieceA": "Piece A (Under)",
+            "pieceB": "Piece B (Over)",
+            "width": "Board Width",
+            "lapLength": "Lap Length",
+            "boardThickness": "Board Thickness",
+            "depthPerPass": "Depth Per Pass",
+            "plungeFeed": "Plunge Feed",
+            "standardHelp": "A standard half lap removes half the thickness of each board, allowing them to overlap flush.",
+            "miteredHelp": "A mitered half lap adds a 45° miter to the face-half of the joint for a cleaner look."
         }
     },
     "preflight": {

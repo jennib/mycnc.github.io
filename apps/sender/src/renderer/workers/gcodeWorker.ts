@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams, BoxJointParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams, BoxJointParams, HalfLapParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet' | 'boxjoint';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet' | 'boxjoint' | 'halfLap';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -74,6 +74,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
                 break;
             case 'cabinet':
                 result = generateCabinetCode(settings, params as CabinetParams, toolLibrary, unit);
+                break;
+            case 'halfLap':
+                result = generateHalfLapCode(settings, params as HalfLapParams, toolLibrary, unit);
                 break;
             case 'boxjoint':
                 result = generateBoxJointCode(settings, params as BoxJointParams, toolLibrary, unit);
@@ -1900,6 +1903,195 @@ const generateMortiseTenonCode = (
 
     code.push(`G0 Z${safeZ.toFixed(3)}`);
     code.push(`M5`);
+
+    return { code, paths, bounds, error: null };
+};
+
+const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapParams, toolLibrary: Tool[], unit: string) => {
+    let bounds: Bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const code: string[] = [];
+    const paths: PreviewPath[] = [];
+
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: "No tool selected", code, paths, bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    if (!selectedTool) return { error: "No tool selected", code, paths, bounds };
+
+    const width = parseFloat(String(params.width));
+    const thickness = parseFloat(String(params.thickness));
+    const lapLength = parseFloat(String(params.lapLength));
+    const jointType = params.jointType;
+    const partToGenerate = params.partToGenerate || 'both';
+    const feed = parseFloat(String(params.feed));
+    const plunge = parseFloat(String(params.plungeFeed));
+    const spindle = parseFloat(String(params.spindle));
+    const safeZ = parseFloat(String(params.safeZ));
+    const dpp = parseFloat(String(params.depthPerPass));
+    const toolDiam = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
+    const R = toolDiam / 2;
+
+    if (isNaN(width) || isNaN(thickness) || isNaN(lapLength) || width <= 0 || thickness <= 0 || lapLength <= 0) {
+        return { error: "Check all required half lap fields.", code, paths, bounds };
+    }
+
+    code.push(`(--- Half Lap Joinery Generator ---)`);
+    code.push(`(Tool: ${selectedTool.name} - Ø${toolDiam}${unit})`);
+    code.push(`(Joint: ${jointType})`);
+    code.push(`G21 G90`);
+    code.push(`M3 S${spindle}`);
+    code.push(`G0 Z${safeZ.toFixed(3)}`);
+
+    const updateBounds = (x: number, y: number) => {
+        if (x < bounds.minX) bounds.minX = x;
+        if (x > bounds.maxX) bounds.maxX = x;
+        if (y < bounds.minY) bounds.minY = y;
+        if (y > bounds.maxY) bounds.maxY = y;
+    };
+
+    const addLap = (label: string, isPartB: boolean, offsetX: number, offsetY: number) => {
+        code.push(`(--- Cutting ${label} ---)`);
+        const targetDepth = -thickness / 2;
+        const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
+        const stepover = toolDiam * 0.45;
+
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            const currentZ = Math.max(targetDepth, -pass * dpp);
+            const isLastPass = pass === totalPasses;
+            let pathD = "";
+
+            code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
+
+            if (jointType === 'standard') {
+                let y = R;
+                while (y <= width - R) {
+                    const startX = 0;
+                    const endX = lapLength - R;
+                    
+                    code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
+                    updateBounds(offsetX + startX, offsetY + y);
+                    updateBounds(offsetX + endX, offsetY + y);
+                    
+                    if (isLastPass) {
+                        pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                    }
+                    
+                    if (y === width - R) break;
+                    y += stepover;
+                    if (y > width - R) y = width - R;
+                }
+            } else { // mitered
+                const miterSlope = lapLength / width;
+                
+                if (!isPartB) {
+                    // Piece A: Triangular lap pocket (Under)
+                    // The lap is the triangle X < Y * miterSlope
+                    // We clear to targetDepth (-thickness/2)
+                    let y = R;
+                    while (y <= width - R) {
+                        const startX = 0;
+                        const endX = (y * miterSlope) - R;
+                        
+                        if (endX >= startX) {
+                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + width - y).toFixed(3)}`);
+                            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                            code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
+                            updateBounds(offsetX + startX, offsetY + width - y);
+                            updateBounds(offsetX + endX, offsetY + width - y);
+                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + width - y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + width - y).toFixed(3)} `;
+                        }
+                        
+                        if (y === width - R) break;
+                        y += stepover;
+                        if (y > width - R) y = width - R;
+                    }
+                } else {
+                    // Piece B: Mitered end and lap (Over)
+                    // Triangle X > Y * miterSlope is the lap (Half depth)
+                    let y = R;
+                    while (y <= width - R) {
+                        const miterX = y * miterSlope;
+                        const startX = miterX + R;
+                        const endX = lapLength - R;
+
+                        if (endX >= startX) {
+                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + thickness > 0 ? y : y).toFixed(3)}`);
+                            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                            code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
+                            updateBounds(offsetX + startX, offsetY + y);
+                            updateBounds(offsetX + endX, offsetY + y);
+                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                        }
+
+                        if (y === width - R) break;
+                        y += stepover;
+                        if (y > width - R) y = width - R;
+                    }
+                }
+            }
+
+            if (isLastPass && pathD) {
+                paths.push({ d: pathD, stroke: isPartB ? 'var(--color-accent-green)' : 'var(--color-accent-yellow)' });
+            }
+        }
+        code.push(`G0 Z${safeZ.toFixed(3)}`);
+    };
+
+    const spacing = width + toolDiam * 2;
+    if (partToGenerate === 'A' || partToGenerate === 'both') {
+        addLap("Piece A", false, 0, 0);
+    }
+    if (partToGenerate === 'B' || partToGenerate === 'both') {
+        const xOffset = (partToGenerate === 'both') ? (lapLength + spacing) : 0;
+        addLap("Piece B", true, xOffset, 0);
+
+        // --- Added: Miter End Cut for Piece B (Removes corner) ---
+        if (jointType === 'mitered') {
+            code.push(`(--- Removing Miter Corner Piece B ---)`);
+            const miterSlope = lapLength / width;
+            const targetDepth = -thickness;
+            const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
+            const stepover = toolDiam * 0.45;
+
+            for (let pass = 1; pass <= totalPasses; pass++) {
+                const currentZ = Math.max(targetDepth, -pass * dpp);
+                const isLastPass = pass === totalPasses;
+                let pathD = "";
+                
+                code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
+                
+                let y = R;
+                while (y <= width - R) {
+                    const startX = 0;
+                    const endX = (y * miterSlope) - R;
+                    
+                    if (endX >= startX) {
+                        code.push(`G0 X${(xOffset + startX).toFixed(3)} Y${(y).toFixed(3)}`);
+                        code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                        code.push(`G1 X${(xOffset + endX).toFixed(3)} F${feed}`);
+                        updateBounds(xOffset + startX, y);
+                        updateBounds(xOffset + endX, y);
+                        if (isLastPass) pathD += `M ${(xOffset + startX).toFixed(3)} ${(y).toFixed(3)} L ${(xOffset + endX).toFixed(3)} ${(y).toFixed(3)} `;
+                    }
+                    
+                    if (y === width - R) break;
+                    y += stepover;
+                    if (y > width - R) y = width - R;
+                }
+                if (isLastPass && pathD) {
+                    paths.push({ d: pathD, stroke: 'var(--color-accent-red)' });
+                }
+            }
+            code.push(`G0 Z${safeZ.toFixed(3)}`);
+        }
+    }
+
+    code.push(`M5`);
+
+    if (bounds.minX === Infinity) {
+        bounds = { minX: 0, maxX: lapLength, minY: 0, maxY: width };
+    }
 
     return { code, paths, bounds, error: null };
 };

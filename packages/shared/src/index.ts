@@ -35,6 +35,7 @@ export type {
     DecorativeJoineryParams,
     CabinetParams,
     BoxJointParams,
+    HalfLapParams,
     BoundingBox,
     ToolpathSegmentMetadata
 } from './types';

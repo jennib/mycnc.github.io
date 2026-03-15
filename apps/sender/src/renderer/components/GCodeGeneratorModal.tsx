@@ -24,6 +24,7 @@ import DadoRabbetGenerator from './DadoRabbetGenerator';
 import DecorativeJoineryGenerator from './DecorativeJoineryGenerator';
 import CabinetGenerator from './CabinetGenerator';
 import BoxJointGenerator from './BoxJointGenerator';
+import HalfLapGenerator from './HalfLapGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1501,7 +1502,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative', 'cabinet', 'boxjoint'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative', 'cabinet', 'boxjoint', 'halfLap'];
 
             if (workerResultTypes.includes(activeTab)) {
                 result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
@@ -1616,7 +1617,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
 
     const handleParamChange = useCallback((field: string, value: any) => {
-        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation', 'part', 'hasToeKick', 'configuration', 'jointOnly'].includes(field);
+        const isNumberField = !['shape', 'cutSide', 'tabsEnabled', 'counterboreEnabled', 'type', 'jointType', 'font', 'text', 'alignment', 'hand', 'direction', 'drillType', 'imageDataUrl', 'invert', 'roughingEnabled', 'finishingEnabled', 'operation', 'keepAspectRatio', 'cutoutEnabled', 'cutoutTabsEnabled', 'colorAdjustmentEnabled', 'file', 'fileName', 'svgContent', 'joineryType', 'partToGenerate', 'bottomType', 'cornerClearance', 'orientation', 'part', 'hasToeKick', 'configuration', 'jointOnly'].includes(field);
 
         let parsedValue = value;
         if (isNumberField) {
@@ -1779,6 +1780,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.decorative.title')} isActive={activeTab === 'decorative'} onClick={() => setActiveTab('decorative')} />
                             <Tab label={t('generators.cabinet.title')} isActive={activeTab === 'cabinet'} onClick={() => setActiveTab('cabinet')} />
                             <Tab label={t('generators.boxjoint.title')} isActive={activeTab === 'boxjoint'} onClick={() => setActiveTab('boxjoint')} />
+                            <Tab label={t('generators.halfLap.title')} isActive={activeTab === 'halfLap'} onClick={() => setActiveTab('halfLap')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1960,6 +1962,15 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     settings={settings}
                                     selectedToolId={selectedToolId}
                                     onToolSelect={onToolSelect}
+                                />
+                            )}
+                            {activeTab === 'halfLap' && (
+                                <HalfLapGenerator
+                                    params={generatorSettings.halfLap || DEFAULT_GENERATOR_SETTINGS.halfLap}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    settings={settings}
                                 />
                             )}
                             {activeTab === 'boxjoint' && (

@@ -322,6 +322,20 @@ export interface DecorativeJoineryParams {
     toolId: number | null;
 }
 
+export interface HalfLapParams {
+    width: number | '';
+    thickness: number | '';
+    lapLength: number | '';
+    jointType: 'standard' | 'mitered';
+    partToGenerate: 'A' | 'B' | 'both';
+    feed: number | '';
+    plungeFeed: number | '';
+    spindle: number | '';
+    safeZ: number | '';
+    depthPerPass: number | '';
+    toolId: number | null;
+}
+
 export interface BoxJointParams {
     width: number | '';
     length: number | ''; // length is the board dimension along the joints
@@ -465,6 +479,7 @@ export interface GeneratorSettings {
     dadorabbet: DadoRabbetParams;
     decorative: DecorativeJoineryParams;
     cabinet: CabinetParams;
+    halfLap: HalfLapParams;
     boxjoint: BoxJointParams;
 }
 
