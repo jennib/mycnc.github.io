@@ -323,8 +323,9 @@ export interface BoxJointParams {
     width: number | '';
     length: number | ''; // length is the board dimension along the joints
     depth: number | ''; // wood thickness
-    fingerWidth: number | '';
+    numberOfFingers: number | '';
     tolerance: number | '';
+    fingerStickOut: number | '';
     partToGenerate: 'A' | 'B' | 'both';
     feed: number | '';
     plungeFeed: number | '';

@@ -62,6 +62,18 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       const prevState = get().machineState;
       set({ machineState: state });
 
+      // Detect successful homing cycle completion
+      if (
+        (prevState?.status === 'Home' || prevState?.status === 'Homing') &&
+        state?.status === 'Idle'
+      ) {
+        set({ isHomedSinceConnect: true });
+        useLogStore.getState().actions.addLog({
+          type: 'info',
+          message: 'Machine homing cycle complete.',
+        });
+      }
+
       // Detect alarm state change
       if (state?.status === 'Alarm' && prevState?.status !== 'Alarm') {
         // Import useUIStore dynamically to avoid circular dependency
@@ -145,10 +157,10 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
 
       let command = '';
       if (axes.includes('X')) {
-        command += `X-${probeTravelDistance} `;
+        command += `X${probeTravelDistance} `;
       }
       if (axes.includes('Y')) {
-        command += `Y-${probeTravelDistance} `;
+        command += `Y${probeTravelDistance} `;
       }
       if (axes.includes('Z')) {
         command += `Z-${probeTravelDistance} `;

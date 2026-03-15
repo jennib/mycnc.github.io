@@ -104,29 +104,30 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
     const toolDiameter = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
 
     const {
-        width, length, depth, fingerWidth, tolerance,
+        width, length, depth, numberOfFingers, tolerance, fingerStickOut,
         depthPerPass, feed, plungeFeed, spindle, safeZ, partToGenerate = 'both', cornerClearance, jointOnly
     } = params;
 
     const numericWidth = parseFloat(String(width));
     const numericLength = parseFloat(String(length));
     const numericDepth = parseFloat(String(depth));
-    const numericFingerWidth = parseFloat(String(fingerWidth));
+    const numericNumberOfFingers = parseFloat(String(numberOfFingers));
     const numericTolerance = parseFloat(String(tolerance)) || 0;
+    const numericFingerStickOut = parseFloat(String(fingerStickOut)) || 0;
     const numericDepthPerPass = parseFloat(String(depthPerPass));
     const numericFeed = parseFloat(String(feed));
     const numericPlungeFeed = parseFloat(String(plungeFeed));
     const numericSpindle = parseFloat(String(spindle));
     const numericSafeZ = parseFloat(String(safeZ));
 
-    if ([numericWidth, numericLength, numericDepth, numericFingerWidth, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
+    if ([numericWidth, numericLength, numericDepth, numericNumberOfFingers, numericDepthPerPass, numericFeed, numericSpindle, numericSafeZ].some(isNaN)) {
         return { error: 'Fill required fields', code: [], paths: [], bounds: {} as Bounds };
     }
 
     const code = [
         `(--- Box Joint Generator ---)`,
         `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
-        `(Length: ${numericLength}, Depth (Thickness): ${numericDepth}, Finger Width: ${numericFingerWidth})`,
+        `(Length: ${numericLength}, Depth: ${numericDepth}, Fingers: ${numericNumberOfFingers})`,
         `(Part: ${partToGenerate})`,
         `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ.toFixed(3)}`
     ];
@@ -142,18 +143,20 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
     const addPanel = (pW: number, pH: number, startWithPin: boolean, label: string, offsetX: number, offsetY: number) => {
         code.push(`(--- Cutting Board ${label} ---)`);
 
-        const fingers = Math.max(1, Math.round(pH / numericFingerWidth));
-        const fW = pH / fingers;
+        const divisions = numericNumberOfFingers * 2 - 1;
+        const fW = pH / divisions;
+
+        const cutDepth = WT + numericFingerStickOut;
 
         const zPasses: number[] = [];
         let curZ = 0;
         const stepZBoundary = -Math.max(R, 3);
-        while (curZ > -WT) {
+        while (curZ > -cutDepth) {
             let nextZ = curZ - numericDepthPerPass;
             if (cornerClearance === 'finger_cutout' && curZ > stepZBoundary && nextZ < stepZBoundary) {
                 nextZ = stepZBoundary;
             }
-            if (nextZ < -WT) nextZ = -WT;
+            if (nextZ < -cutDepth) nextZ = -cutDepth;
             zPasses.push(nextZ);
             curZ = nextZ;
         }
@@ -182,7 +185,7 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
 
             const getBoundaryY = (idx: number, isLeft: boolean) => {
                 let y = isLeft ? (pH - idx * fW) : (idx * fW);
-                if (idx > 0 && idx < fingers) {
+                if (idx > 0 && idx < divisions) {
                     const pinIsPrev = ((idx - 1) % 2 === 0) === startWithPin;
                     const tOffset = numericTolerance / 2;
                     if (isLeft) {
@@ -192,9 +195,9 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
                     }
                 }
 
-                if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
+                if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && idx > 0 && idx < divisions) {
                     const isPinAbove = idx > 0 && ((idx - 1) % 2 === 0) === startWithPin;
-                    const isPinBelow = idx < fingers && (idx % 2 === 0) === startWithPin;
+                    const isPinBelow = idx < divisions && (idx % 2 === 0) === startWithPin;
                     const step = Math.min(R, fW / 4);
                     if (isLeft) {
                         if (isPinAbove) y += step;
@@ -215,22 +218,20 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
                      return;
                 }
                 if (cornerClearance === 'dogbone') {
-                    const angle = 45 * (Math.PI / 180);
-                    const dx = vx * Math.cos(angle) - vy * Math.sin(angle);
-                    const dy = vx * Math.sin(angle) + vy * Math.cos(angle);
-                    addPt(x + dx * R * 0.5, y + dy * R * 0.5);
+                    addPt(x + vx * R, y + vy * R);
                     addPt(x, y);
                 } else if (cornerClearance === 't_bone') {
-                    addPt(x + vx * R, y + vy * R);
+                    addPt(x, y + vy * R);
                     addPt(x, y);
                 }
             };
 
             addPt(-R, pH + R, true);
+            addPt(-R, pH, true);
             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
 
             // Left Edge (fingers side)
-            for (let i = 0; i < fingers; i++) {
+            for (let i = 0; i < divisions; i++) {
                 const isPin = startWithPin ? (i % 2 === 0) : (i % 2 !== 0);
                 const yTop = getBoundaryY(i, true);
                 const yBot = getBoundaryY(i + 1, true);
@@ -239,16 +240,16 @@ const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJoint
                     addPt(-R, yBot);
                 } else {
                     const stepActiveTop = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i > 0;
-                    const stepActiveBot = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i < fingers - 1;
-                    const baseDepthTop = stepActiveTop ? WT - R * 0.75 : WT - R;
-                    const baseDepthBot = stepActiveBot ? WT - R * 0.75 : WT - R;
+                    const stepActiveBot = cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && i < divisions - 1;
+                    const baseDepthTop = stepActiveTop ? cutDepth - R * 0.75 : cutDepth - R;
+                    const baseDepthBot = stepActiveBot ? cutDepth - R * 0.75 : cutDepth - R;
 
                     addPt(-R, yTop - R);
                     addPt(baseDepthTop, yTop - R);
-                    applyCC(WT - R, yTop - R, 1, 1);
+                    applyCC(cutDepth - R, yTop - R, 1, 1);
                     
                     addPt(baseDepthBot, yBot + R);
-                    applyCC(WT - R, yBot + R, 1, -1);
+                    applyCC(cutDepth - R, yBot + R, 1, -1);
                     
                     addPt(-R, yBot + R);
                     addPt(-R, yBot);
@@ -1376,7 +1377,7 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
                         }
                     }
 
-                    if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary) {
+                    if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && idx > 0 && idx < divisions) {
                         const isPinAbove = idx > 0 && ((idx - 1) % 2 === 0) === startWithPin;
                         const isPinBelow = idx < fingers && (idx % 2 === 0) === startWithPin;
                         const step = Math.min(R, fW / 4);

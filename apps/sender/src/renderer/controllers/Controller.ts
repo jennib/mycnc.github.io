@@ -8,7 +8,7 @@ export interface Controller {
     jog(x: number, y: number, z: number, feedRate: number): void;
     home(axis: 'all' | 'x' | 'y' | 'z'): void;
     emergencyStop(): void;
-    sendGCode(lines: string[], options?: { startLine?: number; isDryRun?: boolean }): void;
+    sendGCode(lines: string[], options?: { startLine?: number; isDryRun?: boolean }): Promise<void>;
     pause(): Promise<void>;
     resume(): Promise<void>;
     stopJob(): void;

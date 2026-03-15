@@ -154,7 +154,7 @@ export function useJob() {
         }
       }
       jobActions.setJobStatus(JobStatus.Running);
-      controller.sendGCode(gcodeLines, { startLine, isDryRun });
+      await controller.sendGCode(gcodeLines, { startLine, isDryRun });
     };
 
     uiActions.closePreflightModal();

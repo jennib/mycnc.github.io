@@ -528,7 +528,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
             `(--- Surfacing Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -612,7 +613,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
             `(--- Pocket Operation: ${shape} ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`, `G0 Z${numericSafeZ}`
@@ -714,7 +716,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
             `(--- Bore Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${(selectedTool.diameter === '' ? 0 : selectedTool.diameter)}${unit})`,
             `G21 G90`, `M3 S${numericSpindle}`
@@ -844,7 +847,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
             `(--- Slot Operation: ${type} ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             // `T${toolIndex + 1} M6`, // Tool change disabled for non-ATC setups
@@ -973,7 +977,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [];
+        const originOffsetY = 0;
+        const code = [];
         const paths: PreviewPath[] = [];
         const FONT_BASE_HEIGHT = 7;
         const FONT_BASE_WIDTH = 5;
@@ -1091,7 +1096,8 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
 
         // Default to 0,0 offset for front_left_top
         const originOffsetX = 0;
-        const originOffsetY = 0; const code = [
+        const originOffsetY = 0;
+        const code = [
             `(--- Thread Milling Operation ---)`,
             `(Tool: ${selectedTool.name} - Ø${toolDiameter}${unit})`,
             `(Type: ${type}, Hand: ${hand})`,

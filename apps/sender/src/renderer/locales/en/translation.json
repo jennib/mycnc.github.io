@@ -12,6 +12,7 @@
         "fullscreen": "Fullscreen Console",
         "sendCommand": "Send Command",
         "cancel": "Cancel",
+        "close": "Close",
         "language": "Language",
         "save": "Save",
         "toggleTheme": "Toggle Theme"
@@ -137,7 +138,9 @@
             "reset": "Reset to Top-Down View",
             "fit": "Fit to View",
             "zoomIn": "Zoom In",
-            "zoomOut": "Zoom Out"
+            "zoomOut": "Zoom Out",
+            "jumpToLine": "Jump to line:",
+            "go": "Go"
         },
         "actions": {
             "saveLocal": "Save",
@@ -221,7 +224,8 @@
         "port": "Port",
         "disconnect": "Disconnect",
         "connect": "Connect",
-        "connecting": "Connecting..."
+        "connecting": "Connecting...",
+        "autoDetect": "Auto-Detect"
     },
     "toolLibrary": {
         "title": "Tool Library",
@@ -646,11 +650,12 @@
         },
         "boxjoint": {
             "title": "Box Joint Generator",
-            "boardWidth": "Board Width (W)",
+            "boardLength": "Board Length",
             "jointLength": "Joint Length (L)",
             "boardThickness": "Board Thickness (D)",
-            "fingerWidth": "Finger Width",
+            "numberOfFingers": "Number of Fingers",
             "tolerance": "Joint Tolerance",
+            "fingerStickOut": "Finger Stick Out",
             "cornerClearance": "Corner Clearance",
             "none": "None",
             "dogbone": "Dogbone",

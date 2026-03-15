@@ -116,7 +116,7 @@ const JogButton: React.FC<JogButtonProps> = memo(({
 
   const getButtonColor = () => {
     if (isDisabled) return "bg-white/5 border-white/5 text-text-secondary opacity-30";
-    if (axis === "Z") return "bg-gradient-to-br from-slate-700 to-slate-900 border-white/10 text-text-primary hover:from-slate-600 hover:to-slate-800";
+    if (axis === "Z") return "bg-gradient-to-br from-secondary to-secondary-focus border-border text-text-primary hover:from-secondary-focus hover:to-secondary";
     return "bg-gradient-to-br from-primary/80 to-primary-focus/80 border-primary/20 text-white hover:from-primary hover:to-primary-focus";
   };
 

@@ -24,14 +24,15 @@ const BoxJointGenerator: React.FC<BoxJointGeneratorProps> = ({ params, onParamsC
             <ToolSelector selectedId={params.toolId} onChange={(id) => handleParamChange('toolId', id)} unit={unit} toolLibrary={toolLibrary} />
             <hr className='border-secondary' />
             <div className='grid grid-cols-2 gap-4'>
-                <Input label={t('generators.boxjoint.boardWidth')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
+                <Input label={t('generators.boxjoint.boardLength')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
                 <Input label={t('generators.boxjoint.jointLength')} value={params.length} onChange={e => handleParamChange('length', e.target.value)} unit={unit} />
                 <Input label={t('generators.boxjoint.boardThickness')} value={params.depth} onChange={e => handleParamChange('depth', e.target.value)} unit={unit} />
             </div>
 
             <div className='grid grid-cols-2 gap-4'>
-                <Input label={t('generators.boxjoint.fingerWidth')} value={params.fingerWidth} onChange={e => handleParamChange('fingerWidth', e.target.value)} unit={unit} />
+                <Input label={t('generators.boxjoint.numberOfFingers')} value={params.numberOfFingers} onChange={e => handleParamChange('numberOfFingers', e.target.value)} />
                 <Input label={t('generators.boxjoint.tolerance')} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
+                <Input label={t('generators.boxjoint.fingerStickOut')} value={params.fingerStickOut} onChange={e => handleParamChange('fingerStickOut', e.target.value)} unit={unit} />
             </div>
 
             <RadioGroup

@@ -118,7 +118,7 @@ declare interface BoxJointParams {
     width: number | '';
     length: number | '';
     depth: number | '';
-    fingerWidth: number | '';
+    numberOfFingers: number | '';
     tolerance: number | '';
     partToGenerate: 'A' | 'B' | 'both';
     feed: number | '';
