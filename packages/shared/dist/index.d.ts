@@ -114,7 +114,7 @@ export declare interface BoundingBox {
     maxZ: number;
 }
 
-declare interface BoxJointParams {
+export declare interface BoxJointParams {
     width: number | '';
     length: number | '';
     depth: number | '';
@@ -560,6 +560,8 @@ export declare interface MortiseTenonParams {
     width: number | '';
     height: number | '';
     depth: number | '';
+    clearingWidth: number | '';
+    clearingLength: number | '';
     tolerance: number | '';
     feed: number | '';
     plungeFeed: number | '';

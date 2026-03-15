@@ -544,7 +544,9 @@
             "jointType": "Joint Style",
             "standard": "Standard (Filleted)",
             "tbone": "T-Bone",
-            "dogbone": "Dogbone"
+            "dogbone": "Dogbone",
+            "clearingWidth": "Clearing Width",
+            "clearingLength": "Clearing Length"
         },
         "drawer": {
             "title": "Drawer Generator",

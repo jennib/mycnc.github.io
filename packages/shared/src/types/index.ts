@@ -274,6 +274,8 @@ export interface MortiseTenonParams {
     width: number | '';
     height: number | '';
     depth: number | '';
+    clearingWidth: number | '';
+    clearingLength: number | '';
     tolerance: number | '';
     feed: number | '';
     plungeFeed: number | '';

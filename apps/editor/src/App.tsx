@@ -8,7 +8,19 @@ const defaultMachineSettings: MachineSettings = {
     jogFeedRate: 1000,
     controllerType: 'GRBL',
     spindle: { min: 0, max: 10000, warmupDelay: 0 },
-    probe: { xOffset: 0, yOffset: 0, zOffset: 0, feedRate: 50, probeTravelDistance: 10 },
+    probe: { 
+        xOffset: 0, 
+        yOffset: 0, 
+        zOffset: 0, 
+        fastFeedRate: 50, 
+        slowFeedRate: 10, 
+        probeTravelDistance: 10, 
+        retractDistance: 2,
+        blockWidthX: 25,
+        blockWidthY: 25,
+        blockHeight: 10,
+        bitDiameter: 3.175
+    },
     scripts: { startup: '', shutdown: '', toolChange: '', jobPause: '', jobResume: '', jobStop: '' }
 };
 

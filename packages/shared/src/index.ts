@@ -34,6 +34,7 @@ export type {
     DadoRabbetParams,
     DecorativeJoineryParams,
     CabinetParams,
+    BoxJointParams,
     BoundingBox,
     ToolpathSegmentMetadata
 } from './types';

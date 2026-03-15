@@ -1377,7 +1377,7 @@ const generateDrawerCode = (machineSettings: MachineSettings, drawerParams: Draw
                         }
                     }
 
-                    if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && idx > 0 && idx < divisions) {
+                    if (cornerClearance === 'finger_cutout' && currentZ >= stepZBoundary && idx > 0 && idx < fingers) {
                         const isPinAbove = idx > 0 && ((idx - 1) % 2 === 0) === startWithPin;
                         const isPinBelow = idx < fingers && (idx % 2 === 0) === startWithPin;
                         const step = Math.min(R, fW / 4);
@@ -1772,8 +1772,48 @@ const generateMortiseTenonCode = (
             currentZ = Math.max(currentZ - dpp, -D);
             const isLastPass = pass === totalPasses;
 
-            // Retract & Plunge to start point
-            if (pass === 1) code.push(`G0 Z${safeZ.toFixed(3)}`);
+            // --- Material Clearing Loop ---
+            const clearingW = parseFloat(String(params.clearingWidth)) || 0;
+            const clearingL = parseFloat(String(params.clearingLength)) || 0;
+
+            if (clearingW > tw || clearingL > tl) {
+                code.push(`(--- Material Clearing Pass at Z:${currentZ.toFixed(3)} ---)`);
+                const stepover = toolDiam * 0.4;
+                
+                // Effective clearing bounds (center relative)
+                const startCW = (tw / 2) + R;
+                const startCL = (tl / 2) + R;
+                const endCW = clearingW / 2 - R;
+                const endCL = clearingL / 2 - R;
+
+                const numClearingPasses = Math.ceil(Math.max((endCW - startCW), (endCL - startCL)) / stepover) + 1;
+
+                for (let cp = 0; cp < numClearingPasses; cp++) {
+                    const r = cp * stepover;
+                    const px = Math.min(endCW, startCW + r);
+                    const py = Math.min(endCL, startCL + r);
+
+                    code.push(`G0 X${(offsetX - px).toFixed(3)} Y${(offsetY - py).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    
+                    const addCPPt = (cxp: number, cyp: number) => {
+                        updateBounds(offsetX + cxp, offsetY + cyp);
+                        code.push(`G1 X${(offsetX + cxp).toFixed(3)} Y${(offsetY + cyp).toFixed(3)} F${feed}`);
+                        if (isLastPass) {
+                            // We don't necessarily need to preview every clearing pass to keep UI clean, 
+                            // but let's add them for now.
+                        }
+                    };
+
+                    addCPPt(px, -py);
+                    addCPPt(px, py);
+                    addCPPt(-px, py);
+                    addCPPt(-px, -py);
+                }
+                code.push(`G0 Z${(currentZ + 2).toFixed(3)}`); // Small lift between clearing and tenon profile
+            }
+
+            // Retract & Plunge to start point for tenon profile
             code.push(`G0 X${(offsetX + 0).toFixed(3)} Y${(offsetY + cy + 2 * R).toFixed(3)}`);
             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
 

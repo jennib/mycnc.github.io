@@ -53,6 +53,13 @@ const MortiseTenonGenerator: React.FC<MortiseTenonGeneratorProps> = ({ params, o
                 <Input label={t('generators.mortiseTenon.tolerance')} value={params.tolerance} onChange={e => handleParamChange('tolerance', e.target.value)} unit={unit} />
             </div>
 
+            {params.partToGenerate !== 'mortise' && (
+                <div className='grid grid-cols-2 gap-4'>
+                    <Input label={t('generators.mortiseTenon.clearingWidth')} value={params.clearingWidth} onChange={e => handleParamChange('clearingWidth', e.target.value)} unit={unit} />
+                    <Input label={t('generators.mortiseTenon.clearingLength')} value={params.clearingLength} onChange={e => handleParamChange('clearingLength', e.target.value)} unit={unit} />
+                </div>
+            )}
+
             <hr className='border-secondary' />
             <SpindleAndFeedControls
                 params={params}
