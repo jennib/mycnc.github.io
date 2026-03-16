@@ -1781,15 +1781,19 @@ const generateMortiseTenonCode = (
 
             if (clearingW > tw || clearingL > tl) {
                 code.push(`(--- Material Clearing Pass at Z:${currentZ.toFixed(3)} ---)`);
-                const stepover = toolDiam * 0.4;
+                const stepover = toolDiam * 0.45;
                 
                 // Effective clearing bounds (center relative)
                 const startCW = (tw / 2) + R;
                 const startCL = (tl / 2) + R;
-                const endCW = clearingW / 2 - R;
-                const endCL = clearingL / 2 - R;
+                const endCW = Math.max(startCW, clearingW / 2 - R);
+                const endCL = Math.max(startCL, clearingL / 2 - R);
 
-                const numClearingPasses = Math.ceil(Math.max((endCW - startCW), (endCL - startCL)) / stepover) + 1;
+                const distW = endCW - startCW;
+                const distL = endCL - startCL;
+                const numClearingPasses = Math.max(1, Math.ceil(Math.max(distW, distL) / stepover) + 1);
+
+                let clearingPathD = "";
 
                 for (let cp = 0; cp < numClearingPasses; cp++) {
                     const r = cp * stepover;
@@ -1799,12 +1803,13 @@ const generateMortiseTenonCode = (
                     code.push(`G0 X${(offsetX - px).toFixed(3)} Y${(offsetY - py).toFixed(3)}`);
                     code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                     
+                    if (isLastPass && cp === 0) clearingPathD += `M ${(offsetX - px).toFixed(3)} ${(offsetY - py).toFixed(3)} `;
+
                     const addCPPt = (cxp: number, cyp: number) => {
                         updateBounds(offsetX + cxp, offsetY + cyp);
                         code.push(`G1 X${(offsetX + cxp).toFixed(3)} Y${(offsetY + cyp).toFixed(3)} F${feed}`);
                         if (isLastPass) {
-                            // We don't necessarily need to preview every clearing pass to keep UI clean, 
-                            // but let's add them for now.
+                            clearingPathD += `L ${(offsetX + cxp).toFixed(3)} ${(offsetY + cyp).toFixed(3)} `;
                         }
                     };
 
@@ -1812,6 +1817,18 @@ const generateMortiseTenonCode = (
                     addCPPt(px, py);
                     addCPPt(-px, py);
                     addCPPt(-px, -py);
+                    
+                    if (isLastPass && cp < numClearingPasses - 1) {
+                        // Move to next starting point in preview
+                        const nextR = (cp + 1) * stepover;
+                        const npx = Math.min(endCW, startCW + nextR);
+                        const npy = Math.min(endCL, startCL + nextR);
+                        clearingPathD += `M ${(offsetX - npx).toFixed(3)} ${(offsetY - npy).toFixed(3)} `;
+                    }
+                }
+                
+                if (isLastPass && clearingPathD) {
+                    paths.push({ d: clearingPathD, stroke: 'var(--color-accent-blue)', strokeWidth: '0.5' });
                 }
                 code.push(`G0 Z${(currentZ + 2).toFixed(3)}`); // Small lift between clearing and tenon profile
             }
