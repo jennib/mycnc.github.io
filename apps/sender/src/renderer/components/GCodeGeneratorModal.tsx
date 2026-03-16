@@ -182,6 +182,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
     const [viewBox, setViewBox] = useState('0 0 100 100');
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [generationProgress, setGenerationProgress] = useState<number | null>(null);
+    const [isStale, setIsStale] = useState(true);
 
     // --- Array State (now universal) ---
     const [arraySettings, setArraySettings] = useState({
@@ -1578,6 +1579,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             }
 
             setGeneratedGCode(result.code ? result.code.filter(line => line.trim() !== '').join('\n') : '');
+            setIsStale(false);
 
             // For relief/STL, the path count is massive (10k-100k+ lines) and rendering them as SVG 
             // will freeze the browser main thread. We rely on the 3D preview in the generator component instead.
@@ -1636,6 +1638,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             ...prevSettings,
             [tabKey]: { ...(prevSettings[tabKey] || DEFAULT_GENERATOR_SETTINGS[tabKey]), [field]: parsedValue }
         }));
+        setIsStale(true);
     }, [activeTab, onSettingsChange]);
 
     const handleToolChange = useCallback((toolId: number | null) => {
@@ -1650,6 +1653,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             ...prevSettings,
             [tabKey]: { ...(prevSettings[tabKey] || DEFAULT_GENERATOR_SETTINGS[tabKey]), toolId: toolId }
         }));
+        setIsStale(true);
     }, [activeTab, onSettingsChange, onToolSelect]);
 
     const currentParams = useMemo(() => {
@@ -1699,8 +1703,12 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
         }
     }, [selectedToolId, activeTab, currentParams, handleToolChange]);
 
+    useEffect(() => {
+        setIsStale(true);
+    }, [activeTab, arraySettings]);
 
-    const isLoadDisabled = !generatedGCode || !!generationError || !currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null);
+
+    const isLoadDisabled = isStale || !generatedGCode || !!generationError || !currentParams || (activeTab !== 'relief' && (currentParams as any).toolId === null);
 
     const renderPreviewContent = () => {
         if (isGenerating) {
@@ -2033,7 +2041,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                     <button
                         onClick={() => onLoadGCode(generatedGCode, `${activeTab}_generated.gcode`)}
                         disabled={isLoadDisabled}
-                        title={isLoadDisabled ? (generationError || 'Please select a tool') : 'Load G-Code'}
+                        title={isLoadDisabled ? (generationError || (isStale ? "G-Code is outdated. Please regenerate." : 'Please select a tool')) : 'Load G-Code'}
                         className="px-6 py-2 bg-primary text-white font-bold rounded-md hover:bg-primary-focus disabled:bg-secondary disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Save className="w-5 h-5" />
