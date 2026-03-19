@@ -6,7 +6,8 @@ import { MachineSettings } from '../types';
 import { registerGCodeLanguage, GCODE_LANGUAGE_ID } from '../services/gcodeLanguage';
 import { registerGCodeIntelliSense } from '../services/gcodeIntelliSense';
 import { validateGCode, setValidationMarkers, clearValidationMarkers } from '../services/gcodeValidator';
-import { X, Save, Download, Undo, Redo, Search, Code2 } from './Icons';
+// import LockMitreJointGenerator from './generators/LockMitreJointGenerator';
+import { X, Save, Download, Undo, Redo, Search, Code2, Wand } from './Icons';
 
 interface GCodeEditorModalProps {
     isOpen: boolean;
@@ -40,6 +41,7 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
     const [warningCount, setWarningCount] = useState(0);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isTouchMode, setIsTouchMode] = useState(false);
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
 
     // Handle mount - register language
     useEffect(() => {
@@ -152,6 +154,19 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
         editorRef.current?.trigger('editor', 'editor.action.formatDocument', null);
     };
 
+    const handleInsertGCode = (gcode: string) => {
+        if (editorRef.current) {
+            const selection = editorRef.current.getSelection();
+            if (selection) {
+                const id = { major: 1, minor: 1 };
+                const text = gcode;
+                const op = { identifier: id, range: selection, text: text, forceMoveMarkers: true };
+                editorRef.current.executeEdits("gcode-generator", [op]);
+            }
+        }
+        setIsGeneratorOpen(false);
+    }
+
     if (!isOpen) return null;
 
     return (
@@ -218,6 +233,15 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                     >
                         <Code2 className="w-4 h-4" />
                     </button>
+                    <div className="w-px h-6 bg-secondary mx-2" />
+                                        {/* <button
+                        onClick={() => setIsGeneratorOpen(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-secondary text-white rounded-md hover:bg-secondary-focus transition-colors"
+                        title={t('gcode.editor.openGenerator', 'Open G-Code Generator')}
+                    >
+                        <Wand className="w-4 h-4" />
+                    </button> */}
+
 
                     {TouchInputComponent && (
                         <>
@@ -317,6 +341,13 @@ const GCodeEditorModal: React.FC<GCodeEditorModalProps> = ({
                         </button>
                     </div>
                 </div>
+
+                {/* {isGeneratorOpen && (
+                    <LockMitreJointGenerator
+                        onGenerate={handleInsertGCode}
+                        onClose={() => setIsGeneratorOpen(false)}
+                    />
+                )} */}
             </div>
         </div>
     );

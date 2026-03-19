@@ -142,6 +142,111 @@ const JogButton: React.FC<JogButtonProps> = memo(({
   );
 });
 
+interface TimedZeroButtonProps {
+  onClick: () => void;
+  icon: React.ReactNode;
+  disabled: boolean;
+  title: string;
+  id?: string;
+}
+
+const TimedZeroButton: React.FC<TimedZeroButtonProps> = memo(({
+  onClick,
+  icon,
+  disabled,
+  title,
+  id,
+}) => {
+  const [isPressing, setIsPressing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  const startTimer = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (disabled) return;
+    
+    // Prevent default to avoid context menus or other touch behaviors
+    if (e.type === 'touchstart') {
+      // e.preventDefault(); // This might block scrolling if not careful, but for this button it's fine
+    }
+
+    setIsPressing(true);
+    startTimeRef.current = Date.now();
+    setProgress(0);
+    
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const p = (elapsed / 3000) * 100;
+      
+      if (p >= 100) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = null;
+        setProgress(100);
+        onClick();
+        
+        // Brief visual confirmation
+        setTimeout(() => {
+          setIsPressing(false);
+          setProgress(0);
+        }, 300);
+      } else {
+        setProgress(p);
+      }
+    }, 50);
+  }, [disabled, onClick]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsPressing(false);
+    setProgress(0);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <button
+      id={id}
+      onMouseDown={startTimer}
+      onMouseUp={stopTimer}
+      onMouseLeave={stopTimer}
+      onTouchStart={startTimer}
+      onTouchEnd={stopTimer}
+      disabled={disabled}
+      className={`p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary relative overflow-hidden ${isPressing ? 'scale-[0.97] ring-1 ring-primary/50' : ''}`}
+      title={title}
+    >
+      <div className={`relative z-10 transition-transform duration-200 ${isPressing ? 'scale-110' : ''}`}>
+        {icon}
+      </div>
+      
+      {/* Background Pulse Effect when pressing */}
+      {isPressing && (
+        <div className="absolute inset-0 bg-primary/10 animate-pulse pointer-events-none" />
+      )}
+      
+      {/* Progress Bar at top */}
+      <div 
+        className="absolute top-0 left-0 h-1 bg-primary shadow-[0_0_10px_rgba(56,189,248,0.8)] z-20 transition-all duration-75 ease-linear"
+        style={{ width: `${progress}%`, opacity: progress > 0 ? 1 : 0 }}
+      />
+      
+      {/* Tinted Overlay during progress */}
+      <div 
+        className="absolute inset-0 bg-primary/5 pointer-events-none transition-opacity duration-200"
+        style={{ opacity: progress / 100 }}
+      />
+    </button>
+  );
+});
+
 const JogPanel: React.FC<JogPanelProps> = memo(
   ({
     isConnected,
@@ -659,46 +764,36 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               </h4>
               <div className="space-y-1 text-sm">
                 <div className="grid grid-cols-5 gap-2">
-                  <button
+                  <TimedZeroButton
                     onClick={() => onSetZero("all")}
                     disabled={isControlDisabled}
-                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.all')}
-                  >
-                    <Crosshair className="w-5 h-5" />
-                  </button>
-                  <button
+                    icon={<Crosshair className="w-5 h-5" />}
+                  />
+                  <TimedZeroButton
                     onClick={() => onSetZero("x")}
                     disabled={isControlDisabled}
-                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.x')}
-                  >
-                    <CrosshairX className="w-5 h-5" />
-                  </button>
-                  <button
+                    icon={<CrosshairX className="w-5 h-5" />}
+                  />
+                  <TimedZeroButton
                     onClick={() => onSetZero("y")}
                     disabled={isControlDisabled}
-                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.y')}
-                  >
-                    <CrosshairY className="w-5 h-5" />
-                  </button>
-                  <button
+                    icon={<CrosshairY className="w-5 h-5" />}
+                  />
+                  <TimedZeroButton
                     onClick={() => onSetZero("z")}
                     disabled={isControlDisabled}
-                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.z')}
-                  >
-                    <CrosshairZ className="w-5 h-5" />
-                  </button>
-                  <button
+                    icon={<CrosshairZ className="w-5 h-5" />}
+                  />
+                  <TimedZeroButton
                     onClick={() => onSetZero("xy")}
                     disabled={isControlDisabled}
-                    className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                     title={t('jog.zero.xy')}
-                  >
-                    <CrosshairXY className="w-5 h-5" />
-                  </button>
+                    icon={<CrosshairXY className="w-5 h-5" />}
+                  />
                 </div>
               </div>
             </div>

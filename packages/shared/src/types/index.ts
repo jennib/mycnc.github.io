@@ -355,6 +355,19 @@ export interface BoxJointParams {
     jointOnly: boolean;
 }
 
+export interface LockMitreParams {
+    stockThickness: number | '';
+    length: number | '';
+    bitDiameter: number | '';
+    bitAngle: number | '';
+    feedRate: number | '';
+    stepover: number | '';
+    useSteppedVersion: boolean;
+    stepdown: number | '';
+    toolId: number | null;
+    partToGenerate: 'A' | 'B' | 'both';
+}
+
 export interface DrawerParams {
     joineryType: 'finger' | 'butt';
     bottomType?: 'flat' | 'groove' | 'rabbet';
@@ -461,6 +474,18 @@ export interface CabinetParams {
     // Part selection
     partToGenerate: 'all' | 'sides' | 'top' | 'bottom' | 'back' | 'shelves' | 'toe_kick' | 'doors' | 'drawers';
 }
+export interface LockMitreParams {
+    stockThickness: number | '';
+    length: number | '';
+    bitDiameter: number | '';
+    bitAngle: number | '';
+    feedRate: number | '';
+    stepover: number | '';
+    useSteppedVersion: boolean;
+    stepdown: number | '';
+    toolId: number | null;
+    partToGenerate: 'A' | 'B' | 'both';
+}
 
 export interface GeneratorSettings {
     surfacing: SurfacingParams;
@@ -481,6 +506,7 @@ export interface GeneratorSettings {
     cabinet: CabinetParams;
     halfLap: HalfLapParams;
     boxjoint: BoxJointParams;
+    lockMitre: LockMitreParams;
 }
 
 export interface TimeEstimate {
@@ -520,3 +546,19 @@ export interface GCodePoint {
     z: number;
 }
 
+export interface WorkspaceBookmark {
+    id: string;
+    name: string;
+    position: MachinePosition; // Work position (WPOS) or Offset from work position
+    mpos?: MachinePosition;    // Machine position (MPOS)
+    wcs?: string;              // Current WCS (e.g. G54)
+    wco?: MachinePosition;     // WCS Offset
+    reference: 'machine' | 'work'; // Added reference type
+    jobId?: string;
+    jobName?: string;
+    snapshot?: string;          // Optional webcam snapshot (DataURL)
+    toolId?: number;            // Tool loaded when saved
+    category?: string;          // For grouping
+    commands?: string[];        // Mini-macro commands
+    isProbed?: boolean;         // Flag if saved from probing
+}

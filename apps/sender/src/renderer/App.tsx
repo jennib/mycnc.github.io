@@ -16,6 +16,7 @@ import GrblSettingsModal from "./components/GrblSettingsModal";
 import ToolLibraryModal from "./components/ToolLibraryModal";
 import CalculatorModal from "./components/CalculatorModal";
 import LibraryPanel from "./components/LibraryPanel";
+import BookmarkPanel from "./components/BookmarkPanel";
 import { NotificationContainer } from "./components/Notification";
 import StatusBar from "./components/StatusBar";
 import WebcamPeek from "./components/WebcamPeek";
@@ -40,6 +41,7 @@ import {
   Terminal,
   FolderOpen,
   Calculator,
+  Pin,
   GRBL_REALTIME_COMMANDS,
 } from "@mycnc/shared";
 import { Analytics } from "@vercel/analytics/react";
@@ -645,6 +647,16 @@ const MainApp: React.FC = () => {
                 content: (
                   <div className="h-full overflow-hidden p-2">
                     <LibraryPanel />
+                  </div>
+                ),
+              },
+              {
+                id: "bookmarks",
+                label: "Bookmarks",
+                icon: <Pin className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-hidden p-2">
+                    <BookmarkPanel />
                   </div>
                 ),
               },

@@ -25,6 +25,7 @@ import DecorativeJoineryGenerator from './DecorativeJoineryGenerator';
 import CabinetGenerator from './CabinetGenerator';
 import BoxJointGenerator from './BoxJointGenerator';
 import HalfLapGenerator from './HalfLapGenerator';
+import LockMitreJointGenerator from './LockMitreJointGenerator';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import * as THREE from 'three';
 
@@ -1503,7 +1504,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                 return;
             }
 
-            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative', 'cabinet', 'boxjoint', 'halfLap'];
+            const workerResultTypes = ['surfacing', 'drilling', 'bore', 'pocket', 'profile', 'slot', 'text', 'thread', 'drawer', 'mortisetenon', 'dadorabbet', 'decorative', 'cabinet', 'boxjoint', 'halfLap', 'lockMitre'];
 
             if (workerResultTypes.includes(activeTab)) {
                 result = await runGCodeWorker(activeTab, currentSettings, toolLibrary, settings, arraySettings);
@@ -1609,7 +1610,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
             if (parts.length !== 4) return currentViewBox;
             let [x, y, w, h] = parts;
             const newW = w * factor;
-            const newH = h * h; // This seems like a typo, should be h * factor
+            const newH = h * factor;
             const newX = x + (w - newW) / 2;
             const newY = y + (h - newH) / 2;
             return `${newX} ${newY} ${newW} ${newH}`;
@@ -1789,6 +1790,7 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                             <Tab label={t('generators.cabinet.title')} isActive={activeTab === 'cabinet'} onClick={() => setActiveTab('cabinet')} />
                             <Tab label={t('generators.boxjoint.title')} isActive={activeTab === 'boxjoint'} onClick={() => setActiveTab('boxjoint')} />
                             <Tab label={t('generators.halfLap.title')} isActive={activeTab === 'halfLap'} onClick={() => setActiveTab('halfLap')} />
+                            <Tab label={t('generators.lockMitre.title', 'Lock Mitre')} isActive={activeTab === 'lockMitre'} onClick={() => setActiveTab('lockMitre')} />
                         </div>
                         <div className="py-4">
                             {activeTab === 'surfacing' && generatorSettings.surfacing && (
@@ -1988,6 +1990,16 @@ const GCodeGeneratorModal: React.FC<GCodeGeneratorModalProps> = ({ isOpen, onClo
                                     toolLibrary={toolLibrary}
                                     unit={unit}
                                     settings={settings}
+                                />
+                            )}
+                            {activeTab === 'lockMitre' && (
+                                <LockMitreJointGenerator
+                                    params={generatorSettings.lockMitre || DEFAULT_GENERATOR_SETTINGS.lockMitre}
+                                    onParamsChange={handleParamChange}
+                                    toolLibrary={toolLibrary}
+                                    unit={unit}
+                                    selectedToolId={selectedToolId}
+                                    onToolSelect={onToolSelect}
                                 />
                             )}
                         </div>

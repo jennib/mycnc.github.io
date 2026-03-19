@@ -1,3 +1,4 @@
+import { Activity } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
 import { ArrowDown } from 'lucide-react';
 import { ArrowLeft } from 'lucide-react';
@@ -19,6 +20,7 @@ import { Circle } from 'lucide-react';
 import { Clock } from 'lucide-react';
 import { Code } from 'lucide-react';
 import { Code2 } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import { Crosshair } from 'lucide-react';
 import { default as default_2 } from 'react';
 import { Dock } from 'lucide-react';
@@ -28,8 +30,12 @@ import { FileText } from 'lucide-react';
 import { FolderOpen } from 'lucide-react';
 import { GripHorizontal } from 'lucide-react';
 import { Hand } from 'lucide-react';
+import { History as History_2 } from 'lucide-react';
 import { Home } from 'lucide-react';
+import { Image as Image_2 } from 'lucide-react';
 import { Info } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { Maximize } from 'lucide-react';
 import { Minimize } from 'lucide-react';
 import { Minus } from 'lucide-react';
@@ -66,11 +72,14 @@ import { Unlock } from 'lucide-react';
 import { Upload } from 'lucide-react';
 import { Volume2 } from 'lucide-react';
 import { VolumeX } from 'lucide-react';
+import { Wand } from 'lucide-react';
 import { X } from 'lucide-react';
 import { Zap } from 'lucide-react';
 import { ZapOff } from 'lucide-react';
 import { ZoomIn } from 'lucide-react';
 import { ZoomOut } from 'lucide-react';
+
+export { Activity }
 
 export { AlertTriangle }
 
@@ -203,6 +212,8 @@ export declare interface ConsoleLog {
 }
 
 export declare const Contrast: default_2.FC<IconProps>;
+
+export { Cpu }
 
 export { Crosshair }
 
@@ -412,6 +423,7 @@ export declare interface GeneratorSettings {
     cabinet: CabinetParams;
     halfLap: HalfLapParams;
     boxjoint: BoxJointParams;
+    lockMitre: LockMitreParams;
 }
 
 export declare const getMachineStateAtLine: (gcodeLines: string[], lineNumber: number) => GCodeAnalysisState;
@@ -471,6 +483,8 @@ export declare interface HalfLapParams {
 
 export { Hand }
 
+export { History_2 as History }
+
 export { Home }
 
 export declare const HomeX: default_2.FC<IconProps>;
@@ -483,6 +497,8 @@ export declare const HomeZ: default_2.FC<IconProps>;
 
 declare type IconProps = default_2.SVGProps<SVGSVGElement>;
 
+export { Image_2 as Image }
+
 export { Info }
 
 export declare enum JobStatus {
@@ -491,6 +507,36 @@ export declare enum JobStatus {
     Paused = "paused",
     Stopped = "stopped",
     Complete = "complete"
+}
+
+export { Keyboard }
+
+export { Layers }
+
+export declare interface LockMitreParams {
+    stockThickness: number | '';
+    length: number | '';
+    bitDiameter: number | '';
+    bitAngle: number | '';
+    feedRate: number | '';
+    stepover: number | '';
+    useSteppedVersion: boolean;
+    stepdown: number | '';
+    toolId: number | null;
+    partToGenerate: 'A' | 'B' | 'both';
+}
+
+export declare interface LockMitreParams {
+    stockThickness: number | '';
+    length: number | '';
+    bitDiameter: number | '';
+    bitAngle: number | '';
+    feedRate: number | '';
+    stepover: number | '';
+    useSteppedVersion: boolean;
+    stepdown: number | '';
+    toolId: number | null;
+    partToGenerate: 'A' | 'B' | 'both';
 }
 
 export declare interface MachinePosition {
@@ -912,6 +958,8 @@ export { Volume2 }
 
 export { VolumeX }
 
+export { Wand }
+
 export declare interface WebcamSettings {
     selectedDeviceId: string;
     selectedAudioDeviceId: string;
@@ -920,6 +968,23 @@ export declare interface WebcamSettings {
     mode?: 'local' | 'webrtc' | string;
     webRTCUrl?: string;
     webRTCAutoConnect?: boolean;
+}
+
+export declare interface WorkspaceBookmark {
+    id: string;
+    name: string;
+    position: MachinePosition;
+    mpos?: MachinePosition;
+    wcs?: string;
+    wco?: MachinePosition;
+    reference: 'machine' | 'work';
+    jobId?: string;
+    jobName?: string;
+    snapshot?: string;
+    toolId?: number;
+    category?: string;
+    commands?: string[];
+    isProbed?: boolean;
 }
 
 export { X }

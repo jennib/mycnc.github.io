@@ -43,9 +43,9 @@ const WebcamPanel: React.FC = () => {
                 setIsPoppedOut(false);
             } else {
                 const params = {
-                    mode: (mode === 'off' ? 'local' : mode) as 'local' | 'webrtc', // Default to local if off when popping out? Or just don't allow popout if off?
+                    mode: (mode === 'off' ? 'local' : mode) as 'local' | 'webrtc', 
                     deviceId: webcamSettings.selectedDeviceId,
-                    url: 'ws://10.0.0.162:8888/webrtc' // TODO: Get actual URL from WebRTC component if possible, or store in settings
+                    url: webcamSettings.webRTCUrl || 'ws://10.0.0.162:8888/webrtc' 
                 };
                 window.electronAPI.openCameraWindow(params);
                 setIsPoppedOut(true);

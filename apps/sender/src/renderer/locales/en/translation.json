@@ -298,6 +298,19 @@
             "textEngraving": "Engraving",
             "generate": "Generate G-Code"
         },
+        "shared": {
+            "tool": "Tool",
+            "feedRate": "Feed Rate",
+            "spindleSpeed": "Spindle Speed",
+            "safeZ": "Safe Z",
+            "safeZHelp": "Rapid height above stock",
+            "plungeRate": "Plunge Rate",
+            "selectTool": "Select Tool...",
+            "noTools": "No tools available",
+            "addTools": "Please add tools in the Tool Library first",
+            "bitAngle": "Bit Angle (°)",
+            "stepover": "Stepover (%)"
+        },
         "tabs": {
             "surfacing": "Surfacing",
             "drilling": "Drilling",
@@ -508,19 +521,6 @@
                 "email": "Please enter a valid email address."
             }
         },
-        "shared": {
-            "tool": "Tool",
-            "selectTool": "Select a tool...",
-            "noTools": "No tools in library",
-            "addTools": "Add tools in the Tool Library to enable generation.",
-            "feedRate": "Feed Rate",
-            "spindleSpeed": "Spindle Speed",
-            "plungeRate": "Plunge Rate",
-            "safeZ": "Safe Z",
-            "safeZHelp": "Rapid height above stock",
-            "cabinet": "Cabinet",
-            "boxjoint": "Box Joint"
-        },
         "array": {
             "enable": "Enable Array Pattern",
             "rectGrid": "Rectangular Grid",
@@ -697,6 +697,17 @@
             "plungeFeed": "Plunge Feed",
             "standardHelp": "A standard half lap removes half the thickness of each board, allowing them to overlap flush.",
             "miteredHelp": "A mitered half lap adds a 45° miter to the face-half of the joint for a cleaner look."
+        },
+        "lockMitre": {
+            "title": "Lock Mitre Joint",
+            "stockThickness": "Stock Thickness (mm)",
+            "length": "Joint Length",
+            "stepover": "Stepover (%)",
+            "stepdown": "Stepdown (mm)",
+            "partToGenerate": "Part to Generate",
+            "flatMillingNote": "This generator mills both pieces flat on the bed using a stepped profile. Use a small stepdown for a smoother finish.",
+            "useSteppedVersion": "Stepped Version (Flat Endmill)",
+            "bitAngle": "Bit Angle (°)"
         }
     },
     "preflight": {

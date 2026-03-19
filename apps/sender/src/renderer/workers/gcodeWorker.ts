@@ -1,4 +1,4 @@
-import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams, BoxJointParams, HalfLapParams } from "@mycnc/shared";
+import { MachineSettings, Tool, GeneratorSettings, SurfacingParams, DrillingParams, BoreParams, PocketParams, ProfileParams, SlotParams, TextParams, ThreadMillingParams, DrawerParams, MortiseTenonParams, DadoRabbetParams, DecorativeJoineryParams, CabinetParams, BoxJointParams, HalfLapParams, LockMitreParams } from "@mycnc/shared";
 import { FONTS, CharacterStroke, CharacterOutline } from '../services/cncFonts';
 
 // Define PreviewPath interface locally or import if available
@@ -21,7 +21,7 @@ interface Bounds {
 }
 
 interface WorkerMessage {
-    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet' | 'boxjoint' | 'halfLap';
+    type: 'surfacing' | 'drilling' | 'bore' | 'pocket' | 'profile' | 'slot' | 'text' | 'thread' | 'drawer' | 'mortisetenon' | 'dadorabbet' | 'decorative' | 'cabinet' | 'boxjoint' | 'halfLap' | 'lockMitre';
     params: any;
     toolLibrary: Tool[];
     settings: MachineSettings;
@@ -81,6 +81,9 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
             case 'boxjoint':
                 result = generateBoxJointCode(settings, params as BoxJointParams, toolLibrary, unit);
                 break;
+            case 'lockMitre':
+                result = generateLockMitreCode(settings, params as LockMitreParams, toolLibrary, unit);
+                break;
         }
 
         if (result.error) {
@@ -99,7 +102,141 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
     }
 };
 
+const generateLockMitreCode = (machineSettings: MachineSettings, params: LockMitreParams, toolLibrary: Tool[], unit: string) => {
+    const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
+    if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} as Bounds };
+    const selectedTool = toolLibrary[toolIndex];
+    const toolDiameter = selectedTool ? (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter) : 0;
+    const toolRadius = toolDiameter / 2;
+
+    const { stockThickness, length, feedRate, stepover, stepdown, partToGenerate, bitAngle } = params;
+
+    const numericThickness = parseFloat(String(stockThickness));
+    const numericLength = parseFloat(String(length));
+    const numericFeed = parseFloat(String(feedRate));
+    const numericStepover = parseFloat(String(stepover)) || 0.5;
+    const numericStepdown = parseFloat(String(stepdown)) || 0.5;
+    const numericBitAngle = parseFloat(String(bitAngle)) || 45;
+    const numericSafeZ = 5;
+
+    if ([numericThickness, numericLength, numericFeed].some(isNaN)) {
+        return { error: 'Fill required fields (Thickness, Length, Feed)', code: [], paths: [], bounds: {} as Bounds };
+    }
+
+    const code: string[] = [
+        `(--- Flat-Milled Stepped Lock Mitre ---)`,
+        `(Thickness: ${numericThickness}, Length: ${numericLength}, Feed: ${numericFeed})`,
+        `(Stepover: ${numericStepover}, Stepdown: ${numericStepdown}, Angle: ${numericBitAngle})`,
+        `G21 G90`, `M3 S10000`, `G0 Z${numericSafeZ.toFixed(3)}`
+    ];
+
+    const paths: PreviewPath[] = [];
+    const bounds = { minX: 0, maxX: numericThickness * 2 + 50, minY: 0, maxY: numericLength };
+
+    const hStepover = toolDiameter * numericStepover;
+    const tanAngle = Math.tan(numericBitAngle * (Math.PI / 180));
+
+    // Improved addCut that supports staying at depth
+    let lastZ: number | null = null;
+    let lastX: number | null = null;
+    let lastY: number | null = null;
+
+    const addCutLine = (x: number, y1: number, y2: number, z: number) => {
+        // Move to start if not already there or if Z changed
+        if (lastX === null || Math.abs(lastX - x) > 0.001 || lastZ === null || Math.abs(lastZ - z) > 0.001 || lastY === null || Math.abs(lastY - y1) > 0.001) {
+            code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+            code.push(`G0 X${x.toFixed(3)} Y${y1.toFixed(3)}`);
+            code.push(`G1 Z${z.toFixed(3)} F${numericFeed / 2}`);
+        }
+        
+        code.push(`G1 Y${y2.toFixed(3)} F${numericFeed}`);
+        
+        paths.push({ 
+            d: `M ${x.toFixed(3)} ${y1.toFixed(3)} L ${x.toFixed(3)} ${y2.toFixed(3)}`, 
+            stroke: 'var(--color-accent-blue)' 
+        });
+
+        lastX = x;
+        lastY = y2;
+        lastZ = z;
+    };
+
+    const generatePiece = (offsetX: number, isPieceA: boolean) => {
+        const T = numericThickness;
+        const P = T / 4; // Tongue/Groove depth
+        
+        for (let z = 0; z <= T; z += numericStepdown) {
+            const currentZ = -Math.min(z, T);
+            let targetX = Math.abs(currentZ) / tanAngle;
+            
+            if (isPieceA) {
+                // Piece A: Tongue protrusion
+                if (Math.abs(currentZ) >= T * 0.25 && Math.abs(currentZ) <= T * 0.75) {
+                    targetX -= P;
+                }
+            } else {
+                // Piece B: Groove recess
+                if (Math.abs(currentZ) >= T * 0.25 && Math.abs(currentZ) <= T * 0.75) {
+                    targetX += P;
+                }
+            }
+
+            // We need to clear from the outer edge (X=0 approx) to the target slope X.
+            // For Piece A: Edge is at X=targetX_at_bottom, Profiling towards X=0.
+            // Actually, simplified: always clear from -toolRadius to targetX.
+            const xPasses = [];
+            const startX = -toolRadius;
+            const endX = targetX;
+            
+            for (let x = startX; x <= endX; x += hStepover) {
+                xPasses.push(x);
+            }
+            if (xPasses.length === 0 || Math.abs(xPasses[xPasses.length - 1] - endX) > 0.001) {
+                xPasses.push(endX);
+            }
+
+            for (let i = 0; i < xPasses.length; i++) {
+                const x = xPasses[i];
+                const yStart = (i % 2 === 0) ? 0 : numericLength;
+                const yEnd = (i % 2 === 0) ? numericLength : 0;
+                
+                if (lastZ !== null && Math.abs(lastZ - currentZ) < 0.001) {
+                    code.push(`G1 X${(x + offsetX).toFixed(3)} F${numericFeed}`);
+                    code.push(`G1 Y${yEnd.toFixed(3)} F${numericFeed}`);
+                    
+                    paths.push({ 
+                        d: `M ${(x + offsetX).toFixed(3)} ${yStart.toFixed(3)} L ${(x + offsetX).toFixed(3)} ${yEnd.toFixed(3)}`, 
+                        stroke: 'var(--color-accent-blue)' 
+                    });
+                    
+                    lastX = x + offsetX;
+                    lastY = yEnd;
+                } else {
+                    addCutLine(x + offsetX, yStart, yEnd, currentZ);
+                }
+            }
+        }
+        code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+        lastZ = null; lastX = null; lastY = null;
+    };
+
+    if (partToGenerate === 'A' || partToGenerate === 'both') {
+        generatePiece(toolRadius, true);
+    }
+    if (partToGenerate === 'B' || partToGenerate === 'both') {
+        const pieceBWidth = (numericThickness / tanAngle) + (numericThickness / 4);
+        const offset = (partToGenerate === 'both') ? pieceBWidth + toolDiameter + 40 : toolRadius;
+        generatePiece(offset, false);
+    }
+
+    code.push(`G0 Z${numericSafeZ.toFixed(3)}`);
+    code.push(`M5`);
+
+    return { code, paths, bounds, error: null };
+};
+
 const generateBoxJointCode = (machineSettings: MachineSettings, params: BoxJointParams, toolLibrary: Tool[], unit: string) => {
+
     const toolIndex = toolLibrary.findIndex(t => t.id === params.toolId);
     if (toolIndex === -1) return { error: null, code: [], paths: [], bounds: {} as Bounds };
     const selectedTool = toolLibrary[toolIndex];
@@ -1936,7 +2073,14 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
 
     const width = parseFloat(String(params.width));
     const thickness = parseFloat(String(params.thickness));
-    const lapLength = parseFloat(String(params.lapLength));
+    let lapLength = parseFloat(String(params.lapLength));
+    
+    // For mitered joints, lapLength is redundant and should match width for a 45-degree miter.
+    // If it's NaN or we just want to force it, we use width.
+    if (params.jointType === 'mitered' && (isNaN(lapLength) || lapLength === 0)) {
+        lapLength = width;
+    }
+
     const jointType = params.jointType;
     const partToGenerate = params.partToGenerate || 'both';
     const feed = parseFloat(String(params.feed));
@@ -2002,15 +2146,15 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                 const miterSlope = lapLength / width;
                 
                 if (!isPartB) {
-                    // Piece A: Triangular lap pocket (Under)
-                    // The lap is the triangle X < Y * miterSlope
-                    // We clear to targetDepth (-thickness/2)
+                    // Piece A (Under/Socket): Square board with a triangular pocket.
+                    // This creates a "socket" that the mitered Piece B fits into.
                     let y = R;
                     while (y <= width - R) {
                         const startX = 0;
                         const endX = (y * miterSlope) - R;
                         
                         if (endX >= startX) {
+                            // Point at Y=0 (width-y when y is small)
                             code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + width - y).toFixed(3)}`);
                             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                             code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
@@ -2024,16 +2168,16 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                         if (y > width - R) y = width - R;
                     }
                 } else {
-                    // Piece B: Mitered end and lap (Over)
-                    // Triangle X > Y * miterSlope is the lap (Half depth)
+                    // Piece B (Over/Tongue): Mitered board (full thickness cut) with a triangular lap tongue.
+                    // Rotated 180 degrees: Y moves from (width-y) to y, and X is mirrored across lapLength.
                     let y = R;
                     while (y <= width - R) {
                         const miterX = y * miterSlope;
-                        const startX = miterX + R;
-                        const endX = lapLength - R;
+                        const startX = lapLength - miterX + R;
+                        const endX = lapLength;
 
                         if (endX >= startX) {
-                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + thickness > 0 ? y : y).toFixed(3)}`);
+                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
                             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                             code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
                             updateBounds(offsetX + startX, offsetY + y);
@@ -2056,51 +2200,62 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
     };
 
     const spacing = width + toolDiam * 2;
+    
+    const generateMiterCut = (offsetX: number, offsetY: number, isPartB: boolean) => {
+        // Only Piece B needs a miter cut (full depth) to fit into the socket of Piece A.
+        // Piece A stays square at full thickness everywhere except the triangular pocket.
+        if (!isPartB) return;
+
+        code.push(`(--- Removing Miter Corner Piece B ---)`);
+        const miterSlope = lapLength / width;
+        const targetDepth = -thickness;
+        const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
+        const stepover = toolDiam * 0.45;
+
+        for (let pass = 1; pass <= totalPasses; pass++) {
+            const currentZ = Math.max(targetDepth, -pass * dpp);
+            const isLastPass = pass === totalPasses;
+            let pathD = "";
+            
+            code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
+            
+            let y = R;
+            while (y <= width - R) {
+                const miterX = y * miterSlope;
+                const startX = 0;
+                const endX = lapLength - miterX - R;
+                
+                if (endX >= startX) {
+                    code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
+                    updateBounds(offsetX + startX, offsetY + y);
+                    updateBounds(offsetX + endX, offsetY + y);
+                    if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                }
+                
+                if (y === width - R) break;
+                y += stepover;
+                if (y > width - R) y = width - R;
+            }
+            if (isLastPass && pathD) {
+                paths.push({ d: pathD, stroke: 'var(--color-accent-red)' });
+            }
+        }
+        code.push(`G0 Z${safeZ.toFixed(3)}`);
+    };
+
     if (partToGenerate === 'A' || partToGenerate === 'both') {
         addLap("Piece A", false, 0, 0);
+        if (jointType === 'mitered') {
+            generateMiterCut(0, 0, false);
+        }
     }
     if (partToGenerate === 'B' || partToGenerate === 'both') {
         const xOffset = (partToGenerate === 'both') ? (lapLength + spacing) : 0;
         addLap("Piece B", true, xOffset, 0);
-
-        // --- Added: Miter End Cut for Piece B (Removes corner) ---
         if (jointType === 'mitered') {
-            code.push(`(--- Removing Miter Corner Piece B ---)`);
-            const miterSlope = lapLength / width;
-            const targetDepth = -thickness;
-            const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
-            const stepover = toolDiam * 0.45;
-
-            for (let pass = 1; pass <= totalPasses; pass++) {
-                const currentZ = Math.max(targetDepth, -pass * dpp);
-                const isLastPass = pass === totalPasses;
-                let pathD = "";
-                
-                code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
-                
-                let y = R;
-                while (y <= width - R) {
-                    const startX = 0;
-                    const endX = (y * miterSlope) - R;
-                    
-                    if (endX >= startX) {
-                        code.push(`G0 X${(xOffset + startX).toFixed(3)} Y${(y).toFixed(3)}`);
-                        code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
-                        code.push(`G1 X${(xOffset + endX).toFixed(3)} F${feed}`);
-                        updateBounds(xOffset + startX, y);
-                        updateBounds(xOffset + endX, y);
-                        if (isLastPass) pathD += `M ${(xOffset + startX).toFixed(3)} ${(y).toFixed(3)} L ${(xOffset + endX).toFixed(3)} ${(y).toFixed(3)} `;
-                    }
-                    
-                    if (y === width - R) break;
-                    y += stepover;
-                    if (y > width - R) y = width - R;
-                }
-                if (isLastPass && pathD) {
-                    paths.push({ d: pathD, stroke: 'var(--color-accent-red)' });
-                }
-            }
-            code.push(`G0 Z${safeZ.toFixed(3)}`);
+            generateMiterCut(xOffset, 0, true);
         }
     }
 

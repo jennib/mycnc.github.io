@@ -36,8 +36,10 @@ export type {
     CabinetParams,
     BoxJointParams,
     HalfLapParams,
+    LockMitreParams,
     BoundingBox,
-    ToolpathSegmentMetadata
+    ToolpathSegmentMetadata,
+    WorkspaceBookmark
 } from './types';
 export {
     DEFAULT_WEBCAM_SETTINGS,
@@ -55,3 +57,4 @@ export { configureMonaco } from './services/monacoConfig';
 export * from './services/gcodeParser';
 export * from './services/gcodeAnalyzer';
 export * from './services/gcodeTimeEstimator';
+

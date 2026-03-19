@@ -71,7 +71,14 @@ import {
     Ruler,
     Check,
     Hand,
-    GripHorizontal
+    GripHorizontal,
+    Wand,
+    Layers,
+    Keyboard,
+    Activity,
+    Image,
+    History,
+    Cpu
 } from 'lucide-react';
 
 import React from 'react';
@@ -150,7 +157,14 @@ export {
     Ruler,
     Check,
     Hand,
-    GripHorizontal
+    GripHorizontal,
+    Wand,
+    Layers,
+    Keyboard,
+    Activity,
+    Image,
+    History,
+    Cpu
 };
 
 // Custom Composite Icons (using Lucide style)
