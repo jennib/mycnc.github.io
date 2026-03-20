@@ -433,6 +433,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           <button
             key="pause"
             onClick={() => onJobControl("pause")}
+            onContextMenu={(e) => e.preventDefault()}
             disabled={isHoming}
             className="flex items-center justify-center gap-2 p-3 bg-accent-yellow text-white font-bold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-yellow-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
             title="Pause Job"
@@ -443,6 +444,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             <button
               key="stop"
               onClick={() => onJobControl("stop")}
+              onContextMenu={(e) => e.preventDefault()}
               disabled={isHoming}
               className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
               title="Stop Job"
@@ -460,6 +462,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           <button
             key="resume"
             onClick={() => onJobControl("resume")}
+            onContextMenu={(e) => e.preventDefault()}
             disabled={isHoming}
             className="flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
             title="Resume Job"
@@ -470,6 +473,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             <button
               key="stop"
               onClick={() => onJobControl("stop")}
+              onContextMenu={(e) => e.preventDefault()}
               disabled={isHoming}
               className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
               title="Stop Job"
@@ -492,6 +496,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
     return (
       <button
         onClick={() => onJobControl("start", { startLine: 0 })}
+        onContextMenu={(e) => e.preventDefault()}
         disabled={!isReadyToStart}
         className="col-span-3 flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none text-lg"
         title={tooltip}

@@ -118,6 +118,18 @@
   width: 28px;
 }
 
+/* Global touch and selection prevention for controls */
+button,
+.no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

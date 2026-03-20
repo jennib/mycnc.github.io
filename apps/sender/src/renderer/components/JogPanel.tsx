@@ -130,6 +130,7 @@ const JogButton: React.FC<JogButtonProps> = memo(({
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
+      onContextMenu={(e) => e.preventDefault()}
       disabled={isDisabled}
       className={`flex items-center justify-center py-4 rounded-lg border transition-all active:scale-95 shadow-md ${getButtonColor()} ${flashingButton === id ? "ring-2 ring-white ring-inset shadow-[0_0_15px_rgba(255,255,255,0.4)]" : ""
         }`}
@@ -219,6 +220,7 @@ const TimedZeroButton: React.FC<TimedZeroButtonProps> = memo(({
       onMouseLeave={stopTimer}
       onTouchStart={startTimer}
       onTouchEnd={stopTimer}
+      onContextMenu={(e) => e.preventDefault()}
       disabled={disabled}
       className={`p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary relative overflow-hidden ${isPressing ? 'scale-[0.97] ring-1 ring-primary/50' : ''}`}
       title={title}
@@ -631,6 +633,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                         key={step}
                         id={`step-${step}`}
                         onClick={() => onStepChange(step)}
+                        onContextMenu={(e) => e.preventDefault()}
                         disabled={isControlDisabled}
                         className={`flex-1 py-2 text-xs rounded-md transition-all relative font-mono ${jogStep === step
                           ? "bg-primary text-white font-bold shadow-md"
@@ -660,6 +663,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               <div className={`grid gap-2 text-sm ${machineSettings?.controllerType === "grbl" ? "grid-cols-1" : "grid-cols-5"}`}>
                 <button
                   onClick={() => onHome("all")}
+                  onContextMenu={(e) => e.preventDefault()}
                   disabled={isControlDisabled}
                   className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                   title={t('jog.homing.all')}
@@ -670,6 +674,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <>
                     <button
                       onClick={() => onHome("x")}
+                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
                       className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                       title={t('jog.homing.x')}
@@ -678,6 +683,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                     </button>
                     <button
                       onClick={() => onHome("y")}
+                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
                       className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                       title={t('jog.homing.y')}
@@ -686,6 +692,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                     </button>
                     <button
                       onClick={() => onHome("z")}
+                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
                       className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                       title={t('jog.homing.z')}
@@ -694,6 +701,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                     </button>
                     <button
                       onClick={() => onHome("xy")}
+                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
                       className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
                       title={t('jog.homing.xy')}
@@ -732,6 +740,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     title={t('jog.spindle.cw')}
                     onClick={() => onSpindleCommand("cw", spindleSpeed)}
+                    onContextMenu={(e) => e.preventDefault()}
                     disabled={isSpindleDisabled}
                     className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-green flex-1"
                   >
@@ -740,6 +749,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     title={t('jog.spindle.ccw')}
                     onClick={() => onSpindleCommand("ccw", spindleSpeed)}
+                    onContextMenu={(e) => e.preventDefault()}
                     disabled={isSpindleDisabled}
                     className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-yellow flex-1"
                   >
@@ -748,6 +758,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <button
                     title={t('jog.spindle.off')}
                     onClick={() => onSpindleCommand("off", 0)}
+                    onContextMenu={(e) => e.preventDefault()}
                     disabled={isSpindleDisabled}
                     className="p-2 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 flex justify-center transition-all hover:shadow-md active:scale-95 text-text-primary hover:text-accent-red flex-1"
                   >

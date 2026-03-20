@@ -196,6 +196,7 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
             <div className="absolute right-4 flex items-center">
                 <button
                     onClick={toggleWebcamPeek}
+                    onContextMenu={(e) => e.preventDefault()}
                     className={`p-1.5 rounded-md transition-colors ${isWebcamPeekOpen ? 'bg-primary text-white' : 'text-text-secondary hover:text-text-primary hover:bg-white/5'}`}
                     title="Toggle Webcam Peek"
                 >
