@@ -113,6 +113,39 @@ const WCS_STYLES: Record<string, { border: string; text: string }> = {
     'G59': { border: 'border-l-orange-500', text: 'text-orange-500' },
 };
 
+const LimitStatusIndicator: React.FC<{ machineState: MachineState | null }> = ({ machineState }) => {
+    const { t } = useTranslation();
+    const pins = machineState?.pins || '';
+
+    const renderLimit = (axis: string, label: string) => {
+        const isTriggered = pins.includes(axis);
+        return (
+            <div
+                className={`flex items-center gap-1 px-1.5 py-0.5 rounded border transition-colors ${isTriggered
+                        ? (axis === 'P' ? 'bg-accent-blue/20 border-accent-blue/50 text-accent-blue' : 'bg-accent-red/20 border-accent-red/50 text-accent-red animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.3)]')
+                        : 'bg-background/40 border-white/5 text-text-secondary opacity-40'
+                    }`}
+                title={isTriggered ? `${label} ${t('status.limitTriggered')}` : label}
+            >
+                <span className="text-[10px] font-black uppercase tracking-tight">{label}</span>
+            </div>
+        );
+    };
+
+    return (
+        <div className="flex items-center gap-1 ml-2">
+            <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest opacity-50 mr-1">{t('status.limits')}</span>
+            <div className="flex gap-1">
+                {renderLimit('X', t('status.xAxis'))}
+                {renderLimit('Y', t('status.yAxis'))}
+                {renderLimit('Z', t('status.zAxis'))}
+                <div className="w-px h-3 bg-white/10 mx-0.5 self-center" />
+                {renderLimit('P', t('status.probe'))}
+            </div>
+        </div>
+    );
+};
+
 const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, unit }) => {
     const { t } = useTranslation();
     const { isWebcamPeekOpen, actions: { toggleWebcamPeek } } = useUIStore();
@@ -130,6 +163,8 @@ const StatusBar: React.FC<StatusBarProps> = memo(({ isConnected, machineState, u
         <div className="bg-surface/80 backdrop-blur-md border-t border-white/20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] py-1 px-2 flex justify-center items-center z-20 flex-shrink-0 gap-4 text-sm">
             <div className="flex items-center gap-4">
                 <StatusIndicator isConnected={isConnected} machineState={machineState} />
+                <div className="h-4 border-l border-white/20" />
+                <LimitStatusIndicator machineState={machineState} />
                 <div className="h-4 border-l border-white/20" />
                 <SpindleStatusIndicator isConnected={isConnected} machineState={machineState} />
             </div>

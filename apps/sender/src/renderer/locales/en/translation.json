@@ -220,7 +220,13 @@
         "counterCw": "Counter-CW",
         "wpos": "WPos",
         "mpos": "MPos",
-        "wcs": "WCS"
+        "wcs": "WCS",
+        "limits": "Limits:",
+        "limitTriggered": "Triggered",
+        "xAxis": "X",
+        "yAxis": "Y",
+        "zAxis": "Z",
+        "probe": "Probe"
     },
     "connection": {
         "status": "Status",

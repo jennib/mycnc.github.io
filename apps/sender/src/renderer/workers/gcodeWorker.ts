@@ -2111,8 +2111,9 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
 
     const addLap = (label: string, isPartB: boolean, offsetX: number, offsetY: number) => {
         code.push(`(--- Cutting ${label} ---)`);
-        const targetDepth = -thickness / 2;
+        const targetDepth = -thickness / 2 - 0.2; // Add 0.2mm overdepth for flush fit
         const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
+        const overTravel = R * 1.5; // Overtravel to ensure clean edges
         const stepover = toolDiam * 0.45;
 
         for (let pass = 1; pass <= totalPasses; pass++) {
@@ -2123,11 +2124,12 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
             code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
 
             if (jointType === 'standard') {
-                let y = R;
-                while (y <= width - R) {
-                    const startX = 0;
-                    const endX = lapLength - R;
+                let y = -R; // Start outside the board
+                while (y <= width + R) {
+                    const startX = -overTravel;
+                    const endX = lapLength + overTravel;
                     
+                    const safeY = Math.max(0, Math.min(width, y));
                     code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
                     code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                     code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
@@ -2138,9 +2140,9 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                         pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
                     }
                     
-                    if (y === width - R) break;
+                    if (y >= width + R) break;
                     y += stepover;
-                    if (y > width - R) y = width - R;
+                    if (y > width + R) y = width + R;
                 }
             } else { // mitered
                 const miterSlope = lapLength / width;
@@ -2148,33 +2150,46 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                 if (!isPartB) {
                     // Piece A (Under/Socket): Square board with a triangular pocket.
                     // This creates a "socket" that the mitered Piece B fits into.
-                    let y = R;
-                    while (y <= width - R) {
-                        const startX = 0;
-                        const endX = (y * miterSlope) - R;
+                    let y = -R;
+                    while (y <= width + R) {
+                        const startX = -overTravel;
+                        // For socket, we want to clear everything where x < miterLine.
+                        // However, we must stop the tool edge at the miter line.
+                        // miterLine: x = (width - Y) * miterSlope. 
+                        // Since we use y in the loop, let's calculate the line based on Y_center = y.
+                        // Actually, Piece A Y is width - y in the original code. Let's stick to that.
+                        const Y_center = width - y;
+                        const miterLineX = Y_center * miterSlope;
+                        const endX = miterLineX - R;
                         
                         if (endX >= startX) {
-                            // Point at Y=0 (width-y when y is small)
-                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + width - y).toFixed(3)}`);
+                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + Y_center).toFixed(3)}`);
                             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                             code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
-                            updateBounds(offsetX + startX, offsetY + width - y);
-                            updateBounds(offsetX + endX, offsetY + width - y);
-                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + width - y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + width - y).toFixed(3)} `;
+                            updateBounds(offsetX + startX, offsetY + Y_center);
+                            updateBounds(offsetX + endX, offsetY + Y_center);
+                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} `;
                         }
                         
-                        if (y === width - R) break;
+                        // Dogbone for the internal miter corner (at the point of the socket)
+                        if (isLastPass && y >= width - stepover && y <= width) {
+                            // The corner is at X=0, Y=0 (bottom left of piece A socket). 
+                            // This depends on the exact geometry, but let's add a small clearance move.
+                            code.push(`G1 X${(offsetX + endX + 0.5).toFixed(3)} Y${(offsetY + Y_center - 0.5).toFixed(3)} F${feed}`);
+                        }
+
+                        if (y >= width + R) break;
                         y += stepover;
-                        if (y > width - R) y = width - R;
+                        if (y > width + R) y = width + R;
                     }
                 } else {
                     // Piece B (Over/Tongue): Mitered board (full thickness cut) with a triangular lap tongue.
                     // Rotated 180 degrees: Y moves from (width-y) to y, and X is mirrored across lapLength.
-                    let y = R;
-                    while (y <= width - R) {
+                    let y = -R;
+                    while (y <= width + R) {
                         const miterX = y * miterSlope;
                         const startX = lapLength - miterX + R;
-                        const endX = lapLength;
+                        const endX = lapLength + overTravel;
 
                         if (endX >= startX) {
                             code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
@@ -2185,9 +2200,9 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                             if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
                         }
 
-                        if (y === width - R) break;
+                        if (y >= width + R) break;
                         y += stepover;
-                        if (y > width - R) y = width - R;
+                        if (y > width + R) y = width + R;
                     }
                 }
             }
@@ -2219,10 +2234,10 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
             
             code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
             
-            let y = R;
-            while (y <= width - R) {
+            let y = -R;
+            while (y <= width + R) {
                 const miterX = y * miterSlope;
-                const startX = 0;
+                const startX = -overTravel;
                 const endX = lapLength - miterX - R;
                 
                 if (endX >= startX) {
@@ -2234,9 +2249,9 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                     if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
                 }
                 
-                if (y === width - R) break;
+                if (y >= width + R) break;
                 y += stepover;
-                if (y > width - R) y = width - R;
+                if (y > width + R) y = width + R;
             }
             if (isLastPass && pathD) {
                 paths.push({ d: pathD, stroke: 'var(--color-accent-red)' });

@@ -305,11 +305,51 @@ export class GrblSimulator implements Simulator {
 
         // Support ;PROBE_ON and ;PROBE_OFF for testing
         if (upperCmd === ';PROBE_ON') {
-            this.state.pins = 'P';
+            if (!this.state.pins?.includes('P')) this.state.pins = (this.state.pins || '') + 'P';
             this.emitData('ok\r\n');
             return;
         }
         if (upperCmd === ';PROBE_OFF') {
+            this.state.pins = this.state.pins?.replace('P', '') || '';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_X_ON') {
+            if (!this.state.pins?.includes('X')) this.state.pins = (this.state.pins || '') + 'X';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_X_OFF') {
+            this.state.pins = this.state.pins?.replace('X', '') || '';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_Y_ON') {
+            if (!this.state.pins?.includes('Y')) this.state.pins = (this.state.pins || '') + 'Y';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_Y_OFF') {
+            this.state.pins = this.state.pins?.replace('Y', '') || '';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_Z_ON') {
+            if (!this.state.pins?.includes('Z')) this.state.pins = (this.state.pins || '') + 'Z';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_Z_OFF') {
+            this.state.pins = this.state.pins?.replace('Z', '') || '';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_ALL_ON') {
+            this.state.pins = 'XYZP';
+            this.emitData('ok\r\n');
+            return;
+        }
+        if (upperCmd === ';LIMIT_ALL_OFF') {
             this.state.pins = '';
             this.emitData('ok\r\n');
             return;
