@@ -2149,17 +2149,11 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                 
                 if (!isPartB) {
                     // Piece A (Under/Socket): Square board with a triangular pocket.
-                    // This creates a "socket" that the mitered Piece B fits into.
                     let y = -R;
                     while (y <= width + R) {
-                        const startX = -overTravel;
-                        // For socket, we want to clear everything where x < miterLine.
-                        // However, we must stop the tool edge at the miter line.
-                        // miterLine: x = (width - Y) * miterSlope. 
-                        // Since we use y in the loop, let's calculate the line based on Y_center = y.
-                        // Actually, Piece A Y is width - y in the original code. Let's stick to that.
                         const Y_center = width - y;
                         const miterLineX = Y_center * miterSlope;
+                        const startX = -overTravel;
                         const endX = miterLineX - R;
                         
                         if (endX >= startX) {
@@ -2171,10 +2165,7 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                             if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} `;
                         }
                         
-                        // Dogbone for the internal miter corner (at the point of the socket)
                         if (isLastPass && y >= width - stepover && y <= width) {
-                            // The corner is at X=0, Y=0 (bottom left of piece A socket). 
-                            // This depends on the exact geometry, but let's add a small clearance move.
                             code.push(`G1 X${(offsetX + endX + 0.5).toFixed(3)} Y${(offsetY + Y_center - 0.5).toFixed(3)} F${feed}`);
                         }
 
@@ -2183,21 +2174,21 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                         if (y > width + R) y = width + R;
                     }
                 } else {
-                    // Piece B (Over/Tongue): Mitered board (full thickness cut) with a triangular lap tongue.
-                    // Rotated 180 degrees: Y moves from (width-y) to y, and X is mirrored across lapLength.
+                    // Piece B (Over/Tongue): Triangular lap tongue.
                     let y = -R;
                     while (y <= width + R) {
-                        const miterX = y * miterSlope;
-                        const startX = lapLength - miterX + R;
+                        const Y_center = width - y;
+                        const miterLineX = Y_center * miterSlope;
+                        const startX = miterLineX + R;
                         const endX = lapLength + overTravel;
 
                         if (endX >= startX) {
-                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
+                            code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + Y_center).toFixed(3)}`);
                             code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                             code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
-                            updateBounds(offsetX + startX, offsetY + y);
-                            updateBounds(offsetX + endX, offsetY + y);
-                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                            updateBounds(offsetX + startX, offsetY + Y_center);
+                            updateBounds(offsetX + endX, offsetY + Y_center);
+                            if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} `;
                         }
 
                         if (y >= width + R) break;
@@ -2236,17 +2227,18 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
             
             let y = -R;
             while (y <= width + R) {
-                const miterX = y * miterSlope;
+                const Y_center = width - y;
+                const miterLineX = Y_center * miterSlope;
                 const startX = -overTravel;
-                const endX = lapLength - miterX - R;
+                const endX = miterLineX - R;
                 
                 if (endX >= startX) {
-                    code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
+                    code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + Y_center).toFixed(3)}`);
                     code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
                     code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
-                    updateBounds(offsetX + startX, offsetY + y);
-                    updateBounds(offsetX + endX, offsetY + y);
-                    if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + y).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + y).toFixed(3)} `;
+                    updateBounds(offsetX + startX, offsetY + Y_center);
+                    updateBounds(offsetX + endX, offsetY + Y_center);
+                    if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} `;
                 }
                 
                 if (y >= width + R) break;
