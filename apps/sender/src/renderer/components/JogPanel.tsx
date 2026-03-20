@@ -781,31 +781,31 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               </h4>
               <div className="space-y-1 text-sm">
                 <div className="grid grid-cols-5 gap-2">
-                  <TimedZeroButton
+                  <TimedButton
                     onClick={() => onSetZero("all")}
                     disabled={isControlDisabled}
                     title={t('jog.zero.all')}
                     icon={<Crosshair className="w-5 h-5" />}
                   />
-                  <TimedZeroButton
+                  <TimedButton
                     onClick={() => onSetZero("x")}
                     disabled={isControlDisabled}
                     title={t('jog.zero.x')}
                     icon={<CrosshairX className="w-5 h-5" />}
                   />
-                  <TimedZeroButton
+                  <TimedButton
                     onClick={() => onSetZero("y")}
                     disabled={isControlDisabled}
                     title={t('jog.zero.y')}
                     icon={<CrosshairY className="w-5 h-5" />}
                   />
-                  <TimedZeroButton
+                  <TimedButton
                     onClick={() => onSetZero("z")}
                     disabled={isControlDisabled}
                     title={t('jog.zero.z')}
                     icon={<CrosshairZ className="w-5 h-5" />}
                   />
-                  <TimedZeroButton
+                  <TimedButton
                     onClick={() => onSetZero("xy")}
                     disabled={isControlDisabled}
                     title={t('jog.zero.xy')}
