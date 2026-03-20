@@ -282,12 +282,16 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const jogManagerRef = useRef<JogManager | null>(null);
     const pressedKeys = useRef<Set<string>>(new Set());
 
-    const isControlDisabled =
+    // Jog buttons must NOT be disabled while isJogging — they need to receive
+    // the mouseUp/mouseLeave event to stop continuous jogging.
+    const isJogButtonDisabled =
       !isConnected ||
       isJobActive ||
-      isJogging ||
       isMacroRunning ||
       machineState?.status === "Alarm";
+
+    // Everything else (probing, zeroing, homing) is disabled while jogging.
+    const isControlDisabled = isJogButtonDisabled || isJogging;
 
     const isProbeDisabled =
       isControlDisabled || machineState?.status !== "Idle";
@@ -555,7 +559,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowUp className="w-6 h-6" />}
                   label={t('jog.yPlus')}
                   hotkey="Up Arrow"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}
@@ -570,7 +574,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowUp className="w-6 h-6" />}
                   label={t('jog.zPlus')}
                   hotkey="Page Up"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}
@@ -585,7 +589,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowLeft className="w-6 h-6" />}
                   label={t('jog.xMinus')}
                   hotkey="Left Arrow"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}
@@ -605,7 +609,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowRight className="w-6 h-6" />}
                   label={t('jog.xPlus')}
                   hotkey="Right Arrow"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}
@@ -621,7 +625,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowDown className="w-6 h-6" />}
                   label={t('jog.yMinus')}
                   hotkey="Down Arrow"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}
@@ -636,7 +640,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   icon={<ArrowDown className="w-6 h-6" />}
                   label={t('jog.zMinus')}
                   hotkey="Page Down"
-                  isControlDisabled={isControlDisabled}
+                  isControlDisabled={isJogButtonDisabled}
                   isZJogDisabledForStep={isZJogDisabledForStep}
                   unit={unit}
                   flashingButton={flashingButton}

@@ -43,6 +43,7 @@ export class JogManager {
     // Tap detection
     private tapStartTime: number = 0;
     private tapTimer: number | null = null;
+    private _cancelCurrentTap: (() => void) | null = null;
 
     constructor(callbacks: JogManagerCallbacks) {
         this.callbacks = callbacks;
@@ -85,16 +86,27 @@ export class JogManager {
         // Record tap start time
         this.tapStartTime = Date.now();
 
-        // Start timer to detect if this becomes a hold
+        // Clear any old timer and cancel callback
         if (this.tapTimer) {
             clearTimeout(this.tapTimer);
+            this.tapTimer = null;
         }
+        this._cancelCurrentTap = null;
+
+        // Use a 'stopped' flag so that if stopJog() fires before this timer
+        // callback executes, we don't accidentally start continuous jogging.
+        let stopped = false;
+        this._cancelCurrentTap = () => { stopped = true; };
 
         this.tapTimer = window.setTimeout(() => {
-            // Held long enough - start continuous jogging
-            this.startContinuousJog(axis, direction, feedRate);
+            this.tapTimer = null;
+            if (!stopped) {
+                // Held long enough - start continuous jogging
+                this.startContinuousJog(axis, direction, feedRate);
+            }
         }, this.HOLD_THRESHOLD);
     }
+
 
     /**
      * Start analog jogging (variable feed rate, immediate continuous)
@@ -117,10 +129,14 @@ export class JogManager {
     public stopJog(axis: JogAxis, direction: JogDirection, step: number, feedRate: number): void {
         const holdDuration = Date.now() - this.tapStartTime;
 
-        // Clear the hold detection timer
+        // Cancel the hold detection timer and its callback
         if (this.tapTimer) {
             clearTimeout(this.tapTimer);
             this.tapTimer = null;
+        }
+        if (this._cancelCurrentTap) {
+            this._cancelCurrentTap();
+            this._cancelCurrentTap = null;
         }
 
         // If continuous jog is active, stop it
