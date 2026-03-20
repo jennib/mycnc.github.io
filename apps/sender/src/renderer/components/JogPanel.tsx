@@ -1,4 +1,4 @@
-import React, { useState, memo, useEffect, useRef, useCallback } from "react";
+import React, { useState, memo, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowUp,
@@ -301,6 +301,25 @@ const JogPanel: React.FC<JogPanelProps> = memo(
     const stepSizes =
       unit === "mm" ? [0.01, 0.1, 1, 10, 50] : [0.001, 0.01, 0.1, 1, 2];
 
+    const getScaledFeedRate = useCallback((step: number, maxFeed: number, unit: "mm" | "in"): number => {
+      if (unit === "mm") {
+        if (step <= 0.01) return Math.max(maxFeed * 0.05, 50);
+        if (step <= 0.1) return Math.max(maxFeed * 0.2, 100);
+        if (step <= 1.0) return Math.max(maxFeed * 0.5, 400);
+        return maxFeed;
+      } else {
+        // Inch scaling
+        if (step <= 0.001) return Math.max(maxFeed * 0.05, 2);
+        if (step <= 0.01) return Math.max(maxFeed * 0.2, 4);
+        if (step <= 0.1) return Math.max(maxFeed * 0.5, 15);
+        return maxFeed;
+      }
+    }, []);
+
+    const scaledJogFeedRate = useMemo(() =>
+      getScaledFeedRate(jogStep, jogFeedRate, unit),
+      [getScaledFeedRate, jogStep, jogFeedRate, unit]);
+
     const jogHotkeys: { [key: string]: { axis: string; direction: number; id: string } } = {
       ArrowUp: { axis: "Y", direction: 1, id: "jog-y-plus" },
       ArrowDown: { axis: "Y", direction: -1, id: "jog-y-minus" },
@@ -458,7 +477,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             hotkey.axis as JogAxis,
             hotkey.direction as JogDirection,
             jogStep,
-            jogFeedRate
+            scaledJogFeedRate
           );
         }
       };
@@ -484,7 +503,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
             hotkey.axis as JogAxis,
             hotkey.direction as JogDirection,
             jogStep,
-            jogFeedRate
+            scaledJogFeedRate
           );
         }
       };
@@ -503,18 +522,18 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         axis as JogAxis,
         direction as JogDirection,
         jogStep,
-        jogFeedRate
+        scaledJogFeedRate
       );
-    }, [jogStep, jogFeedRate]);
+    }, [jogStep, scaledJogFeedRate]);
 
     const handleStopJog = useCallback((axis: string, direction: number) => {
       jogManagerRef.current?.stopJog(
         axis as JogAxis,
         direction as JogDirection,
         jogStep,
-        jogFeedRate
+        scaledJogFeedRate
       );
-    }, [jogStep, jogFeedRate]);
+    }, [jogStep, scaledJogFeedRate]);
 
     return (
       <div className="flex flex-col p-1 gap-2 h-full">
