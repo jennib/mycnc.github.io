@@ -143,20 +143,22 @@ const JogButton: React.FC<JogButtonProps> = memo(({
   );
 });
 
-interface TimedZeroButtonProps {
+interface TimedButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
   disabled: boolean;
   title: string;
   id?: string;
+  className?: string; // Optional className for custom styling
 }
 
-const TimedZeroButton: React.FC<TimedZeroButtonProps> = memo(({
+const TimedButton: React.FC<TimedButtonProps> = memo(({
   onClick,
   icon,
   disabled,
   title,
   id,
+  className = "p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary",
 }) => {
   const [isPressing, setIsPressing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -222,7 +224,7 @@ const TimedZeroButton: React.FC<TimedZeroButtonProps> = memo(({
       onTouchEnd={stopTimer}
       onContextMenu={(e) => e.preventDefault()}
       disabled={disabled}
-      className={`p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary relative overflow-hidden ${isPressing ? 'scale-[0.97] ring-1 ring-primary/50' : ''}`}
+      className={`${className} relative overflow-hidden ${isPressing ? 'scale-[0.97] ring-1 ring-primary/50' : ''}`}
       title={title}
     >
       <div className={`relative z-10 transition-transform duration-200 ${isPressing ? 'scale-110' : ''}`}>
@@ -661,53 +663,38 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 {t('jog.homing.title')}
               </h4>
               <div className={`grid gap-2 text-sm ${machineSettings?.controllerType === "grbl" ? "grid-cols-1" : "grid-cols-5"}`}>
-                <button
+                <TimedButton
                   onClick={() => onHome("all")}
-                  onContextMenu={(e) => e.preventDefault()}
                   disabled={isControlDisabled}
-                  className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                  icon={<Home className="w-5 h-5" />}
                   title={t('jog.homing.all')}
-                >
-                  <Home className="w-5 h-5" />
-                </button>
+                />
                 {machineSettings?.controllerType !== "grbl" && (
                   <>
-                    <button
+                    <TimedButton
                       onClick={() => onHome("x")}
-                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
-                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      icon={<HomeX className="w-5 h-5" />}
                       title={t('jog.homing.x')}
-                    >
-                      <HomeX className="w-5 h-5" />
-                    </button>
-                    <button
+                    />
+                    <TimedButton
                       onClick={() => onHome("y")}
-                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
-                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      icon={<HomeY className="w-5 h-5" />}
                       title={t('jog.homing.y')}
-                    >
-                      <HomeY className="w-5 h-5" />
-                    </button>
-                    <button
+                    />
+                    <TimedButton
                       onClick={() => onHome("z")}
-                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
-                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      icon={<HomeZ className="w-5 h-5" />}
                       title={t('jog.homing.z')}
-                    >
-                      <HomeZ className="w-5 h-5" />
-                    </button>
-                    <button
+                    />
+                    <TimedButton
                       onClick={() => onHome("xy")}
-                      onContextMenu={(e) => e.preventDefault()}
                       disabled={isControlDisabled}
-                      className="p-3 bg-secondary/80 rounded-lg hover:bg-secondary border border-white/10 disabled:opacity-50 font-bold flex items-center justify-center transition-all hover:shadow-md active:scale-95 text-text-primary"
+                      icon={<HomeXY className="w-5 h-5" />}
                       title={t('jog.homing.xy')}
-                    >
-                      <HomeXY className="w-5 h-5" />
-                    </button>
+                    />
                   </>
                 )}
               </div>
