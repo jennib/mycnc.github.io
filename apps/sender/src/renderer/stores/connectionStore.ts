@@ -102,13 +102,27 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     disconnect: async () => {
       await get().controller?.disconnect();
     },
-    sendLine: (line: string, timeout?: number) => {
+    sendLine: async (line: string, timeout?: number) => {
       const controller = get().controller;
       if (controller) {
-        return controller.sendCommand(line, timeout).catch(error => {
-          useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed: ${error.message}` });
-          throw error;
-        });
+        let lastError: any = null;
+        for (let i = 0; i < 5; i++) {
+          try {
+            return await controller.sendCommand(line, timeout);
+          } catch (error: any) {
+            lastError = error;
+            // Only retry if it's a "command underway" or "awaiting ok" error
+            const isCollision = error.message?.includes("awaiting 'ok'") || error.message?.includes("already underway");
+            if (isCollision) {
+              console.warn(`Command collision detected, retrying (${i + 1}/5): ${line}`);
+              await new Promise(resolve => setTimeout(resolve, 100));
+              continue;
+            }
+            throw error;
+          }
+        }
+        useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed after retries: ${lastError?.message}` });
+        throw lastError;
       }
       return Promise.reject(new Error("Not connected."));
     },

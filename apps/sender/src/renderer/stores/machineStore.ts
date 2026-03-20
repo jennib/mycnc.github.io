@@ -146,7 +146,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
           get().actions._executeProbe(axes, diameter);
         },
         onCancel: () => {
-          useConnectionStore.getState().actions.stop();
+          useConnectionStore.getState().actions.sendRealtimeCommand('\x18'); // Soft Reset to stop any motion
           uiActions.updateProbeVerificationModalStatus('failed', 'Probing cancelled by user.');
         }
       });
@@ -223,7 +223,7 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
           get().actions._executeXYZProbe(diameter);
         },
         onCancel: () => {
-          useConnectionStore.getState().actions.stop();
+          useConnectionStore.getState().actions.sendRealtimeCommand('\x18'); // Soft Reset to stop any motion
           uiActions.updateProbeVerificationModalStatus('failed', 'XYZ Probing cancelled by user.');
         }
       });
@@ -303,11 +303,15 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       const y = axis === 'Y' ? direction * step : 0;
       const z = axis === 'Z' ? direction * step : 0;
 
+      if (!get().isJogging) {
+        set({ isJogging: true });
+      }
       controller?.jog(x, y, z, rate);
     },
 
     handleJogStop: () => {
       const { controller } = useConnectionStore.getState();
+      set({ isJogging: false });
       controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
     },
 
