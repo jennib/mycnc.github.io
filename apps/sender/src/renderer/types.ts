@@ -28,7 +28,9 @@ import type {
     DadoRabbetParams,
     DecorativeJoineryParams,
     CabinetParams,
-    BoxJointParams
+    BoxJointParams,
+    HalfLapParams,
+    LockMitreParams
 } from '@mycnc/shared';
 import { JobStatus } from '@mycnc/shared';
 
@@ -62,7 +64,9 @@ export type {
     DadoRabbetParams,
     DecorativeJoineryParams,
     CabinetParams,
-    BoxJointParams
+    BoxJointParams,
+    HalfLapParams,
+    LockMitreParams
 };
 
 export interface BoundingBox {

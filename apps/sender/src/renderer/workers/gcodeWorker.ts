@@ -2103,6 +2103,8 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
     code.push(`M3 S${spindle}`);
     code.push(`G0 Z${safeZ.toFixed(3)}`);
 
+    const tolerance = 0.2; // 0.2mm glue gap/tolerance
+    const finishingStock = 0.1; // 0.1mm stock to leave for cleanup pass
     const updateBounds = (x: number, y: number) => {
         if (x < bounds.minX) bounds.minX = x;
         if (x > bounds.maxX) bounds.maxX = x;
@@ -2127,7 +2129,7 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                 let y = -R; // Start outside the board
                 while (y <= width + R) {
                     const startX = -overTravel;
-                    const endX = lapLength + overTravel;
+                    const endX = isPartB ? (lapLength + overTravel) : (lapLength + tolerance - finishingStock);
                     
                     const safeY = Math.max(0, Math.min(width, y));
                     code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + y).toFixed(3)}`);
@@ -2144,6 +2146,18 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                     y += stepover;
                     if (y > width + R) y = width + R;
                 }
+                // Wall Cleanup Pass (Standard)
+                const wallX = isPartB ? lapLength : (lapLength + tolerance);
+                code.push(`(--- Wall Cleanup ---)`);
+                code.push(`G0 X${(offsetX + wallX).toFixed(3)} Y${(offsetY + width + R).toFixed(3)}`);
+                code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                code.push(`G1 Y${(offsetY - R).toFixed(3)} F${feed}`); // Cleanup 1
+                code.push(`G1 Y${(offsetY + width + R).toFixed(3)} F${feed * 0.7}`); // Cleanup 2 (Return Semi)
+                code.push(`G1 Y${(offsetY - R).toFixed(3)} F${feed * 0.5}`); // Cleanup 3 (Final Forward)
+                code.push(`G1 Y${(offsetY + width + R).toFixed(3)} F${feed * 0.3}`); // Cleanup 4 (Ultra-Slow Spring)
+                if (isLastPass) {
+                    pathD += `M ${(offsetX + wallX).toFixed(3)} ${(offsetY + width + R).toFixed(3)} L ${(offsetX + wallX).toFixed(3)} ${(offsetY - R).toFixed(3)} L ${(offsetX + wallX).toFixed(3)} ${(offsetY + width + R).toFixed(3)} L ${(offsetX + wallX).toFixed(3)} ${(offsetY - R).toFixed(3)} `;
+                }
             } else { // mitered
                 const miterSlope = lapLength / width;
                 
@@ -2151,10 +2165,11 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                     // Piece A (Under/Socket): Square board with a triangular pocket.
                     let y = -R;
                     while (y <= width + R) {
-                        const Y_center = width - y;
-                        const miterLineX = Y_center * miterSlope;
+                        const Y_center = isPartB ? y : (width - y);
+                        // Add tolerance to Piece A's miter line to make the pocket slightly larger
+                        const miterLineX = (Y_center * miterSlope) + (isPartB ? 0 : tolerance);
                         const startX = -overTravel;
-                        const endX = miterLineX - R;
+                        const endX = miterLineX - R - (isPartB ? 0 : finishingStock);
                         
                         if (endX >= startX) {
                             code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + Y_center).toFixed(3)}`);
@@ -2173,13 +2188,28 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                         y += stepover;
                         if (y > width + R) y = width + R;
                     }
+                    // Wall Cleanup Pass (Miter Piece A)
+                    code.push(`(--- Wall Cleanup ---)`);
+                    const startWallY = width + R;
+                    const endWallY = -R;
+                    const startWallX = ((width - startWallY) * miterSlope) + tolerance - R;
+                    const endWallX = ((width - endWallY) * miterSlope) + tolerance - R;
+                    code.push(`G0 X${(offsetX + startWallX).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    code.push(`G1 X${(offsetX + endWallX).toFixed(3)} Y${(offsetY + endWallY).toFixed(3)} F${feed}`);
+                    code.push(`G1 X${(offsetX + startWallX).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)} F${feed * 0.7}`);
+                    code.push(`G1 X${(offsetX + endWallX).toFixed(3)} Y${(offsetY + endWallY).toFixed(3)} F${feed * 0.5}`);
+                    code.push(`G1 X${(offsetX + startWallX).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)} F${feed * 0.3}`);
+                    if (isLastPass) {
+                        pathD += `M ${(offsetX + startWallX).toFixed(3)} ${(offsetY + startWallY).toFixed(3)} L ${(offsetX + endWallX).toFixed(3)} ${(offsetY + endWallY).toFixed(3)} L ${(offsetX + startWallX).toFixed(3)} ${(offsetY + startWallY).toFixed(3)} L ${(offsetX + endWallX).toFixed(3)} ${(offsetY + endWallY).toFixed(3)} `;
+                    }
                 } else {
                     // Piece B (Over/Tongue): Triangular lap tongue.
                     let y = -R;
                     while (y <= width + R) {
-                        const Y_center = width - y;
+                        const Y_center = isPartB ? y : (width - y);
                         const miterLineX = Y_center * miterSlope;
-                        const startX = miterLineX + R;
+                        const startX = miterLineX + R + finishingStock;
                         const endX = lapLength + overTravel;
 
                         if (endX >= startX) {
@@ -2194,6 +2224,20 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
                         if (y >= width + R) break;
                         y += stepover;
                         if (y > width + R) y = width + R;
+                    }
+                    // Right-Wall Contour Finishing Pass (Piece B)
+                    // The raster ends at lapLength + overTravel. The right-facing wall
+                    // it leaves is at X = lapLength. Run a clean vertical contour there.
+                    code.push(`(--- Right Wall Contour Finish ---)`);
+                    const wallX = lapLength;
+                    code.push(`G0 Z${safeZ.toFixed(3)}`);
+                    code.push(`G0 X${(offsetX + wallX).toFixed(3)} Y${(offsetY).toFixed(3)}`);
+                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+                    code.push(`G1 Y${(offsetY + width).toFixed(3)} F${feed * 0.5}`);
+                    code.push(`G1 Y${(offsetY).toFixed(3)} F${feed * 0.3}`);
+
+                    if (isLastPass) {
+                        pathD += `M ${(offsetX + wallX).toFixed(3)} ${(offsetY).toFixed(3)} L ${(offsetX + wallX).toFixed(3)} ${(offsetY + width).toFixed(3)} L ${(offsetX + wallX).toFixed(3)} ${(offsetY).toFixed(3)} `;
                     }
                 }
             }
@@ -2225,29 +2269,31 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
             
             code.push(`(Pass ${pass} at Z:${currentZ.toFixed(3)})`);
             
-            let y = -R;
-            while (y <= width + R) {
-                const Y_center = width - y;
-                const miterLineX = Y_center * miterSlope;
-                const startX = -overTravel;
-                const endX = miterLineX - R;
-                
-                if (endX >= startX) {
-                    code.push(`G0 X${(offsetX + startX).toFixed(3)} Y${(offsetY + Y_center).toFixed(3)}`);
-                    code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
-                    code.push(`G1 X${(offsetX + endX).toFixed(3)} F${feed}`);
-                    updateBounds(offsetX + startX, offsetY + Y_center);
-                    updateBounds(offsetX + endX, offsetY + Y_center);
-                    if (isLastPass) pathD += `M ${(offsetX + startX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} L ${(offsetX + endX).toFixed(3)} ${(offsetY + Y_center).toFixed(3)} `;
-                }
-                
-                if (y >= width + R) break;
-                y += stepover;
-                if (y > width + R) y = width + R;
+            // Wall Cleanup / Profile Cut (Full Thickness Miter)
+            // Instead of clearing the whole triangle, we just cut the boundary line.
+            code.push(`(--- Diagonal Profile Cut ---)`);
+            const startWallY = -R;
+            const endWallY = width + R;
+            const startWallX_stock = (startWallY * miterSlope) - R - finishingStock;
+            const endWallX_stock = (endWallY * miterSlope) - R - finishingStock;
+            const startWallX_final = (startWallY * miterSlope) - R;
+            const endWallX_final = (endWallY * miterSlope) - R;
+
+            code.push(`G0 X${(offsetX + startWallX_stock).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)}`);
+            code.push(`G1 Z${currentZ.toFixed(3)} F${plunge}`);
+            code.push(`G1 X${(offsetX + endWallX_stock).toFixed(3)} Y${(offsetY + endWallY).toFixed(3)} F${feed}`);
+            code.push(`G1 X${(offsetX + startWallX_final).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)} F${feed * 0.7}`);
+            code.push(`G1 X${(offsetX + endWallX_final).toFixed(3)} Y${(offsetY + endWallY).toFixed(3)} F${feed * 0.5}`);
+            code.push(`G1 X${(offsetX + startWallX_final).toFixed(3)} Y${(offsetY + startWallY).toFixed(3)} F${feed * 0.3}`);
+            
+            if (isLastPass) {
+                pathD += `M ${(offsetX + startWallX_final).toFixed(3)} ${(offsetY + startWallY).toFixed(3)} L ${(offsetX + endWallX_final).toFixed(3)} ${(offsetY + endWallY).toFixed(3)} L ${(offsetX + startWallX_final).toFixed(3)} ${(offsetY + startWallY).toFixed(3)} L ${(offsetX + endWallX_final).toFixed(3)} ${(offsetY + endWallY).toFixed(3)} `;
             }
             if (isLastPass && pathD) {
                 paths.push({ d: pathD, stroke: 'var(--color-accent-red)' });
             }
+            updateBounds(offsetX + startWallX_final, offsetY + startWallY);
+            updateBounds(offsetX + endWallX_final, offsetY + endWallY);
         }
         code.push(`G0 Z${safeZ.toFixed(3)}`);
     };
