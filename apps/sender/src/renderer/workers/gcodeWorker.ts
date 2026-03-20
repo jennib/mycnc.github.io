@@ -2090,6 +2090,7 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
     const dpp = parseFloat(String(params.depthPerPass));
     const toolDiam = (typeof selectedTool.diameter === 'string' ? parseFloat(selectedTool.diameter) || 0 : selectedTool.diameter);
     const R = toolDiam / 2;
+    const overTravel = R * 1.5; // Overtravel to ensure clean edges
 
     if (isNaN(width) || isNaN(thickness) || isNaN(lapLength) || width <= 0 || thickness <= 0 || lapLength <= 0) {
         return { error: "Check all required half lap fields.", code, paths, bounds };
@@ -2113,7 +2114,6 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
         code.push(`(--- Cutting ${label} ---)`);
         const targetDepth = -thickness / 2 - 0.2; // Add 0.2mm overdepth for flush fit
         const totalPasses = Math.ceil(Math.abs(targetDepth) / dpp);
-        const overTravel = R * 1.5; // Overtravel to ensure clean edges
         const stepover = toolDiam * 0.45;
 
         for (let pass = 1; pass <= totalPasses; pass++) {
