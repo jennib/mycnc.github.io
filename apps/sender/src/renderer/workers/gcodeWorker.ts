@@ -2103,7 +2103,7 @@ const generateHalfLapCode = (machineSettings: MachineSettings, params: HalfLapPa
     code.push(`M3 S${spindle}`);
     code.push(`G0 Z${safeZ.toFixed(3)}`);
 
-    const tolerance = 0.2; // 0.2mm glue gap/tolerance
+    const tolerance = (params.gap !== undefined && params.gap !== '') ? parseFloat(String(params.gap)) : 0.2; // user-controlled gap / glue clearance
     const finishingStock = 0.1; // 0.1mm stock to leave for cleanup pass
     const updateBounds = (x: number, y: number) => {
         if (x < bounds.minX) bounds.minX = x;

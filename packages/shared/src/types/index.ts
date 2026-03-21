@@ -334,6 +334,7 @@ export interface HalfLapParams {
     safeZ: number | '';
     depthPerPass: number | '';
     toolId: number | null;
+    gap?: number | ''; // spacing between laps (glue gap), only used for mitered joints
 }
 
 export interface BoxJointParams {

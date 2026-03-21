@@ -53,8 +53,15 @@ const HalfLapGenerator: React.FC<HalfLapGeneratorProps> = ({ params, onParamsCha
 
             <div className="grid grid-cols-2 gap-4">
                 <Input label={t('generators.halfLap.width')} value={params.width} onChange={e => handleParamChange('width', e.target.value)} unit={unit} />
-                {params.jointType !== 'mitered' && (
+                {params.jointType !== 'mitered' ? (
                     <Input label={t('generators.halfLap.lapLength')} value={params.lapLength} onChange={e => handleParamChange('lapLength', e.target.value)} unit={unit} />
+                ) : (
+                    <Input
+                        label="Gap"
+                        value={params.gap ?? 0.2}
+                        onChange={e => handleParamChange('gap', e.target.value)}
+                        unit={unit}
+                    />
                 )}
             </div>
 
