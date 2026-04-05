@@ -15,14 +15,6 @@ import {
   ProbeXY,
   ProbeXYZ,
   Home,
-  HomeX,
-  HomeY,
-  HomeZ,
-  HomeXY,
-  CrosshairXY,
-  CrosshairX,
-  CrosshairY,
-  CrosshairZ,
   Target,
 } from "@mycnc/shared";
 import { MachineState, MachineSettings, JobStatus } from "@mycnc/shared";
@@ -55,6 +47,12 @@ interface JogPanelProps {
   jogFeedRate: number;
   jobStatus?: JobStatus; // Add jobStatus prop
 }
+
+const getAxisColor = (axis: string) => {
+  if (axis === "X") return "text-rose-400";
+  if (axis === "Y") return "text-emerald-400";
+  return "text-sky-400"; // Z
+};
 
 interface JogButtonProps {
   id: string;
@@ -136,8 +134,13 @@ const JogButton: React.FC<JogButtonProps> = memo(({
         }`}
       title={title}
     >
-      <div className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
-        {icon}
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+          {icon}
+        </div>
+        <span className={`text-[9px] font-bold leading-none ${getAxisColor(axis)} drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]`}>
+          {axis}{direction > 0 ? "+" : "−"}
+        </span>
       </div>
     </button>
   );
@@ -150,6 +153,7 @@ interface TimedButtonProps {
   title: string;
   id?: string;
   className?: string; // Optional className for custom styling
+  label?: string; // Axis label shown below icon
 }
 
 const TimedButton: React.FC<TimedButtonProps> = memo(({
@@ -159,6 +163,7 @@ const TimedButton: React.FC<TimedButtonProps> = memo(({
   title,
   id,
   className = "btn btn-secondary btn-icon",
+  label,
 }) => {
   const [isPressing, setIsPressing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -227,8 +232,9 @@ const TimedButton: React.FC<TimedButtonProps> = memo(({
       className={`${className} relative overflow-hidden ${isPressing ? 'scale-[0.97] ring-1 ring-primary/50' : ''}`}
       title={title}
     >
-      <div className={`relative z-10 transition-transform duration-200 ${isPressing ? 'scale-110' : ''}`}>
+      <div className={`relative z-10 transition-transform duration-200 ${isPressing ? 'scale-110' : ''} flex flex-col items-center gap-0.5`}>
         {icon}
+        {label && <span className="text-[9px] font-bold leading-none text-text-secondary">{label}</span>}
       </div>
       
       {/* Background Pulse Effect when pressing */}
@@ -601,7 +607,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 />
                   <div className="col-start-2 row-start-2 flex items-center justify-center">
                   <div className="w-12 h-12 rounded-full bg-surface border border-white/10 flex items-center justify-center shadow-inner">
-                    <Crosshair className="w-6 h-6 text-primary" />
+                    <div className="w-3 h-3 rounded-full bg-primary/50 ring-2 ring-primary/30" />
                   </div>
                 </div>
                 <JogButton
@@ -693,32 +699,42 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   disabled={isControlDisabled}
                   icon={<Home className="w-5 h-5" />}
                   title={t('jog.homing.all')}
+                  label="All"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
                 />
                 {machineSettings?.controllerType !== "grbl" && (
                   <>
                     <TimedButton
                       onClick={() => onHome("x")}
                       disabled={isControlDisabled}
-                      icon={<HomeX className="w-5 h-5" />}
+                      icon={<Home className="w-5 h-5" />}
                       title={t('jog.homing.x')}
+                      label="X"
+                      className="btn btn-secondary py-2 px-1 flex-col gap-1"
                     />
                     <TimedButton
                       onClick={() => onHome("y")}
                       disabled={isControlDisabled}
-                      icon={<HomeY className="w-5 h-5" />}
+                      icon={<Home className="w-5 h-5" />}
                       title={t('jog.homing.y')}
+                      label="Y"
+                      className="btn btn-secondary py-2 px-1 flex-col gap-1"
                     />
                     <TimedButton
                       onClick={() => onHome("z")}
                       disabled={isControlDisabled}
-                      icon={<HomeZ className="w-5 h-5" />}
+                      icon={<Home className="w-5 h-5" />}
                       title={t('jog.homing.z')}
+                      label="Z"
+                      className="btn btn-secondary py-2 px-1 flex-col gap-1"
                     />
                     <TimedButton
                       onClick={() => onHome("xy")}
                       disabled={isControlDisabled}
-                      icon={<HomeXY className="w-5 h-5" />}
+                      icon={<Home className="w-5 h-5" />}
                       title={t('jog.homing.xy')}
+                      label="XY"
+                      className="btn btn-secondary py-2 px-1 flex-col gap-1"
                     />
                   </>
                 )}
@@ -785,39 +801,47 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               <h4 className="text-xs font-bold text-text-secondary mb-2 uppercase tracking-wider">
                 {t('jog.zero.title')}
               </h4>
-              <div className="space-y-1 text-sm">
-                <div className="grid grid-cols-5 gap-2">
-                  <TimedButton
-                    onClick={() => onSetZero("all")}
-                    disabled={isControlDisabled}
-                    title={t('jog.zero.all')}
-                    icon={<Crosshair className="w-5 h-5" />}
-                  />
-                  <TimedButton
-                    onClick={() => onSetZero("x")}
-                    disabled={isControlDisabled}
-                    title={t('jog.zero.x')}
-                    icon={<CrosshairX className="w-5 h-5" />}
-                  />
-                  <TimedButton
-                    onClick={() => onSetZero("y")}
-                    disabled={isControlDisabled}
-                    title={t('jog.zero.y')}
-                    icon={<CrosshairY className="w-5 h-5" />}
-                  />
-                  <TimedButton
-                    onClick={() => onSetZero("z")}
-                    disabled={isControlDisabled}
-                    title={t('jog.zero.z')}
-                    icon={<CrosshairZ className="w-5 h-5" />}
-                  />
-                  <TimedButton
-                    onClick={() => onSetZero("xy")}
-                    disabled={isControlDisabled}
-                    title={t('jog.zero.xy')}
-                    icon={<CrosshairXY className="w-5 h-5" />}
-                  />
-                </div>
+              <div className="grid grid-cols-5 gap-2 text-sm">
+                <TimedButton
+                  onClick={() => onSetZero("all")}
+                  disabled={isControlDisabled}
+                  title={t('jog.zero.all')}
+                  icon={<Crosshair className="w-5 h-5" />}
+                  label="All"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
+                />
+                <TimedButton
+                  onClick={() => onSetZero("x")}
+                  disabled={isControlDisabled}
+                  title={t('jog.zero.x')}
+                  icon={<Crosshair className="w-5 h-5" />}
+                  label="X"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
+                />
+                <TimedButton
+                  onClick={() => onSetZero("y")}
+                  disabled={isControlDisabled}
+                  title={t('jog.zero.y')}
+                  icon={<Crosshair className="w-5 h-5" />}
+                  label="Y"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
+                />
+                <TimedButton
+                  onClick={() => onSetZero("z")}
+                  disabled={isControlDisabled}
+                  title={t('jog.zero.z')}
+                  icon={<Crosshair className="w-5 h-5" />}
+                  label="Z"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
+                />
+                <TimedButton
+                  onClick={() => onSetZero("xy")}
+                  disabled={isControlDisabled}
+                  title={t('jog.zero.xy')}
+                  icon={<Crosshair className="w-5 h-5" />}
+                  label="XY"
+                  className="btn btn-secondary py-2 px-1 flex-col gap-1"
+                />
               </div>
             </div>
 
@@ -826,47 +850,25 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               <h4 className="text-xs font-bold text-text-primary mb-2 uppercase tracking-wider opacity-80">
                 {t('jog.probe.title')}
               </h4>
-              <div className="grid grid-cols-4 gap-2 text-sm">
-                <button
-                  onClick={() => onProbe("X")}
-                  disabled={isProbeDisabled}
-                  className="btn btn-secondary btn-icon"
-                  title={t('jog.probe.x')}
-                >
-                  <ProbeX className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onProbe("Y")}
-                  disabled={isProbeDisabled}
-                  className="btn btn-secondary btn-icon"
-                  title={t('jog.probe.y')}
-                >
-                  <ProbeY className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onProbe("Z")}
-                  disabled={isProbeDisabled}
-                  className="btn btn-secondary btn-icon"
-                  title={t('jog.probe.z')}
-                >
-                  <Probe className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onProbe("XY")}
-                  disabled={isProbeDisabled}
-                  className="btn btn-secondary btn-icon"
-                  title={t('jog.probe.xy')}
-                >
-                  <ProbeXY className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onXYZProbe()}
-                  disabled={isProbeDisabled}
-                  className="btn btn-secondary btn-icon"
-                  title={t('jog.probe.xyz')}
-                >
-                  <ProbeXYZ className="w-5 h-5" />
-                </button>
+              <div className="grid grid-cols-5 gap-1.5 text-sm">
+                {([
+                  { axis: "X", icon: <ProbeX className="w-5 h-5" />, onClick: () => onProbe("X"), title: t('jog.probe.x') },
+                  { axis: "Y", icon: <ProbeY className="w-5 h-5" />, onClick: () => onProbe("Y"), title: t('jog.probe.y') },
+                  { axis: "Z", icon: <Probe className="w-5 h-5" />, onClick: () => onProbe("Z"), title: t('jog.probe.z') },
+                  { axis: "XY", icon: <ProbeXY className="w-5 h-5" />, onClick: () => onProbe("XY"), title: t('jog.probe.xy') },
+                  { axis: "XYZ", icon: <ProbeXYZ className="w-5 h-5" />, onClick: () => onXYZProbe(), title: t('jog.probe.xyz') },
+                ] as { axis: string; icon: React.ReactNode; onClick: () => void; title: string }[]).map(({ axis, icon, onClick, title }) => (
+                  <button
+                    key={axis}
+                    onClick={onClick}
+                    disabled={isProbeDisabled}
+                    className="btn btn-secondary flex-col py-2 px-1 gap-1 aspect-auto"
+                    title={title}
+                  >
+                    {icon}
+                    <span className="text-[9px] font-bold leading-none text-text-secondary">{axis}</span>
+                  </button>
+                ))}
               </div>
               <button
                 onClick={() => {
