@@ -62,7 +62,10 @@ const PreflightChecklistModal: React.FC<PreflightChecklistModalProps> = ({ isOpe
                     </ul>
                     {warnings.length > 0 && (
                         <div className="max-h-40 overflow-y-auto space-y-2">
-                            {warnings.map((w, i) => (
+                            {[...warnings].sort((a, b) => {
+                                if (a.type === b.type) return 0;
+                                return a.type === 'error' ? -1 : 1;
+                            }).map((w, i) => (
                                 <div key={i} className={`p-3 rounded-md text-sm ${w.type === 'error' ? 'bg-accent-red/20 text-accent-red' : 'bg-accent-yellow/20 text-accent-yellow'}`}><strong>{w.type === 'error' ? t('preflight.error') : t('preflight.warning')}</strong> {w.message}</div>
                             ))}
                         </div>
