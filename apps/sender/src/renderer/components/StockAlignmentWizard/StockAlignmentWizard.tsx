@@ -147,7 +147,7 @@ const StockAlignmentWizard: React.FC = () => {
                             <h3 className="text-xl font-semibold">Step 2: Probe Point A</h3>
                             <p className="text-text-secondary">When ready, click 'Start Probe'. The machine will slowly probe along the Y-axis to find the edge.</p>
                             <div className="flex justify-center pt-8">
-                                <button onClick={handleProbeA} disabled={isProbing} className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 ${isProbing ? 'bg-secondary text-text-secondary cursor-not-allowed' : 'bg-accent-cyan text-background hover:bg-cyan-400 shadow-lg shadow-cyan-400/20'}`}>
+                                <button onClick={handleProbeA} disabled={isProbing} className="btn btn-info px-8 py-3 text-lg">
                                     {isProbing ? <RotateCw className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
                                     {isProbing ? 'Probing...' : 'Start Probe'}
                                 </button>
@@ -161,8 +161,8 @@ const StockAlignmentWizard: React.FC = () => {
                             <p className="text-text-secondary">Point A recorded successfully!</p>
                             <p className="text-text-secondary">Now, move the touch plate further right along the front edge of the stock. Jog the machine to position the tool in front of the new plate location.</p>
                             <div className="flex justify-end pt-4 gap-3">
-                                <button onClick={() => setStep(2)} className="btn-secondary">Back</button>
-                                <button onClick={() => setStep(4)} className="btn-primary">Next</button>
+                                <button onClick={() => setStep(2)} className="btn btn-secondary">Back</button>
+                                <button onClick={() => setStep(4)} className="btn btn-primary">Next</button>
                             </div>
                         </div>
                     )}
@@ -172,7 +172,7 @@ const StockAlignmentWizard: React.FC = () => {
                             <h3 className="text-xl font-semibold">Step 4: Probe Point B</h3>
                             <p className="text-text-secondary">Click 'Start Probe' to find the second edge point.</p>
                             <div className="flex justify-center pt-8">
-                                <button onClick={handleProbeB} disabled={isProbing} className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 ${isProbing ? 'bg-secondary text-text-secondary cursor-not-allowed' : 'bg-accent-cyan text-background hover:bg-cyan-400 shadow-lg shadow-cyan-400/20'}`}>
+                                <button onClick={handleProbeB} disabled={isProbing} className="btn btn-info px-8 py-3 text-lg">
                                     {isProbing ? <RotateCw className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
                                     {isProbing ? 'Probing...' : 'Start Probe'}
                                 </button>
@@ -196,9 +196,9 @@ const StockAlignmentWizard: React.FC = () => {
                 </div>
 
                 <div className="p-6 border-t border-white/10 flex justify-between bg-surface/50">
-                    <button onClick={uiActions.closeStockAlignmentWizard} className="btn-secondary">Cancel</button>
+                    <button onClick={uiActions.closeStockAlignmentWizard} className="btn btn-secondary">Cancel</button>
                     {step === 5 && (
-                        <button onClick={applyCompensation} className="btn-primary">Apply Compensation</button>
+                        <button onClick={applyCompensation} className="btn btn-primary">Apply Compensation</button>
                     )}
                 </div>
             </div>

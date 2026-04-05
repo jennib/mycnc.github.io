@@ -76,8 +76,10 @@ export class JogManager {
     /**
      * Start a jog operation (called on key/button press)
      * Will automatically determine if it's continuous (hold) or discrete (tap)
+     * @param feedRate - feed rate for discrete (tap) jog
+     * @param continuousFeedRate - feed rate for continuous (hold) jog; defaults to feedRate if not provided
      */
-    public startJog(axis: JogAxis, direction: JogDirection, step: number, feedRate: number): void {
+    public startJog(axis: JogAxis, direction: JogDirection, step: number, feedRate: number, continuousFeedRate?: number): void {
         // Safety check
         if (this.isAlarmState()) {
             return;
@@ -98,11 +100,13 @@ export class JogManager {
         let stopped = false;
         this._cancelCurrentTap = () => { stopped = true; };
 
+        const holdFeedRate = continuousFeedRate ?? feedRate;
+
         this.tapTimer = window.setTimeout(() => {
             this.tapTimer = null;
             if (!stopped) {
-                // Held long enough - start continuous jogging
-                this.startContinuousJog(axis, direction, feedRate);
+                // Held long enough - start continuous jogging at the full (unscaled) feed rate
+                this.startContinuousJog(axis, direction, holdFeedRate);
             }
         }, this.HOLD_THRESHOLD);
     }

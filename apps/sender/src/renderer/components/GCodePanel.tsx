@@ -417,7 +417,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
           <p className="text-sm opacity-50 max-w-xs">{t('gcode.status.loadInstruction')}</p>
           <button 
             onClick={handleUploadClick}
-            className="mt-8 px-6 py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-focus transition-all shadow-lg active:scale-95"
+            className="btn btn-primary mt-8 px-6 py-2 text-base"
           >
             {t('gcode.actions.load')}
           </button>
@@ -435,7 +435,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={() => onJobControl("pause")}
             onContextMenu={(e) => e.preventDefault()}
             disabled={isHoming}
-            className="flex items-center justify-center gap-2 p-3 bg-accent-yellow text-white font-bold rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-yellow-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
+            className="btn btn-warning text-lg p-3"
             title="Pause Job"
           >
             <Pause className="w-6 h-6" />
@@ -446,7 +446,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               onClick={() => onJobControl("stop")}
               onContextMenu={(e) => e.preventDefault()}
               disabled={isHoming}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
+              className="btn btn-danger w-full text-lg p-3"
               title="Stop Job"
             >
               <Square className="w-6 h-6" />
@@ -464,7 +464,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
             onClick={() => onJobControl("resume")}
             onContextMenu={(e) => e.preventDefault()}
             disabled={isHoming}
-            className="flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
+            className="btn btn-success text-lg p-3"
             title="Resume Job"
           >
             <Play className="w-6 h-6" />
@@ -475,7 +475,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
               onClick={() => onJobControl("stop")}
               onContextMenu={(e) => e.preventDefault()}
               disabled={isHoming}
-              className="w-full flex items-center justify-center gap-2 p-3 bg-accent-red text-white font-bold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-red-900/20 text-lg disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none"
+              className="btn btn-danger w-full text-lg p-3"
               title="Stop Job"
             >
               <Square className="w-6 h-6" />
@@ -498,7 +498,7 @@ const GCodePanel: React.FC<GCodePanelProps> = ({
         onClick={() => onJobControl("start", { startLine: 0 })}
         onContextMenu={(e) => e.preventDefault()}
         disabled={!isReadyToStart}
-        className="col-span-3 flex items-center justify-center gap-2 p-3 bg-accent-green text-white font-bold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-surface transition-all shadow-lg shadow-green-900/20 disabled:bg-secondary disabled:cursor-not-allowed disabled:shadow-none text-lg"
+        className="btn btn-success col-span-3 text-lg p-3"
         title={tooltip}
       >
         <Play className="w-6 h-6" />

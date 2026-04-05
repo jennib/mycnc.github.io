@@ -39,8 +39,9 @@ const analyzeGCode = (gcodeLines: string[], settings: MachineSettings): Analysis
     if (bounds.maxZ > settings.workArea.z) {
         warnings.push({ type: 'warning', message: `Toolpath exceeds machine Z+ travel (${bounds.maxZ.toFixed(2)}mm > ${settings.workArea.z}mm).` });
     }
+    // NOTE: Negative Z cuts are expected for normal machining — always a warning, never an error.
     if (bounds.minZ < 0) {
-        warnings.push({ type: 'warning', message: `Toolpath plunges below Z0 (${bounds.minZ.toFixed(2)}mm). This is normal for cutting, but confirm your Z-zero is on the stock top.` });
+        warnings.push({ type: 'warning' as const, message: `Toolpath cuts to Z${bounds.minZ.toFixed(2)}mm. This is expected for cutting operations. Confirm your Z-zero is set to the top of your stock.` });
     }
 
     // 2. Spindle Speed Check

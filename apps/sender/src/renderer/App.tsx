@@ -34,7 +34,7 @@ import {
   Moon,
   Maximize,
   Minimize,
-  BookOpen,
+  Wrench,
   Move,
   Camera,
   Zap,
@@ -429,28 +429,28 @@ const MainApp: React.FC = () => {
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
             <button
               onClick={uiActions.openToolLibraryModal}
-              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              className="btn btn-secondary btn-icon"
               title={t('tools.title')}
             >
-              <BookOpen className="w-5 h-5" />
+              <Wrench className="w-5 h-5" />
             </button>
             <button
               onClick={uiActions.openCalculatorModal}
-              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              className="btn btn-secondary btn-icon"
               title={t('calculator.title', 'Calculator')}
             >
               <Calculator className="w-5 h-5" />
             </button>
             <button
               onClick={uiActions.openSettingsModal}
-              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              className="btn btn-secondary btn-icon"
               title={t('settings.title')}
             >
               <Settings className="w-5 h-5" />
             </button>
             <button
               onClick={() => settingsActions.setIsLightMode(!isLightMode)}
-              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              className="btn btn-secondary btn-icon"
               title={t('common.toggleTheme', 'Toggle Theme')}
             >
               {isLightMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -463,7 +463,7 @@ const MainApp: React.FC = () => {
                   if (document.exitFullscreen) document.exitFullscreen();
                 }
               }}
-              className="p-2 text-text-secondary hover:text-primary hover:bg-white/5 rounded-lg transition-colors"
+              className="btn btn-secondary btn-icon"
               title={t('common.fullscreen', 'Toggle Fullscreen')}
             >
               {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}

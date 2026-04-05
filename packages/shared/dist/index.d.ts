@@ -60,11 +60,13 @@ import { RotateCcw } from 'lucide-react';
 import { RotateCw } from 'lucide-react';
 import { Ruler } from 'lucide-react';
 import { Save } from 'lucide-react';
+import { ScanLine } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { Send } from 'lucide-react';
 import { Settings } from 'lucide-react';
 import { Square } from 'lucide-react';
 import { Sun } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { Terminal } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
 import { Undo } from 'lucide-react';
@@ -73,6 +75,7 @@ import { Upload } from 'lucide-react';
 import { Volume2 } from 'lucide-react';
 import { VolumeX } from 'lucide-react';
 import { Wand } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { X } from 'lucide-react';
 import { Zap } from 'lucide-react';
 import { ZapOff } from 'lucide-react';
@@ -217,12 +220,16 @@ export { Cpu }
 
 export { Crosshair }
 
+/** Zero X axis */
 export declare const CrosshairX: default_2.FC<IconProps>;
 
+/** Zero XY axes */
 export declare const CrosshairXY: default_2.FC<IconProps>;
 
+/** Zero Y axis */
 export declare const CrosshairY: default_2.FC<IconProps>;
 
+/** Zero Z axis */
 export declare const CrosshairZ: default_2.FC<IconProps>;
 
 export declare type CutDirection = 'up' | 'down' | 'compression';
@@ -479,6 +486,7 @@ export declare interface HalfLapParams {
     safeZ: number | '';
     depthPerPass: number | '';
     toolId: number | null;
+    gap?: number | '';
 }
 
 export { Hand }
@@ -487,12 +495,16 @@ export { History_2 as History }
 
 export { Home }
 
+/** Home X axis */
 export declare const HomeX: default_2.FC<IconProps>;
 
+/** Home XY axes */
 export declare const HomeXY: default_2.FC<IconProps>;
 
+/** Home Y axis */
 export declare const HomeY: default_2.FC<IconProps>;
 
+/** Home Z axis */
 export declare const HomeZ: default_2.FC<IconProps>;
 
 declare type IconProps = default_2.SVGProps<SVGSVGElement>;
@@ -698,14 +710,19 @@ export { Power }
 
 export { PowerOff }
 
+/** Probe Z – tool descends vertically to touch the top face */
 export declare const Probe: default_2.FC<IconProps>;
 
+/** Probe X – tool moves right to touch the right face */
 export declare const ProbeX: default_2.FC<IconProps>;
 
+/** Probe XY – corner probe (finds both X and Y walls) */
 export declare const ProbeXY: default_2.FC<IconProps>;
 
+/** Probe XYZ – full 3-axis corner probe */
 export declare const ProbeXYZ: default_2.FC<IconProps>;
 
+/** Probe Y – tool moves up to touch the top face */
 export declare const ProbeY: default_2.FC<IconProps>;
 
 export declare interface ProfileParams {
@@ -773,6 +790,8 @@ export { RotateCw }
 export { Ruler }
 
 export { Save }
+
+export { ScanLine }
 
 export { Search }
 
@@ -882,6 +901,8 @@ declare interface TabsProps {
     className?: string;
 }
 
+export { Target }
+
 export { Terminal }
 
 export declare interface TextParams {
@@ -986,6 +1007,8 @@ export declare interface WorkspaceBookmark {
     commands?: string[];
     isProbed?: boolean;
 }
+
+export { Wrench }
 
 export { X }
 

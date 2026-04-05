@@ -75,6 +75,39 @@
     border-width: 1px;
     border-style: solid;
   }
+
+  /* Unified Button System */
+  .btn {
+    @apply flex items-center justify-center gap-2 px-4 py-2 font-bold rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface shadow-lg disabled:bg-secondary disabled:text-text-secondary disabled:cursor-not-allowed disabled:shadow-none active:scale-95 text-sm;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-focus focus:ring-primary shadow-sky-500/20;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-text-primary hover:bg-secondary-focus border border-white/10 focus:ring-secondary-focus shadow-black/20;
+  }
+
+  .btn-success {
+    @apply bg-accent-green text-white hover:bg-green-600 focus:ring-green-500 shadow-green-900/20;
+  }
+
+  .btn-warning {
+    @apply bg-accent-yellow text-white hover:bg-yellow-600 focus:ring-yellow-500 shadow-yellow-900/20;
+  }
+
+  .btn-danger {
+    @apply bg-accent-red text-white hover:bg-red-700 focus:ring-red-500 shadow-red-900/20;
+  }
+
+  .btn-info {
+    @apply bg-cyan-500 text-white hover:bg-cyan-400 focus:ring-cyan-500 shadow-cyan-900/20;
+  }
+  
+  .btn-icon {
+    @apply p-2 md:p-3 aspect-square;
+  }
 }
 
 .react-switch-checkbox {
