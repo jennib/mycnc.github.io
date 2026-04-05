@@ -17,6 +17,13 @@ export const useHotkeys = (handlers: HotkeyHandlers) => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const JOG_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown'];
+
+      // Always prevent browser default for jog keys (scrolling, etc.)
+      if (JOG_KEYS.includes(event.key)) {
+        event.preventDefault();
+      }
+
       if (
         event.repeat ||
         (document.activeElement &&
@@ -65,7 +72,6 @@ export const useHotkeys = (handlers: HotkeyHandlers) => {
       }
 
       if (axis && direction !== 0) {
-        event.preventDefault();
         activeJogKeyRef.current = event.key;
         const { jogFeedRate } = machineSettings;
         const distance = direction * 99999;
