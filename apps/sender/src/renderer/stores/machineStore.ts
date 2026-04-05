@@ -77,6 +77,11 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
         });
       }
 
+      // Reset isJogging when machine returns to Idle after a jog (handles discrete tap jogs)
+      if (get().isJogging && state?.status === 'Idle' && prevState?.status === 'Jog') {
+        set({ isJogging: false });
+      }
+
       // Detect alarm state change
       if (state?.status === 'Alarm' && prevState?.status !== 'Alarm') {
         // Import useUIStore dynamically to avoid circular dependency

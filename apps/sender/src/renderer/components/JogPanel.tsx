@@ -464,7 +464,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         }
 
         const hotkey = jogHotkeys[event.key];
-        if (hotkey && !isControlDisabled) {
+        if (hotkey && !isJogButtonDisabled) {
           event.preventDefault();
 
           // Prevent key repeat - only process first keydown
@@ -520,7 +520,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
       };
-    }, [isControlDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys, jogFeedRate]);
+    }, [isJogButtonDisabled, jogStep, onFlash, stepSizes, onStepChange, jogHotkeys, jogFeedRate]);
 
     const handleStartJog = useCallback((axis: string, direction: number) => {
       jogManagerRef.current?.startJog(

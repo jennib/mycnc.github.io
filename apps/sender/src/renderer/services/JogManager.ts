@@ -16,6 +16,7 @@ export type JogDirection = 1 | -1;
 interface JogState {
     axis: JogAxis;
     direction: JogDirection;
+    distance: number;
     feedRate: number;
 }
 
@@ -36,8 +37,7 @@ export class JogManager {
     private bufferedCommands: number = 0;
 
     // Configuration
-    private readonly CONTINUOUS_JOG_INTERVAL = 300; // ms between "keep-alive" continuous jog commands
-    private readonly CONTINUOUS_JOG_DISTANCE = 100; // mm per continuous jog move (large enough for smoothness, small enough for safety)
+    private readonly CONTINUOUS_JOG_INTERVAL = 300; // ms between continuous jog commands
     private readonly HOLD_THRESHOLD = 250; // ms to distinguish tap from hold (slightly longer for reliability)
 
     // Tap detection
@@ -105,8 +105,8 @@ export class JogManager {
         this.tapTimer = window.setTimeout(() => {
             this.tapTimer = null;
             if (!stopped) {
-                // Held long enough - start continuous jogging at the full (unscaled) feed rate
-                this.startContinuousJog(axis, direction, holdFeedRate);
+                // Held long enough - start continuous jogging using step as distance per interval
+                this.startContinuousJog(axis, direction, step, holdFeedRate);
             }
         }, this.HOLD_THRESHOLD);
     }
@@ -116,7 +116,7 @@ export class JogManager {
      * Start analog jogging (variable feed rate, immediate continuous)
      * Used for gamepad control
      */
-    public startAnalogJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
+    public startAnalogJog(axis: JogAxis, direction: JogDirection, feedRate: number, step: number = 100): void {
         // Safety check
         if (this.isAlarmState()) {
             return;
@@ -124,7 +124,7 @@ export class JogManager {
 
         // For analog jog, we skip the tap detection and go straight to continuous
         // but we update the feed rate if already jogging
-        this.startContinuousJog(axis, direction, feedRate);
+        this.startContinuousJog(axis, direction, step, feedRate);
     }
 
     /**
@@ -156,9 +156,9 @@ export class JogManager {
     }
 
     /**
-     * Start continuous jogging (sends small incremental jogs repeatedly)
+     * Start continuous jogging (sends incremental jogs of step distance repeatedly)
      */
-    private startContinuousJog(axis: JogAxis, direction: JogDirection, feedRate: number): void {
+    private startContinuousJog(axis: JogAxis, direction: JogDirection, distance: number, feedRate: number): void {
         // If already jogging this direction, just update if feed rate changed significantly
         if (this.continuousJogState?.axis === axis && this.continuousJogState?.direction === direction) {
             if (Math.abs(this.continuousJogState.feedRate - feedRate) > 10) {
@@ -172,10 +172,15 @@ export class JogManager {
         this.stopContinuousJog();
 
         // Set new continuous jog state
-        this.continuousJogState = { axis, direction, feedRate };
+        this.continuousJogState = { axis, direction, distance, feedRate };
 
         // Send first jog command immediately
         this.sendContinuousJogStep();
+
+        // Interval = 80% of estimated move duration, clamped between 50ms and 300ms.
+        // Small steps tick fast; large steps pace to avoid flooding GRBL's planning buffer.
+        const estimatedMoveDurationMs = (distance / feedRate) * 60 * 1000;
+        const interval = Math.min(300, Math.max(50, estimatedMoveDurationMs * 0.8));
 
         // Start interval to send continuous jog commands
         this.continuousJogInterval = window.setInterval(() => {
@@ -184,7 +189,7 @@ export class JogManager {
                 return;
             }
             this.sendContinuousJogStep();
-        }, this.CONTINUOUS_JOG_INTERVAL);
+        }, interval);
     }
 
     /**
@@ -209,11 +214,11 @@ export class JogManager {
     private sendContinuousJogStep(): void {
         if (!this.continuousJogState) return;
 
-        const { axis, direction, feedRate } = this.continuousJogState;
+        const { axis, direction, distance, feedRate } = this.continuousJogState;
         this.callbacks.onSendJogCommand(
             axis,
             direction,
-            this.CONTINUOUS_JOG_DISTANCE,
+            distance,
             feedRate
         );
     }
@@ -315,8 +320,6 @@ export class JogManager {
      * Update configuration
      */
     public setConfig(config: {
-        continuousJogInterval?: number;
-        continuousJogDistance?: number;
         holdThreshold?: number;
     }): void {
         // Note: Changing these requires stopping/restarting for interval change
