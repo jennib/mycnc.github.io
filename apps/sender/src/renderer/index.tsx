@@ -2,14 +2,6 @@ import './shim';
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { configureMonaco } from "@mycnc/shared";
-import * as monaco from "monaco-editor";
-
-import { setupMonacoWorkers } from "./monacoWorker";
-
-// Configure Monaco loader
-setupMonacoWorkers();
-configureMonaco();
 
 import "./i18n";
 import "./index.css";

@@ -199,8 +199,6 @@ export { Code }
 
 export { Code2 }
 
-export declare function configureMonaco(): Promise<any>;
-
 export declare interface ConnectionOptions {
     type: 'usb' | 'tcp' | 'simulator';
     ip?: string;
@@ -347,21 +345,6 @@ export declare interface GCodeAnalysisState {
     unitMode: 'G20' | 'G21';
     distanceMode: 'G90' | 'G91';
     feedRate: number | null;
-}
-
-export declare const GCodeEditorModal: default_2.FC<GCodeEditorModalProps>;
-
-declare interface GCodeEditorModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    initialContent: string;
-    fileName: string;
-    onSaveToApp: (content: string) => void;
-    onSaveToDisk: (content: string, filename: string) => void;
-    machineSettings: MachineSettings;
-    unit: 'mm' | 'in';
-    isLightMode: boolean;
-    TouchInputComponent?: default_2.ComponentType<any>;
 }
 
 export declare const GCodeLine: default_2.FC<GCodeLineProps>;

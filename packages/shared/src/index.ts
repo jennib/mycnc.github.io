@@ -52,8 +52,8 @@ export {
     GRBL_REALTIME_COMMANDS
 } from './constants';
 export * from './components/GCodeVisualizer';
-export * from './components/GCodeEditorModal';
-export { configureMonaco } from './services/monacoConfig';
+// GCodeEditorModal and configureMonaco are exported from "@mycnc/shared/editor"
+// to keep monaco-editor out of this entry point's dependency tree.
 export * from './services/gcodeParser';
 export * from './services/gcodeAnalyzer';
 export * from './services/gcodeTimeEstimator';

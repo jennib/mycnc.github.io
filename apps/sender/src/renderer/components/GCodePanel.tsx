@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, DragEvent, memo, Suspense } from "react";
+import React, { useRef, useState, useEffect, DragEvent, memo, Suspense, lazy } from "react";
 import { useTranslation } from "react-i18next";
 
 import { JobStatus, MachineState, Tool, MachineSettings } from "@mycnc/shared";
@@ -34,8 +34,10 @@ import { useUndoRedo } from "../hooks/useUndoRedo";
 import { Tabs } from "@mycnc/shared";
 import { useSettingsStore } from "../stores/settingsStore";
 
-import { GCodeVisualizer, GCodeEditorModal } from "@mycnc/shared";
+import { GCodeVisualizer } from "@mycnc/shared";
 import GCodeVisualizerWorker from '../workers/gcodeVisualizerWorker?worker';
+
+const GCodeEditorModal = lazy(() => import('./GCodeEditorModalLazy'));
 import { useLibraryStore } from "../stores/libraryStore";
 
 interface OverrideControlProps {

@@ -51,6 +51,7 @@ export default defineConfig(({ mode }) => ({
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer'),
+        '@mycnc/shared/editor': resolve(__dirname, '../../packages/shared/dist/editor.js'),
         '@mycnc/shared/worker': resolve(__dirname, '../../packages/shared/dist/worker.js'),
         '@mycnc/shared': resolve(__dirname, '../../packages/shared/dist/index.js')
       }

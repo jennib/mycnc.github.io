@@ -12,6 +12,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        editor: resolve(__dirname, 'src/editorExports.ts'),
         worker: resolve(__dirname, 'src/worker.ts')
       },
       name: 'MyCNCShared',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { GCodeEditorModal, GCodeVisualizer, MachineSettings } from '@mycnc/shared';
+import { GCodeVisualizer, MachineSettings } from '@mycnc/shared';
+import { GCodeEditorModal } from '@mycnc/shared/editor';
 import GCodeVisualizerWorker from './renderer/workers/gcodeVisualizerWorker?worker';
 
 // Mock machine settings for now
