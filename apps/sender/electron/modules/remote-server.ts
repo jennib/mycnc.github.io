@@ -38,10 +38,14 @@ export const startRemoteServer = (
     appServer.use((_req, res, next) => {
         res.setHeader(
             'Content-Security-Policy',
-            `default-src 'self'; connect-src 'self' ws:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:; worker-src blob:;`
+            `default-src 'self'; connect-src 'self' ws:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:; worker-src blob: 'self';`
         );
         next();
     });
+    appServer.get('/api/is-remote', (_req, res) => {
+        res.json({ isRemote: true });
+    });
+
     appServer.post('/api/upload', (req: express.Request, res: express.Response) => {
         const { name, content } = req.body;
         if (mainWindow && !mainWindow.isDestroyed()) {

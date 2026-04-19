@@ -167,9 +167,9 @@ const setupIpcHandlers = () => {
     let csp = "";
 
     if (isDevelopment) {
-      csp = `default-src 'self' http://localhost:*; connect-src 'self' ws://localhost:*; script-src 'self' http://localhost:* 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
+      csp = `default-src 'self' http://localhost:*; connect-src 'self' ws://localhost:*; script-src 'self' http://localhost:* 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:; worker-src blob: http://localhost:*;`;
     } else {
-      csp = `default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:;`;
+      csp = `default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:; worker-src blob:;`;
     }
 
     callback({

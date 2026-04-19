@@ -29,9 +29,10 @@ class RemoteSyncService {
 
         if (this.isElectron) {
             this.initHost();
-        } else {
+        } else if (window.electronAPI?.isRemote) {
             this.initClient();
         }
+        // Standalone mode: no sync needed
     }
 
     private initHost() {

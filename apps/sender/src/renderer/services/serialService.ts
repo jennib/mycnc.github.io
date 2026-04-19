@@ -101,27 +101,30 @@ export class SerialService {
     }
 
     private async connectTCP(ip: string, port: number): Promise<PortInfo> {
-        if (!window.electronAPI?.isElectron) {
-            throw new Error("TCP connection is only available in Electron environment.");
+        if (window.electronAPI?.isElectron) {
+            return this.connectTCPElectron(ip, port);
+        } else {
+            return this.connectTCPWebSocket(ip, port);
         }
+    }
 
+    private async connectTCPElectron(ip: string, port: number): Promise<PortInfo> {
         try {
-            window.electronAPI.onTCPData((data) => {
+            window.electronAPI!.onTCPData((data) => {
                 this.tcpBuffer += data;
                 const lines = this.tcpBuffer.split('\n');
                 this.tcpBuffer = lines.pop()!;
                 lines.forEach(line => this.callbacks.onData(line));
             });
-            window.electronAPI.onTCPError((error) => {
+            window.electronAPI!.onTCPError((error) => {
                 this.callbacks.onError(`TCP Error: ${error}`);
                 this.disconnect();
             });
-            window.electronAPI.onTCPDisconnect(() => {
+            window.electronAPI!.onTCPDisconnect(() => {
                 this.disconnect();
             });
 
-            const connected = await window.electronAPI.connectTCP(ip, port);
-
+            const connected = await window.electronAPI!.connectTCP(ip, port);
             if (connected) {
                 this.connectionType = 'tcp';
                 return { type: 'tcp', ip, port };
@@ -132,6 +135,42 @@ export class SerialService {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
             throw new Error(`Failed to connect via TCP: ${errorMessage}`);
         }
+    }
+
+    private connectTCPWebSocket(ip: string, port: number): Promise<PortInfo> {
+        return new Promise((resolve, reject) => {
+            const ws = new WebSocket(`ws://${ip}:${port}`);
+            (this as any)._ws = ws;
+
+            const onOpen = () => {
+                this.connectionType = 'tcp';
+                (this as any)._ws = ws;
+                resolve({ type: 'tcp', ip, port });
+            };
+
+            const onMessage = (event: MessageEvent) => {
+                const data: string = typeof event.data === 'string'
+                    ? event.data
+                    : new TextDecoder().decode(event.data);
+                this.tcpBuffer += data;
+                const lines = this.tcpBuffer.split('\n');
+                this.tcpBuffer = lines.pop()!;
+                lines.forEach(line => { if (line.trim()) this.callbacks.onData(line); });
+            };
+
+            const onError = () => {
+                reject(new Error(`WebSocket connection to ${ip}:${port} failed. Ensure the machine has WebSocket support or a bridge is running.`));
+            };
+
+            const onClose = () => {
+                if (this.connectionType === 'tcp') this.disconnect();
+            };
+
+            ws.addEventListener('open', onOpen);
+            ws.addEventListener('message', onMessage);
+            ws.addEventListener('error', onError);
+            ws.addEventListener('close', onClose);
+        });
     }
 
     async connectSimulator(simulator: Simulator): Promise<PortInfo> {
@@ -177,8 +216,13 @@ export class SerialService {
         try {
             if (this.connectionType === 'usb' && this.port) {
                 this.port.close();
-            } else if (this.connectionType === 'tcp' && window.electronAPI) {
-                window.electronAPI.disconnectTCP();
+            } else if (this.connectionType === 'tcp') {
+                if (window.electronAPI?.isElectron) {
+                    window.electronAPI.disconnectTCP();
+                } else {
+                    (this as any)._ws?.close();
+                    (this as any)._ws = null;
+                }
             } else if (this.connectionType === 'simulator' && this.simulator) {
                 this.simulator.disconnect().catch(console.error);
             }
@@ -238,9 +282,13 @@ export class SerialService {
                 this.callbacks.onError(errorMessage);
                 throw error;
             }
-        } else if (this.connectionType === 'tcp' && window.electronAPI) {
+        } else if (this.connectionType === 'tcp') {
             try {
-                window.electronAPI.sendTCP(data);
+                if (window.electronAPI?.isElectron) {
+                    window.electronAPI.sendTCP(data);
+                } else {
+                    (this as any)._ws?.send(data);
+                }
             } catch (error) {
                 this.callbacks.onError("Error writing to TCP socket.");
                 throw error;

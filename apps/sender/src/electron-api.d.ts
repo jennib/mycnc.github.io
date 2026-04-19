@@ -1,5 +1,6 @@
 interface ElectronAPI {
     isElectron: boolean;
+    isRemote?: boolean;
     connectTCP: (ip: string, port: number) => Promise<boolean>;
     sendTCP: (data: string) => void;
     disconnectTCP: () => void;
