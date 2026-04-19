@@ -39,7 +39,14 @@ function initRemoteMode() {
     console.log("Remote client mode: connecting to Electron host via Socket.IO.");
     const socket: Socket = io();
 
-    socket.on("connect", () => console.log("Connected to Electron host:", socket.id));
+    socket.on("connect", () => {
+        console.log("Connected to Electron host:", socket.id);
+        window.dispatchEvent(new CustomEvent('electron-host-status', { detail: { connected: true } }));
+    });
+    socket.on("disconnect", () => {
+        console.warn("Disconnected from Electron host");
+        window.dispatchEvent(new CustomEvent('electron-host-status', { detail: { connected: false } }));
+    });
     socket.on("connect_error", (err) => console.error("Socket.IO error:", err));
 
     (window as any).electronAPI = {

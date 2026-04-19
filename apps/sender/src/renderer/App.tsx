@@ -190,11 +190,19 @@ const MainApp: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isHostConnected, setIsHostConnected] = useState(true);
 
   useEffect(() => {
     const handleFullScreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!window.electronAPI?.isRemote) return;
+    const handler = (e: Event) => setIsHostConnected((e as CustomEvent).detail.connected);
+    window.addEventListener('electron-host-status', handler);
+    return () => window.removeEventListener('electron-host-status', handler);
   }, []);
 
   // Check for startup file from Electron when app loads
@@ -252,10 +260,27 @@ const MainApp: React.FC = () => {
           connectionActions.sendRealtimeCommand(action.payload);
         } else if (action.type === 'SEND_LINE') {
           connectionActions.sendLine(action.payload.line);
+        } else if (action.type === 'LOAD_LIBRARY_JOB') {
+          const { id, name } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.loadJobContent(id).then((content) => {
+              if (content) jobActions.loadFile(content, name);
+            });
+          });
+        } else if (action.type === 'ADD_LIBRARY_JOB') {
+          const { name, content } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.addJob(name, content);
+          });
+        } else if (action.type === 'DELETE_LIBRARY_JOB') {
+          const { id } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.removeJob(id);
+          });
         }
       });
     }
-  }, [handleStartJobConfirmed, connectionActions, handleJobControl]);
+  }, [handleStartJobConfirmed, connectionActions, handleJobControl, jobActions]);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -524,6 +549,15 @@ const MainApp: React.FC = () => {
           </div>
         )
       }
+      {window.electronAPI?.isRemote && !isHostConnected && (
+        <div
+          className="bg-orange-500/10 border-l-4 border-orange-500 text-orange-400 p-3 mx-4 mt-2 flex items-center gap-3 rounded-r-lg backdrop-blur-sm"
+          role="alert"
+        >
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+          <p className="text-sm font-medium">Connection to Electron host lost. Reconnecting…</p>
+        </div>
+      )}
       {
         !isSerialApiSupported && connectionSettings.type !== 'simulator' && (
           <div
