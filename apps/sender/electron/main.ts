@@ -1,10 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu, shell, dialog, session, MenuItemConstructorOptions } from "electron";
+import os from 'os';
 import { autoUpdater } from "electron-updater";
 import { createMenu } from './modules/menu';
 import { setupAutoUpdater } from './modules/updater';
 import { connectToTcp, disconnectTcp, sendTcp } from './modules/tcp-client';
 import { loadPlugins, notifyPlugins, setupPluginHandlers } from './modules/plugin-manager';
-import { startRemoteServer } from './modules/remote-server';
+import { startRemoteServer, broadcastStateToClients } from './modules/remote-server';
 import { createWindows, getMainWindow } from './modules/windows';
 import { handleStartupArgs, setupStartupHandler } from './modules/startup';
 
@@ -43,16 +44,26 @@ const setupIpcHandlers = () => {
 
   // --- State Synchronization Handlers ---
   ipcMain.on("state-update", (event, { storeName, state }) => {
-    // Update local cache
     appState[storeName] = { ...appState[storeName], ...state };
-
     notifyPlugins(storeName, state);
-
-    // The remote server will handle broadcasting to its own clients
+    broadcastStateToClients(storeName, state);
   });
 
   ipcMain.handle("get-initial-state", () => {
     return appState;
+  });
+
+  ipcMain.handle("get-server-urls", () => {
+    const PORT = 8080;
+    const urls: string[] = [`http://localhost:${PORT}`];
+    Object.values(os.networkInterfaces()).forEach(iface => {
+      iface?.forEach(addr => {
+        if (addr.family === 'IPv4' && !addr.internal) {
+          urls.push(`http://${addr.address}:${PORT}`);
+        }
+      });
+    });
+    return urls;
   });
 
   let autoSelectIndex = -1;
@@ -152,14 +163,13 @@ const setupIpcHandlers = () => {
 
   // Set a Content Security Policy
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL; let csp = "";
+    const isDevelopment = !!process.env.VITE_DEV_SERVER_URL;
+    let csp = "";
 
     if (isDevelopment) {
-      // Relaxed CSP for development
-      csp = `default -src 'self' http://localhost:3000; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' http://localhost:3000 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
+      csp = `default-src 'self' http://localhost:*; connect-src 'self' ws://localhost:*; script-src 'self' http://localhost:* 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src * blob:; img-src 'self' data:;`;
     } else {
-      // Stricter CSP for production
-      csp = `default-src 'self'; connect-src 'self' ws://10.0.0.162:8888; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:;`;
+      csp = `default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:;`;
     }
 
     callback({

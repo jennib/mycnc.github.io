@@ -45,7 +45,7 @@ export class TinyGController implements Controller {
             workArea: { x: 200, y: 200, z: 200 },
             jogFeedRate: 1000,
             spindle: { min: 0, max: 24000, warmupDelay: 0 },
-            probe: { xOffset: 0, yOffset: 0, zOffset: 0, feedRate: 100, probeTravelDistance: 10 },
+            probe: { xOffset: 0, yOffset: 0, zOffset: 0, fastFeedRate: 100, slowFeedRate: 25, probeTravelDistance: 20, retractDistance: 2, blockWidthX: 20, blockWidthY: 20, blockHeight: 10, bitDiameter: 3.175 },
             scripts: { startup: '', toolChange: '', shutdown: '', jobPause: '', jobResume: '', jobStop: '' },
         };
 

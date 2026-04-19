@@ -26,6 +26,9 @@ interface ElectronAPI {
     onRemoteAction?: (callback: (action: { type: string, payload?: any }) => void) => void;
     isRemoteConnected?: () => boolean;
 
+    // Remote Server
+    getServerUrls?: () => Promise<string[]>;
+
     // Startup file
     getStartupFile?: () => Promise<{ name: string; content: string } | null>;
     onLoadRemoteFile?: (callback: (file: { name: string; content: string }) => void) => void;

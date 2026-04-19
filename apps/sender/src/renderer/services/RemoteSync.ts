@@ -197,14 +197,7 @@ class RemoteSyncService {
                 console.log("Received initial state:", appState);
                 this.hydrateStores(appState);
 
-                // Auto-connect if host is connected
-                if (appState.connectionStore?.isConnected) {
-                    console.log("Host is connected. Auto-connecting remote client...");
-                    setTimeout(() => {
-                        const { actions } = useConnectionStore.getState();
-                        actions.connect({ type: 'tcp', ip: 'remote', port: 0 });
-                    }, 500);
-                }
+                // Connection state is reflected via store hydration — no local connect needed
             });
         }
 
@@ -226,7 +219,10 @@ class RemoteSyncService {
             if (appState.jobStore) useJobStore.setState(appState.jobStore);
             if (appState.settingsStore) useSettingsStore.setState(appState.settingsStore);
             if (appState.machineStore) useMachineStore.setState(appState.machineStore);
-            // Connection store handled separately
+            if (appState.connectionStore) {
+                const { isConnected, portInfo } = appState.connectionStore;
+                useConnectionStore.setState({ isConnected, portInfo });
+            }
         } finally {
             this.isApplyingRemoteUpdate = false;
         }

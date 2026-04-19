@@ -124,10 +124,23 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         useLogStore.getState().actions.addLog({ type: 'error', message: `Command failed after retries: ${lastError?.message}` });
         throw lastError;
       }
+      const api = window.electronAPI;
+      if (api && !api.isElectron && api.sendRemoteAction) {
+        api.sendRemoteAction({ type: 'SEND_LINE', payload: { line } });
+        return Promise.resolve('');
+      }
       return Promise.reject(new Error("Not connected."));
     },
     sendRealtimeCommand: (command: string) => {
-      get().controller?.sendRealtimeCommand(command);
+      const controller = get().controller;
+      if (controller) {
+        controller.sendRealtimeCommand(command);
+        return;
+      }
+      const api = window.electronAPI;
+      if (api && !api.isElectron && api.sendRemoteAction) {
+        api.sendRemoteAction({ type: 'REALTIME_CMD', payload: command });
+      }
     },
     autoDetect: async () => {
       if (get().isConnected || get().isConnecting) return;

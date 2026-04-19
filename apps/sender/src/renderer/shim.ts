@@ -117,6 +117,7 @@ if (!win.electronAPI) {
             return new Promise((resolve) => {
                 if (socket) {
                     socket.once("initial-state", (state) => resolve(state));
+                    socket.emit("get-initial-state");
                 } else {
                     resolve({});
                 }
@@ -142,6 +143,8 @@ if (!win.electronAPI) {
 
         isRemoteConnected: () => {
             return socket?.connected || false;
-        }
+        },
+
+        getServerUrls: () => Promise.resolve([] as string[])
     };
 }

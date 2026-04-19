@@ -47,6 +47,7 @@ import {
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 import Logo from "./components/Logo";
 import ConnectionSelector from "./components/ConnectionSelector";
+import RemoteAccessButton from "./components/RemoteAccessButton";
 
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
@@ -242,6 +243,15 @@ const MainApp: React.FC = () => {
         } else if (action.type === 'RESUME_JOB') {
           console.log("Remote commanded RESUME");
           handleJobControl('resume');
+        } else if (action.type === 'JOG_COMMAND') {
+          const { x, y, z, rate } = action.payload;
+          useConnectionStore.getState().controller?.jog(x, y, z, rate);
+        } else if (action.type === 'JOG_STOP') {
+          useConnectionStore.getState().controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
+        } else if (action.type === 'REALTIME_CMD') {
+          connectionActions.sendRealtimeCommand(action.payload);
+        } else if (action.type === 'SEND_LINE') {
+          connectionActions.sendLine(action.payload.line);
         }
       });
     }
@@ -427,6 +437,7 @@ const MainApp: React.FC = () => {
             isElectron={!!window.electronAPI?.isElectron}
           />
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
+            <RemoteAccessButton />
             <button
               onClick={uiActions.openToolLibraryModal}
               className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"

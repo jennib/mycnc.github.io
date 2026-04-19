@@ -5,6 +5,12 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 import path from 'path';
 import os from 'os';
 
+let _io: SocketIOServer | null = null;
+
+export const broadcastStateToClients = (storeName: string, state: any) => {
+    _io?.emit('state-update', { storeName, state });
+};
+
 export const startRemoteServer = (
     appState: Record<string, any>,
     broadcast: (channel: string, ...args: any[]) => void,
@@ -23,9 +29,19 @@ export const startRemoteServer = (
         },
         maxHttpBufferSize: 1e8 // 100 MB
     });
+    _io = io;
 
     // Configure Express
     appServer.use(express.json({ limit: '100mb' }));
+
+    // CSP for remote browser clients — allow WebSocket back to this server
+    appServer.use((_req, res, next) => {
+        res.setHeader(
+            'Content-Security-Policy',
+            `default-src 'self'; connect-src 'self' ws:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; img-src 'self' data:; worker-src blob:;`
+        );
+        next();
+    });
     appServer.post('/api/upload', (req: express.Request, res: express.Response) => {
         const { name, content } = req.body;
         if (mainWindow && !mainWindow.isDestroyed()) {
@@ -66,8 +82,10 @@ export const startRemoteServer = (
         });
 
         // --- State Synchronization ---
-        // Send current cached state to new client
-        socket.emit("initial-state", appState);
+        // Send current state when client requests it (avoids race condition with emit-on-connect)
+        socket.on("get-initial-state", () => {
+            socket.emit("initial-state", appState);
+        });
 
         socket.on("state-update", ({ storeName, state }) => {
             // Update local cache
