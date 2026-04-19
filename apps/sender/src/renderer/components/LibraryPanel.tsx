@@ -17,8 +17,10 @@ const LibraryPanel: React.FC = () => {
     const { actions: jobActions } = useJobStore();
     const uiActions = useUIStore((state) => state.actions);
 
+    const isRemote = !!window.electronAPI?.isRemote;
+
     useEffect(() => {
-        libraryActions.init();
+        if (window.electronAPI?.isElectron) libraryActions.init();
     }, [libraryActions]);
 
     const handleUploadClick = () => {
@@ -33,7 +35,11 @@ const LibraryPanel: React.FC = () => {
                 reader.onload = async (event) => {
                     const content = event.target?.result as string;
                     if (content) {
-                        await libraryActions.addJob(file.name, content);
+                        if (isRemote) {
+                            window.electronAPI!.sendRemoteAction({ type: 'ADD_LIBRARY_JOB', payload: { name: file.name, content } });
+                        } else {
+                            await libraryActions.addJob(file.name, content);
+                        }
                         jobActions.loadFile(content, file.name);
                     }
                 };
@@ -44,16 +50,24 @@ const LibraryPanel: React.FC = () => {
     };
 
     const handleLoadJob = async (id: string, name: string) => {
-        const content = await libraryActions.loadJobContent(id);
-        if (content) {
-            jobActions.loadFile(content, name);
+        if (isRemote) {
+            window.electronAPI!.sendRemoteAction({ type: 'LOAD_LIBRARY_JOB', payload: { id, name } });
+        } else {
+            const content = await libraryActions.loadJobContent(id);
+            if (content) {
+                jobActions.loadFile(content, name);
+            }
         }
     };
 
     const handleDeleteJob = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         if (window.confirm('Delete this job from the library?')) {
-            await libraryActions.removeJob(id);
+            if (isRemote) {
+                window.electronAPI!.sendRemoteAction({ type: 'DELETE_LIBRARY_JOB', payload: { id } });
+            } else {
+                await libraryActions.removeJob(id);
+            }
         }
     };
 

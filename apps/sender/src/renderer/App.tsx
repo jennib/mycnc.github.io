@@ -47,6 +47,7 @@ import {
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 import Logo from "./components/Logo";
 import ConnectionSelector from "./components/ConnectionSelector";
+import RemoteAccessButton from "./components/RemoteAccessButton";
 
 import ContactModal from "./components/ContactModal";
 import ErrorBoundary from "./ErrorBoundary";
@@ -189,11 +190,19 @@ const MainApp: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [flashingButton, setFlashingButton] = useState<string | null>(null);
   const flashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isHostConnected, setIsHostConnected] = useState(true);
 
   useEffect(() => {
     const handleFullScreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullScreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!window.electronAPI?.isRemote) return;
+    const handler = (e: Event) => setIsHostConnected((e as CustomEvent).detail.connected);
+    window.addEventListener('electron-host-status', handler);
+    return () => window.removeEventListener('electron-host-status', handler);
   }, []);
 
   // Check for startup file from Electron when app loads
@@ -242,10 +251,36 @@ const MainApp: React.FC = () => {
         } else if (action.type === 'RESUME_JOB') {
           console.log("Remote commanded RESUME");
           handleJobControl('resume');
+        } else if (action.type === 'JOG_COMMAND') {
+          const { x, y, z, rate } = action.payload;
+          useConnectionStore.getState().controller?.jog(x, y, z, rate);
+        } else if (action.type === 'JOG_STOP') {
+          useConnectionStore.getState().controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
+        } else if (action.type === 'REALTIME_CMD') {
+          connectionActions.sendRealtimeCommand(action.payload);
+        } else if (action.type === 'SEND_LINE') {
+          connectionActions.sendLine(action.payload.line);
+        } else if (action.type === 'LOAD_LIBRARY_JOB') {
+          const { id, name } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.loadJobContent(id).then((content) => {
+              if (content) jobActions.loadFile(content, name);
+            });
+          });
+        } else if (action.type === 'ADD_LIBRARY_JOB') {
+          const { name, content } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.addJob(name, content);
+          });
+        } else if (action.type === 'DELETE_LIBRARY_JOB') {
+          const { id } = action.payload;
+          import('./stores/libraryStore').then(({ useLibraryStore }) => {
+            useLibraryStore.getState().actions.removeJob(id);
+          });
         }
       });
     }
-  }, [handleStartJobConfirmed, connectionActions, handleJobControl]);
+  }, [handleStartJobConfirmed, connectionActions, handleJobControl, jobActions]);
 
   const handleFlash = useCallback((buttonId: string) => {
     if (flashTimeoutRef.current) {
@@ -415,18 +450,21 @@ const MainApp: React.FC = () => {
       <header className="bg-surface border-b border-white/5 px-4 py-2 flex items-center justify-between shadow-md z-10 flex-shrink-0">
         <Logo className="h-8 w-auto" />
         <div className="flex items-center gap-6">
-          <ConnectionSelector />
-          <SerialConnector
-            isConnected={isConnected}
-            isConnecting={isConnecting}
-            portInfo={portInfo}
-            onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
-            isApiSupported={isSerialApiSupported}
-            isSimulated={connectionSettings.type === 'simulator'}
-            isElectron={!!window.electronAPI?.isElectron}
-          />
+          {!window.electronAPI?.isRemote && <ConnectionSelector />}
+          {!window.electronAPI?.isRemote && (
+            <SerialConnector
+              isConnected={isConnected}
+              isConnecting={isConnecting}
+              portInfo={portInfo}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+              isApiSupported={isSerialApiSupported}
+              isSimulated={connectionSettings.type === 'simulator'}
+              isElectron={!!window.electronAPI?.isElectron}
+            />
+          )}
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
+            {window.electronAPI?.isElectron && <RemoteAccessButton />}
             <button
               onClick={uiActions.openToolLibraryModal}
               className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"
@@ -511,6 +549,15 @@ const MainApp: React.FC = () => {
           </div>
         )
       }
+      {window.electronAPI?.isRemote && !isHostConnected && (
+        <div
+          className="bg-orange-500/10 border-l-4 border-orange-500 text-orange-400 p-3 mx-4 mt-2 flex items-center gap-3 rounded-r-lg backdrop-blur-sm"
+          role="alert"
+        >
+          <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+          <p className="text-sm font-medium">Connection to Electron host lost. Reconnecting…</p>
+        </div>
+      )}
       {
         !isSerialApiSupported && connectionSettings.type !== 'simulator' && (
           <div

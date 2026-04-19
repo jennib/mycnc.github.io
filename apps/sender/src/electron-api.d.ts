@@ -1,5 +1,6 @@
 interface ElectronAPI {
     isElectron: boolean;
+    isRemote?: boolean;
     connectTCP: (ip: string, port: number) => Promise<boolean>;
     sendTCP: (data: string) => void;
     disconnectTCP: () => void;
@@ -25,6 +26,9 @@ interface ElectronAPI {
     sendRemoteAction?: (action: { type: string, payload?: any }) => void;
     onRemoteAction?: (callback: (action: { type: string, payload?: any }) => void) => void;
     isRemoteConnected?: () => boolean;
+
+    // Remote Server
+    getServerUrls?: () => Promise<string[]>;
 
     // Startup file
     getStartupFile?: () => Promise<{ name: string; content: string } | null>;

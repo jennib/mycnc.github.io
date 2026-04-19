@@ -311,13 +311,22 @@ export const useMachineStore = create<MachineStoreState>((set, get) => ({
       if (!get().isJogging) {
         set({ isJogging: true });
       }
-      controller?.jog(x, y, z, rate);
+
+      if (!controller) {
+        window.electronAPI?.sendRemoteAction?.({ type: 'JOG_COMMAND', payload: { x, y, z, rate } });
+        return;
+      }
+      controller.jog(x, y, z, rate);
     },
 
     handleJogStop: () => {
       const { controller } = useConnectionStore.getState();
       set({ isJogging: false });
-      controller?.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
+      if (!controller) {
+        window.electronAPI?.sendRemoteAction?.({ type: 'JOG_STOP' });
+        return;
+      }
+      controller.sendRealtimeCommand(GRBL_REALTIME_COMMANDS.JOG_CANCEL);
     },
 
     handleManualCommand: (command) => {
