@@ -457,7 +457,7 @@ const MainApp: React.FC = () => {
               title={t('common.toggleTheme', 'Toggle Theme')}
             >
               {isLightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              <span className="text-[10px] leading-none text-text-secondary">{t('common.theme', 'Theme')}</span>
+              <span className="text-[10px] leading-none text-text-secondary">{t('common.theme')}</span>
             </button>
             <button
               onClick={() => {
@@ -578,7 +578,7 @@ const MainApp: React.FC = () => {
                     {!isConnected && (
                       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20 text-accent-yellow text-xs font-medium">
                         <Zap className="w-3.5 h-3.5 shrink-0" />
-                        Connect a machine to enable jog controls
+                        {t('jog.disconnectedHint')}
                       </div>
                     )}
                     <JogPanel
@@ -611,7 +611,7 @@ const MainApp: React.FC = () => {
               },
               {
                 id: "macros",
-                label: "Macros",
+                label: t('macros.title'),
                 icon: <Zap className="w-4 h-4" />,
                 content: (
                   <div className="h-full overflow-auto p-2">

@@ -608,7 +608,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                   <div className="col-start-2 row-start-2 flex items-center justify-center">
                   <button
                     onClick={onJogStop}
-                    title="Stop jog"
+                    title={t('jog.stopJog')}
                     className="w-12 h-12 rounded-full bg-accent-red border-2 border-accent-red text-white flex items-center justify-center shadow-md hover:opacity-90 active:scale-95 transition-all"
                   >
                     <div className="w-4 h-4 rounded-sm bg-white" />
@@ -884,7 +884,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 disabled={isProbeDisabled}
                 className="btn btn-info w-full mt-2"
               >
-                <Target className="w-4 h-4" /> Stock Alignment Wizard
+                <Target className="w-4 h-4" /> {t('jog.stockAlignment')}
               </button>
               <button
                 onClick={() => {
@@ -894,7 +894,7 @@ const JogPanel: React.FC<JogPanelProps> = memo(
                 }}
                 className="btn btn-secondary w-full mt-2"
               >
-                <Crosshair className="w-4 h-4" /> Translate to Origin
+                <Crosshair className="w-4 h-4" /> {t('jog.translateToOrigin')}
               </button>
             </div>
 

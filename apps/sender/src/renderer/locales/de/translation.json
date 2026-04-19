@@ -13,7 +13,8 @@
         "sendCommand": "Befehl senden",
         "cancel": "Abbrechen",
         "language": "Sprache",
-        "save": "Save"
+        "save": "Save",
+        "theme": "Theme"
     },
     "console": {
         "title": "Konsole",
@@ -121,7 +122,11 @@
             "cw": "Spindel Ein (CW)",
             "ccw": "Spindel Ein (CCW)",
             "off": "Spindel Aus"
-        }
+        },
+        "stopJog": "Stop Jog",
+        "disconnectedHint": "Connect a machine to enable jog controls",
+        "stockAlignment": "Stock Alignment Wizard",
+        "translateToOrigin": "Translate to Origin"
     },
     "gcode": {
         "title": "G-Code",
@@ -573,5 +578,14 @@
         "backup": "Backup Settings",
         "restore": "Restore Settings",
         "currentSettings": "Current Settings"
+    },
+    "translateToOrigin": {
+        "title": "Translate to Origin",
+        "description": "Shifts the toolpath so the nearest part edge lands at (0, 0), accounting for tool radius.",
+        "detectedUnit": "Detected GCode unit:",
+        "mmUnit": "Millimeters (G21)",
+        "inUnit": "Inches (G20)",
+        "toolDiameter": "Tool Diameter",
+        "conversionNote": "= {{value}} {{unit}} (GCode units)"
     }
 }

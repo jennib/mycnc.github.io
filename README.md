@@ -25,6 +25,7 @@ This repository contains multiple interconnected applications and packages:
 - **G-Code Transforms**: Built-in toolpath manipulation including stock alignment (rotation compensation) and origin translation — shifts the loaded job so the nearest part edge lands at (0, 0), accounting for tool diameter.
 - **Plugin System**: Extend functionality by writing custom JavaScript/Node.js plugins that hook into real-time application state.
 - **Extensibility**: Built with modern web technologies (TypeScript, React, XState, Zustand), making the interface highly customizable and the architecture easy to extend.
+- **Internationalization**: UI fully wired for translation with 10 supported locales (English, German, Spanish, French, Hindi, Japanese, Bengali, Punjabi, Ukrainian, Chinese).
 
 ## Creating a Plugin
 

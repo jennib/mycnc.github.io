@@ -13,7 +13,8 @@
         "sendCommand": "发送命令",
         "cancel": "取消",
         "language": "语言",
-        "save": "Save"
+        "save": "Save",
+        "theme": "Theme"
     },
     "console": {
         "title": "控制台",
@@ -120,7 +121,11 @@
             "cw": "主轴开启 (顺时针)",
             "ccw": "主轴开启 (逆时针)",
             "off": "主轴关闭"
-        }
+        },
+        "stopJog": "Stop Jog",
+        "disconnectedHint": "Connect a machine to enable jog controls",
+        "stockAlignment": "Stock Alignment Wizard",
+        "translateToOrigin": "Translate to Origin"
     },
     "gcode": {
         "title": "G代码",
@@ -571,5 +576,14 @@
         "backup": "Backup Settings",
         "restore": "Restore Settings",
         "currentSettings": "Current Settings"
+    },
+    "translateToOrigin": {
+        "title": "Translate to Origin",
+        "description": "Shifts the toolpath so the nearest part edge lands at (0, 0), accounting for tool radius.",
+        "detectedUnit": "Detected GCode unit:",
+        "mmUnit": "Millimeters (G21)",
+        "inUnit": "Inches (G20)",
+        "toolDiameter": "Tool Diameter",
+        "conversionNote": "= {{value}} {{unit}} (GCode units)"
     }
 }

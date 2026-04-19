@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Move } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../../stores/uiStore';
 import { useJobStore } from '../../stores/jobStore';
 import { translateGCodeToOrigin } from '../../utils/gcodeTranslation';
@@ -16,6 +17,7 @@ function detectGCodeUnit(lines: string[]): 'mm' | 'in' {
 }
 
 const TranslateToOriginModal: React.FC = () => {
+    const { t } = useTranslation();
     const { isTranslateToOriginModalOpen, actions: uiActions } = useUIStore();
     const { gcodeLines, actions: jobActions } = useJobStore();
 
@@ -29,7 +31,6 @@ const TranslateToOriginModal: React.FC = () => {
     const diameter = parseFloat(toolDiameter);
     const isValid = !isNaN(diameter) && diameter > 0;
 
-    // Convert input diameter to GCode native units
     const diameterInGCodeUnits = (() => {
         if (!isValid) return 0;
         if (inputUnit === 'mm' && gcodeUnit === 'in') return diameter / 25.4;
@@ -45,7 +46,7 @@ const TranslateToOriginModal: React.FC = () => {
     };
 
     const conversionNote = inputUnit !== gcodeUnit && isValid
-        ? `= ${diameterInGCodeUnits.toFixed(4)} ${gcodeUnit} (GCode units)`
+        ? t('translateToOrigin.conversionNote', { value: diameterInGCodeUnits.toFixed(4), unit: gcodeUnit })
         : null;
 
     return ReactDOM.createPortal(
@@ -54,7 +55,7 @@ const TranslateToOriginModal: React.FC = () => {
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <h2 className="text-xl font-bold flex items-center gap-3">
                         <Move className="w-5 h-5 text-accent-cyan" />
-                        Translate to Origin
+                        {t('translateToOrigin.title')}
                     </h2>
                     <button onClick={uiActions.closeTranslateToOriginModal} className="p-2 rounded-lg text-text-secondary hover:text-white transition-colors">
                         <X className="w-5 h-5" />
@@ -63,17 +64,19 @@ const TranslateToOriginModal: React.FC = () => {
 
                 <div className="p-6 space-y-4">
                     <p className="text-text-secondary text-sm">
-                        Shifts the toolpath so the nearest part edge lands at (0, 0), accounting for tool radius.
+                        {t('translateToOrigin.description')}
                     </p>
 
                     <div className="flex items-center gap-2 text-xs text-text-secondary bg-background/50 px-3 py-2 rounded-lg border border-white/5">
-                        <span>Detected GCode unit:</span>
-                        <span className="font-bold text-text-primary">{gcodeUnit === 'mm' ? 'Millimeters (G21)' : 'Inches (G20)'}</span>
+                        <span>{t('translateToOrigin.detectedUnit')}</span>
+                        <span className="font-bold text-text-primary">
+                            {gcodeUnit === 'mm' ? t('translateToOrigin.mmUnit') : t('translateToOrigin.inUnit')}
+                        </span>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-text-secondary mb-2">
-                            Tool Diameter
+                            {t('translateToOrigin.toolDiameter')}
                         </label>
                         <div className="flex gap-2">
                             <NumberInput
@@ -81,7 +84,7 @@ const TranslateToOriginModal: React.FC = () => {
                                 onChange={setToolDiameter}
                                 min={0}
                                 step={0.01}
-                                label="Tool Diameter"
+                                label={t('translateToOrigin.toolDiameter')}
                                 unit={inputUnit}
                                 placeholder="e.g. 6.35"
                                 className="flex-1"
@@ -108,13 +111,13 @@ const TranslateToOriginModal: React.FC = () => {
                 </div>
 
                 <div className="p-6 border-t border-white/10 flex justify-between bg-surface/50">
-                    <button onClick={uiActions.closeTranslateToOriginModal} className="btn btn-secondary">Cancel</button>
+                    <button onClick={uiActions.closeTranslateToOriginModal} className="btn btn-secondary">{t('common.cancel')}</button>
                     <button
                         onClick={handleApply}
                         disabled={gcodeLines.length === 0 || !isValid}
                         className="btn btn-primary"
                     >
-                        Apply
+                        {t('common.ok')}
                     </button>
                 </div>
             </div>
