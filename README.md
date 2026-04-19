@@ -22,6 +22,7 @@ This repository contains multiple interconnected applications and packages:
 - **Visualization**: Interactive 3D rendering of toolpaths, stock material, and dynamic chip spawning during cutting simulation.
 - **Remote Operations**: Support for remote job control and monitoring across a local network.
 - **Job Documentation**: Tracking of recent jobs and file library management.
+- **G-Code Transforms**: Built-in toolpath manipulation including stock alignment (rotation compensation) and origin translation — shifts the loaded job so the nearest part edge lands at (0, 0), accounting for tool diameter.
 - **Plugin System**: Extend functionality by writing custom JavaScript/Node.js plugins that hook into real-time application state.
 - **Extensibility**: Built with modern web technologies (TypeScript, React, XState, Zustand), making the interface highly customizable and the architecture easy to extend.
 

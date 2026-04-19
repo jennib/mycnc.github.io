@@ -36,6 +36,7 @@ type UIState = {
   isGrblSettingsModalOpen: boolean;
   isPluginManagerModalOpen: boolean;
   isStockAlignmentWizardOpen: boolean;
+  isTranslateToOriginModalOpen: boolean;
   isCalculatorModalOpen: boolean;
   isProbeVerificationModalOpen: boolean;
   probeVerificationModalArgs: ProbeVerificationModalArgs;
@@ -68,6 +69,8 @@ type UIState = {
     closePluginManagerModal: () => void;
     openStockAlignmentWizard: () => void;
     closeStockAlignmentWizard: () => void;
+    openTranslateToOriginModal: () => void;
+    closeTranslateToOriginModal: () => void;
     openCalculatorModal: () => void;
     closeCalculatorModal: () => void;
     openProbeVerificationModal: (args: ProbeVerificationModalArgs) => void;
@@ -99,10 +102,12 @@ export const useUIStore = create<UIState>((set) => ({
   isGrblSettingsModalOpen: false,
   isPluginManagerModalOpen: false,
   isStockAlignmentWizardOpen: false,
+  isTranslateToOriginModalOpen: false,
   isCalculatorModalOpen: false,
   isProbeVerificationModalOpen: false,
   probeVerificationModalArgs: {
     onConfirm: () => { },
+    status: 'idle' as const,
   },
   preflightWarnings: [],
   actions: {
@@ -133,6 +138,8 @@ export const useUIStore = create<UIState>((set) => ({
     closePluginManagerModal: () => set({ isPluginManagerModalOpen: false }),
     openStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: true }),
     closeStockAlignmentWizard: () => set({ isStockAlignmentWizardOpen: false }),
+    openTranslateToOriginModal: () => set({ isTranslateToOriginModalOpen: true }),
+    closeTranslateToOriginModal: () => set({ isTranslateToOriginModalOpen: false }),
     openCalculatorModal: () => set({ isCalculatorModalOpen: true }),
     closeCalculatorModal: () => set({ isCalculatorModalOpen: false }),
     openProbeVerificationModal: (args) => set({ isProbeVerificationModalOpen: true, probeVerificationModalArgs: args }),

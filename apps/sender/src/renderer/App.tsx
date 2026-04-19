@@ -44,7 +44,6 @@ import {
   Pin,
   GRBL_REALTIME_COMMANDS,
 } from "@mycnc/shared";
-import { Analytics } from "@vercel/analytics/react";
 import GCodeGeneratorModal from "./components/GCodeGeneratorModal";
 import Logo from "./components/Logo";
 import ConnectionSelector from "./components/ConnectionSelector";
@@ -57,6 +56,7 @@ import ProbeVerificationModal from "./components/ProbeVerificationModal";
 import InfoModal from "./components/InfoModal";
 import PluginManagerModal from "./components/PluginManagerModal";
 import StockAlignmentWizard from "./components/StockAlignmentWizard/StockAlignmentWizard";
+import TranslateToOriginModal from "./components/TranslateToOriginModal/TranslateToOriginModal";
 import { GRBL_ALARM_CODES } from "@mycnc/shared";
 import { useUIStore } from "./stores/uiStore";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -748,6 +748,7 @@ const MainApp: React.FC = () => {
       />
 
       <StockAlignmentWizard />
+      <TranslateToOriginModal />
 
       <ToolLibraryModal
         isOpen={isToolLibraryModalOpen}

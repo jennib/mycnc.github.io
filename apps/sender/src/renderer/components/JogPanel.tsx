@@ -882,6 +882,16 @@ const JogPanel: React.FC<JogPanelProps> = memo(
               >
                 <Target className="w-4 h-4" /> Stock Alignment Wizard
               </button>
+              <button
+                onClick={() => {
+                  import('../stores/uiStore').then(({ useUIStore }) => {
+                    useUIStore.getState().actions.openTranslateToOriginModal();
+                  });
+                }}
+                className="btn btn-secondary w-full mt-2"
+              >
+                <Crosshair className="w-4 h-4" /> Translate to Origin
+              </button>
             </div>
 
             {/* Units Controls */}
