@@ -429,31 +429,35 @@ const MainApp: React.FC = () => {
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
             <button
               onClick={uiActions.openToolLibraryModal}
-              className="btn btn-secondary btn-icon"
+              className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"
               title={t('tools.title')}
             >
-              <Wrench className="w-5 h-5" />
+              <Wrench className="w-4 h-4" />
+              <span className="text-[10px] leading-none text-text-secondary">{t('tools.title')}</span>
             </button>
             <button
               onClick={uiActions.openCalculatorModal}
-              className="btn btn-secondary btn-icon"
+              className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"
               title={t('calculator.title', 'Calculator')}
             >
-              <Calculator className="w-5 h-5" />
+              <Calculator className="w-4 h-4" />
+              <span className="text-[10px] leading-none text-text-secondary">{t('calculator.title', 'Calc')}</span>
             </button>
             <button
               onClick={uiActions.openSettingsModal}
-              className="btn btn-secondary btn-icon"
+              className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"
               title={t('settings.title')}
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
+              <span className="text-[10px] leading-none text-text-secondary">{t('settings.title')}</span>
             </button>
             <button
               onClick={() => settingsActions.setIsLightMode(!isLightMode)}
-              className="btn btn-secondary btn-icon"
+              className="btn btn-secondary flex flex-col items-center gap-0.5 px-2 py-1 h-auto"
               title={t('common.toggleTheme', 'Toggle Theme')}
             >
-              {isLightMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              {isLightMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              <span className="text-[10px] leading-none text-text-secondary">{t('common.theme', 'Theme')}</span>
             </button>
             <button
               onClick={() => {
@@ -571,6 +575,12 @@ const MainApp: React.FC = () => {
                 icon: <Move className="w-4 h-4" />,
                 content: (
                   <div className="h-full overflow-auto p-2 flex flex-col gap-2">
+                    {!isConnected && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent-yellow/10 border border-accent-yellow/20 text-accent-yellow text-xs font-medium">
+                        <Zap className="w-3.5 h-3.5 shrink-0" />
+                        Connect a machine to enable jog controls
+                      </div>
+                    )}
                     <JogPanel
                       isConnected={isConnected}
                       machineState={machineState}
@@ -596,6 +606,15 @@ const MainApp: React.FC = () => {
                       jogFeedRate={machineSettings.jogFeedRate}
                       jobStatus={jobStatus}
                     />
+                  </div>
+                ),
+              },
+              {
+                id: "macros",
+                label: "Macros",
+                icon: <Zap className="w-4 h-4" />,
+                content: (
+                  <div className="h-full overflow-auto p-2">
                     <MacrosPanel
                       macros={macros}
                       onRunMacro={handleRunMacro}
