@@ -31,7 +31,7 @@ const BookmarkPanel: React.FC = () => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
     useEffect(() => {
-        libraryActions.init();
+        if (window.electronAPI?.isElectron) libraryActions.init();
     }, [libraryActions]);
 
     const captureSnapshot = () => {

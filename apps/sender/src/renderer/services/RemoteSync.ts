@@ -5,6 +5,8 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useConnectionStore } from '../stores/connectionStore';
 import { useMachineStore } from '../stores/machineStore';
 import { useLogStore } from '../stores/logStore';
+import { useBookmarkStore } from '../stores/bookmarkStore';
+import { useLibraryStore } from '../stores/libraryStore';
 
 // Define types for state updates
 type StateUpdate = {
@@ -72,6 +74,20 @@ class RemoteSyncService {
             if (this.isApplyingRemoteUpdate) return;
             const { isConnected, portInfo } = state;
             this.sendUpdate('connectionStore', { isConnected, portInfo });
+        });
+
+        useBookmarkStore.subscribe((state) => {
+            if (this.isApplyingRemoteUpdate) return;
+            const { actions, ...rest } = state as any;
+            this.sendUpdate('bookmarkStore', rest);
+        });
+
+        useLibraryStore.subscribe((state) => {
+            if (this.isApplyingRemoteUpdate) return;
+            const { actions, ...rest } = state as any;
+            // Only sync metadata — content is large and fetched on demand
+            const jobs = rest.jobs?.map(({ content: _, ...meta }: any) => meta) ?? [];
+            this.sendUpdate('libraryStore', { jobs });
         });
 
 
@@ -223,6 +239,8 @@ class RemoteSyncService {
                 const { isConnected, portInfo } = appState.connectionStore;
                 useConnectionStore.setState({ isConnected, portInfo });
             }
+            if (appState.bookmarkStore) useBookmarkStore.setState(appState.bookmarkStore);
+            if (appState.libraryStore) useLibraryStore.setState(appState.libraryStore);
         } finally {
             this.isApplyingRemoteUpdate = false;
         }
@@ -239,13 +257,10 @@ class RemoteSyncService {
                 case 'settingsStore': useSettingsStore.setState(state); break;
                 case 'machineStore': useMachineStore.setState(state); break;
                 case 'connectionStore':
-                    // Special handling for Host receiving connection updates? 
-                    // Or client receiving host status?
-                    // We definitely want to receive `isConnected`.
-                    // But we don't want to overwrite our local controller instance.
-                    // setState in useConnectionStore only updates properties, not the controller.
                     useConnectionStore.setState(state);
                     break;
+                case 'bookmarkStore': useBookmarkStore.setState(state); break;
+                case 'libraryStore': useLibraryStore.setState(state); break;
             }
         } finally {
             this.isApplyingRemoteUpdate = false;

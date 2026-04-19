@@ -18,7 +18,7 @@ const LibraryPanel: React.FC = () => {
     const uiActions = useUIStore((state) => state.actions);
 
     useEffect(() => {
-        libraryActions.init();
+        if (window.electronAPI?.isElectron) libraryActions.init();
     }, [libraryActions]);
 
     const handleUploadClick = () => {

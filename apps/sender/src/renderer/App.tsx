@@ -425,17 +425,19 @@ const MainApp: React.FC = () => {
       <header className="bg-surface border-b border-white/5 px-4 py-2 flex items-center justify-between shadow-md z-10 flex-shrink-0">
         <Logo className="h-8 w-auto" />
         <div className="flex items-center gap-6">
-          <ConnectionSelector />
-          <SerialConnector
-            isConnected={isConnected}
-            isConnecting={isConnecting}
-            portInfo={portInfo}
-            onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
-            isApiSupported={isSerialApiSupported}
-            isSimulated={connectionSettings.type === 'simulator'}
-            isElectron={!!window.electronAPI?.isElectron}
-          />
+          {window.electronAPI?.isElectron && <ConnectionSelector />}
+          {window.electronAPI?.isElectron && (
+            <SerialConnector
+              isConnected={isConnected}
+              isConnecting={isConnecting}
+              portInfo={portInfo}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+              isApiSupported={isSerialApiSupported}
+              isSimulated={connectionSettings.type === 'simulator'}
+              isElectron={true}
+            />
+          )}
           <div className="flex items-center gap-1 border-l border-white/10 pl-4 ml-2">
             <RemoteAccessButton />
             <button
