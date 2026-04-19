@@ -42,7 +42,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave, settings, generatorSettings, connectionSettings, isVirtualKeyboardEnabled, allowRemoteFiles, playCompletionSound, onResetDialogs, onExport, onImport, onContactClick, onOpenGrblSettings, onOpenPluginManager }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const [localSettings, setLocalSettings] = useState<MachineSettings>(settings);
     const [localGeneratorSettings, setLocalGeneratorSettings] = useState<GeneratorSettings>(generatorSettings);
     const [localConnectionSettings, setLocalConnectionSettings] = useState<ConnectionSettings>(connectionSettings);
@@ -350,24 +350,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onCancel, onSave,
                     <div className="bg-background p-4 rounded-xl border border-white/10 shadow-md">
                         <h3 className="text-sm font-bold text-text-secondary mb-2 uppercase tracking-wider">{t('settings.interface')}</h3>
                         <div className="space-y-4">
-                            <InputGroup label={t('common.language')}>
-                                <select
-                                    value={i18n.language}
-                                    onChange={(e) => i18n.changeLanguage(e.target.value)}
-                                    className="w-full input-style text-text-primary rounded-lg p-2 focus:ring-2 focus:ring-primary focus:outline-none"
-                                >
-                                    <option value="en">English</option>
-                                    <option value="es">Español</option>
-                                    <option value="fr">Français</option>
-                                    <option value="de">Deutsch</option>
-                                    <option value="zh">中文</option>
-                                    <option value="hi">हिन्दी</option>
-                                    <option value="bn">বাংলা</option>
-                                    <option value="ja">日本語</option>
-                                    <option value="uk">Українська</option>
-                                    <option value="pa">ਪੰਜਾਬੀ</option>
-                                </select>
-                            </InputGroup>
                         <div className="grid grid-cols-1 gap-2">
                             <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface/50 border border-white/5">
                                 <label htmlFor="completion-sound" className="text-sm font-medium text-text-primary cursor-pointer select-none">
